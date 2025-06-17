@@ -1,0 +1,20 @@
+# Ignore build artifacts
+bin/
+tmp/
+*.log
+
+# Ignore development files
+.git/
+.gitignore
+README.md
+docs/
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
