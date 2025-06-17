@@ -59,7 +59,7 @@ dist/
 /tmp/
 
 # Air live reload
-.air.toml
+# .air.toml  # 設定ファイルは含める
 tmp/
 
 # Database
