@@ -1,0 +1,130 @@
+{{define "header"}}
+<header class="fixed top-0 left-0 right-0 z-50 fixed-header border-b border-gray-200">
+  <div class="container mx-auto px-4">
+    <div class="flex items-center justify-between h-16">
+      <div class="flex items-center align-middle space-x-3">
+        <a href="/" class="flex items-center space-x-3">
+          <img src="/static/images/icon.png" alt="MHP Rooms" class="w-12 h-12">
+          <h1 class="text-2xl font-bold text-gray-800">MHP Rooms</h1>
+        </a>
+      </div>
+
+      <!-- 右側: ナビゲーション + 認証関連ボタン/メニュー -->
+      <div class="flex items-center space-x-6">
+        <!-- ナビゲーションメニュー（認証後のみ表示） -->
+        <nav class="hidden md:flex items-center space-x-6" id="nav-menu" style="display: none;">
+          <a href="/rooms" class="text-gray-600 hover:text-gray-800 transition-colors">部屋一覧</a>
+          <a href="/rooms/create" class="text-gray-600 hover:text-gray-800 transition-colors">部屋作成</a>
+        </nav>
+
+        <!-- 未認証時のボタン -->
+        <div class="hidden md:flex items-center gap-3" id="auth-buttons">
+          <button hx-get="/auth/login" hx-target="#main-content" hx-push-url="true"
+            class="text-gray-700 hover:text-gray-900 font-medium transition-colors px-3 py-2 rounded-md hover:bg-gray-100">
+            ログイン
+          </button>
+
+          <button hx-get="/auth/register" hx-target="#main-content" hx-push-url="true"
+            class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-2 px-4 rounded-md transition-colors">
+            新規登録
+          </button>
+        </div>
+
+        <!-- 認証済み時のユーザーメニュー（認証後に表示される） -->
+        <div class="relative hidden" id="user-menu" x-data="{ open: false }">
+          <button @click="open = !open"
+            class="flex items-center gap-2 text-gray-700 hover:text-gray-900 transition-colors p-2 rounded-md hover:bg-gray-100">
+            <img src="/static/images/default-avatar.png" class="w-8 h-8 rounded-full object-cover" alt="ユーザーアバター">
+            <span class="font-medium hidden sm:block">ユーザー名</span>
+            <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="currentColor"
+              viewBox="0 0 20 20">
+              <path fill-rule="evenodd"
+                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                clip-rule="evenodd" />
+            </svg>
+          </button>
+
+          <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-100"
+            x-transition:enter-start="transform opacity-0 scale-95"
+            x-transition:enter-end="transform opacity-100 scale-100"
+            x-transition:leave="transition ease-in duration-75"
+            x-transition:leave-start="transform opacity-100 scale-100"
+            x-transition:leave-end="transform opacity-0 scale-95"
+            class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+
+            <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+              プロフィール
+            </a>
+            <a href="/rooms/my" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+              マイ部屋
+            </a>
+            <a href="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+              設定
+            </a>
+            <hr class="my-1 border-gray-200">
+            <button hx-post="/auth/logout" hx-confirm="ログアウトしますか？"
+              class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 transition-colors">
+              ログアウト
+            </button>
+          </div>
+        </div>
+
+        <!-- モバイルハンバーガーメニュー -->
+        <div class="md:hidden" x-data="{ open: false }">
+          <button @click="open = !open" class="text-gray-600 hover:text-gray-800 p-2">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16">
+              </path>
+            </svg>
+          </button>
+
+          <!-- モバイルメニュー -->
+          <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-100"
+            x-transition:enter-start="transform opacity-0 scale-95"
+            x-transition:enter-end="transform opacity-100 scale-100"
+            x-transition:leave="transition ease-in duration-75"
+            x-transition:leave-start="transform opacity-100 scale-100"
+            x-transition:leave-end="transform opacity-0 scale-95"
+            class="absolute right-4 top-16 w-64 bg-white rounded-md shadow-lg py-2 z-50 border border-gray-200">
+
+            <!-- 未認証時のメニュー -->
+            <div class="block md:hidden" id="mobile-auth-buttons">
+              <a href="/auth/login" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">
+                ログイン
+              </a>
+              <a href="/auth/register" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">
+                新規登録
+              </a>
+            </div>
+
+            <!-- 認証済み時のメニュー（認証後に表示される） -->
+            <div class="hidden" id="mobile-user-menu">
+              <a href="/rooms" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">
+                部屋一覧
+              </a>
+              <a href="/rooms/create" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">
+                部屋作成
+              </a>
+              <hr class="my-1 border-gray-200">
+              <a href="/profile" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">
+                プロフィール
+              </a>
+              <a href="/rooms/my" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">
+                マイ部屋
+              </a>
+              <a href="/settings" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">
+                設定
+              </a>
+              <hr class="my-1 border-gray-200">
+              <button hx-post="/auth/logout" hx-confirm="ログアウトしますか？"
+                class="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 transition-colors">
+                ログアウト
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+{{end}}

@@ -1,0 +1,68 @@
+{{define "head"}}
+<!-- 部屋一覧ページ固有のheadタグ内容 -->
+{{end}}
+
+{{define "content"}}
+<!-- ページヘッダー -->
+<section class="bg-white py-8 border-b border-gray-200">
+  <div class="container mx-auto px-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">部屋一覧</h1>
+        <p class="text-gray-600">アクティブなアドホックパーティ部屋を探そう</p>
+      </div>
+      <a href="/rooms/create" class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-3 px-6 rounded-lg transition-colors">
+        新しい部屋を作る
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- フィルターセクション -->
+<section class="bg-gray-50 py-6">
+  <div class="container mx-auto px-4">
+    <div class="flex flex-wrap gap-4 items-center">
+      <span class="text-sm font-medium text-gray-700">ゲームで絞り込み:</span>
+      <button class="bg-white text-gray-800 px-4 py-2 rounded-full border hover:bg-gray-100 transition-colors">
+        すべて
+      </button>
+      <button class="bg-gray-100 text-gray-600 px-4 py-2 rounded-full hover:bg-gray-200 transition-colors">
+        MHP
+      </button>
+      <button class="bg-gray-100 text-gray-600 px-4 py-2 rounded-full hover:bg-gray-200 transition-colors">
+        MHP2
+      </button>
+      <button class="bg-gray-100 text-gray-600 px-4 py-2 rounded-full hover:bg-gray-200 transition-colors">
+        MHP2G
+      </button>
+      <button class="bg-gray-100 text-gray-600 px-4 py-2 rounded-full hover:bg-gray-200 transition-colors">
+        MHP3
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- 部屋一覧 -->
+<section class="py-8">
+  <div class="container mx-auto px-4">
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="room-list">
+      <!-- 部屋カードがここに表示される -->
+      <!-- 今後、動的に生成される -->
+    </div>
+    
+    <!-- 空の状態 -->
+    <div class="text-center py-16" id="empty-state">
+      <div class="text-gray-400 mb-4">
+        <svg class="w-16 h-16 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
+        </svg>
+      </div>
+      <h3 class="text-lg font-medium text-gray-500 mb-2">現在アクティブな部屋がありません</h3>
+      <p class="text-gray-400 mb-6">新しい部屋を作って、ハンターを募集してみましょう！</p>
+      <a href="/rooms/create" class="inline-flex items-center bg-gray-800 hover:bg-gray-900 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+        部屋を作る
+      </a>
+    </div>
+  </div>
+</section>
+{{end}}

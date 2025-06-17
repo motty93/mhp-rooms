@@ -23,6 +23,7 @@ func main() {
 	r := mux.NewRouter()
 
 	r.HandleFunc("/", handlers.HomeHandler).Methods("GET")
+	r.HandleFunc("/rooms", handlers.RoomsHandler).Methods("GET")
 	r.HandleFunc("/hello", handlers.HelloHandler).Methods("GET")
 	
 	// ヘルスチェックエンドポイント

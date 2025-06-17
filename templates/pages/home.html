@@ -1,0 +1,160 @@
+{{define "head"}}
+<!-- ホームページ固有のheadタグ内容 -->
+{{end}}
+
+{{define "content"}}
+<!-- ヒーローセクション -->
+<section class="hero-bg text-white py-52">
+  <div class="container mx-auto px-4 text-center">
+    <h2 class="text-4xl md:text-5xl font-bold mb-6">
+      一緒にクエストに行こう！<br>
+      <span class="text-3xl md:text-4xl">アドホックパーティ募集</span>
+    </h2>
+    <p class="text-sm md:text-xl mb-8 text-gray-100">
+      モンスターハンターポータブルシリーズで仲間を見つけて、みんなでクエストを楽しもう
+    </p>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto mb-8">
+      <div class="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur-sm">
+        <div class="mhp-icon game-icon mx-auto mb-2 rounded"></div>
+        <p class="text-sm font-semibold">MHP</p>
+      </div>
+      <div class="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur-sm">
+        <div class="mhp2-icon game-icon mx-auto mb-2 rounded"></div>
+        <p class="text-sm font-semibold">MHP2</p>
+      </div>
+      <div class="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur-sm">
+        <div class="mhp2g-icon game-icon mx-auto mb-2 rounded"></div>
+        <p class="text-sm font-semibold">MHP2G</p>
+      </div>
+      <div class="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur-sm">
+        <div class="mhp3-icon game-icon mx-auto mb-2 rounded"></div>
+        <p class="text-sm font-semibold">MHP3</p>
+      </div>
+    </div>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      <button
+        class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white font-medium py-3 px-8 rounded-lg transition-colors backdrop-blur-sm">
+        部屋を作る
+      </button>
+      <button
+        class="text-white hover:bg-white hover:bg-opacity-20 font-medium py-3 px-8 rounded-lg transition-colors">
+        部屋を見る
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- 部屋一覧セクション -->
+<section id="rooms" class="py-16 bg-white">
+  <div class="container mx-auto px-4">
+    <div class="text-center mb-12">
+      <h3 class="text-3xl font-bold text-gray-800 mb-4">アクティブな部屋</h3>
+      <p class="text-gray-600 max-w-2xl mx-auto">
+        現在開催中のアドホックパーティ部屋です。参加したい部屋をクリックしてください。
+      </p>
+    </div>
+
+    <!-- フィルター -->
+    <div class="flex flex-wrap gap-4 justify-center mb-8">
+      <button class="bg-gray-200 text-gray-800 px-4 py-2 rounded-full hover:bg-gray-300 transition-colors">
+        すべて
+      </button>
+      <button class="bg-gray-100 text-gray-600 px-4 py-2 rounded-full hover:bg-gray-200 transition-colors">
+        MHP
+      </button>
+      <button class="bg-gray-100 text-gray-600 px-4 py-2 rounded-full hover:bg-gray-200 transition-colors">
+        MHP2
+      </button>
+      <button class="bg-gray-100 text-gray-600 px-4 py-2 rounded-full hover:bg-gray-200 transition-colors">
+        MHP2G
+      </button>
+      <button class="bg-gray-100 text-gray-600 px-4 py-2 rounded-full hover:bg-gray-200 transition-colors">
+        MHP3
+      </button>
+    </div>
+
+    <!-- 部屋リスト -->
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6" id="room-list">
+      <!-- サンプル部屋 -->
+      <div class="room-card bg-white rounded-lg shadow-md border border-gray-200 flex flex-col h-full">
+        <div class="p-6 flex-grow">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center space-x-3">
+              <div class="mhp2g-icon game-icon rounded"></div>
+              <div>
+                <h4 class="font-bold text-gray-800">上位クエスト募集</h4>
+                <p class="text-sm text-gray-500">MHP2G</p>
+              </div>
+            </div>
+            <span class="bg-green-100 text-green-800 text-sm px-2 py-1 rounded-full">3/4</span>
+          </div>
+          <p class="text-gray-600">ティガレックス討伐クエストを一緒にやりませんか？</p>
+        </div>
+        <div class="p-6 pt-0">
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-500">ホスト: ハンター太郎</span>
+            <button class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded text-sm transition-colors">
+              参加
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="room-card bg-white rounded-lg shadow-md border border-gray-200 flex flex-col h-full">
+        <div class="p-6 flex-grow">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center space-x-3">
+              <div class="mhp3-icon game-icon rounded"></div>
+              <div>
+                <h4 class="font-bold text-gray-800">初心者歓迎</h4>
+                <p class="text-sm text-gray-500">MHP3</p>
+              </div>
+            </div>
+            <span class="bg-yellow-100 text-yellow-800 text-sm px-2 py-1 rounded-full">2/4</span>
+          </div>
+          <p class="text-gray-600">下位クエストでゆっくり楽しみましょう！</p>
+        </div>
+        <div class="p-6 pt-0">
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-500">ホスト: 猫好きハンター</span>
+            <button class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded text-sm transition-colors">
+              参加
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="room-card bg-white rounded-lg shadow-md border border-gray-200 flex flex-col h-full">
+        <div class="p-6 flex-grow">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center space-x-3">
+              <div class="mhp2-icon game-icon rounded"></div>
+              <div>
+                <h4 class="font-bold text-gray-800">素材集め</h4>
+                <p class="text-sm text-gray-500">MHP2</p>
+              </div>
+            </div>
+            <span class="bg-red-100 text-red-800 text-sm px-2 py-1 rounded-full">4/4</span>
+          </div>
+          <p class="text-gray-600">レア素材狙いで効率よく周回します</p>
+        </div>
+        <div class="p-6 pt-0">
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-500">ホスト: 素材コレクター</span>
+            <button class="bg-gray-400 text-white px-4 py-2 rounded text-sm cursor-not-allowed" disabled>
+              満員
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-center mt-8">
+      <button
+        class="border border-gray-400 text-gray-700 hover:bg-gray-100 px-6 py-3 rounded-lg transition-colors">
+        もっと見る
+      </button>
+    </div>
+  </div>
+</section>
+{{end}}

@@ -1,0 +1,42 @@
+{{define "base"}}
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{.Title}} - MHP 部屋管理</title>
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+  <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="/static/images/icons/favicon.ico">
+  <link rel="icon" type="image/x-icon" sizes="32x32" href="/static/images/icons/favicon-32x32.ico">
+  <link rel="icon" type="image/x-icon" sizes="16x16" href="/static/images/icons/favicon-16x16.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/images/icons/apple-touch-icon.png">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap"
+    rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="/static/css/style.css">
+  
+  {{template "head" .}}
+</head>
+
+<body class="bg-gray-50">
+  {{template "header" .}}
+
+  <!-- メインコンテンツエリア -->
+  <main class="{{if .HasHero}}{{else}}pt-16{{end}}">
+    {{template "content" .}}
+  </main>
+
+  {{template "footer" .}}
+</body>
+
+</html>
+{{end}}

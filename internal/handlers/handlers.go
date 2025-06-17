@@ -7,20 +7,50 @@ import (
 	"path/filepath"
 )
 
-func HomeHandler(w http.ResponseWriter, r *http.Request) {
-	tmplPath := filepath.Join("templates", "index.html")
-	tmpl, err := template.ParseFiles(tmplPath)
+// TemplateData はテンプレートに渡すデータ構造体
+type TemplateData struct {
+	Title    string
+	HasHero  bool
+	User     interface{} // 将来的にユーザー情報を格納
+	PageData interface{} // ページ固有のデータ
+}
+
+// renderTemplate はテンプレートをレンダリングする共通関数
+func renderTemplate(w http.ResponseWriter, templateName string, data TemplateData) {
+	// 必要なテンプレートファイルを全て読み込み
+	tmpl, err := template.ParseFiles(
+		filepath.Join("templates", "layouts", "base.html"),
+		filepath.Join("templates", "components", "header.html"),
+		filepath.Join("templates", "components", "footer.html"),
+		filepath.Join("templates", "pages", templateName),
+	)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Template parsing error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "text/html")
-	err = tmpl.Execute(w, nil)
+	err = tmpl.ExecuteTemplate(w, "base", data)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Template execution error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func HomeHandler(w http.ResponseWriter, r *http.Request) {
+	data := TemplateData{
+		Title:   "ホーム",
+		HasHero: true, // ホームページはヒーローセクションがある
+	}
+	renderTemplate(w, "home.html", data)
+}
+
+func RoomsHandler(w http.ResponseWriter, r *http.Request) {
+	data := TemplateData{
+		Title:   "部屋一覧",
+		HasHero: false, // 部屋一覧ページはヒーローセクションがない
+	}
+	renderTemplate(w, "rooms.html", data)
 }
 
 func HelloHandler(w http.ResponseWriter, r *http.Request) {
