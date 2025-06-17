@@ -2,7 +2,7 @@
 
 ## 概要
 
-モンスターハンターポータブルシリーズのアドホックパーティルーム管理システムのデータベース設計ドキュメントです。Render PostgreSQLを使用し、GORMをORMとして採用しています。Supabase Authenticationと連携した認証システムを採用しています。
+モンスターハンターポータブルシリーズのアドホックパーティルーム管理システムのデータベース設計ドキュメントです。Fly.io PostgreSQLを使用し、GORMをORMとして採用しています。Supabase Authenticationと連携した認証システムを採用しています。
 
 ## テーブル一覧
 
@@ -295,21 +295,21 @@ CREATE TRIGGER update_room_count_on_join
 ### インデックス戦略
 - 頻繁に検索条件となるカラムにインデックスを設定
 - 複合インデックスは検索パターンに合わせて設計
-- Render PostgreSQLの自動VACUUM、ANALYZEを活用
+- Fly.io PostgreSQLの自動VACUUM、ANALYZEを活用
 
 ### パーティショニング
 - room_messagesとroom_logsは月単位でパーティショニングを検討
 - 古いデータのアーカイブ戦略
 
 ### キャッシング
-- Render Redisでのアプリケーションセッション情報キャッシュ
+- Fly.io Redisでのアプリケーションセッション情報キャッシュ
 - アクティブなルーム情報のキャッシュ
 - ユーザープロフィールのキャッシュ
 - Supabase AuthのJWTトークン検証結果の短時間キャッシュ（メール・Google共通）
 
 ## バックアップ戦略
 
-- Render PostgreSQLの自動バックアップ機能を活用
+- Fly.io PostgreSQLの自動バックアップ機能を活用
 - 日次自動バックアップ
 - ポイントインタイムリカバリのサポート
 - クリティカルデータの定期エクスポート

@@ -41,17 +41,17 @@
   - マルチデバイス対応
 
 ### データベース
-- **ホスティング**: Render PostgreSQL
+- **ホスティング**: Fly.io PostgreSQL
   - マネージドPostgreSQLサービス
   - 自動バックアップ
   - SSL接続必須
 - **ORMライブラリ**: GORM
   - Go向けの人気ORM
   - マイグレーション機能付き
-- **キャッシュ**: Redis (Render Redis)
+- **キャッシュ**: Redis (Fly.io Redis)
   - セッション管理
   - リアルタイムデータのキャッシング
-  - Render上でのマネージドRedis
+  - Fly.io上でのマネージドRedis
 - **Redisクライアント**: go-redis
   - Go向けの高速Redisクライアント
 
@@ -61,24 +61,24 @@
   - デプロイメントの簡素化
 - **オーケストレーション**: Docker Compose（開発環境）
 - **本番環境**:
-  - Render（Webサービス、PostgreSQL、Redis）
-  - 自動デプロイ、スケーリング
-  - Cloudflare CDN（静的アセット配信）
+  - Fly.io（App、PostgreSQL、Redis）
+  - 自動デプロイ、マルチリージョンスケーリング
+  - Global Anycast IP、自動SSL証明書
 
 ## システム構成
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │                 │     │                 │     │                 │
-│   クライアント   │────▶│   Render LB     │────▶│   CDN (静的)    │
-│   (ブラウザ)    │     │                 │     │  (Cloudflare)   │
+│   クライアント   │────▶│   Fly.io Proxy  │────▶│   Global CDN    │
+│   (ブラウザ)    │     │ (Anycast Edge)  │     │   (Fly.io)      │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
          │                       │
          │ htmx/WebSocket       │
          ▼                       ▼
 ┌─────────────────────────────────────────┐       ┌────────────────────┐
 │                                         │       │                    │
-│      Render Web Service (Go App)        │───────│ Supabase Auth     │
+│        Fly.io App (Go App)              │───────│ Supabase Auth     │
 │  ┌─────────────┐  ┌─────────────────┐  │       │ - メール/PW認証  │
 │  │  HTTPハンドラ │  │ WebSocketハンドラ│  │       │ - Google OAuth    │
 │  └─────────────┘  └─────────────────┘  │       │ - 統一JWT管理     │
@@ -95,7 +95,7 @@
            ▼                 ▼
    ┌───────────────────┐   ┌───────────────┐
    │                   │   │               │
-   │ Render PostgreSQL │   │ Render Redis  │
+   │ Fly.io PostgreSQL │   │ Fly.io Redis  │
    │                   │   │               │
    └───────────────────┘   └───────────────┘
 ```
@@ -226,9 +226,10 @@
 ### 環境構成
 - 開発環境: Docker Compose
 - ホットリロード: Air（Goアプリケーション）
-- 本番環境: Renderデプロイ
+- 本番環境: Fly.ioデプロイ
   - GitHub統合による自動デプロイ
-  - Web Service + PostgreSQL + Redisの統合環境
+  - マルチリージョン対応
+  - App + PostgreSQL + Redisの統合環境
 
 ### CI/CD
 - GitHub Actions による自動テスト

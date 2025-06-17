@@ -9,7 +9,7 @@
 ### ベースURL
 ```
 開発環境: http://localhost:8080
-本番環境: https://mhp-rooms.onrender.com
+本番環境: https://mhp-rooms.fly.dev
 ```
 
 ### 認証方式
