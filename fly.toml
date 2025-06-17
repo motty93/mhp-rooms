@@ -1,0 +1,37 @@
+# Fly.io デプロイ設定ファイル（最小スペック）
+
+app = "mhp-rooms"
+primary_region = "nrt"  # 東京リージョン
+
+[build]
+
+[env]
+  PORT = "8080"
+
+# 最小スペックのマシン設定
+[vm]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 256
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+  max_machines_running = 1
+
+[deploy]
+  strategy = "immediate"
+
+# PostgreSQL設定（使用時にコメントアウト解除）
+# [[services]]
+#   protocol = "tcp"
+#   internal_port = 5432
+#   
+#   [[services.ports]]
+#     port = 5432
+#
+# [env]
+#   DATABASE_URL = "postgres://postgres:password@top2.nearest.of.mhp-rooms-db.internal:5432/mhp_rooms"
