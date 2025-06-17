@@ -23,8 +23,8 @@ run: build
 
 # 開発サーバーを起動（ホットリロードなし - 基本実装）
 dev:
-	@echo "開発サーバーを起動中..."
-	@go run $(MAIN_PATH)
+	@echo "ホットリロード開発サーバーを起動中..."
+	@air
 
 # テストを実行
 test:
@@ -58,7 +58,7 @@ help:
 	@echo "利用可能なコマンド:"
 	@echo "  build    - アプリケーションをビルド"
 	@echo "  run      - アプリケーションを実行"
-	@echo "  dev      - 開発サーバーを起動"
+	@echo "  dev      - ホットリロード開発サーバーを起動"
 	@echo "  test     - テストを実行"
 	@echo "  lint     - リンターを実行"
 	@echo "  fmt      - コードをフォーマット"
