@@ -35,9 +35,13 @@ WORKDIR /app
 # Copy the binary from builder stage
 COPY --from=builder /app/main .
 
-# Copy static files and templates
-COPY --from=builder /app/static ./static
+# Copy templates
 COPY --from=builder /app/templates ./templates
+
+# Copy static files individually to ensure they're included
+COPY --from=builder /app/static/css ./static/css
+COPY --from=builder /app/static/images ./static/images
+COPY --from=builder /app/static/js ./static/js
 
 # Verify files are copied to final stage (debug)
 RUN ls -la static/ && ls -la static/css/ || echo "CSS directory not found in final stage"
