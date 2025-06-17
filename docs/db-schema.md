@@ -1,0 +1,350 @@
+# データベーススキーマ設計
+
+## 概要
+
+モンスターハンターポータブルシリーズのアドホックパーティルーム管理システムのデータベース設計ドキュメントです。Render PostgreSQLを使用し、GORMをORMとして採用しています。Supabase Authenticationと連携した認証システムを採用しています。
+
+## テーブル一覧
+
+### 1. users（ユーザー）
+
+ユーザー情報を管理するマスターテーブル（Supabase Authと連携）
+
+| カラム名 | データ型 | NULL | デフォルト | 説明 |
+|---------|---------|------|-----------|------|
+| id | UUID | NO | gen_random_uuid() | 主キー |
+| supabase_user_id | UUID | NO | - | Supabase AuthユーザーID（ユニーク） |
+| email | VARCHAR(255) | NO | - | メールアドレス（ユニーク） |
+| username | VARCHAR(50) | YES | NULL | ユーザー名（ユニーク、後から設定可能） |
+| display_name | VARCHAR(100) | NO | - | 表示名 |
+| avatar_url | TEXT | YES | NULL | アバター画像URL |
+| bio | TEXT | YES | NULL | 自己紹介 |
+| is_active | BOOLEAN | NO | true | アクティブフラグ |
+| role | VARCHAR(20) | NO | 'user' | ロール（user/admin） |
+| created_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | 作成日時 |
+| updated_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | 更新日時 |
+
+**インデックス:**
+- UNIQUE INDEX on supabase_user_id
+- UNIQUE INDEX on email
+- UNIQUE INDEX on username (NULL値を許可)
+- INDEX on is_active, created_at
+
+### 2. game_versions（ゲームバージョンマスター）
+
+対応ゲームバージョンを管理するマスターテーブル
+
+| カラム名 | データ型 | NULL | デフォルト | 説明 |
+|---------|---------|------|-----------|------|
+| id | UUID | NO | gen_random_uuid() | 主キー |
+| code | VARCHAR(10) | NO | - | バージョンコード（MHP/MHP2/MHP2G/MHP3） |
+| name | VARCHAR(50) | NO | - | ゲーム名 |
+| display_order | INTEGER | NO | - | 表示順 |
+| is_active | BOOLEAN | NO | true | 有効フラグ |
+| created_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | 作成日時 |
+
+**インデックス:**
+- UNIQUE INDEX on code
+- INDEX on is_active, display_order
+
+### 3. rooms（ルーム）
+
+アドホックパーティのルーム情報を管理
+
+| カラム名 | データ型 | NULL | デフォルト | 説明 |
+|---------|---------|------|-----------|------|
+| id | UUID | NO | gen_random_uuid() | 主キー |
+| room_code | VARCHAR(20) | NO | - | ルームコード（ユニーク） |
+| name | VARCHAR(100) | NO | - | ルーム名 |
+| description | TEXT | YES | NULL | ルーム説明 |
+| game_version_id | UUID | NO | - | ゲームバージョンID（外部キー） |
+| host_user_id | UUID | NO | - | ホストユーザーID（外部キー） |
+| max_players | INTEGER | NO | 4 | 最大人数（固定で4人） |
+| current_players | INTEGER | NO | 0 | 現在の人数 |
+| password_hash | VARCHAR(255) | YES | NULL | パスワード（NULL=公開） |
+| status | VARCHAR(20) | NO | 'waiting' | ステータス（waiting/playing/closed） |
+| quest_type | VARCHAR(50) | YES | NULL | クエストタイプ |
+| target_monster | VARCHAR(100) | YES | NULL | ターゲットモンスター |
+| rank_requirement | VARCHAR(20) | YES | NULL | ランク制限 |
+| is_active | BOOLEAN | NO | true | アクティブフラグ |
+| expires_at | TIMESTAMP | NO | created_at + INTERVAL '24 hours' | 期限（24時間後） |
+| created_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | 作成日時 |
+| updated_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | 更新日時 |
+| closed_at | TIMESTAMP | YES | NULL | クローズ日時 |
+
+**インデックス:**
+- UNIQUE INDEX on room_code
+- INDEX on game_version_id, status, is_active
+- INDEX on host_user_id
+- INDEX on expires_at, status
+- INDEX on created_at DESC
+
+### 4. room_members（ルームメンバー）
+
+ルームの参加メンバーを管理
+
+| カラム名 | データ型 | NULL | デフォルト | 説明 |
+|---------|---------|------|-----------|------|
+| id | UUID | NO | gen_random_uuid() | 主キー |
+| room_id | UUID | NO | - | ルームID（外部キー） |
+| user_id | UUID | NO | - | ユーザーID（外部キー） |
+| player_number | INTEGER | NO | - | プレイヤー番号（1-4） |
+| is_host | BOOLEAN | NO | false | ホストフラグ |
+| status | VARCHAR(20) | NO | 'active' | ステータス（active/kicked/left） |
+| joined_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | 参加日時 |
+| left_at | TIMESTAMP | YES | NULL | 退出日時 |
+
+**インデックス:**
+- UNIQUE INDEX on room_id, user_id, status='active'
+- INDEX on user_id, status
+- INDEX on room_id, player_number
+
+### 5. room_messages（ルームメッセージ）
+
+ルーム内のチャットメッセージを管理
+
+| カラム名 | データ型 | NULL | デフォルト | 説明 |
+|---------|---------|------|-----------|------|
+| id | UUID | NO | gen_random_uuid() | 主キー |
+| room_id | UUID | NO | - | ルームID（外部キー） |
+| user_id | UUID | NO | - | ユーザーID（外部キー） |
+| message | TEXT | NO | - | メッセージ内容 |
+| message_type | VARCHAR(20) | NO | 'chat' | タイプ（chat/system/join/leave） |
+| is_deleted | BOOLEAN | NO | false | 削除フラグ |
+| created_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | 作成日時 |
+
+**インデックス:**
+- INDEX on room_id, created_at DESC
+- INDEX on user_id
+
+### 6. user_sessions（ユーザーセッション）
+
+ユーザーのセッション情報を管理（Supabase Authで主に管理されるため、最小限の情報のみ）
+
+| カラム名 | データ型 | NULL | デフォルト | 説明 |
+|---------|---------|------|-----------|------|
+| id | UUID | NO | gen_random_uuid() | 主キー |
+| user_id | UUID | NO | - | ユーザーID（外部キー） |
+| session_token | VARCHAR(255) | NO | - | アプリケーション独自のセッショントークン |
+| device_info | JSONB | YES | NULL | デバイス情報 |
+| ip_address | INET | YES | NULL | IPアドレス |
+| expires_at | TIMESTAMP | NO | - | 有効期限 |
+| created_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | 作成日時 |
+
+**インデックス:**
+- INDEX on user_id
+- INDEX on session_token
+- INDEX on expires_at
+
+### 7. user_blocks（ユーザーブロック）
+
+ユーザー間のブロック関係を管理
+
+| カラム名 | データ型 | NULL | デフォルト | 説明 |
+|---------|---------|------|-----------|------|
+| id | UUID | NO | gen_random_uuid() | 主キー |
+| blocker_user_id | UUID | NO | - | ブロックしたユーザーID（外部キー） |
+| blocked_user_id | UUID | NO | - | ブロックされたユーザーID（外部キー） |
+| reason | TEXT | YES | NULL | ブロック理由 |
+| created_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | 作成日時 |
+
+**インデックス:**
+- UNIQUE INDEX on blocker_user_id, blocked_user_id
+- INDEX on blocked_user_id
+
+### 8. room_logs（ルームログ）
+
+ルームの活動ログを記録
+
+| カラム名 | データ型 | NULL | デフォルト | 説明 |
+|---------|---------|------|-----------|------|
+| id | UUID | NO | gen_random_uuid() | 主キー |
+| room_id | UUID | NO | - | ルームID（外部キー） |
+| user_id | UUID | YES | NULL | ユーザーID（外部キー） |
+| action | VARCHAR(50) | NO | - | アクション（create/join/leave/kick/close） |
+| details | JSONB | YES | NULL | 詳細情報 |
+| created_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | 作成日時 |
+
+**インデックス:**
+- INDEX on room_id, created_at DESC
+- INDEX on user_id
+- INDEX on action
+
+## 制約とトリガー
+
+### 外部キー制約
+
+```sql
+-- rooms
+ALTER TABLE rooms 
+  ADD CONSTRAINT fk_rooms_game_version 
+  FOREIGN KEY (game_version_id) REFERENCES game_versions(id);
+
+ALTER TABLE rooms 
+  ADD CONSTRAINT fk_rooms_host_user 
+  FOREIGN KEY (host_user_id) REFERENCES users(id);
+
+-- room_members
+ALTER TABLE room_members 
+  ADD CONSTRAINT fk_room_members_room 
+  FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE;
+
+ALTER TABLE room_members 
+  ADD CONSTRAINT fk_room_members_user 
+  FOREIGN KEY (user_id) REFERENCES users(id);
+
+-- room_messages
+ALTER TABLE room_messages 
+  ADD CONSTRAINT fk_room_messages_room 
+  FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE;
+
+ALTER TABLE room_messages 
+  ADD CONSTRAINT fk_room_messages_user 
+  FOREIGN KEY (user_id) REFERENCES users(id);
+
+-- user_sessions
+ALTER TABLE user_sessions 
+  ADD CONSTRAINT fk_user_sessions_user 
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+-- user_blocks
+ALTER TABLE user_blocks 
+  ADD CONSTRAINT fk_user_blocks_blocker 
+  FOREIGN KEY (blocker_user_id) REFERENCES users(id);
+
+ALTER TABLE user_blocks 
+  ADD CONSTRAINT fk_user_blocks_blocked 
+  FOREIGN KEY (blocked_user_id) REFERENCES users(id);
+
+-- room_logs
+ALTER TABLE room_logs 
+  ADD CONSTRAINT fk_room_logs_room 
+  FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE;
+
+ALTER TABLE room_logs 
+  ADD CONSTRAINT fk_room_logs_user 
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL;
+
+-- users
+ALTER TABLE users 
+  ADD CONSTRAINT chk_users_supabase_user_id 
+  CHECK (supabase_user_id IS NOT NULL);
+
+-- rooms
+ALTER TABLE rooms 
+  ADD CONSTRAINT chk_rooms_max_players 
+  CHECK (max_players = 4);
+```
+
+### トリガー
+
+1. **updated_at自動更新トリガー**
+```sql
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = CURRENT_TIMESTAMP;
+  RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_rooms_updated_at BEFORE UPDATE ON rooms
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+```
+
+2. **ルーム人数自動更新トリガー**
+```sql
+CREATE OR REPLACE FUNCTION update_room_player_count()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE rooms 
+  SET current_players = (
+    SELECT COUNT(*) 
+    FROM room_members 
+    WHERE room_id = COALESCE(NEW.room_id, OLD.room_id) 
+    AND status = 'active'
+  )
+  WHERE id = COALESCE(NEW.room_id, OLD.room_id);
+  RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_room_count_on_join 
+  AFTER INSERT OR UPDATE OR DELETE ON room_members
+  FOR EACH ROW EXECUTE FUNCTION update_room_player_count();
+```
+
+3. **ルーム自動期限設定トリガー**
+```sql
+CREATE OR REPLACE FUNCTION set_room_expiry()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.expires_at = NEW.created_at + INTERVAL '24 hours';
+  RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER set_room_expiry_on_create 
+  BEFORE INSERT ON rooms
+  FOR EACH ROW EXECUTE FUNCTION set_room_expiry();
+```
+
+## Supabase Authentication連携
+
+### ユーザー作成フロー
+1. Supabase Authでユーザー作成：
+   - メールアドレス/パスワード認証
+   - Google OAuth 2.0認証（Supabase Authの機能として）
+2. Webhookまたは初回ログイン時にusersテーブルにレコード作成
+3. supabase_user_idでSupabase Authと連携
+
+### セッション管理
+- Supabase Authの統一JWTトークンを使用（メール・Google共通）
+- アプリケーション独自のセッション情報はuser_sessionsテーブルで管理
+
+## ルーム自動クローズ機能
+
+### 仕様
+- 全てのルームは作成から24時間後に自動的にクローズ
+- expires_atフィールドで期限を管理
+- バックグラウンドジョブが5分ごとに期限切れルームをチェック
+
+### クリーンアップクエリ
+```sql
+-- 期限切れルームのクローズ
+UPDATE rooms 
+SET status = 'closed', 
+    closed_at = CURRENT_TIMESTAMP,
+    updated_at = CURRENT_TIMESTAMP
+WHERE expires_at <= CURRENT_TIMESTAMP 
+  AND status != 'closed'
+  AND is_active = true;
+```
+
+## パフォーマンス考慮事項
+
+### インデックス戦略
+- 頻繁に検索条件となるカラムにインデックスを設定
+- 複合インデックスは検索パターンに合わせて設計
+- expires_atフィールドのインデックスがクリーンアップ処理に重要
+- Render PostgreSQLの自動VACUUM、ANALYZEを活用
+
+### パーティショニング
+- room_messagesとroom_logsは月単位でパーティショニングを検討
+- 古いデータのアーカイブ戦略
+
+### キャッシング
+- Render Redisでのアプリケーションセッション情報キャッシュ
+- アクティブなルーム情報のキャッシュ
+- ユーザープロフィールのキャッシュ
+- Supabase AuthのJWTトークン検証結果の短時間キャッシュ（メール・Google共通）
+
+## バックアップ戦略
+
+- Render PostgreSQLの自動バックアップ機能を活用
+- 日次自動バックアップ
+- ポイントインタイムリカバリのサポート
+- クリティカルデータの定期エクスポート
