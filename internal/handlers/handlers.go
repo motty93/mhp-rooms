@@ -26,7 +26,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 func HelloHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	fmt.Fprint(w, `<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded block">
-    <strong>Hello World!</strong> Go + HTMX + Tailwind CSS で動作しています！
+    <strong>Hello World!</strong> Go + HTMX + Tailwind CSS + Air ホットリロードで動作しています！
 </div>
 <script>
     document.getElementById('hello-result').classList.remove('hidden');
