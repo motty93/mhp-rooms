@@ -286,7 +286,6 @@ Google OAuth認証コールバック（Supabase Auth使用）
         "target_monster": "キリン",
         "rank_requirement": "HR6以上",
         "created_at": "2024-01-20T12:00:00Z",
-        "expires_at": "2024-01-21T12:00:00Z"
       }
     ],
     "pagination": {
@@ -371,7 +370,6 @@ Google OAuth認証コールバック（Supabase Auth使用）
     "rank_requirement": "HR6以上",
     "created_at": "2024-01-20T12:00:00Z",
     "updated_at": "2024-01-20T12:05:00Z",
-    "expires_at": "2024-01-21T12:00:00Z"
   }
 }
 ```
@@ -579,28 +577,6 @@ ws://localhost:3001/socket.io?token=jwt-access-token
 }
 ```
 
-## ルーム自動クローズ仕様
-
-- ルームは作成から24時間後に自動的にクローズされる
-- クローズされたルームは再開不可
-- 新しいルームを作成する必要がある
-- バックグラウンドジョブが定期的（5分ごと）に期限切れルームをチェック
-
-### GET /rooms/cleanup
-期限切れルームのクリーンアップ（内部API）
-
-**説明:** Cronジョブから呼び出される内部エンドポイント
-
-**レスポンス:**
-```json
-{
-  "success": true,
-  "data": {
-    "closed_count": 5,
-    "closed_rooms": ["room-id-1", "room-id-2", ...]
-  }
-}
-```
 
 ## エラーコード一覧
 

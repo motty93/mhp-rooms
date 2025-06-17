@@ -67,7 +67,6 @@
 | target_monster | VARCHAR(100) | YES | NULL | ターゲットモンスター |
 | rank_requirement | VARCHAR(20) | YES | NULL | ランク制限 |
 | is_active | BOOLEAN | NO | true | アクティブフラグ |
-| expires_at | TIMESTAMP | NO | created_at + INTERVAL '24 hours' | 期限（24時間後） |
 | created_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | 作成日時 |
 | updated_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | 更新日時 |
 | closed_at | TIMESTAMP | YES | NULL | クローズ日時 |
@@ -76,7 +75,6 @@
 - UNIQUE INDEX on room_code
 - INDEX on game_version_id, status, is_active
 - INDEX on host_user_id
-- INDEX on expires_at, status
 - INDEX on created_at DESC
 
 ### 4. room_members（ルームメンバー）
@@ -277,20 +275,6 @@ CREATE TRIGGER update_room_count_on_join
   FOR EACH ROW EXECUTE FUNCTION update_room_player_count();
 ```
 
-3. **ルーム自動期限設定トリガー**
-```sql
-CREATE OR REPLACE FUNCTION set_room_expiry()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.expires_at = NEW.created_at + INTERVAL '24 hours';
-  RETURN NEW;
-END;
-$$ language 'plpgsql';
-
-CREATE TRIGGER set_room_expiry_on_create
-  BEFORE INSERT ON rooms
-  FOR EACH ROW EXECUTE FUNCTION set_room_expiry();
-```
 
 ## Supabase Authentication連携
 
@@ -305,31 +289,12 @@ CREATE TRIGGER set_room_expiry_on_create
 - Supabase Authの統一JWTトークンを使用（メール・Google共通）
 - アプリケーション独自のセッション情報はuser_sessionsテーブルで管理
 
-## ルーム自動クローズ機能
-
-### 仕様
-- 全てのルームは作成から24時間後に自動的にクローズ
-- expires_atフィールドで期限を管理
-- バックグラウンドジョブが5分ごとに期限切れルームをチェック
-
-### クリーンアップクエリ
-```sql
--- 期限切れルームのクローズ
-UPDATE rooms
-SET status = 'closed',
-    closed_at = CURRENT_TIMESTAMP,
-    updated_at = CURRENT_TIMESTAMP
-WHERE expires_at <= CURRENT_TIMESTAMP
-  AND status != 'closed'
-  AND is_active = true;
-```
 
 ## パフォーマンス考慮事項
 
 ### インデックス戦略
 - 頻繁に検索条件となるカラムにインデックスを設定
 - 複合インデックスは検索パターンに合わせて設計
-- expires_atフィールドのインデックスがクリーンアップ処理に重要
 - Render PostgreSQLの自動VACUUM、ANALYZEを活用
 
 ### パーティショニング

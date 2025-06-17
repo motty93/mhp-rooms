@@ -60,7 +60,6 @@ erDiagram
         string target_monster
         string rank_requirement
         boolean is_active
-        timestamp expires_at "24時間後"
         timestamp created_at
         timestamp updated_at
         timestamp closed_at
@@ -196,15 +195,6 @@ erDiagram
    - 同じゲームバージョンのルームにのみ参加可能
    - ゲームバージョンの互換性はアプリケーション層で管理
 
-### ルーム自動クローズ制約
-1. **期限制限**
-   - 全てのルームは作成から24時間後に自動的にクローズ
-   - `expires_at`フィールドで期限を管理
-   - クローズされたルームは再開不可
-
-2. **自動クリーンアップ**
-   - バックグラウンドジョブが5分ごとに期限切れルームをチェック
-   - WebSocket経由で参加者に通知
 
 ### ユーザーブロック制約
 1. **相互作用制限**
@@ -263,7 +253,6 @@ erDiagram
    - アクティブなルーム一覧（game_version_id, status, is_active）
    - ユーザーの参加ルーム（user_id, status）
    - ルーム内メッセージ（room_id, created_at DESC）
-   - ルーム自動クローズ（expires_at, status）
 
 2. **結合最適化**
    - 外部キーカラムには自動的にインデックスが作成される
@@ -272,4 +261,3 @@ erDiagram
 ### データアーカイブ
 - 古いroom_messagesとroom_logsは定期的にアーカイブ
 - クローズから一定期間経過したルームデータの移行
-- ルーム自動クローズ機能により古いルームデータの数が制限される
