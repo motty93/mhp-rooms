@@ -1,37 +1,22 @@
-# Fly.io デプロイ設定ファイル（最小スペック）
+# fly.toml app configuration file generated for mhp-rooms on 2025-06-17T15:12:00Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
-app = "mhp-rooms"
-primary_region = "nrt"  # 東京リージョン
+app = 'mhp-rooms'
+primary_region = 'nrt'
 
 [build]
-
-[env]
-  PORT = "8080"
-
-# 最小スペックのマシン設定
-[vm]
-  cpu_kind = "shared"
-  cpus = 1
-  memory_mb = 256
 
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = true
+  auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 0
-  max_machines_running = 1
+  processes = ['app']
 
-[deploy]
-  strategy = "immediate"
-
-# PostgreSQL設定（使用時にコメントアウト解除）
-# [[services]]
-#   protocol = "tcp"
-#   internal_port = 5432
-#   
-#   [[services.ports]]
-#     port = 5432
-#
-# [env]
-#   DATABASE_URL = "postgres://postgres:password@top2.nearest.of.mhp-rooms-db.internal:5432/mhp_rooms"
+[[vm]]
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 1024
