@@ -53,15 +53,42 @@ deps:
 	@echo "依存関係を取得中..."
 	@go mod tidy
 
+# Docker開発環境コマンド
+docker-up:
+	@echo "Docker環境を起動中..."
+	@docker-compose up -d
+
+docker-down:
+	@echo "Docker環境を停止中..."
+	@docker-compose down
+
+docker-build:
+	@echo "Dockerイメージを再ビルド中..."
+	@docker-compose build --no-cache app
+
+docker-logs:
+	@echo "アプリケーションログを表示中..."
+	@docker-compose logs -f app
+
+docker-reset:
+	@echo "Docker環境をリセット中..."
+	@docker-compose down -v
+	@docker-compose up -d
+
 # ヘルプを表示
 help:
 	@echo "利用可能なコマンド:"
-	@echo "  build    - アプリケーションをビルド"
-	@echo "  run      - アプリケーションを実行"
-	@echo "  dev      - ホットリロード開発サーバーを起動"
-	@echo "  test     - テストを実行"
-	@echo "  lint     - リンターを実行"
-	@echo "  fmt      - コードをフォーマット"
-	@echo "  clean    - ビルド成果物をクリーンアップ"
-	@echo "  deps     - 依存関係を取得"
-	@echo "  help     - このヘルプを表示"
+	@echo "  build       - アプリケーションをビルド"
+	@echo "  run         - アプリケーションを実行"
+	@echo "  dev         - ホットリロード開発サーバーを起動"
+	@echo "  test        - テストを実行"
+	@echo "  lint        - リンターを実行"
+	@echo "  fmt         - コードをフォーマット"
+	@echo "  clean       - ビルド成果物をクリーンアップ"
+	@echo "  deps        - 依存関係を取得"
+	@echo "  docker-up   - Docker環境を起動"
+	@echo "  docker-down - Docker環境を停止"
+	@echo "  docker-build- Dockerイメージを再ビルド"
+	@echo "  docker-logs - アプリケーションログを表示"
+	@echo "  docker-reset- Docker環境をリセット"
+	@echo "  help        - このヘルプを表示"
