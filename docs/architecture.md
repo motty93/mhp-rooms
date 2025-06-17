@@ -60,7 +60,7 @@
   - 開発環境の統一
   - デプロイメントの簡素化
 - **オーケストレーション**: Docker Compose（開発環境）
-- **本番環境**: 
+- **本番環境**:
   - Render（Webサービス、PostgreSQL、Redis）
   - 自動デプロイ、スケーリング
   - Cloudflare CDN（静的アセット配信）

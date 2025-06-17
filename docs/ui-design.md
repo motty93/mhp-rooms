@@ -44,16 +44,16 @@
 ```html
 <div class="flex items-center gap-3">
   <!-- ログインボタン -->
-  <button 
-    hx-get="/auth/login" 
+  <button
+    hx-get="/auth/login"
     hx-target="#main-content"
     class="text-blue-600 hover:text-blue-800 font-medium transition-colors">
     ログイン
   </button>
-  
+
   <!-- 新規登録ボタン -->
-  <button 
-    hx-get="/auth/register" 
+  <button
+    hx-get="/auth/register"
     hx-target="#main-content"
     class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
     新規登録
@@ -64,21 +64,21 @@
 #### 認証済み時の右上メニュー
 ```html
 <div class="relative" x-data="{ open: false }">
-  <button 
-    @click="open = !open" 
+  <button
+    @click="open = !open"
     class="flex items-center gap-2 text-gray-700 hover:text-gray-900 transition-colors">
-    <img 
-      src="${user.avatar_url || '/default-avatar.png'}" 
-      class="w-8 h-8 rounded-full object-cover" 
+    <img
+      src="${user.avatar_url || '/default-avatar.png'}"
+      class="w-8 h-8 rounded-full object-cover"
       alt="${user.display_name}のアバター">
     <span class="font-medium">${user.display_name}</span>
     <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="currentColor" viewBox="0 0 20 20">
       <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
     </svg>
   </button>
-  
-  <div 
-    x-show="open" 
+
+  <div
+    x-show="open"
     @click.away="open = false"
     x-transition:enter="transition ease-out duration-100"
     x-transition:enter-start="transform opacity-0 scale-95"
@@ -157,7 +157,7 @@
   <button class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
     ログイン
   </button>
-  
+
   <!-- Googleログイン -->
   <button class="bg-white hover:bg-gray-50 text-gray-900 font-medium py-2 px-4 rounded-md border border-gray-300 transition-colors flex items-center gap-2">
     <svg class="w-5 h-5" viewBox="0 0 24 24"><!-- Google icon --></svg>
@@ -221,17 +221,17 @@
 ```html
 <div class="flex items-center gap-3">
   <!-- ログインボタン -->
-  <button 
-    hx-get="/auth/login" 
+  <button
+    hx-get="/auth/login"
     hx-target="#main-content"
     hx-push-url="true"
     class="text-blue-600 hover:text-blue-800 font-medium transition-colors px-3 py-2 rounded-md hover:bg-blue-50">
     ログイン
   </button>
-  
+
   <!-- 新規登録ボタン -->
-  <button 
-    hx-get="/auth/register" 
+  <button
+    hx-get="/auth/register"
     hx-target="#main-content"
     hx-push-url="true"
     class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors shadow-sm">
@@ -244,15 +244,15 @@
 ```html
 <div class="flex flex-col sm:flex-row gap-2">
   <!-- メールログイン -->
-  <button 
-    hx-get="/auth/login" 
+  <button
+    hx-get="/auth/login"
     hx-target="#main-content"
     class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
     ログイン
   </button>
-  
+
   <!-- Googleログイン -->
-  <a 
+  <a
     href="/auth/google"
     class="bg-white hover:bg-gray-50 text-gray-900 font-medium py-2 px-4 rounded-md border border-gray-300 transition-colors flex items-center justify-center gap-2">
     <svg class="w-5 h-5" viewBox="0 0 24 24">
@@ -270,21 +270,21 @@
 #### HeaderUserMenu（Headerの認証済み時）
 ```html
 <div class="relative" x-data="{ open: false }">
-  <button 
-    @click="open = !open" 
+  <button
+    @click="open = !open"
     class="flex items-center gap-2 text-gray-700 hover:text-gray-900 transition-colors p-2 rounded-md hover:bg-gray-100">
-    <img 
-      src="${user.avatar_url || '/default-avatar.png'}" 
-      class="w-8 h-8 rounded-full object-cover" 
+    <img
+      src="${user.avatar_url || '/default-avatar.png'}"
+      class="w-8 h-8 rounded-full object-cover"
       alt="${user.display_name}のアバター">
     <span class="font-medium hidden sm:block">${user.display_name}</span>
     <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="currentColor" viewBox="0 0 20 20">
       <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
     </svg>
   </button>
-  
-  <div 
-    x-show="open" 
+
+  <div
+    x-show="open"
     @click.away="open = false"
     x-transition:enter="transition ease-out duration-100"
     x-transition:enter-start="transform opacity-0 scale-95"
@@ -304,7 +304,7 @@
       設定
     </a>
     <hr class="my-1 border-gray-200">
-    <button 
+    <button
       hx-post="/auth/logout"
       hx-confirm="ログアウトしますか？"
       class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 transition-colors">
@@ -317,21 +317,21 @@
 #### FooterUserMenu（Footerの認証済み時）
 ```html
 <div class="relative" x-data="{ open: false }">
-  <button 
-    @click="open = !open" 
+  <button
+    @click="open = !open"
     class="flex items-center gap-2 text-gray-700 hover:text-gray-900 transition-colors">
-    <img 
-      src="${user.avatar_url || '/default-avatar.png'}" 
-      class="w-8 h-8 rounded-full object-cover" 
+    <img
+      src="${user.avatar_url || '/default-avatar.png'}"
+      class="w-8 h-8 rounded-full object-cover"
       alt="${user.display_name}のアバター">
     <span class="font-medium">${user.display_name}</span>
     <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="currentColor" viewBox="0 0 20 20">
       <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
     </svg>
   </button>
-  
-  <div 
-    x-show="open" 
+
+  <div
+    x-show="open"
     @click.away="open = false"
     x-transition:enter="transition ease-out duration-100"
     x-transition:enter-start="transform opacity-0 scale-95"
@@ -348,7 +348,7 @@
       マイルーム
     </a>
     <hr class="my-1 border-gray-200">
-    <button 
+    <button
       hx-post="/auth/logout"
       hx-confirm="ログアウトしますか？"
       class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 transition-colors">

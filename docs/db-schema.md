@@ -176,63 +176,63 @@
 
 ```sql
 -- rooms
-ALTER TABLE rooms 
-  ADD CONSTRAINT fk_rooms_game_version 
+ALTER TABLE rooms
+  ADD CONSTRAINT fk_rooms_game_version
   FOREIGN KEY (game_version_id) REFERENCES game_versions(id);
 
-ALTER TABLE rooms 
-  ADD CONSTRAINT fk_rooms_host_user 
+ALTER TABLE rooms
+  ADD CONSTRAINT fk_rooms_host_user
   FOREIGN KEY (host_user_id) REFERENCES users(id);
 
 -- room_members
-ALTER TABLE room_members 
-  ADD CONSTRAINT fk_room_members_room 
+ALTER TABLE room_members
+  ADD CONSTRAINT fk_room_members_room
   FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE;
 
-ALTER TABLE room_members 
-  ADD CONSTRAINT fk_room_members_user 
+ALTER TABLE room_members
+  ADD CONSTRAINT fk_room_members_user
   FOREIGN KEY (user_id) REFERENCES users(id);
 
 -- room_messages
-ALTER TABLE room_messages 
-  ADD CONSTRAINT fk_room_messages_room 
+ALTER TABLE room_messages
+  ADD CONSTRAINT fk_room_messages_room
   FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE;
 
-ALTER TABLE room_messages 
-  ADD CONSTRAINT fk_room_messages_user 
+ALTER TABLE room_messages
+  ADD CONSTRAINT fk_room_messages_user
   FOREIGN KEY (user_id) REFERENCES users(id);
 
 -- user_sessions
-ALTER TABLE user_sessions 
-  ADD CONSTRAINT fk_user_sessions_user 
+ALTER TABLE user_sessions
+  ADD CONSTRAINT fk_user_sessions_user
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 -- user_blocks
-ALTER TABLE user_blocks 
-  ADD CONSTRAINT fk_user_blocks_blocker 
+ALTER TABLE user_blocks
+  ADD CONSTRAINT fk_user_blocks_blocker
   FOREIGN KEY (blocker_user_id) REFERENCES users(id);
 
-ALTER TABLE user_blocks 
-  ADD CONSTRAINT fk_user_blocks_blocked 
+ALTER TABLE user_blocks
+  ADD CONSTRAINT fk_user_blocks_blocked
   FOREIGN KEY (blocked_user_id) REFERENCES users(id);
 
 -- room_logs
-ALTER TABLE room_logs 
-  ADD CONSTRAINT fk_room_logs_room 
+ALTER TABLE room_logs
+  ADD CONSTRAINT fk_room_logs_room
   FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE;
 
-ALTER TABLE room_logs 
-  ADD CONSTRAINT fk_room_logs_user 
+ALTER TABLE room_logs
+  ADD CONSTRAINT fk_room_logs_user
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL;
 
 -- users
-ALTER TABLE users 
-  ADD CONSTRAINT chk_users_supabase_user_id 
+ALTER TABLE users
+  ADD CONSTRAINT chk_users_supabase_user_id
   CHECK (supabase_user_id IS NOT NULL);
 
 -- rooms
-ALTER TABLE rooms 
-  ADD CONSTRAINT chk_rooms_max_players 
+ALTER TABLE rooms
+  ADD CONSTRAINT chk_rooms_max_players
   CHECK (max_players = 4);
 ```
 
@@ -260,11 +260,11 @@ CREATE TRIGGER update_rooms_updated_at BEFORE UPDATE ON rooms
 CREATE OR REPLACE FUNCTION update_room_player_count()
 RETURNS TRIGGER AS $$
 BEGIN
-  UPDATE rooms 
+  UPDATE rooms
   SET current_players = (
-    SELECT COUNT(*) 
-    FROM room_members 
-    WHERE room_id = COALESCE(NEW.room_id, OLD.room_id) 
+    SELECT COUNT(*)
+    FROM room_members
+    WHERE room_id = COALESCE(NEW.room_id, OLD.room_id)
     AND status = 'active'
   )
   WHERE id = COALESCE(NEW.room_id, OLD.room_id);
@@ -272,7 +272,7 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
-CREATE TRIGGER update_room_count_on_join 
+CREATE TRIGGER update_room_count_on_join
   AFTER INSERT OR UPDATE OR DELETE ON room_members
   FOR EACH ROW EXECUTE FUNCTION update_room_player_count();
 ```
@@ -287,7 +287,7 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
-CREATE TRIGGER set_room_expiry_on_create 
+CREATE TRIGGER set_room_expiry_on_create
   BEFORE INSERT ON rooms
   FOR EACH ROW EXECUTE FUNCTION set_room_expiry();
 ```
@@ -315,11 +315,11 @@ CREATE TRIGGER set_room_expiry_on_create
 ### クリーンアップクエリ
 ```sql
 -- 期限切れルームのクローズ
-UPDATE rooms 
-SET status = 'closed', 
+UPDATE rooms
+SET status = 'closed',
     closed_at = CURRENT_TIMESTAMP,
     updated_at = CURRENT_TIMESTAMP
-WHERE expires_at <= CURRENT_TIMESTAMP 
+WHERE expires_at <= CURRENT_TIMESTAMP
   AND status != 'closed'
   AND is_active = true;
 ```

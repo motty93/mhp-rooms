@@ -6,44 +6,152 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MHP ルーム管理 - モンスターハンターポータブル アドホックパーティ</title>
   <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+  <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="/static/css/style.css">
 </head>
 
 <body class="bg-gray-50">
+  <!-- 固定ヘッダー -->
   <header class="fixed top-0 left-0 right-0 z-50 fixed-header border-b border-gray-200">
     <div class="container mx-auto px-4">
       <div class="flex items-center justify-between h-16">
+        <!-- 左側: ロゴ/タイトル -->
         <div class="flex items-center space-x-4">
-          <h1 class="text-2xl font-bold text-gray-800">MHP ルーム管理</h1>
+          <h1 class="text-2xl font-bold text-gray-800">MHP Rooms</h1>
         </div>
-        <nav class="hidden md:flex items-center space-x-6">
-          <a href="#rooms" class="text-gray-600 hover:text-gray-800 transition-colors">ルーム一覧</a>
-          <a href="#create"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">ルーム作成</a>
-        </nav>
-        <div class="md:hidden">
-          <button class="text-gray-600 hover:text-gray-800">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-            </svg>
-          </button>
+
+        <!-- 右側: ナビゲーション + 認証関連ボタン/メニュー -->
+        <div class="flex items-center space-x-6">
+          <!-- ナビゲーションメニュー（認証後のみ表示） -->
+          <nav class="hidden md:flex items-center space-x-6" id="nav-menu" style="display: none;">
+            <a href="/rooms" class="text-gray-600 hover:text-gray-800 transition-colors">ルーム一覧</a>
+            <a href="/rooms/create" class="text-gray-600 hover:text-gray-800 transition-colors">ルーム作成</a>
+          </nav>
+
+          <!-- 未認証時のボタン -->
+          <div class="hidden md:flex items-center gap-3" id="auth-buttons">
+            <button hx-get="/auth/login" hx-target="#main-content" hx-push-url="true"
+              class="text-gray-700 hover:text-gray-900 font-medium transition-colors px-3 py-2 rounded-md hover:bg-gray-100">
+              ログイン
+            </button>
+
+            <button hx-get="/auth/register" hx-target="#main-content" hx-push-url="true"
+              class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-2 px-4 rounded-md transition-colors">
+              新規登録
+            </button>
+          </div>
+
+          <!-- 認証済み時のユーザーメニュー（認証後に表示される） -->
+          <div class="relative hidden" id="user-menu" x-data="{ open: false }">
+            <button @click="open = !open"
+              class="flex items-center gap-2 text-gray-700 hover:text-gray-900 transition-colors p-2 rounded-md hover:bg-gray-100">
+              <img src="/default-avatar.png" class="w-8 h-8 rounded-full object-cover" alt="ユーザーアバター">
+              <span class="font-medium hidden sm:block">ユーザー名</span>
+              <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="currentColor"
+                viewBox="0 0 20 20">
+                <path fill-rule="evenodd"
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                  clip-rule="evenodd" />
+              </svg>
+            </button>
+
+            <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-100"
+              x-transition:enter-start="transform opacity-0 scale-95"
+              x-transition:enter-end="transform opacity-100 scale-100"
+              x-transition:leave="transition ease-in duration-75"
+              x-transition:leave-start="transform opacity-100 scale-100"
+              x-transition:leave-end="transform opacity-0 scale-95"
+              class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+
+              <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                プロフィール
+              </a>
+              <a href="/rooms/my" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                マイルーム
+              </a>
+              <a href="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                設定
+              </a>
+              <hr class="my-1 border-gray-200">
+              <button hx-post="/auth/logout" hx-confirm="ログアウトしますか？"
+                class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 transition-colors">
+                ログアウト
+              </button>
+            </div>
+          </div>
+
+          <!-- モバイルハンバーガーメニュー -->
+          <div class="md:hidden" x-data="{ open: false }">
+            <button @click="open = !open" class="text-gray-600 hover:text-gray-800 p-2">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16">
+                </path>
+              </svg>
+            </button>
+
+            <!-- モバイルメニュー -->
+            <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-100"
+              x-transition:enter-start="transform opacity-0 scale-95"
+              x-transition:enter-end="transform opacity-100 scale-100"
+              x-transition:leave="transition ease-in duration-75"
+              x-transition:leave-start="transform opacity-100 scale-100"
+              x-transition:leave-end="transform opacity-0 scale-95"
+              class="absolute right-4 top-16 w-64 bg-white rounded-md shadow-lg py-2 z-50 border border-gray-200">
+
+              <!-- 未認証時のメニュー -->
+              <div class="block md:hidden" id="mobile-auth-buttons">
+                <a href="/auth/login" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">
+                  ログイン
+                </a>
+                <a href="/auth/register" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">
+                  新規登録
+                </a>
+              </div>
+
+              <!-- 認証済み時のメニュー（認証後に表示される） -->
+              <div class="hidden" id="mobile-user-menu">
+                <a href="/rooms" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">
+                  ルーム一覧
+                </a>
+                <a href="/rooms/create" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">
+                  ルーム作成
+                </a>
+                <hr class="my-1 border-gray-200">
+                <a href="/profile" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">
+                  プロフィール
+                </a>
+                <a href="/rooms/my" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">
+                  マイルーム
+                </a>
+                <a href="/settings" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors">
+                  設定
+                </a>
+                <hr class="my-1 border-gray-200">
+                <button hx-post="/auth/logout" hx-confirm="ログアウトしますか？"
+                  class="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 transition-colors">
+                  ログアウト
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </header>
 
   <!-- ヒーローセクション -->
-  <section class="hero-bg text-white pt-24 pb-16">
+  <section class="hero-bg text-white py-44">
     <div class="container mx-auto px-4 text-center">
       <h2 class="text-4xl md:text-5xl font-bold mb-6">
         モンスターハンター<br>
-        <span class="text-3xl md:text-4xl text-yellow-300">ポータブルシリーズ</span>
+        <span class="text-3xl md:text-4xl">ポータブルシリーズ</span>
       </h2>
-      <p class="text-xl md:text-2xl mb-8 text-gray-100">
+      <p class="text-sm md:text-xl mb-8 text-gray-100">
         アドホックパーティのルーム管理システム
       </p>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto mb-8">
@@ -66,11 +174,11 @@
       </div>
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
         <button
-          class="bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-3 px-8 rounded-lg text-lg transition-colors">
+          class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white font-medium py-3 px-8 rounded-lg transition-colors backdrop-blur-sm">
           ルームを作成
         </button>
         <button
-          class="border-2 border-white text-white hover:bg-white hover:text-gray-800 font-bold py-3 px-8 rounded-lg text-lg transition-colors">
+          class="border border-white border-opacity-50 text-white hover:bg-white hover:bg-opacity-20 font-medium py-3 px-8 rounded-lg transition-colors">
           ルーム一覧を見る
         </button>
       </div>
@@ -89,7 +197,7 @@
 
       <!-- フィルター -->
       <div class="flex flex-wrap gap-4 justify-center mb-8">
-        <button class="bg-blue-100 text-blue-800 px-4 py-2 rounded-full hover:bg-blue-200 transition-colors">
+        <button class="bg-gray-200 text-gray-800 px-4 py-2 rounded-full hover:bg-gray-300 transition-colors">
           すべて
         </button>
         <button class="bg-gray-100 text-gray-600 px-4 py-2 rounded-full hover:bg-gray-200 transition-colors">
@@ -109,70 +217,82 @@
       <!-- ルームリスト -->
       <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6" id="room-list">
         <!-- サンプルルーム -->
-        <div class="room-card bg-white rounded-lg shadow-md p-6 border border-gray-200">
-          <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center space-x-3">
-              <div class="mhp2g-icon game-icon rounded"></div>
-              <div>
-                <h4 class="font-bold text-gray-800">上位クエスト募集</h4>
-                <p class="text-sm text-gray-500">MHP2G</p>
+        <div class="room-card bg-white rounded-lg shadow-md border border-gray-200 flex flex-col h-full">
+          <div class="p-6 flex-grow">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center space-x-3">
+                <div class="mhp2g-icon game-icon rounded"></div>
+                <div>
+                  <h4 class="font-bold text-gray-800">上位クエスト募集</h4>
+                  <p class="text-sm text-gray-500">MHP2G</p>
+                </div>
               </div>
+              <span class="bg-green-100 text-green-800 text-sm px-2 py-1 rounded-full">3/4</span>
             </div>
-            <span class="bg-green-100 text-green-800 text-sm px-2 py-1 rounded-full">3/4</span>
+            <p class="text-gray-600">ティガレックス討伐クエストを一緒にやりませんか？</p>
           </div>
-          <p class="text-gray-600 mb-4">ティガレックス討伐クエストを一緒にやりませんか？</p>
-          <div class="flex items-center justify-between">
-            <span class="text-sm text-gray-500">ホスト: ハンター太郎</span>
-            <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm transition-colors">
-              参加
-            </button>
+          <div class="p-6 pt-0">
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-gray-500">ホスト: ハンター太郎</span>
+              <button class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded text-sm transition-colors">
+                参加
+              </button>
+            </div>
           </div>
         </div>
 
-        <div class="room-card bg-white rounded-lg shadow-md p-6 border border-gray-200">
-          <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center space-x-3">
-              <div class="mhp3-icon game-icon rounded"></div>
-              <div>
-                <h4 class="font-bold text-gray-800">初心者歓迎</h4>
-                <p class="text-sm text-gray-500">MHP3</p>
+        <div class="room-card bg-white rounded-lg shadow-md border border-gray-200 flex flex-col h-full">
+          <div class="p-6 flex-grow">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center space-x-3">
+                <div class="mhp3-icon game-icon rounded"></div>
+                <div>
+                  <h4 class="font-bold text-gray-800">初心者歓迎</h4>
+                  <p class="text-sm text-gray-500">MHP3</p>
+                </div>
               </div>
+              <span class="bg-yellow-100 text-yellow-800 text-sm px-2 py-1 rounded-full">2/4</span>
             </div>
-            <span class="bg-yellow-100 text-yellow-800 text-sm px-2 py-1 rounded-full">2/4</span>
+            <p class="text-gray-600">下位クエストでゆっくり楽しみましょう！</p>
           </div>
-          <p class="text-gray-600 mb-4">下位クエストでゆっくり楽しみましょう！</p>
-          <div class="flex items-center justify-between">
-            <span class="text-sm text-gray-500">ホスト: 猫好きハンター</span>
-            <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm transition-colors">
-              参加
-            </button>
+          <div class="p-6 pt-0">
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-gray-500">ホスト: 猫好きハンター</span>
+              <button class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded text-sm transition-colors">
+                参加
+              </button>
+            </div>
           </div>
         </div>
 
-        <div class="room-card bg-white rounded-lg shadow-md p-6 border border-gray-200">
-          <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center space-x-3">
-              <div class="mhp2-icon game-icon rounded"></div>
-              <div>
-                <h4 class="font-bold text-gray-800">素材集め</h4>
-                <p class="text-sm text-gray-500">MHP2</p>
+        <div class="room-card bg-white rounded-lg shadow-md border border-gray-200 flex flex-col h-full">
+          <div class="p-6 flex-grow">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center space-x-3">
+                <div class="mhp2-icon game-icon rounded"></div>
+                <div>
+                  <h4 class="font-bold text-gray-800">素材集め</h4>
+                  <p class="text-sm text-gray-500">MHP2</p>
+                </div>
               </div>
+              <span class="bg-red-100 text-red-800 text-sm px-2 py-1 rounded-full">4/4</span>
             </div>
-            <span class="bg-red-100 text-red-800 text-sm px-2 py-1 rounded-full">4/4</span>
+            <p class="text-gray-600">レア素材狙いで効率よく周回します</p>
           </div>
-          <p class="text-gray-600 mb-4">レア素材狙いで効率よく周回します</p>
-          <div class="flex items-center justify-between">
-            <span class="text-sm text-gray-500">ホスト: 素材コレクター</span>
-            <button class="bg-gray-400 text-white px-4 py-2 rounded text-sm cursor-not-allowed" disabled>
-              満員
-            </button>
+          <div class="p-6 pt-0">
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-gray-500">ホスト: 素材コレクター</span>
+              <button class="bg-gray-400 text-white px-4 py-2 rounded text-sm cursor-not-allowed" disabled>
+                満員
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       <div class="text-center mt-8">
         <button
-          class="border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white px-6 py-3 rounded-lg transition-colors">
+          class="border border-gray-400 text-gray-700 hover:bg-gray-100 px-6 py-3 rounded-lg transition-colors">
           もっと見る
         </button>
       </div>
@@ -184,14 +304,14 @@
     <div class="container mx-auto px-4">
       <div class="grid md:grid-cols-3 gap-8">
         <div>
-          <h5 class="text-lg font-bold mb-4">MHP ルーム管理</h5>
-          <p class="text-gray-400">
+          <h5 class="text-base font-bold mb-3">MHP ルーム管理</h5>
+          <p class="text-gray-400 text-sm">
             モンスターハンターポータブルシリーズのアドホックパーティをより楽しく、より便利に。
           </p>
         </div>
         <div>
-          <h5 class="text-lg font-bold mb-4">対応ゲーム</h5>
-          <ul class="text-gray-400 space-y-2">
+          <h5 class="text-base font-bold mb-3">対応ゲーム</h5>
+          <ul class="text-gray-400 text-sm space-y-1">
             <li>モンスターハンターポータブル</li>
             <li>モンスターハンターポータブル 2nd</li>
             <li>モンスターハンターポータブル 2nd G</li>
@@ -199,8 +319,8 @@
           </ul>
         </div>
         <div>
-          <h5 class="text-lg font-bold mb-4">リンク</h5>
-          <ul class="text-gray-400 space-y-2">
+          <h5 class="text-base font-bold mb-3">リンク</h5>
+          <ul class="text-gray-400 text-sm space-y-1">
             <li><a href="#" class="hover:text-white transition-colors">使い方</a></li>
             <li><a href="#" class="hover:text-white transition-colors">よくある質問</a></li>
             <li><a href="#" class="hover:text-white transition-colors">お問い合わせ</a></li>
@@ -208,7 +328,7 @@
         </div>
       </div>
       <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
-        <p>&copy; 2024 MHP ルーム管理. All rights reserved.</p>
+        <p class="text-xs">&copy; 2024 MHP ルーム管理. All rights reserved.</p>
       </div>
     </div>
   </footer>

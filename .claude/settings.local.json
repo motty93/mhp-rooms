@@ -6,7 +6,9 @@
       "Bash(npm init:*)",
       "Bash(mkdir:*)",
       "Bash(go install:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(grep:*)",
+      "Bash(rg:*)"
     ],
     "deny": []
   }
