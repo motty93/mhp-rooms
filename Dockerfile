@@ -13,6 +13,9 @@ RUN go mod download
 # Copy source code
 COPY . .
 
+# Verify files are copied correctly (debug)
+RUN ls -la static/ && ls -la static/css/ || echo "CSS directory not found"
+
 # Build the application with optimizations
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags='-w -s -extldflags "-static"' \
@@ -35,6 +38,9 @@ COPY --from=builder /app/main .
 # Copy static files and templates
 COPY --from=builder /app/static ./static
 COPY --from=builder /app/templates ./templates
+
+# Verify files are copied to final stage (debug)
+RUN ls -la static/ && ls -la static/css/ || echo "CSS directory not found in final stage"
 
 # Change ownership to non-root user
 RUN chown -R appuser:appgroup /app

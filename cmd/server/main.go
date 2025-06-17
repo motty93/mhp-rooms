@@ -33,21 +33,46 @@ func main() {
 	
 	// ファイル存在確認用デバッグエンドポイント
 	r.HandleFunc("/debug", func(w http.ResponseWriter, r *http.Request) {
-		if _, err := os.Stat("static/css/style.css"); os.IsNotExist(err) {
-			w.Write([]byte("style.css NOT found\n"))
-		} else {
-			w.Write([]byte("style.css found\n"))
+		// 現在の作業ディレクトリを表示
+		if wd, err := os.Getwd(); err == nil {
+			w.Write([]byte("Working directory: " + wd + "\n"))
 		}
 		
+		// staticディレクトリの確認
 		if _, err := os.Stat("static"); os.IsNotExist(err) {
 			w.Write([]byte("static directory NOT found\n"))
 		} else {
 			w.Write([]byte("static directory found\n"))
+			
+			// staticディレクトリの中身をリスト
+			if files, err := os.ReadDir("static"); err == nil {
+				w.Write([]byte("static directory contents:\n"))
+				for _, file := range files {
+					w.Write([]byte("  " + file.Name() + "\n"))
+				}
+			}
 		}
 		
-		// 現在の作業ディレクトリを表示
-		if wd, err := os.Getwd(); err == nil {
-			w.Write([]byte("Working directory: " + wd + "\n"))
+		// static/cssディレクトリの確認
+		if _, err := os.Stat("static/css"); os.IsNotExist(err) {
+			w.Write([]byte("static/css directory NOT found\n"))
+		} else {
+			w.Write([]byte("static/css directory found\n"))
+			
+			// static/cssディレクトリの中身をリスト
+			if files, err := os.ReadDir("static/css"); err == nil {
+				w.Write([]byte("static/css directory contents:\n"))
+				for _, file := range files {
+					w.Write([]byte("  " + file.Name() + "\n"))
+				}
+			}
+		}
+		
+		// style.cssファイルの確認
+		if _, err := os.Stat("static/css/style.css"); os.IsNotExist(err) {
+			w.Write([]byte("style.css NOT found\n"))
+		} else {
+			w.Write([]byte("style.css found\n"))
 		}
 	}).Methods("GET")
 
