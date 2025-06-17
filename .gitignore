@@ -72,8 +72,6 @@ tmp/
 logs/
 
 # Static files (if generated)
-/static/css/
-/static/js/
 /public/build/
 
 # Test coverage

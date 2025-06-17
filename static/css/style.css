@@ -1,0 +1,54 @@
+/* カスタムスタイル */
+body {
+  font-family: 'Noto Sans JP', sans-serif;
+}
+
+.hero-bg {
+  background: 
+    linear-gradient(135deg, rgba(102, 126, 234, 0.85) 0%, rgba(118, 75, 162, 0.85) 100%),
+    url('/static/images/hero.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.room-card {
+  transition:
+    transform 0.2s ease-in-out,
+    box-shadow 0.2s ease-in-out;
+}
+
+.room-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.fixed-header {
+  backdrop-filter: blur(10px);
+  background-color: rgba(255, 255, 255, 0.95);
+}
+
+.game-icon {
+  width: 40px;
+  height: 40px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.mhp-icon {
+  background-image: url('/static/images/mhp-icon.png');
+  background-color: rgba(139, 69, 19, 0.3); /* fallback color */
+}
+.mhp2-icon {
+  background-image: url('/static/images/mhp2-icon.png');
+  background-color: rgba(70, 130, 180, 0.3); /* fallback color */
+}
+.mhp2g-icon {
+  background-image: url('/static/images/mhp2g-icon.png');
+  background-color: rgba(34, 139, 34, 0.3); /* fallback color */
+}
+.mhp3-icon {
+  background-image: url('/static/images/mhp3-icon.png');
+  background-color: rgba(218, 165, 32, 0.3); /* fallback color */
+}
