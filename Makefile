@@ -1,20 +1,23 @@
-.PHONY: build run dev test lint fmt clean
+.PHONY: build run dev test lint fmt clean migrate migrate-dev
 
 # バイナリ名
 BINARY_NAME=mhp-rooms
+MIGRATE_BINARY=migrate
 
 # ビルドディレクトリ
 BUILD_DIR=bin
 
 # メインファイルのパス
 MAIN_PATH=./cmd/server
+MIGRATE_PATH=./cmd/migrate
 
 # アプリケーションをビルド
 build:
 	@echo "ビルド中..."
 	@mkdir -p $(BUILD_DIR)
 	@go build -o $(BUILD_DIR)/$(BINARY_NAME) $(MAIN_PATH)
-	@echo "ビルド完了: $(BUILD_DIR)/$(BINARY_NAME)"
+	@go build -o $(BUILD_DIR)/$(MIGRATE_BINARY) $(MIGRATE_PATH)
+	@echo "ビルド完了: $(BUILD_DIR)/$(BINARY_NAME), $(BUILD_DIR)/$(MIGRATE_BINARY)"
 
 # アプリケーションを実行
 run: build
@@ -47,6 +50,15 @@ clean:
 	@echo "クリーンアップ中..."
 	@rm -rf $(BUILD_DIR)
 	@echo "クリーンアップ完了"
+
+# マイグレーション
+migrate: build
+	@echo "マイグレーションを実行中..."
+	@./$(BUILD_DIR)/$(MIGRATE_BINARY) -migrate
+
+migrate-dev:
+	@echo "開発モードでマイグレーションを実行中..."
+	@go run $(MIGRATE_PATH)/main.go -migrate
 
 # 依存関係を取得
 deps:
@@ -81,6 +93,8 @@ help:
 	@echo "  build       - アプリケーションをビルド"
 	@echo "  run         - アプリケーションを実行"
 	@echo "  dev         - ホットリロード開発サーバーを起動"
+	@echo "  migrate     - マイグレーションを実行"
+	@echo "  migrate-dev - 開発モードでマイグレーションを実行"
 	@echo "  test        - テストを実行"
 	@echo "  lint        - リンターを実行"
 	@echo "  fmt         - コードをフォーマット"
