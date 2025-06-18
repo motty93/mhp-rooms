@@ -1,7 +1,6 @@
-version: '3.8'
+# Docker Compose v2形式（versionフィールドは不要）
 
 services:
-  # Webアプリケーション
   app:
     build: 
       context: .
@@ -10,6 +9,12 @@ services:
       - "8080:8080"
     environment:
       - PORT=8080
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=mhp_user
+      - DB_PASSWORD=mhp_password
+      - DB_NAME=mhp_rooms_dev
+      - DB_SSLMODE=disable
       - DATABASE_URL=postgres://mhp_user:mhp_password@db:5432/mhp_rooms_dev?sslmode=disable
       - REDIS_URL=redis://redis:6379
     depends_on:
@@ -24,7 +29,6 @@ services:
     networks:
       - mhp-network
 
-  # PostgreSQLデータベース
   db:
     image: postgres:15-alpine
     environment:
@@ -44,7 +48,6 @@ services:
     networks:
       - mhp-network
 
-  # Redis（キャッシュ・セッション管理用）
   redis:
     image: redis:7-alpine
     ports:
@@ -55,7 +58,6 @@ services:
     networks:
       - mhp-network
 
-  # pgAdmin（データベース管理UI）
   pgadmin:
     image: dpage/pgadmin4:latest
     environment:
