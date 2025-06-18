@@ -24,6 +24,7 @@ templates/
 ### 1. ベースレイアウト (`layouts/base.html`)
 
 全ページで共通のHTMLフレームワークを定義：
+
 - HTML構造
 - メタタグ、CSS、JSの読み込み
 - ヘッダー・フッター・メインコンテンツエリア
@@ -33,17 +34,20 @@ templates/
 再利用可能なUI部品：
 
 #### ヘッダー (`header.html`)
+
 - ロゴ・ナビゲーション
 - 認証状態による表示切り替え
 - レスポンシブメニュー
 
 #### フッター (`footer.html`)
+
 - サイト情報・リンク
 - 対応ゲーム一覧
 
 ### 3. ページテンプレート (`pages/`)
 
 各ページ固有のコンテンツ：
+
 - `head`: ページ固有のhead内容
 - `content`: メインコンテンツ
 
@@ -55,10 +59,8 @@ templates/
 <!-- templates/pages/example.html -->
 {{define "head"}}
 <!-- ページ固有のCSS/JSがあれば記述 -->
-<meta name="description" content="ページの説明">
-{{end}}
-
-{{define "content"}}
+<meta name="description" content="ページの説明" />
+{{end}} {{define "content"}}
 <section class="py-8">
   <div class="container mx-auto px-4">
     <h1 class="text-3xl font-bold">ページタイトル</h1>
@@ -114,6 +116,7 @@ type TemplateData struct {
 ## ページタイプ別のベストプラクティス
 
 ### ヒーローセクションありのページ（トップページ等）
+
 ```go
 data := TemplateData{
     Title:   "ホーム",
@@ -122,6 +125,7 @@ data := TemplateData{
 ```
 
 ### 通常ページ（一覧、詳細等）
+
 ```go
 data := TemplateData{
     Title:   "部屋一覧",
@@ -132,16 +136,19 @@ data := TemplateData{
 ## スタイリングガイドライン
 
 ### レスポンシブデザイン
+
 - `container mx-auto px-4`: 基本コンテナ
 - `grid md:grid-cols-2 lg:grid-cols-3`: レスポンシブグリッド
 - `hidden md:flex`: レスポンシブ表示切り替え
 
 ### 色彩パレット
+
 - プライマリ: `bg-gray-800`, `text-gray-800`
 - セカンダリ: `bg-gray-100`, `text-gray-600`
 - アクセント: `bg-green-100`, `bg-yellow-100`, `bg-red-100`
 
 ### 間隔
+
 - セクション間: `py-8`, `py-16`
 - 要素間: `mb-4`, `mb-6`, `mb-8`
 - 内部余白: `px-4`, `px-6`, `py-2`, `py-3`
@@ -167,10 +174,12 @@ JavaScript（将来実装）で表示切り替えを行います。
 ### よくあるエラー
 
 1. **Template parsing error**
+
    - ファイルパスの確認
    - テンプレート構文の確認
 
 2. **Template execution error**
+
    - `{{define}}` と `{{template}}` の名前一致確認
    - データ構造の確認
 
