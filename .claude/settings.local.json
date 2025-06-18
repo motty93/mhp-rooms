@@ -10,7 +10,13 @@
       "Bash(grep:*)",
       "Bash(rg:*)",
       "Bash(npm install:*)",
-      "Bash(prettier:*)"
+      "Bash(prettier:*)",
+      "Bash(go mod:*)",
+      "Bash(go get:*)",
+      "Bash(docker-compose logs:*)",
+      "Bash(docker compose logs:*)",
+      "Bash(docker compose:*)",
+      "Bash(curl:*)"
     ],
     "deny": []
   }
