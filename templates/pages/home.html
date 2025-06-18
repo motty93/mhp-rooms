@@ -32,14 +32,24 @@
       </div>
     </div>
     <div class="flex flex-col sm:flex-row gap-4 justify-center">
-      <button
-        class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white font-medium py-3 px-8 rounded-lg transition-colors backdrop-blur-sm">
+      <!-- 認証済みユーザー用の部屋作成ボタン -->
+      <a href="/rooms/create" id="create-room-auth"
+        class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white font-medium py-3 px-8 rounded-lg transition-colors backdrop-blur-sm inline-block text-center hidden">
+        部屋を作る
+      </a>
+      
+      <!-- 未認証ユーザー用の無効化ボタン -->
+      <button id="create-room-unauth"
+        class="bg-gray-400 bg-opacity-50 text-gray-300 font-medium py-3 px-8 rounded-lg cursor-not-allowed backdrop-blur-sm"
+        disabled
+        title="ログインが必要です">
         部屋を作る
       </button>
-      <button
-        class="text-white hover:bg-white hover:bg-opacity-20 font-medium py-3 px-8 rounded-lg transition-colors">
+      
+      <a href="/rooms"
+        class="text-white hover:bg-white hover:bg-opacity-20 font-medium py-3 px-8 rounded-lg transition-colors inline-block text-center">
         部屋を見る
-      </button>
+      </a>
     </div>
   </div>
 </section>
@@ -150,10 +160,10 @@
     </div>
 
     <div class="text-center mt-8">
-      <button
-        class="border border-gray-400 text-gray-700 hover:bg-gray-100 px-6 py-3 rounded-lg transition-colors">
+      <a href="/rooms"
+        class="border border-gray-400 text-gray-700 hover:bg-gray-100 px-6 py-3 rounded-lg transition-colors inline-block">
         もっと見る
-      </button>
+      </a>
     </div>
   </div>
 </section>

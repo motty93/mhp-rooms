@@ -53,9 +53,14 @@ body {
 .game-icon {
   width: 40px;
   height: 40px;
-  background-size: contain;
+  min-width: 40px;
+  min-height: 40px;
+  max-width: 40px;
+  max-height: 40px;
+  background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
+  flex-shrink: 0;
 }
 
 .mhp-icon {

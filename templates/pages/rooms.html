@@ -11,9 +11,19 @@
         <h1 class="text-3xl font-bold text-gray-800 mb-2">部屋一覧</h1>
         <p class="text-gray-600">アクティブなアドホックパーティ部屋を探そう</p>
       </div>
-      <a href="/rooms/create" class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-3 px-6 rounded-lg transition-colors">
+      <!-- 認証済みユーザー用の部屋作成ボタン -->
+      <a href="/rooms/create" id="create-room-auth"
+        class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-3 px-6 rounded-lg transition-colors hidden">
         新しい部屋を作る
       </a>
+      
+      <!-- 未認証ユーザー用の無効化ボタン -->
+      <button id="create-room-unauth"
+        class="bg-gray-400 text-gray-500 font-medium py-3 px-6 rounded-lg cursor-not-allowed"
+        disabled
+        title="ログインが必要です">
+        新しい部屋を作る
+      </button>
     </div>
   </div>
 </section>
@@ -23,33 +33,79 @@
   <div class="container mx-auto px-4">
     <div class="flex flex-wrap gap-4 items-center">
       <span class="text-sm font-medium text-gray-700">ゲームで絞り込み:</span>
-      <button class="bg-white text-gray-800 px-4 py-2 rounded-full border hover:bg-gray-100 transition-colors">
+      <a href="/rooms" class="{{if not .PageData.Filter}}bg-white text-gray-800 border{{else}}bg-gray-100 text-gray-600{{end}} px-4 py-2 rounded-full hover:bg-gray-100 transition-colors">
         すべて
-      </button>
-      <button class="bg-gray-100 text-gray-600 px-4 py-2 rounded-full hover:bg-gray-200 transition-colors">
-        MHP
-      </button>
-      <button class="bg-gray-100 text-gray-600 px-4 py-2 rounded-full hover:bg-gray-200 transition-colors">
-        MHP2
-      </button>
-      <button class="bg-gray-100 text-gray-600 px-4 py-2 rounded-full hover:bg-gray-200 transition-colors">
-        MHP2G
-      </button>
-      <button class="bg-gray-100 text-gray-600 px-4 py-2 rounded-full hover:bg-gray-200 transition-colors">
-        MHP3
-      </button>
+      </a>
+      {{range .PageData.GameVersions}}
+      <a href="/rooms?game_version={{.Code}}" class="{{if eq $.PageData.Filter .Code}}bg-white text-gray-800 border{{else}}bg-gray-100 text-gray-600{{end}} px-4 py-2 rounded-full hover:bg-gray-200 transition-colors">
+        {{.Code}}
+      </a>
+      {{end}}
     </div>
+    {{if .PageData.Total}}
+    <div class="mt-4 text-sm text-gray-600">
+      {{.PageData.Total}}件の部屋が見つかりました
+    </div>
+    {{end}}
   </div>
 </section>
 
 <!-- 部屋一覧 -->
 <section class="py-8">
   <div class="container mx-auto px-4">
+    {{if .PageData.Rooms}}
     <div class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="room-list">
-      <!-- 部屋カードがここに表示される -->
-      <!-- 今後、動的に生成される -->
+      {{range .PageData.Rooms}}
+      <div class="room-card bg-white rounded-lg shadow-md border border-gray-200 flex flex-col h-full hover:shadow-lg transition-shadow">
+        <div class="p-6 flex-grow">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center space-x-3">
+              <div class="{{.GameVersion.Code | lower}}-icon game-icon rounded"></div>
+              <div>
+                <h4 class="font-bold text-gray-800">{{.Name}}</h4>
+                <p class="text-sm text-gray-500">{{.GameVersion.Name}}</p>
+              </div>
+            </div>
+            {{if eq .CurrentPlayers .MaxPlayers}}
+              <span class="bg-red-100 text-red-800 text-sm px-2 py-1 rounded-full">{{.CurrentPlayers}}/{{.MaxPlayers}}</span>
+            {{else if eq .Status "playing"}}
+              <span class="bg-blue-100 text-blue-800 text-sm px-2 py-1 rounded-full">{{.CurrentPlayers}}/{{.MaxPlayers}}</span>
+            {{else}}
+              <span class="bg-green-100 text-green-800 text-sm px-2 py-1 rounded-full">{{.CurrentPlayers}}/{{.MaxPlayers}}</span>
+            {{end}}
+          </div>
+          
+          {{if .Description}}
+          <p class="text-gray-600 text-sm mb-3">{{.Description}}</p>
+          {{end}}
+          
+          {{if or .QuestType .TargetMonster .RankRequirement}}
+          <div class="text-xs text-gray-500 space-y-1">
+            {{if .QuestType}}<div>タイプ: {{.QuestType}}</div>{{end}}
+            {{if .TargetMonster}}<div>ターゲット: {{.TargetMonster}}</div>{{end}}
+            {{if .RankRequirement}}<div>ランク: {{.RankRequirement}}</div>{{end}}
+          </div>
+          {{end}}
+        </div>
+        
+        <div class="p-6 pt-0">
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-500">ホスト: {{if .Host.Username}}{{.Host.Username}}{{else}}{{.Host.DisplayName}}{{end}}</span>
+            {{if and (eq .Status "waiting") (lt .CurrentPlayers .MaxPlayers)}}
+              <button class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded text-sm transition-colors">
+                参加
+              </button>
+            {{else}}
+              <button class="bg-gray-400 text-white px-4 py-2 rounded text-sm cursor-not-allowed" disabled>
+                参加不可
+              </button>
+            {{end}}
+          </div>
+        </div>
+      </div>
+      {{end}}
     </div>
-    
+    {{else}}
     <!-- 空の状態 -->
     <div class="text-center py-16" id="empty-state">
       <div class="text-gray-400 mb-4">
@@ -57,12 +113,24 @@
           <path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
         </svg>
       </div>
-      <h3 class="text-lg font-medium text-gray-500 mb-2">現在アクティブな部屋がありません</h3>
+      <h3 class="text-lg font-medium text-gray-500 mb-2">
+        {{if .PageData.Filter}}
+          {{.PageData.Filter}}の部屋が見つかりません
+        {{else}}
+          現在アクティブな部屋がありません
+        {{end}}
+      </h3>
       <p class="text-gray-400 mb-6">新しい部屋を作って、ハンターを募集してみましょう！</p>
-      <a href="/rooms/create" class="inline-flex items-center bg-gray-800 hover:bg-gray-900 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+      <!-- 認証済みユーザー用の部屋作成ボタン -->
+      <a href="/rooms/create" id="create-room-empty-auth" class="inline-flex items-center bg-gray-800 hover:bg-gray-900 text-white font-medium py-2 px-4 rounded-lg transition-colors hidden">
         部屋を作る
       </a>
+      <!-- 未認証ユーザー用の無効化ボタン -->
+      <button id="create-room-empty-unauth" class="inline-flex items-center bg-gray-400 text-gray-500 font-medium py-2 px-4 rounded-lg cursor-not-allowed" disabled title="ログインが必要です">
+        部屋を作る
+      </button>
     </div>
+    {{end}}
   </div>
 </section>
 {{end}}
