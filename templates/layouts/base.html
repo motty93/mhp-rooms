@@ -27,11 +27,11 @@
   {{template "head" .}}
 </head>
 
-<body class="bg-gray-50">
+<body class="bg-gray-50 min-h-screen flex flex-col">
   {{template "header" .}}
 
   <!-- メインコンテンツエリア -->
-  <main class="{{if .HasHero}}{{else}}pt-16{{end}}">
+  <main class="{{if .HasHero}}{{else}}pt-16{{end}} grow">
     {{template "content" .}}
   </main>
 
