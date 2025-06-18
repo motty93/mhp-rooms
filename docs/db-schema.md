@@ -115,26 +115,7 @@
 - INDEX on room_id, created_at DESC
 - INDEX on user_id
 
-### 6. user_sessions（ユーザーセッション）
-
-ユーザーのセッション情報を管理（Supabase Authで主に管理されるため、最小限の情報のみ）
-
-| カラム名 | データ型 | NULL | デフォルト | 説明 |
-|---------|---------|------|-----------|------|
-| id | UUID | NO | gen_random_uuid() | 主キー |
-| user_id | UUID | NO | - | ユーザーID（外部キー） |
-| session_token | VARCHAR(255) | NO | - | アプリケーション独自のセッショントークン |
-| device_info | JSONB | YES | NULL | デバイス情報 |
-| ip_address | INET | YES | NULL | IPアドレス |
-| expires_at | TIMESTAMP | NO | - | 有効期限 |
-| created_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | 作成日時 |
-
-**インデックス:**
-- INDEX on user_id
-- INDEX on session_token
-- INDEX on expires_at
-
-### 7. user_blocks（ユーザーブロック）
+### 6. user_blocks（ユーザーブロック）
 
 ユーザー間のブロック関係を管理
 
@@ -150,7 +131,7 @@
 - UNIQUE INDEX on blocker_user_id, blocked_user_id
 - INDEX on blocked_user_id
 
-### 8. room_logs（ルームログ）
+### 7. room_logs（ルームログ）
 
 ルームの活動ログを記録
 
@@ -199,11 +180,6 @@ ALTER TABLE room_messages
 ALTER TABLE room_messages
   ADD CONSTRAINT fk_room_messages_user
   FOREIGN KEY (user_id) REFERENCES users(id);
-
--- user_sessions
-ALTER TABLE user_sessions
-  ADD CONSTRAINT fk_user_sessions_user
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 -- user_blocks
 ALTER TABLE user_blocks
@@ -287,7 +263,7 @@ CREATE TRIGGER update_room_count_on_join
 
 ### セッション管理
 - Supabase Authの統一JWTトークンを使用（メール・Google共通）
-- アプリケーション独自のセッション情報はuser_sessionsテーブルで管理
+- セッション管理は完全にSupabase Authに一任
 
 
 ## パフォーマンス考慮事項
@@ -302,7 +278,6 @@ CREATE TRIGGER update_room_count_on_join
 - 古いデータのアーカイブ戦略
 
 ### キャッシング
-- Fly.io Redisでのアプリケーションセッション情報キャッシュ
 - アクティブなルーム情報のキャッシュ
 - ユーザープロフィールのキャッシュ
 - Supabase AuthのJWTトークン検証結果の短時間キャッシュ（メール・Google共通）

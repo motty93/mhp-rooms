@@ -11,7 +11,6 @@ erDiagram
     users ||--o{ rooms : "hosts"
     users ||--o{ room_members : "joins"
     users ||--o{ room_messages : "sends"
-    users ||--o{ user_sessions : "has"
     users ||--o{ user_blocks : "blocks"
     users ||--o{ user_blocks : "is_blocked_by"
     users ||--o{ room_logs : "performs"
@@ -86,16 +85,6 @@ erDiagram
         timestamp created_at
     }
     
-    user_sessions {
-        uuid id PK
-        uuid user_id FK
-        string session_token
-        jsonb device_info
-        inet ip_address
-        timestamp expires_at
-        timestamp created_at
-    }
-    
     user_blocks {
         uuid id PK
         uuid blocker_user_id FK
@@ -133,12 +122,6 @@ erDiagram
 - 1人のユーザーは複数のメッセージを送信できる
 - 各メッセージは必ず1人の送信者を持つ
 - 関係性：`room_messages.user_id` → `users.id`
-
-#### users ↔ user_sessions（1対多）
-- 1人のユーザーは複数のセッションを持てる（複数デバイス対応）
-- 各セッションは必ず1人のユーザーに紐づく
-- 関係性：`user_sessions.user_id` → `users.id`
-- カスケード削除：ユーザー削除時にセッションも削除
 
 #### users ↔ user_blocks（多対多）
 - ユーザーは他の複数のユーザーをブロックできる
