@@ -1,34 +1,6 @@
 # Docker Compose v2形式（versionフィールドは不要）
 
 services:
-  app:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
-    environment:
-      - PORT=8080
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_USER=mhp_user
-      - DB_PASSWORD=mhp_password
-      - DB_NAME=mhp_rooms_dev
-      - DB_SSLMODE=disable
-      - DATABASE_URL=postgres://mhp_user:mhp_password@db:5432/mhp_rooms_dev?sslmode=disable
-      - REDIS_URL=redis://redis:6379
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    volumes:
-      # 開発時のホットリロード用（オプション）
-      - ./static:/app/static
-      - ./templates:/app/templates
-    networks:
-      - mhp-network
-
   db:
     image: postgres:15-alpine
     environment:

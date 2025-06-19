@@ -1,4 +1,4 @@
-.PHONY: build run dev test lint fmt clean migrate migrate-dev
+.PHONY: build run dev test lint fmt clean migrate migrate-dev container-up container-down
 
 # バイナリ名
 BINARY_NAME=mhp-rooms
@@ -24,7 +24,7 @@ run: build
 	@echo "アプリケーションを実行中..."
 	@./$(BUILD_DIR)/$(BINARY_NAME)
 
-# 開発サーバーを起動（ホットリロードなし - 基本実装）
+# 開発サーバーを起動（air使用）
 dev:
 	@echo "ホットリロード開発サーバーを起動中..."
 	@air
@@ -65,44 +65,43 @@ deps:
 	@echo "依存関係を取得中..."
 	@go mod tidy
 
-# Docker開発環境コマンド
-docker-up:
-	@echo "Docker環境を起動中..."
+# Docker開発環境コマンド（app以外のコンテナのみ）
+container-up:
+	@echo "DBとRedisコンテナを起動中..."
 	@docker-compose up -d
 
-docker-down:
-	@echo "Docker環境を停止中..."
+container-down:
+	@echo "コンテナを停止中..."
 	@docker-compose down
 
-docker-build:
-	@echo "Dockerイメージを再ビルド中..."
-	@docker-compose build --no-cache app
+container-logs:
+	@echo "コンテナログを表示中..."
+	@docker-compose logs -f
 
-docker-logs:
-	@echo "アプリケーションログを表示中..."
-	@docker-compose logs -f app
-
-docker-reset:
-	@echo "Docker環境をリセット中..."
+container-reset:
+	@echo "コンテナ環境をリセット中..."
 	@docker-compose down -v
 	@docker-compose up -d
+
+# 旧コマンド（互換性のため残す）
+docker-up: container-up
+docker-down: container-down
 
 # ヘルプを表示
 help:
 	@echo "利用可能なコマンド:"
-	@echo "  build       - アプリケーションをビルド"
-	@echo "  run         - アプリケーションを実行"
-	@echo "  dev         - ホットリロード開発サーバーを起動"
-	@echo "  migrate     - マイグレーションを実行"
-	@echo "  migrate-dev - 開発モードでマイグレーションを実行"
-	@echo "  test        - テストを実行"
-	@echo "  lint        - リンターを実行"
-	@echo "  fmt         - コードをフォーマット"
-	@echo "  clean       - ビルド成果物をクリーンアップ"
-	@echo "  deps        - 依存関係を取得"
-	@echo "  docker-up   - Docker環境を起動"
-	@echo "  docker-down - Docker環境を停止"
-	@echo "  docker-build- Dockerイメージを再ビルド"
-	@echo "  docker-logs - アプリケーションログを表示"
-	@echo "  docker-reset- Docker環境をリセット"
-	@echo "  help        - このヘルプを表示"
+	@echo "  build         - アプリケーションをビルド"
+	@echo "  run           - アプリケーションを実行"
+	@echo "  dev           - ホットリロード開発サーバーを起動（air使用）"
+	@echo "  migrate       - マイグレーションを実行"
+	@echo "  migrate-dev   - 開発モードでマイグレーションを実行"
+	@echo "  test          - テストを実行"
+	@echo "  lint          - リンターを実行"
+	@echo "  fmt           - コードをフォーマット"
+	@echo "  clean         - ビルド成果物をクリーンアップ"
+	@echo "  deps          - 依存関係を取得"
+	@echo "  container-up  - DBとRedisコンテナを起動"
+	@echo "  container-down- コンテナを停止"
+	@echo "  container-logs- コンテナログを表示"
+	@echo "  container-reset- コンテナ環境をリセット"
+	@echo "  help          - このヘルプを表示"

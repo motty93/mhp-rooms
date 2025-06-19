@@ -27,8 +27,101 @@
   {{template "head" .}}
 </head>
 
-<body class="bg-gray-50 min-h-screen flex flex-col">
+<body class="bg-gray-50 min-h-screen flex flex-col" x-data x-init="
+  Alpine.store('mobileMenu', {
+    open: false,
+    toggle() { this.open = !this.open },
+    close() { this.open = false }
+  })
+">
   {{template "header" .}}
+  
+  <!-- モバイルメニュー -->
+  <div class="md:hidden">
+    <!-- オーバーレイ -->
+    <div x-show="$store.mobileMenu.open" @click="$store.mobileMenu.close()" 
+      class="fixed inset-0 bg-black bg-opacity-50 z-[9998]"
+      x-transition:enter="transition-opacity ease-out duration-300"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="transition-opacity ease-in duration-200"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0"></div>
+
+    <!-- モバイルメニューパネル -->
+    <div x-show="$store.mobileMenu.open"
+      class="fixed top-0 right-0 h-full w-80 bg-white shadow-lg z-[9999] overflow-y-auto"
+      x-transition:enter="transition ease-out duration-300"
+      x-transition:enter-start="transform translate-x-full"
+      x-transition:enter-end="transform translate-x-0"
+      x-transition:leave="transition ease-in duration-200"
+      x-transition:leave-start="transform translate-x-0"
+      x-transition:leave-end="transform translate-x-full">
+
+      <!-- メニューヘッダー -->
+      <div class="flex items-center justify-between p-6 border-b border-gray-200">
+        <div class="flex items-center space-x-3">
+          <img src="/static/images/icon.png" alt="MHP Rooms" class="w-8 h-8">
+          <h2 class="text-xl font-bold text-gray-800">MHP Rooms</h2>
+        </div>
+        <button @click="$store.mobileMenu.close()" class="text-gray-500 hover:text-gray-700">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- メニュー内容 -->
+      <div class="p-6">
+        <!-- 未認証時のメニュー -->
+        <div id="mobile-auth-buttons">
+          <div class="space-y-4">
+            <a href="/auth/login" @click="$store.mobileMenu.close()" class="block w-full text-center bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+              ログイン
+            </a>
+            <a href="/auth/register" @click="$store.mobileMenu.close()" class="block w-full text-center bg-gray-800 text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-900 transition-colors">
+              新規登録
+            </a>
+          </div>
+          <hr class="my-6 border-gray-200">
+          <div class="space-y-2">
+            <a href="/rooms" @click="$store.mobileMenu.close()" class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+              部屋一覧
+            </a>
+          </div>
+        </div>
+
+        <!-- 認証済み時のメニュー（認証後に表示される） -->
+        <div class="hidden" id="mobile-user-menu">
+          <div class="space-y-2">
+            <a href="/rooms" @click="$store.mobileMenu.close()" class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+              部屋一覧
+            </a>
+            <a href="/rooms/create" @click="$store.mobileMenu.close()" class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+              部屋作成
+            </a>
+          </div>
+          <hr class="my-6 border-gray-200">
+          <div class="space-y-2">
+            <a href="/profile" @click="$store.mobileMenu.close()" class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+              プロフィール
+            </a>
+            <a href="/rooms/my" @click="$store.mobileMenu.close()" class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+              マイ部屋
+            </a>
+            <a href="/settings" @click="$store.mobileMenu.close()" class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+              設定
+            </a>
+          </div>
+          <hr class="my-6 border-gray-200">
+          <button hx-post="/auth/logout" hx-confirm="ログアウトしますか？" @click="$store.mobileMenu.close()"
+            class="block w-full text-left px-4 py-3 text-red-600 hover:bg-gray-100 rounded-lg transition-colors">
+            ログアウト
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- メインコンテンツエリア -->
   <main class="{{if .HasHero}}{{else}}pt-16{{end}} grow">

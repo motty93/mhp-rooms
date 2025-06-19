@@ -79,3 +79,10 @@ body {
   background-image: url('/static/images/mhp3-icon.png');
   background-color: rgba(218, 165, 32, 0.3); /* fallback color */
 }
+
+/* モバイルでデスクトップ認証ボタンを非表示 */
+@media (max-width: 767px) {
+  .auth-buttons-desktop {
+    display: none !important;
+  }
+}
