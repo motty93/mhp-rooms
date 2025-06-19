@@ -19,6 +19,8 @@
 | display_name     | VARCHAR(100) | NO   | -                 | 表示名                                 |
 | avatar_url       | TEXT         | YES  | NULL              | アバター画像URL                        |
 | bio              | TEXT         | YES  | NULL              | 自己紹介                               |
+| psn_online_id    | VARCHAR(16)  | YES  | NULL              | PSN オンラインID                       |
+| twitter_id       | VARCHAR(15)  | YES  | NULL              | Twitter ID（@なし）                    |
 | is_active        | BOOLEAN      | NO   | true              | アクティブフラグ                       |
 | role             | VARCHAR(20)  | NO   | 'user'            | ロール（user/admin）                   |
 | created_at       | TIMESTAMP    | NO   | CURRENT_TIMESTAMP | 作成日時                               |

@@ -16,6 +16,8 @@ type User struct {
 	DisplayName     string    `gorm:"type:varchar(100);not null" json:"display_name"`
 	AvatarURL       *string   `gorm:"type:text" json:"avatar_url"`
 	Bio             *string   `gorm:"type:text" json:"bio"`
+	PSNOnlineID     *string   `gorm:"type:varchar(16)" json:"psn_online_id"`
+	TwitterID       *string   `gorm:"type:varchar(15)" json:"twitter_id"`
 	IsActive        bool      `gorm:"not null;default:true" json:"is_active"`
 	Role            string    `gorm:"type:varchar(20);not null;default:'user'" json:"role"`
 	CreatedAt       time.Time `json:"created_at"`
