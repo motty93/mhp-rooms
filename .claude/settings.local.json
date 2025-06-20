@@ -19,7 +19,8 @@
       "Bash(curl:*)",
       "Bash(mv:*)",
       "Bash(docker-compose:*)",
-      "Bash(make migrate:*)"
+      "Bash(make migrate:*)",
+      "Bash(fly status:*)"
     ],
     "deny": []
   }
