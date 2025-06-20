@@ -81,7 +81,7 @@
 
 2. **Dockerコンテナの起動**
    ```bash
-   docker-compose up -d
+   docker compose up -d
    ```
 
 3. **データベースマイグレーション**

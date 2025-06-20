@@ -68,20 +68,20 @@ deps:
 # Docker開発環境コマンド（app以外のコンテナのみ）
 container-up:
 	@echo "DBとRedisコンテナを起動中..."
-	@docker-compose up -d
+	@docker compose up -d
 
 container-down:
 	@echo "コンテナを停止中..."
-	@docker-compose down
+	@docker compose down
 
 container-logs:
 	@echo "コンテナログを表示中..."
-	@docker-compose logs -f
+	@docker compose logs -f
 
 container-reset:
 	@echo "コンテナ環境をリセット中..."
-	@docker-compose down -v
-	@docker-compose up -d
+	@docker compose down -v
+	@docker compose up -d
 
 # 旧コマンド（互換性のため残す）
 docker-up: container-up

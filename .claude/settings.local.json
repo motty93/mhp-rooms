@@ -17,7 +17,9 @@
       "Bash(docker compose logs:*)",
       "Bash(docker compose:*)",
       "Bash(curl:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(docker-compose:*)",
+      "Bash(make migrate:*)"
     ],
     "deny": []
   }
