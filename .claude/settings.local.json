@@ -20,7 +20,8 @@
       "Bash(mv:*)",
       "Bash(docker-compose:*)",
       "Bash(make migrate:*)",
-      "Bash(fly status:*)"
+      "Bash(fly status:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }

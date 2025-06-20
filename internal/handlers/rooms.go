@@ -19,7 +19,7 @@ type RoomsPageData struct {
 func RoomsHandler(w http.ResponseWriter, r *http.Request) {
 	// ゲームバージョンフィルターを取得
 	filter := r.URL.Query().Get("game_version")
-	
+
 	// ゲームバージョン一覧を取得
 	var gameVersions []models.GameVersion
 	result := database.DB.Where("is_active = ?", true).Order("display_order").Find(&gameVersions)
@@ -35,7 +35,6 @@ func RoomsHandler(w http.ResponseWriter, r *http.Request) {
 		Where("is_active = ? AND status IN (?)", true, []string{"waiting", "playing"}).
 		Order("created_at DESC")
 
-	// フィルター適用
 	if filter != "" {
 		var gameVersion models.GameVersion
 		if err := database.DB.Where("code = ? AND is_active = ?", filter, true).First(&gameVersion).Error; err == nil {

@@ -3,21 +3,21 @@ package database
 import (
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
+	"mhp-rooms/internal/config"
 	"mhp-rooms/internal/models"
 )
 
 var DB *gorm.DB
 
-// InitDB データベース接続を初期化
 func InitDB() error {
-	dsn := getDSN()
+	config.Init()
+	dsn := config.AppConfig.GetDSN()
 
 	var err error
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
@@ -27,7 +27,6 @@ func InitDB() error {
 		return fmt.Errorf("データベース接続に失敗しました: %w", err)
 	}
 
-	// 接続プールの設定
 	sqlDB, err := DB.DB()
 	if err != nil {
 		return fmt.Errorf("データベース接続プールの設定に失敗しました: %w", err)
@@ -39,27 +38,6 @@ func InitDB() error {
 
 	log.Println("データベース接続が確立されました")
 	return nil
-}
-
-// getDSN 環境変数からDSNを取得
-func getDSN() string {
-	host := getEnv("DB_HOST", "localhost")
-	port := getEnv("DB_PORT", "5432")
-	user := getEnv("DB_USER", "postgres")
-	password := getEnv("DB_PASSWORD", "postgres")
-	dbname := getEnv("DB_NAME", "mhp_rooms")
-	sslmode := getEnv("DB_SSLMODE", "disable")
-
-	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-		host, port, user, password, dbname, sslmode)
-}
-
-// getEnv 環境変数を取得、デフォルト値を設定
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
 }
 
 // Migrate データベースマイグレーションを実行
@@ -183,7 +161,7 @@ func insertInitialData() error {
 		},
 		{
 			Code:         "MHP2G",
-			Name:         "モンスターハンターポータブル 2nd G",
+			Name:         "モンスターハンターポータブル 2ndG",
 			DisplayOrder: 3,
 			IsActive:     true,
 		},
@@ -205,7 +183,6 @@ func insertInitialData() error {
 	return nil
 }
 
-// CloseDB データベース接続を閉じる
 func CloseDB() error {
 	if DB == nil {
 		return nil
