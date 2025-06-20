@@ -90,7 +90,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## AI開発注意事項
 
 実装完了後、要件定義ディレクトリ `docs/logs` に実装ログを**必ず**残してください。<br/>
-`yyyy-mm-dd_機能名.md` の形式でファイルを作成してください。
+`yyyy-mm-dd/n_機能名.md` の形式でファイルを作成してください。nは連番です。<br/>
 
 ## コーディング規約
 
