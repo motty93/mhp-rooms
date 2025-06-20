@@ -16,7 +16,6 @@ import (
 var DB *gorm.DB
 
 func InitDB() error {
-	config.Init()
 	dsn := config.AppConfig.GetDSN()
 
 	var err error

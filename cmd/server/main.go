@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"mhp-rooms/internal/config"
 	"mhp-rooms/internal/database"
 	"mhp-rooms/internal/handlers"
 
@@ -15,6 +16,10 @@ import (
 )
 
 func main() {
+	// 設定を初期化
+	log.Println("設定を初期化中...")
+	config.Init()
+
 	log.Println("データベース接続を待機中...")
 	if err := database.WaitForDB(30, 2*time.Second); err != nil {
 		log.Fatalf("データベース接続待機に失敗しました: %v", err)
@@ -51,11 +56,7 @@ func main() {
 
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static/"))))
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	fmt.Printf("サーバーを起動しています... :%s\n", port)
-	log.Fatal(http.ListenAndServe(":"+port, r))
+	addr := config.AppConfig.GetServerAddr()
+	fmt.Printf("サーバーを起動しています... %s\n", addr)
+	log.Fatal(http.ListenAndServe(addr, r))
 }

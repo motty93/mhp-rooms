@@ -9,27 +9,27 @@ import (
 
 // User はユーザー情報を管理するモデル
 type User struct {
-	ID              uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	SupabaseUserID  uuid.UUID `gorm:"type:uuid;uniqueIndex;not null" json:"supabase_user_id"`
-	Email           string    `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`
-	Username        *string   `gorm:"type:varchar(50);uniqueIndex" json:"username"`
-	DisplayName     string    `gorm:"type:varchar(100);not null" json:"display_name"`
-	AvatarURL       *string   `gorm:"type:text" json:"avatar_url"`
-	Bio             *string   `gorm:"type:text" json:"bio"`
-	PSNOnlineID     *string   `gorm:"type:varchar(16)" json:"psn_online_id"`
-	TwitterID       *string   `gorm:"type:varchar(15)" json:"twitter_id"`
-	IsActive        bool      `gorm:"not null;default:true" json:"is_active"`
-	Role            string    `gorm:"type:varchar(20);not null;default:'user'" json:"role"`
-	CreatedAt       time.Time `json:"created_at"`
-	UpdatedAt       time.Time `json:"updated_at"`
+	ID             uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	SupabaseUserID uuid.UUID `gorm:"type:uuid;uniqueIndex;not null" json:"supabase_user_id"`
+	Email          string    `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`
+	Username       *string   `gorm:"type:varchar(50);uniqueIndex" json:"username"`
+	DisplayName    string    `gorm:"type:varchar(100);not null" json:"display_name"`
+	AvatarURL      *string   `gorm:"type:text" json:"avatar_url"`
+	Bio            *string   `gorm:"type:text" json:"bio"`
+	PSNOnlineID    *string   `gorm:"type:varchar(16)" json:"psn_online_id"`
+	TwitterID      *string   `gorm:"type:varchar(15)" json:"twitter_id"`
+	IsActive       bool      `gorm:"not null;default:true" json:"is_active"`
+	Role           string    `gorm:"type:varchar(20);not null;default:'user'" json:"role"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
 
 	// リレーション
-	HostedRooms  []Room       `gorm:"foreignKey:HostUserID" json:"hosted_rooms,omitempty"`
-	RoomMembers  []RoomMember `gorm:"foreignKey:UserID" json:"room_members,omitempty"`
+	HostedRooms  []Room        `gorm:"foreignKey:HostUserID" json:"hosted_rooms,omitempty"`
+	RoomMembers  []RoomMember  `gorm:"foreignKey:UserID" json:"room_members,omitempty"`
 	Messages     []RoomMessage `gorm:"foreignKey:UserID" json:"messages,omitempty"`
-	RoomLogs     []RoomLog    `gorm:"foreignKey:UserID" json:"room_logs,omitempty"`
-	BlockedUsers []UserBlock  `gorm:"foreignKey:BlockerUserID" json:"blocked_users,omitempty"`
-	BlockedBy    []UserBlock  `gorm:"foreignKey:BlockedUserID" json:"blocked_by,omitempty"`
+	RoomLogs     []RoomLog     `gorm:"foreignKey:UserID" json:"room_logs,omitempty"`
+	BlockedUsers []UserBlock   `gorm:"foreignKey:BlockerUserID" json:"blocked_users,omitempty"`
+	BlockedBy    []UserBlock   `gorm:"foreignKey:BlockedUserID" json:"blocked_by,omitempty"`
 }
 
 // GameVersion はゲームバージョンマスターを管理するモデル
@@ -47,23 +47,23 @@ type GameVersion struct {
 
 // Room はルーム情報を管理するモデル
 type Room struct {
-	ID               uuid.UUID    `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	RoomCode         string       `gorm:"type:varchar(20);uniqueIndex;not null" json:"room_code"`
-	Name             string       `gorm:"type:varchar(100);not null" json:"name"`
-	Description      *string      `gorm:"type:text" json:"description"`
-	GameVersionID    uuid.UUID    `gorm:"type:uuid;not null" json:"game_version_id"`
-	HostUserID       uuid.UUID    `gorm:"type:uuid;not null" json:"host_user_id"`
-	MaxPlayers       int          `gorm:"not null;default:4" json:"max_players"`
-	CurrentPlayers   int          `gorm:"not null;default:0" json:"current_players"`
-	PasswordHash     *string      `gorm:"type:varchar(255)" json:"password_hash,omitempty"`
-	Status           string       `gorm:"type:varchar(20);not null;default:'waiting'" json:"status"`
-	QuestType        *string      `gorm:"type:varchar(50)" json:"quest_type"`
-	TargetMonster    *string      `gorm:"type:varchar(100)" json:"target_monster"`
-	RankRequirement  *string      `gorm:"type:varchar(20)" json:"rank_requirement"`
-	IsActive         bool         `gorm:"not null;default:true" json:"is_active"`
-	CreatedAt        time.Time    `json:"created_at"`
-	UpdatedAt        time.Time    `json:"updated_at"`
-	ClosedAt         *time.Time   `json:"closed_at"`
+	ID              uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	RoomCode        string     `gorm:"type:varchar(20);uniqueIndex;not null" json:"room_code"`
+	Name            string     `gorm:"type:varchar(100);not null" json:"name"`
+	Description     *string    `gorm:"type:text" json:"description"`
+	GameVersionID   uuid.UUID  `gorm:"type:uuid;not null" json:"game_version_id"`
+	HostUserID      uuid.UUID  `gorm:"type:uuid;not null" json:"host_user_id"`
+	MaxPlayers      int        `gorm:"not null;default:4" json:"max_players"`
+	CurrentPlayers  int        `gorm:"not null;default:0" json:"current_players"`
+	PasswordHash    *string    `gorm:"type:varchar(255)" json:"password_hash,omitempty"`
+	Status          string     `gorm:"type:varchar(20);not null;default:'waiting'" json:"status"`
+	QuestType       *string    `gorm:"type:varchar(50)" json:"quest_type"`
+	TargetMonster   *string    `gorm:"type:varchar(100)" json:"target_monster"`
+	RankRequirement *string    `gorm:"type:varchar(20)" json:"rank_requirement"`
+	IsActive        bool       `gorm:"not null;default:true" json:"is_active"`
+	CreatedAt       time.Time  `json:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at"`
+	ClosedAt        *time.Time `json:"closed_at"`
 
 	// リレーション
 	GameVersion GameVersion   `gorm:"foreignKey:GameVersionID" json:"game_version"`
@@ -106,11 +106,11 @@ type RoomMessage struct {
 
 // UserBlock はユーザーブロックを管理するモデル
 type UserBlock struct {
-	ID            uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	BlockerUserID uuid.UUID  `gorm:"type:uuid;not null" json:"blocker_user_id"`
-	BlockedUserID uuid.UUID  `gorm:"type:uuid;not null" json:"blocked_user_id"`
-	Reason        *string    `gorm:"type:text" json:"reason"`
-	CreatedAt     time.Time  `json:"created_at"`
+	ID            uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	BlockerUserID uuid.UUID `gorm:"type:uuid;not null" json:"blocker_user_id"`
+	BlockedUserID uuid.UUID `gorm:"type:uuid;not null" json:"blocked_user_id"`
+	Reason        *string   `gorm:"type:text" json:"reason"`
+	CreatedAt     time.Time `json:"created_at"`
 
 	// リレーション
 	Blocker User `gorm:"foreignKey:BlockerUserID" json:"blocker"`

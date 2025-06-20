@@ -7,12 +7,14 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+
+	"mhp-rooms/internal/config"
 )
 
 // WaitForDB データベースが利用可能になるまで待機
 func WaitForDB(maxRetries int, retryInterval time.Duration) error {
-	dsn := getDSN()
-	
+	dsn := config.AppConfig.GetDSN()
+
 	for i := 0; i < maxRetries; i++ {
 		db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 		if err == nil {
@@ -27,12 +29,12 @@ func WaitForDB(maxRetries int, retryInterval time.Duration) error {
 				sqlDB.Close()
 			}
 		}
-		
+
 		if i < maxRetries-1 {
 			log.Printf("データベース接続待機中... (試行 %d/%d) - %v", i+1, maxRetries, err)
 			time.Sleep(retryInterval)
 		}
 	}
-	
+
 	return fmt.Errorf("データベース接続のタイムアウト: %d回試行後も接続できませんでした", maxRetries)
 }

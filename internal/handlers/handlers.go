@@ -16,7 +16,6 @@ type TemplateData struct {
 	PageData interface{} // ページ固有のデータ
 }
 
-
 // renderTemplate はテンプレートをレンダリングする共通関数
 func renderTemplate(w http.ResponseWriter, templateName string, data TemplateData) {
 	// テンプレート関数を定義
@@ -45,7 +44,6 @@ func renderTemplate(w http.ResponseWriter, templateName string, data TemplateDat
 		return
 	}
 }
-
 
 func HelloHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
