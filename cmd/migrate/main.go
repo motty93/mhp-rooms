@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/joho/godotenv"
 	"mhp-rooms/internal/database"
 )
 
@@ -12,6 +13,11 @@ func main() {
 	var migrate = flag.Bool("migrate", false, "マイグレーションを実行")
 	var rollback = flag.Bool("rollback", false, "ロールバックを実行")
 	flag.Parse()
+
+	// .envファイルを読み込み
+	if err := godotenv.Load(); err != nil {
+		log.Printf(".envファイルの読み込みをスキップします: %v", err)
+	}
 
 	// データベース接続を初期化
 	if err := database.InitDB(); err != nil {
