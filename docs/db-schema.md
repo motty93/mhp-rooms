@@ -2,7 +2,9 @@
 
 ## 概要
 
-モンスターハンターポータブルシリーズのアドホックパーティルーム管理システムのデータベース設計ドキュメントです。Fly.io PostgreSQLを使用し、GORMをORMとして採用しています。Supabase Authenticationと連携した認証システムを採用しています。
+モンスターハンターポータブルシリーズのアドホックパーティルーム管理システムのデータベース設計ドキュメントです。<br/>
+開発環境ではDocker ComposeのPostgreSQL、本番環境ではNeon（Serverless PostgreSQL）を使用し、GORMをORMとして採用しています。<br/>
+Supabase Authenticationと連携した認証システムを採用しています。
 
 ## テーブル一覧
 

@@ -14,7 +14,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **言語**: Go 1.22.2
 - **Webフレームワーク**: Gorilla Mux
-- **データベース**: PostgreSQL (GORM v2使用)
+- **データベース**: 
+  - **開発環境**: PostgreSQL (Docker Compose)
+  - **本番環境**: Neon (Serverless PostgreSQL)
+  - **ORM**: GORM v2
 - **フロントエンド**: 
   - HTML/CSS/JavaScript (テンプレートエンジン使用)
   - htmx (非同期通信・DOM更新)
@@ -86,6 +89,37 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **パフォーマンス**: ルーム一覧の効率的な取得とキャッシュ
 - **UI/UX**: モバイル対応レスポンシブデザイン
 - **国際化**: 日本語を基本言語として設計
+
+## データベース設定
+
+### 開発環境
+Docker Composeで起動するPostgreSQLを使用します。
+```bash
+make container-up  # DBとRedisを起動
+make migrate       # マイグレーション実行
+```
+
+### 本番環境（Neon）
+Neonデータベースを使用します。以下の2つの方法で設定できます：
+
+#### 方法1: DATABASE_URL（推奨・最も簡単）
+```bash
+# NeonコンソールからConnection Stringをコピーして設定
+fly secrets set DATABASE_URL="postgresql://username:password@ep-xxx.region.neon.tech/database?sslmode=require"
+fly secrets set ENV="production"
+```
+
+#### 方法2: 個別の環境変数
+```bash
+fly secrets set DB_HOST="ep-xxx.region.neon.tech"
+fly secrets set DB_USER="your-username"
+fly secrets set DB_PASSWORD="your-password"
+fly secrets set DB_NAME="your-database"
+fly secrets set DB_SSLMODE="require"
+fly secrets set ENV="production"
+```
+
+**注意**: DATABASE_URLが設定されている場合は、個別の環境変数より優先して使用されます。
 
 ## AI開発注意事項
 

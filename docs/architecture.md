@@ -45,17 +45,21 @@
 
 ### データベース
 
-- **ホスティング**: Fly.io PostgreSQL
-  - マネージドPostgreSQLサービス
+- **開発環境**: PostgreSQL (Docker Compose)
+  - ローカル開発用PostgreSQL 15
+- **本番環境**: Neon (Serverless PostgreSQL)
+  - サーバーレスPostgreSQLサービス
+  - 自動スケーリング
   - 自動バックアップ
   - SSL接続必須
-- **ORMライブラリ**: GORM
+- **ORMライブラリ**: GORM v2
   - Go向けの人気ORM
   - マイグレーション機能付き
-- **キャッシュ**: Redis (Fly.io Redis)
+  - DATABASE_URL対応
+- **キャッシュ**: Redis
   - セッション管理
   - リアルタイムデータのキャッシング
-  - Fly.io上でのマネージドRedis
+  - 開発環境：Docker Compose、本番環境：Fly.io Redis
 - **Redisクライアント**: go-redis
   - Go向けの高速Redisクライアント
 
