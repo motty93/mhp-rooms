@@ -7,7 +7,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// GameVersion はゲームバージョンマスターを管理するモデル
 type GameVersion struct {
 	ID           uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
 	Code         string    `gorm:"type:varchar(10);uniqueIndex;not null" json:"code"`
@@ -20,7 +19,6 @@ type GameVersion struct {
 	Rooms []Room `gorm:"foreignKey:GameVersionID" json:"rooms,omitempty"`
 }
 
-// BeforeCreate はレコード作成前にUUIDを生成
 func (gv *GameVersion) BeforeCreate(tx *gorm.DB) error {
 	if gv.ID == uuid.Nil {
 		gv.ID = uuid.New()

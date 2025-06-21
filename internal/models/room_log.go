@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// RoomLog はルームログを管理するモデル
+// RoomLog はルームアクションの監査ログ
 type RoomLog struct {
 	ID        uuid.UUID              `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
 	RoomID    uuid.UUID              `gorm:"type:uuid;not null" json:"room_id"`
@@ -21,7 +21,6 @@ type RoomLog struct {
 	User *User `gorm:"foreignKey:UserID" json:"user"`
 }
 
-// BeforeCreate はレコード作成前にUUIDを生成
 func (rl *RoomLog) BeforeCreate(tx *gorm.DB) error {
 	if rl.ID == uuid.Nil {
 		rl.ID = uuid.New()

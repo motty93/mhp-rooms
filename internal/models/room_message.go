@@ -7,7 +7,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// RoomMessage はルームメッセージを管理するモデル
 type RoomMessage struct {
 	ID          uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
 	RoomID      uuid.UUID `gorm:"type:uuid;not null" json:"room_id"`
@@ -22,7 +21,6 @@ type RoomMessage struct {
 	User User `gorm:"foreignKey:UserID" json:"user"`
 }
 
-// BeforeCreate はレコード作成前にUUIDを生成
 func (rmsg *RoomMessage) BeforeCreate(tx *gorm.DB) error {
 	if rmsg.ID == uuid.Nil {
 		rmsg.ID = uuid.New()

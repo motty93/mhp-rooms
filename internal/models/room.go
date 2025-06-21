@@ -7,7 +7,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// Room はルーム情報を管理するモデル
 type Room struct {
 	ID              uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
 	RoomCode        string     `gorm:"type:varchar(20);uniqueIndex;not null" json:"room_code"`
@@ -35,7 +34,6 @@ type Room struct {
 	Logs        []RoomLog     `gorm:"foreignKey:RoomID" json:"logs,omitempty"`
 }
 
-// BeforeCreate はレコード作成前にUUIDを生成
 func (r *Room) BeforeCreate(tx *gorm.DB) error {
 	if r.ID == uuid.Nil {
 		r.ID = uuid.New()
