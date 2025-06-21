@@ -2,10 +2,10 @@ package handlers
 
 import "net/http"
 
-func HomeHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) HomeHandler(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
 		Title:   "ホーム",
-		HasHero: true, // ホームページはヒーローセクションがある
+		HasHero: true,
 	}
 	renderTemplate(w, "home.html", data)
 }

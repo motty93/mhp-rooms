@@ -1,44 +1,37 @@
 package main
 
 import (
-	"flag"
 	"log"
-	"os"
+	"time"
 
-	"github.com/joho/godotenv"
+	"mhp-rooms/internal/config"
 	"mhp-rooms/internal/database"
 )
 
 func main() {
-	var migrate = flag.Bool("migrate", false, "マイグレーションを実行")
-	var rollback = flag.Bool("rollback", false, "ロールバックを実行")
-	flag.Parse()
+	log.Println("マイグレーションコマンドを開始します...")
 
-	// .envファイルを読み込み
-	if err := godotenv.Load(); err != nil {
-		log.Printf(".envファイルの読み込みをスキップします: %v", err)
+	// 設定を初期化
+	config.Init()
+
+	log.Println("データベース接続を待機中...")
+	if err := database.WaitForDB(config.AppConfig, 30, 2*time.Second); err != nil {
+		log.Fatalf("データベース接続待機に失敗しました: %v", err)
 	}
 
-	// データベース接続を初期化
-	if err := database.InitDB(); err != nil {
+	// データベース接続を作成
+	log.Println("データベース接続を初期化中...")
+	db, err := database.NewDB(config.AppConfig)
+	if err != nil {
 		log.Fatalf("データベース接続に失敗しました: %v", err)
 	}
-	defer database.CloseDB()
+	defer db.Close()
 
-	if *migrate {
-		log.Println("マイグレーションを開始します...")
-		if err := database.Migrate(); err != nil {
-			log.Fatalf("マイグレーションに失敗しました: %v", err)
-		}
-		log.Println("マイグレーションが完了しました")
-		return
+	// マイグレーション実行
+	log.Println("データベースマイグレーションを実行中...")
+	if err := db.Migrate(); err != nil {
+		log.Fatalf("マイグレーションに失敗しました: %v", err)
 	}
 
-	if *rollback {
-		log.Println("ロールバック機能は現在実装されていません")
-		os.Exit(1)
-	}
-
-	// フラグが指定されていない場合はヘルプを表示
-	flag.Usage()
+	log.Println("マイグレーションが正常に完了しました")
 }

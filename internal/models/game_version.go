@@ -23,5 +23,6 @@ func (gv *GameVersion) BeforeCreate(tx *gorm.DB) error {
 	if gv.ID == uuid.Nil {
 		gv.ID = uuid.New()
 	}
+
 	return nil
 }

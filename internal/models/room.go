@@ -5,6 +5,8 @@ import (
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+
+	"mhp-rooms/internal/utils"
 )
 
 type Room struct {
@@ -39,4 +41,37 @@ func (r *Room) BeforeCreate(tx *gorm.DB) error {
 		r.ID = uuid.New()
 	}
 	return nil
+}
+
+func (r *Room) SetPassword(password string) error {
+	if password == "" {
+		r.PasswordHash = nil
+		return nil
+	}
+	
+	hash, err := utils.HashPassword(password)
+	if err != nil {
+		return err
+	}
+	r.PasswordHash = &hash
+	return nil
+}
+
+func (r *Room) CheckPassword(password string) bool {
+	if r.PasswordHash == nil {
+		return password == ""
+	}
+	return utils.CheckPassword(password, *r.PasswordHash)
+}
+
+func (r *Room) HasPassword() bool {
+	return r.PasswordHash != nil
+}
+
+func (r *Room) IsFull() bool {
+	return r.CurrentPlayers >= r.MaxPlayers
+}
+
+func (r *Room) CanJoin() bool {
+	return r.IsActive && r.Status == "waiting" && !r.IsFull()
 }

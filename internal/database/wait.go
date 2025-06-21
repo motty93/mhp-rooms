@@ -12,8 +12,8 @@ import (
 )
 
 // WaitForDB データベースが利用可能になるまで待機
-func WaitForDB(maxRetries int, retryInterval time.Duration) error {
-	dsn := config.AppConfig.GetDSN()
+func WaitForDB(cfg *config.Config, maxRetries int, retryInterval time.Duration) error {
+	dsn := cfg.GetDSN()
 
 	for i := 0; i < maxRetries; i++ {
 		db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})

@@ -9,6 +9,7 @@ type Config struct {
 	Database    DatabaseConfig
 	Server      ServerConfig
 	Environment string
+	Migration   MigrationConfig
 }
 
 type DatabaseConfig struct {
@@ -24,6 +25,10 @@ type DatabaseConfig struct {
 type ServerConfig struct {
 	Port string
 	Host string
+}
+
+type MigrationConfig struct {
+	AutoRun bool
 }
 
 var AppConfig *Config
@@ -44,6 +49,9 @@ func Init() {
 			Host: getEnv("HOST", "0.0.0.0"),
 		},
 		Environment: getEnv("ENV", "development"),
+		Migration: MigrationConfig{
+			AutoRun: getEnvBool("RUN_MIGRATION", false),
+		},
 	}
 }
 

@@ -2,7 +2,6 @@ package database
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"gorm.io/driver/postgres"
@@ -13,42 +12,49 @@ import (
 	"mhp-rooms/internal/models"
 )
 
-var DB *gorm.DB
+type DB struct {
+	conn *gorm.DB
+}
 
-func InitDB() error {
-	dsn := config.AppConfig.GetDSN()
+func NewDB(cfg *config.Config) (*DB, error) {
+	dsn := cfg.GetDSN()
 
-	var err error
-	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+	conn, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})
 	if err != nil {
-		return fmt.Errorf("データベース接続に失敗しました: %w", err)
+		return nil, fmt.Errorf("データベース接続に失敗しました: %w", err)
 	}
 
-	sqlDB, err := DB.DB()
+	// 接続プールの設定
+	sqlDB, err := conn.DB()
 	if err != nil {
-		return fmt.Errorf("データベース接続プールの設定に失敗しました: %w", err)
+		return nil, fmt.Errorf("データベース接続プールの設定に失敗しました: %w", err)
 	}
 
 	sqlDB.SetMaxIdleConns(10)
 	sqlDB.SetMaxOpenConns(100)
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
-	log.Println("データベース接続が確立されました")
-	return nil
+	return &DB{conn: conn}, nil
 }
 
-// Migrate データベースマイグレーションを実行
-func Migrate() error {
-	if DB == nil {
-		return fmt.Errorf("データベース接続が初期化されていません")
+// GetConn 移行期間用
+func (db *DB) GetConn() *gorm.DB {
+	return db.conn
+}
+
+func (db *DB) Close() error {
+	sqlDB, err := db.conn.DB()
+	if err != nil {
+		return err
 	}
+	return sqlDB.Close()
+}
 
-	log.Println("データベースマイグレーションを開始します...")
-
+func (db *DB) Migrate() error {
 	// テーブル作成順序に注意（外部キー制約のため）
-	err := DB.AutoMigrate(
+	err := db.conn.AutoMigrate(
 		&models.User{},
 		&models.GameVersion{},
 		&models.Room{},
@@ -62,21 +68,19 @@ func Migrate() error {
 	}
 
 	// 制約とインデックスを追加
-	if err := addConstraintsAndIndexes(); err != nil {
+	if err := db.addConstraintsAndIndexes(); err != nil {
 		return fmt.Errorf("制約とインデックスの追加に失敗しました: %w", err)
 	}
 
 	// 初期データを挿入
-	if err := insertInitialData(); err != nil {
+	if err := db.insertInitialData(); err != nil {
 		return fmt.Errorf("初期データの挿入に失敗しました: %w", err)
 	}
 
-	log.Println("データベースマイグレーションが完了しました")
 	return nil
 }
 
-// addConstraintsAndIndexes 制約とインデックスを追加
-func addConstraintsAndIndexes() error {
+func (db *DB) addConstraintsAndIndexes() error {
 	// 外部キー制約
 	constraints := []string{
 		"ALTER TABLE rooms ADD CONSTRAINT IF NOT EXISTS fk_rooms_game_version FOREIGN KEY (game_version_id) REFERENCES game_versions(id)",
@@ -124,8 +128,7 @@ func addConstraintsAndIndexes() error {
 	allStatements := append(append(constraints, checks...), append(uniques, indexes...)...)
 
 	for _, stmt := range allStatements {
-		if err := DB.Exec(stmt).Error; err != nil {
-			log.Printf("警告: SQL実行に失敗しました: %s - %v", stmt, err)
+		if err := db.conn.Exec(stmt).Error; err != nil {
 			// 制約やインデックスの失敗は警告レベルで継続
 		}
 	}
@@ -133,17 +136,13 @@ func addConstraintsAndIndexes() error {
 	return nil
 }
 
-// insertInitialData 初期データを挿入
-func insertInitialData() error {
+func (db *DB) insertInitialData() error {
 	// game_versionsの初期データが既に存在するかチェック
 	var count int64
-	DB.Model(&models.GameVersion{}).Count(&count)
+	db.conn.Model(&models.GameVersion{}).Count(&count)
 	if count > 0 {
-		log.Println("初期データは既に存在します。スキップします。")
 		return nil
 	}
-
-	log.Println("初期データを挿入しています...")
 
 	gameVersions := []models.GameVersion{
 		{
@@ -173,24 +172,10 @@ func insertInitialData() error {
 	}
 
 	for _, gv := range gameVersions {
-		if err := DB.Create(&gv).Error; err != nil {
+		if err := db.conn.Create(&gv).Error; err != nil {
 			return fmt.Errorf("ゲームバージョンの挿入に失敗しました: %w", err)
 		}
 	}
 
-	log.Println("初期データの挿入が完了しました")
 	return nil
-}
-
-func CloseDB() error {
-	if DB == nil {
-		return nil
-	}
-
-	sqlDB, err := DB.DB()
-	if err != nil {
-		return err
-	}
-
-	return sqlDB.Close()
 }
