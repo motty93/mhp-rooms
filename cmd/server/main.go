@@ -13,9 +13,15 @@ import (
 	"mhp-rooms/internal/repository"
 
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	// .envファイルを読み込む
+	if err := godotenv.Load(); err != nil {
+		log.Println(".envファイルが見つかりません。環境変数を使用します。")
+	}
+
 	// 設定を初期化
 	log.Println("設定を初期化中...")
 	config.Init()
