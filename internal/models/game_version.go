@@ -14,6 +14,7 @@ type GameVersion struct {
 	DisplayOrder int       `gorm:"not null" json:"display_order"`
 	IsActive     bool      `gorm:"not null;default:true" json:"is_active"`
 	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 
 	// リレーション
 	Rooms []Room `gorm:"foreignKey:GameVersionID" json:"rooms,omitempty"`
