@@ -6,7 +6,21 @@ import (
 	"net/http"
 	"path/filepath"
 	"strings"
+
+	"mhp-rooms/internal/repository"
 )
+
+// Handler はハンドラーの基本構造体
+type Handler struct {
+	repo *repository.Repository
+}
+
+// NewHandler は新しいHandlerインスタンスを作成
+func NewHandler(repo *repository.Repository) *Handler {
+	return &Handler{
+		repo: repo,
+	}
+}
 
 // TemplateData はテンプレートに渡すデータ構造体
 type TemplateData struct {
