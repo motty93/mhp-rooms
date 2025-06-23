@@ -9,19 +9,14 @@
   <script src="https://unpkg.com/htmx.org@1.9.10"></script>
   <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="/static/images/icons/favicon.ico">
   <link rel="icon" type="image/x-icon" sizes="32x32" href="/static/images/icons/favicon-32x32.ico">
   <link rel="icon" type="image/x-icon" sizes="16x16" href="/static/images/icons/favicon-16x16.ico">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/images/icons/apple-touch-icon.png">
-
-  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap"
     rel="stylesheet">
-
-  <!-- Styles -->
   <link rel="stylesheet" href="/static/css/style.css">
 
   {{template "head" .}}
@@ -32,7 +27,44 @@
     open: false,
     toggle() { this.open = !this.open },
     close() { this.open = false }
-  })
+  });
+  
+  Alpine.store('auth', {
+    isAuthenticated: false,
+    user: null,
+    
+    init() {
+      this.checkStatus();
+    },
+    
+    checkStatus() {
+      const authToken = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+      this.isAuthenticated = authToken !== null && authToken !== '';
+      if (this.isAuthenticated && !this.user) {
+        this.user = { name: 'ユーザー名' }; // 仮実装
+      }
+    },
+    
+    login(token, user = null) {
+      localStorage.setItem('auth_token', token);
+      this.isAuthenticated = true;
+      this.user = user || { name: 'ユーザー名' };
+    },
+    
+    logout() {
+      localStorage.removeItem('auth_token');
+      sessionStorage.removeItem('auth_token');
+      this.isAuthenticated = false;
+      this.user = null;
+    },
+    
+    handleUnauthenticatedAction() {
+      alert('この機能を利用するにはログインが必要です。');
+    }
+  });
+  
+  // 初期化
+  $store.auth.init();
 ">
   {{template "header" .}}
 
@@ -68,7 +100,7 @@
       <!-- メニュー内容 -->
       <div class="p-6">
         <!-- 未認証時のメニュー -->
-        <div id="mobile-auth-buttons">
+        <div x-show="!$store.auth.isAuthenticated">
           <div class="space-y-4">
             <a href="/auth/login" @click="$store.mobileMenu.close()"
               class="block w-full text-center bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors">
@@ -88,8 +120,8 @@
           </div>
         </div>
 
-        <!-- 認証済み時のメニュー（認証後に表示される） -->
-        <div class="hidden" id="mobile-user-menu">
+        <!-- 認証済み時のメニュー -->
+        <div x-show="$store.auth.isAuthenticated" style="display: none;">
           <div class="space-y-2">
             <a href="/rooms" @click="$store.mobileMenu.close()"
               class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
@@ -116,7 +148,7 @@
             </a>
           </div>
           <hr class="my-6 border-gray-200">
-          <button hx-post="/auth/logout" hx-confirm="ログアウトしますか？" @click="$store.mobileMenu.close()"
+          <button @click="if(confirm('ログアウトしますか？')) { $store.auth.logout(); $store.mobileMenu.close(); }"
             class="block w-full text-left px-4 py-3 text-red-600 hover:bg-gray-100 rounded-lg transition-colors">
             ログアウト
           </button>
@@ -132,8 +164,22 @@
 
   {{template "footer" .}}
 
-  <!-- Scripts -->
-  <script src="/static/js/auth.js"></script>
+  <!-- Alpine.js debug commands for development -->
+  <script>
+    // コンソールからテスト可能にする（開発用）
+    window.debugAuth = {
+      login: () => {
+        Alpine.store('auth').login('debug_token_' + Date.now());
+        console.log('Debug: ログイン状態にしました');
+      },
+      logout: () => {
+        Alpine.store('auth').logout();
+        console.log('Debug: ログアウト状態にしました');
+      },
+      checkStatus: () => Alpine.store('auth').checkStatus()
+    };
+
+  </script>
 </body>
 
 </html>
