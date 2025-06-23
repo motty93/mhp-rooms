@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -180,4 +181,54 @@ func (h *Handler) LeaveRoomHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"message": "ルームから退室しました"}`))
+}
+
+type ToggleRoomClosedRequest struct {
+	IsClosed bool `json:"is_closed"`
+}
+
+func (h *Handler) ToggleRoomClosedHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	roomID, err := uuid.Parse(vars["id"])
+	if err != nil {
+		http.Error(w, "無効なルームIDです", http.StatusBadRequest)
+		return
+	}
+
+	var req ToggleRoomClosedRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "リクエストの解析に失敗しました", http.StatusBadRequest)
+		return
+	}
+
+	// TODO: 認証からユーザーIDを取得してホストかどうかチェック
+	// 現在は仮実装
+
+	// ルームを取得してホストチェック
+	_, err = h.repo.FindRoomByID(roomID)
+	if err != nil {
+		log.Printf("ルーム取得エラー: %v", err)
+		http.Error(w, "ルームが見つかりません", http.StatusNotFound)
+		return
+	}
+
+	// TODO: 認証からのユーザーIDとroom.HostUserIDを比較
+	// if currentUserID != room.HostUserID {
+	//     http.Error(w, "ルームのホストのみが開閉状態を変更できます", http.StatusForbidden)
+	//     return
+	// }
+
+	if err := h.repo.ToggleRoomClosed(roomID, req.IsClosed); err != nil {
+		log.Printf("ルーム開閉状態変更エラー: %v", err)
+		http.Error(w, "ルームの開閉状態変更に失敗しました", http.StatusInternalServerError)
+		return
+	}
+
+	status := "開いた"
+	if req.IsClosed {
+		status = "閉じた"
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(fmt.Sprintf(`{"message": "ルームを%s状態にしました"}`, status)))
 }

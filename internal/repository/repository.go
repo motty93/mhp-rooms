@@ -78,8 +78,8 @@ func (r *Repository) UpdateRoom(room *models.Room) error {
 	return r.Room.UpdateRoom(room)
 }
 
-func (r *Repository) UpdateRoomStatus(id uuid.UUID, status string) error {
-	return r.Room.UpdateRoomStatus(id, status)
+func (r *Repository) ToggleRoomClosed(id uuid.UUID, isClosed bool) error {
+	return r.Room.ToggleRoomClosed(id, isClosed)
 }
 
 func (r *Repository) IncrementRoomPlayerCount(id uuid.UUID) error {

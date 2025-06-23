@@ -59,14 +59,12 @@ func (r *roomRepository) FindRoomByRoomCode(roomCode string) (*models.Room, erro
 	return &room, nil
 }
 
-// GetActiveRooms はアクティブなルーム一覧を取得
 func (r *roomRepository) GetActiveRooms(gameVersionID *uuid.UUID, limit, offset int) ([]models.Room, error) {
 	var rooms []models.Room
 	query := r.db.GetConn().
 		Preload("GameVersion").
 		Preload("Host").
-		Where("is_active = ?", true).
-		Where("status IN ?", []string{"waiting", "playing"})
+		Where("is_active = ?", true)
 
 	if gameVersionID != nil {
 		query = query.Where("game_version_id = ?", *gameVersionID)
@@ -80,20 +78,17 @@ func (r *roomRepository) GetActiveRooms(gameVersionID *uuid.UUID, limit, offset 
 	return rooms, err
 }
 
-// UpdateRoom はルーム情報を更新
 func (r *roomRepository) UpdateRoom(room *models.Room) error {
 	return r.db.GetConn().Save(room).Error
 }
 
-// UpdateRoomStatus はルームのステータスを更新
-func (r *roomRepository) UpdateRoomStatus(id uuid.UUID, status string) error {
+func (r *roomRepository) ToggleRoomClosed(id uuid.UUID, isClosed bool) error {
 	return r.db.GetConn().
 		Model(&models.Room{}).
 		Where("id = ?", id).
-		Update("status", status).Error
+		Update("is_closed", isClosed).Error
 }
 
-// IncrementRoomPlayerCount はルームの参加者数を増やす
 func (r *roomRepository) IncrementRoomPlayerCount(id uuid.UUID) error {
 	return r.db.GetConn().
 		Model(&models.Room{}).
