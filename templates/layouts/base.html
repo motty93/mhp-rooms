@@ -28,15 +28,15 @@
     toggle() { this.open = !this.open },
     close() { this.open = false }
   });
-  
+
   Alpine.store('auth', {
     isAuthenticated: false,
     user: null,
-    
+
     init() {
       this.checkStatus();
     },
-    
+
     checkStatus() {
       const authToken = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
       this.isAuthenticated = authToken !== null && authToken !== '';
@@ -44,25 +44,25 @@
         this.user = { name: 'ユーザー名' }; // 仮実装
       }
     },
-    
+
     login(token, user = null) {
       localStorage.setItem('auth_token', token);
       this.isAuthenticated = true;
       this.user = user || { name: 'ユーザー名' };
     },
-    
+
     logout() {
       localStorage.removeItem('auth_token');
       sessionStorage.removeItem('auth_token');
       this.isAuthenticated = false;
       this.user = null;
     },
-    
+
     handleUnauthenticatedAction() {
       alert('この機能を利用するにはログインが必要です。');
     }
   });
-  
+
   // 初期化
   $store.auth.init();
 ">
@@ -159,7 +159,7 @@
 
   <!-- メインコンテンツエリア -->
   <main class="{{if .HasHero}}{{else}}pt-16{{end}} grow">
-    {{template "content" .}}
+    {{template "page" .}}
   </main>
 
   {{template "footer" .}}
