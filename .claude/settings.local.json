@@ -24,7 +24,8 @@
       "Bash(rm:*)",
       "Bash(env)",
       "Bash(make:*)",
-      "Bash(go build:*)"
+      "Bash(go build:*)",
+      "Bash(docker exec:*)"
     ],
     "deny": []
   }
