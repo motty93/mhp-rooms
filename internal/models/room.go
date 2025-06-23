@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 
 	"mhp-rooms/internal/utils"
 )
@@ -34,13 +33,6 @@ type Room struct {
 	Members     []RoomMember  `gorm:"foreignKey:RoomID" json:"members,omitempty"`
 	Messages    []RoomMessage `gorm:"foreignKey:RoomID" json:"messages,omitempty"`
 	Logs        []RoomLog     `gorm:"foreignKey:RoomID" json:"logs,omitempty"`
-}
-
-func (r *Room) BeforeCreate(tx *gorm.DB) error {
-	if r.ID == uuid.Nil {
-		r.ID = uuid.New()
-	}
-	return nil
 }
 
 func (r *Room) SetPassword(password string) error {

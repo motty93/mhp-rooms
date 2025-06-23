@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 // RoomLog はルームアクションの監査ログ
@@ -19,11 +18,4 @@ type RoomLog struct {
 	// リレーション
 	Room Room  `gorm:"foreignKey:RoomID" json:"room"`
 	User *User `gorm:"foreignKey:UserID" json:"user"`
-}
-
-func (rl *RoomLog) BeforeCreate(tx *gorm.DB) error {
-	if rl.ID == uuid.Nil {
-		rl.ID = uuid.New()
-	}
-	return nil
 }

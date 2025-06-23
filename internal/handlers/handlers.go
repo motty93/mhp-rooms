@@ -10,19 +10,16 @@ import (
 	"mhp-rooms/internal/repository"
 )
 
-// Handler はハンドラーの基本構造体
 type Handler struct {
 	repo *repository.Repository
 }
 
-// NewHandler は新しいHandlerインスタンスを作成
 func NewHandler(repo *repository.Repository) *Handler {
 	return &Handler{
 		repo: repo,
 	}
 }
 
-// TemplateData はテンプレートに渡すデータ構造体
 type TemplateData struct {
 	Title    string
 	HasHero  bool
@@ -30,9 +27,7 @@ type TemplateData struct {
 	PageData interface{} // ページ固有のデータ
 }
 
-// renderTemplate はテンプレートをレンダリングする共通関数
 func renderTemplate(w http.ResponseWriter, templateName string, data TemplateData) {
-	// テンプレート関数を定義
 	funcMap := template.FuncMap{
 		"lower": func(s string) string {
 			return strings.ToLower(s)

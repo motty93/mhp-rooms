@@ -10,22 +10,18 @@ import (
 	"mhp-rooms/internal/models"
 )
 
-// roomRepository はルーム関連の操作を行うリポジトリの実装
 type roomRepository struct {
 	db *database.DB
 }
 
-// NewRoomRepository は新しいRoomRepositoryインスタンスを作成
 func NewRoomRepository(db *database.DB) RoomRepository {
 	return &roomRepository{db: db}
 }
 
-// CreateRoom はルームを作成
 func (r *roomRepository) CreateRoom(room *models.Room) error {
 	return r.db.GetConn().Create(room).Error
 }
 
-// FindRoomByID はIDでルームを検索
 func (r *roomRepository) FindRoomByID(id uuid.UUID) (*models.Room, error) {
 	var room models.Room
 	err := r.db.GetConn().
@@ -42,7 +38,6 @@ func (r *roomRepository) FindRoomByID(id uuid.UUID) (*models.Room, error) {
 	return &room, nil
 }
 
-// FindRoomByRoomCode はルームコードでルームを検索
 func (r *roomRepository) FindRoomByRoomCode(roomCode string) (*models.Room, error) {
 	var room models.Room
 	err := r.db.GetConn().
@@ -96,7 +91,6 @@ func (r *roomRepository) IncrementRoomPlayerCount(id uuid.UUID) error {
 		Update("current_players", gorm.Expr("current_players + ?", 1)).Error
 }
 
-// DecrementRoomPlayerCount はルームの参加者数を減らす
 func (r *roomRepository) DecrementRoomPlayerCount(id uuid.UUID) error {
 	return r.db.GetConn().
 		Model(&models.Room{}).
@@ -105,7 +99,6 @@ func (r *roomRepository) DecrementRoomPlayerCount(id uuid.UUID) error {
 		Update("current_players", gorm.Expr("current_players - ?", 1)).Error
 }
 
-// JoinRoom はユーザーをルームに参加させる
 func (r *roomRepository) JoinRoom(roomID, userID uuid.UUID, password string) error {
 	return r.db.GetConn().Transaction(func(tx *gorm.DB) error {
 		var room models.Room
@@ -143,7 +136,6 @@ func (r *roomRepository) JoinRoom(roomID, userID uuid.UUID, password string) err
 	})
 }
 
-// LeaveRoom はユーザーをルームから退出させる
 func (r *roomRepository) LeaveRoom(roomID, userID uuid.UUID) error {
 	return r.db.GetConn().Transaction(func(tx *gorm.DB) error {
 		result := tx.Model(&models.RoomMember{}).

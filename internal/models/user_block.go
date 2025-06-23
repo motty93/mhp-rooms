@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 type UserBlock struct {
@@ -17,11 +16,4 @@ type UserBlock struct {
 	// リレーション
 	Blocker User `gorm:"foreignKey:BlockerUserID" json:"blocker"`
 	Blocked User `gorm:"foreignKey:BlockedUserID" json:"blocked"`
-}
-
-func (ub *UserBlock) BeforeCreate(tx *gorm.DB) error {
-	if ub.ID == uuid.Nil {
-		ub.ID = uuid.New()
-	}
-	return nil
 }

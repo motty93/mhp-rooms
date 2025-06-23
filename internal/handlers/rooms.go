@@ -20,10 +20,7 @@ type RoomsPageData struct {
 }
 
 func (h *Handler) RoomsHandler(w http.ResponseWriter, r *http.Request) {
-	// ゲームバージョンフィルターを取得
 	filter := r.URL.Query().Get("game_version")
-
-	// ゲームバージョン一覧を取得
 	gameVersions, err := h.repo.GetActiveGameVersions()
 	if err != nil {
 		log.Printf("ゲームバージョン取得エラー: %v", err)
@@ -31,7 +28,6 @@ func (h *Handler) RoomsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// フィルター用のゲームバージョンIDを取得
 	var gameVersionID *uuid.UUID
 	if filter != "" {
 		gameVersion, err := h.repo.FindGameVersionByCode(filter)
@@ -40,7 +36,6 @@ func (h *Handler) RoomsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// ルーム一覧を取得
 	rooms, err := h.repo.GetActiveRooms(gameVersionID, 100, 0)
 	if err != nil {
 		log.Printf("ルーム取得エラー: %v", err)
@@ -98,7 +93,6 @@ func (h *Handler) CreateRoomHandler(w http.ResponseWriter, r *http.Request) {
 		GameVersionID: gameVersionID,
 		HostUserID:    hostUserID,
 		MaxPlayers:    req.MaxPlayers,
-		Status:        "waiting",
 		IsActive:      true,
 	}
 

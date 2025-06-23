@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 type RoomMember struct {
@@ -22,9 +21,3 @@ type RoomMember struct {
 	User User `gorm:"foreignKey:UserID" json:"user"`
 }
 
-func (rm *RoomMember) BeforeCreate(tx *gorm.DB) error {
-	if rm.ID == uuid.Nil {
-		rm.ID = uuid.New()
-	}
-	return nil
-}

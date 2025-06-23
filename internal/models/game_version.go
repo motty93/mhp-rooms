@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 type GameVersion struct {
@@ -18,12 +17,4 @@ type GameVersion struct {
 
 	// リレーション
 	Rooms []Room `gorm:"foreignKey:GameVersionID" json:"rooms,omitempty"`
-}
-
-func (gv *GameVersion) BeforeCreate(tx *gorm.DB) error {
-	if gv.ID == uuid.Nil {
-		gv.ID = uuid.New()
-	}
-
-	return nil
 }
