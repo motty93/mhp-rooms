@@ -19,11 +19,11 @@ type Room struct {
 	MaxPlayers      int        `gorm:"not null;default:4" json:"max_players"`
 	CurrentPlayers  int        `gorm:"not null;default:0" json:"current_players"`
 	PasswordHash    *string    `gorm:"type:varchar(255)" json:"password_hash,omitempty"`
-	Status          string     `gorm:"type:varchar(20);not null;default:'waiting'" json:"status"`
 	QuestType       *string    `gorm:"type:varchar(50)" json:"quest_type"`
 	TargetMonster   *string    `gorm:"type:varchar(100)" json:"target_monster"`
 	RankRequirement *string    `gorm:"type:varchar(20)" json:"rank_requirement"`
 	IsActive        bool       `gorm:"not null;default:true" json:"is_active"`
+	IsClosed        bool       `gorm:"not null;default:false" json:"is_closed"`
 	CreatedAt       time.Time  `json:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at"`
 	ClosedAt        *time.Time `json:"closed_at"`
@@ -73,5 +73,5 @@ func (r *Room) IsFull() bool {
 }
 
 func (r *Room) CanJoin() bool {
-	return r.IsActive && r.Status == "waiting" && !r.IsFull()
+	return r.IsActive && !r.IsClosed && !r.IsFull()
 }
