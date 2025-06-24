@@ -3,6 +3,21 @@ body {
   font-family: 'Noto Sans JP', sans-serif;
 }
 
+/* Alpine.js x-cloak */
+[x-cloak] {
+  display: none !important;
+}
+
+/* モーダルアニメーション */
+.modal-button {
+  transition: all 0.2s ease-in-out;
+}
+
+.modal-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
 .hero-bg {
   position: relative;
   background: linear-gradient(135deg, rgba(102, 126, 234, 0.85) 0%, rgba(118, 75, 162, 0.85) 100%);
