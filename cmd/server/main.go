@@ -69,6 +69,9 @@ func main() {
 	r.HandleFunc("/rooms/{id}/join", handler.JoinRoomHandler).Methods("POST")
 	r.HandleFunc("/rooms/{id}/leave", handler.LeaveRoomHandler).Methods("POST")
 	r.HandleFunc("/rooms/{id}/toggle-closed", handler.ToggleRoomClosedHandler).Methods("PUT")
+	r.HandleFunc("/terms", handler.TermsHandler).Methods("GET")
+	r.HandleFunc("/privacy", handler.PrivacyHandler).Methods("GET")
+	r.HandleFunc("/contact", handler.ContactHandler).Methods("GET", "POST")
 	r.HandleFunc("/hello", handlers.HelloHandler).Methods("GET")
 
 	r.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
