@@ -33,22 +33,22 @@
       PSPゲームのアドホックモードで仲間を見つけて、一緒にゲームを楽しもう
     </p>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto mb-8">
-      <div class="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur-sm">
+      <a href="/rooms?game_version=MHP" class="bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg p-4 backdrop-blur-sm transition-all transform hover:scale-105">
         <div class="mhp-icon game-icon mx-auto mb-2 rounded"></div>
         <p class="text-sm font-semibold">MHP</p>
-      </div>
-      <div class="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur-sm">
+      </a>
+      <a href="/rooms?game_version=MHP2" class="bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg p-4 backdrop-blur-sm transition-all transform hover:scale-105">
         <div class="mhp2-icon game-icon mx-auto mb-2 rounded"></div>
         <p class="text-sm font-semibold">MHP2</p>
-      </div>
-      <div class="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur-sm">
+      </a>
+      <a href="/rooms?game_version=MHP2G" class="bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg p-4 backdrop-blur-sm transition-all transform hover:scale-105">
         <div class="mhp2g-icon game-icon mx-auto mb-2 rounded"></div>
         <p class="text-sm font-semibold">MHP2G</p>
-      </div>
-      <div class="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur-sm">
+      </a>
+      <a href="/rooms?game_version=MHP3" class="bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg p-4 backdrop-blur-sm transition-all transform hover:scale-105">
         <div class="mhp3-icon game-icon mx-auto mb-2 rounded"></div>
         <p class="text-sm font-semibold">MHP3</p>
-      </div>
+      </a>
     </div>
     <p class="text-sm text-gray-200 mb-8">※ 今後、他のPSPゲームにも対応予定です</p>
     <div class="flex flex-col sm:flex-row gap-4 justify-center">
@@ -73,115 +73,191 @@
   </div>
 </section>
 
-<!-- 部屋一覧セクション -->
-<section id="rooms" class="py-16 bg-white">
+<!-- 特徴セクション -->
+<section class="py-16 bg-white">
   <div class="container mx-auto px-4">
     <div class="text-center mb-12">
-      <h3 class="text-3xl font-bold text-gray-800 mb-4">アクティブな部屋</h3>
+      <h3 class="text-3xl font-bold text-gray-800 mb-4">アドパHubの特徴</h3>
       <p class="text-gray-600 max-w-2xl mx-auto">
-        現在開催中のアドホックパーティ部屋です。参加したい部屋をクリックしてください。
+        PSPゲームのアドホックパーティを簡単に作成・参加できるサービスです
       </p>
     </div>
 
-    <!-- フィルター -->
-    <div class="flex flex-wrap gap-4 justify-center mb-8">
-      <button class="bg-gray-200 text-gray-800 px-4 py-2 rounded-full hover:bg-gray-300 transition-colors">
-        すべて
-      </button>
-      <button class="bg-gray-100 text-gray-600 px-4 py-2 rounded-full hover:bg-gray-200 transition-colors">
-        MHP
-      </button>
-      <button class="bg-gray-100 text-gray-600 px-4 py-2 rounded-full hover:bg-gray-200 transition-colors">
-        MHP2
-      </button>
-      <button class="bg-gray-100 text-gray-600 px-4 py-2 rounded-full hover:bg-gray-200 transition-colors">
-        MHP2G
-      </button>
-      <button class="bg-gray-100 text-gray-600 px-4 py-2 rounded-full hover:bg-gray-200 transition-colors">
-        MHP3
-      </button>
-    </div>
-
-    <!-- 部屋リスト -->
-    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6" id="room-list">
-      <!-- サンプル部屋 -->
-      <div class="room-card bg-white rounded-lg shadow-md border border-gray-200 flex flex-col h-full">
-        <div class="p-6 flex-grow">
-          <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center space-x-3">
-              <div class="mhp2g-icon game-icon rounded"></div>
-              <div>
-                <h4 class="font-bold text-gray-800">上位クエスト募集</h4>
-                <p class="text-sm text-gray-500">MHP2G</p>
-              </div>
-            </div>
-            <span class="bg-green-100 text-green-800 text-sm px-2 py-1 rounded-full">3/4</span>
-          </div>
-          <p class="text-gray-600">ティガレックス討伐クエストを一緒にやりませんか？</p>
+    <div class="grid md:grid-cols-3 gap-8">
+      <!-- 特徴1 -->
+      <div class="text-center">
+        <div class="bg-gray-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
+          <svg class="w-10 h-10 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+            </path>
+          </svg>
         </div>
-        <div class="p-6 pt-0">
-          <div class="flex items-center justify-between">
-            <span class="text-sm text-gray-500">ホスト: ハンター太郎</span>
-            <button class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded text-sm transition-colors">
-              参加
-            </button>
-          </div>
-        </div>
+        <h4 class="text-xl font-bold text-gray-800 mb-2">簡単マッチング</h4>
+        <p class="text-gray-600">
+          部屋を作成して待つだけ。<br>
+          同じゲームを楽しむ仲間と<br>
+          すぐにマッチングできます。
+        </p>
       </div>
 
-      <div class="room-card bg-white rounded-lg shadow-md border border-gray-200 flex flex-col h-full">
-        <div class="p-6 flex-grow">
-          <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center space-x-3">
-              <div class="mhp3-icon game-icon rounded"></div>
-              <div>
-                <h4 class="font-bold text-gray-800">初心者歓迎</h4>
-                <p class="text-sm text-gray-500">MHP3</p>
-              </div>
-            </div>
-            <span class="bg-yellow-100 text-yellow-800 text-sm px-2 py-1 rounded-full">2/4</span>
-          </div>
-          <p class="text-gray-600">下位クエストでゆっくり楽しみましょう！</p>
+      <!-- 特徴2 -->
+      <div class="text-center">
+        <div class="bg-gray-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
+          <svg class="w-10 h-10 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z">
+            </path>
+          </svg>
         </div>
-        <div class="p-6 pt-0">
-          <div class="flex items-center justify-between">
-            <span class="text-sm text-gray-500">ホスト: 猫好きハンター</span>
-            <button class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded text-sm transition-colors">
-              参加
-            </button>
-          </div>
-        </div>
+        <h4 class="text-xl font-bold text-gray-800 mb-2">安全・安心</h4>
+        <p class="text-gray-600">
+          パスワード保護機能で<br>
+          プライベートな部屋も作成可能。<br>
+          友達だけで楽しめます。
+        </p>
       </div>
 
-      <div class="room-card bg-white rounded-lg shadow-md border border-gray-200 flex flex-col h-full">
-        <div class="p-6 flex-grow">
-          <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center space-x-3">
-              <div class="mhp2-icon game-icon rounded"></div>
-              <div>
-                <h4 class="font-bold text-gray-800">素材集め</h4>
-                <p class="text-sm text-gray-500">MHP2</p>
-              </div>
-            </div>
-            <span class="bg-red-100 text-red-800 text-sm px-2 py-1 rounded-full">4/4</span>
-          </div>
-          <p class="text-gray-600">レア素材狙いで効率よく周回します</p>
+      <!-- 特徴3 -->
+      <div class="text-center">
+        <div class="bg-gray-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
+          <svg class="w-10 h-10 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
         </div>
-        <div class="p-6 pt-0">
-          <div class="flex items-center justify-between">
-            <span class="text-sm text-gray-500">ホスト: 素材コレクター</span>
-            <button class="bg-gray-400 text-white px-4 py-2 rounded text-sm cursor-not-allowed" disabled>
-              満員
-            </button>
-          </div>
-        </div>
+        <h4 class="text-xl font-bold text-gray-800 mb-2">リアルタイム更新</h4>
+        <p class="text-gray-600">
+          部屋の状態は<br>
+          リアルタイムで更新。<br>
+          最新の情報がすぐわかる。
+        </p>
       </div>
     </div>
+  </div>
+</section>
 
-    <div class="text-center mt-8">
+<!-- 使い方セクション -->
+<section class="py-16 bg-gray-50">
+  <div class="container mx-auto px-4">
+    <div class="text-center mb-12">
+      <h3 class="text-3xl font-bold text-gray-800 mb-4">使い方はかんたん3ステップ</h3>
+    </div>
+
+    <div class="max-w-2xl mx-auto space-y-12">
+      <!-- ステップ1 -->
+      <div class="text-center">
+        <div
+          class="bg-gray-800 text-white rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold mx-auto mb-4">
+          1
+        </div>
+        <h4 class="text-xl font-bold text-gray-800 mb-2">アカウント作成</h4>
+        <p class="text-gray-600">
+          メールアドレスで簡単登録。<br>
+          すぐに使い始められます。
+        </p>
+      </div>
+
+      <!-- ステップ2 -->
+      <div class="text-center">
+        <div
+          class="bg-gray-800 text-white rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold mx-auto mb-4">
+          2
+        </div>
+        <h4 class="text-xl font-bold text-gray-800 mb-2">部屋を作成または参加</h4>
+        <p class="text-gray-600">
+          プレイしたいゲームを選んで部屋を作成。<br>
+          または既存の部屋に参加しよう。
+        </p>
+      </div>
+
+      <!-- ステップ3 -->
+      <div class="text-center">
+        <div
+          class="bg-gray-800 text-white rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold mx-auto mb-4">
+          3
+        </div>
+        <h4 class="text-xl font-bold text-gray-800 mb-2">一緒にプレイ</h4>
+        <p class="text-gray-600">
+          メンバーが集まったら<br>
+          PSPでアドホックモードを起動して遊ぼう！
+        </p>
+      </div>
+    </div>
+
+    <div class="text-center mt-12">
+      <a href="/auth/register" x-show="!$store.auth.isAuthenticated"
+        class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-4 px-8 rounded-lg transition-colors inline-block">
+        今すぐ始める（無料）
+      </a>
+      <a href="/rooms" x-show="$store.auth.isAuthenticated" style="display: none;"
+        class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-4 px-8 rounded-lg transition-colors inline-block">
+        部屋一覧を見る
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ セクション -->
+<section class="py-16 bg-white">
+  <div class="container mx-auto px-4">
+    <div class="text-center mb-12">
+      <h3 class="text-3xl font-bold text-gray-800 mb-4">よくある質問</h3>
+    </div>
+
+    <div class="max-w-3xl mx-auto space-y-6">
+      <!-- FAQ 1 -->
+      <div class="bg-gray-50 rounded-lg p-6">
+        <h4 class="font-bold text-gray-800 mb-2">Q: アドパHubの利用は無料ですか？</h4>
+        <p class="text-gray-600">
+          A: はい、完全無料でご利用いただけます。アカウント作成も部屋の作成・参加もすべて無料です。
+        </p>
+      </div>
+
+      <!-- FAQ 2 -->
+      <div class="bg-gray-50 rounded-lg p-6">
+        <h4 class="font-bold text-gray-800 mb-2">Q: どのPSPゲームに対応していますか？</h4>
+        <p class="text-gray-600">
+          A: 現在はモンスターハンターポータブルシリーズ（MHP、MHP2、MHP2G、MHP3）に対応しています。今後、他のPSPゲームにも対応予定です。
+        </p>
+      </div>
+
+      <!-- FAQ 3 -->
+      <div class="bg-gray-50 rounded-lg p-6">
+        <h4 class="font-bold text-gray-800 mb-2">Q: アドパHubはどのように使うのですか？</h4>
+        <p class="text-gray-600">
+          A: 先にアドホックパーティで入室し、アドパHubで部屋情報を入力してSNSなどに共有して使用します。仲間を集めるための情報共有ツールとしてご活用ください。
+        </p>
+      </div>
+
+      <!-- FAQ 4 -->
+      <div class="bg-gray-50 rounded-lg p-6">
+        <h4 class="font-bold text-gray-800 mb-2">Q: パスワード付きの部屋は作れますか？</h4>
+        <p class="text-gray-600">
+          A: はい、部屋作成時にパスワードを設定できます。友達だけでプレイしたい場合などにご利用ください。
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA セクション -->
+<section class="py-16 bg-gray-800 text-white">
+  <div class="container mx-auto px-4 text-center">
+    <h3 class="text-3xl font-bold mb-4">
+      さあ、仲間と一緒に狩りに出かけよう！
+    </h3>
+    <p class="text-xl mb-8 text-gray-300">
+      アドパHubで新しい仲間を見つけて、PSPゲームをもっと楽しもう
+    </p>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      <a href="/auth/register" x-show="!$store.auth.isAuthenticated"
+        class="bg-white text-gray-800 hover:bg-gray-100 font-medium py-3 px-8 rounded-lg transition-colors inline-block">
+        無料で始める
+      </a>
       <a href="/rooms"
-        class="border border-gray-400 text-gray-700 hover:bg-gray-100 px-6 py-3 rounded-lg transition-colors inline-block">
-        もっと見る
+        class="border-2 border-white text-white hover:bg-white hover:text-gray-800 font-medium py-3 px-8 rounded-lg transition-colors inline-block">
+        部屋一覧を見る
       </a>
     </div>
   </div>
