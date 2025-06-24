@@ -13,6 +13,30 @@
   <meta property="og:description" content="PSPゲームのアドホックパーティを簡単に作成・参加できるサービス">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="アドパHub">
+  
+  <!-- 構造化データ：サイトナビゲーション -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://adpahub.com/#website",
+        "url": "https://adpahub.com/",
+        "name": "アドパHub",
+        "description": "PSPゲームのアドホックパーティを簡単に作成・参加できるサービス",
+        "inLanguage": "ja"
+      },
+      {
+        "@type": "SiteNavigationElement",
+        "@id": "https://adpahub.com/#navigation",
+        "name": ["ホーム", "部屋一覧", "ログイン", "新規登録", "お問い合わせ", "利用規約", "プライバシーポリシー"],
+        "url": ["https://adpahub.com/", "https://adpahub.com/rooms", "https://adpahub.com/auth/login", "https://adpahub.com/auth/register", "https://adpahub.com/contact", "https://adpahub.com/terms", "https://adpahub.com/privacy"]
+      }
+    ]
+  }
+  </script>
+  
   <script src="https://unpkg.com/htmx.org@1.9.10"></script>
   <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
   <script src="https://cdn.tailwindcss.com"></script>
