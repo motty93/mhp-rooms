@@ -5,7 +5,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{.Title}} - AdPaHub</title>
+  <title>{{.Title}} - アドパHub</title>
+  <meta name="description" content="PSPゲームのアドホックパーティを簡単に作成・参加できるサービス。モンハンポータブルシリーズでオンライン対戦を楽しもう。">
+  <meta name="keywords" content="アドパHub,アドパハブ,AdPaHub,PSP,アドホック,パーティ,モンハン,モンスターハンター,ポータブル,オンライン,対戦,協力プレイ">
+  <meta name="author" content="アドパHub">
+  <meta property="og:title" content="{{.Title}} - アドパHub">
+  <meta property="og:description" content="PSPゲームのアドホックパーティを簡単に作成・参加できるサービス">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="アドパHub">
   <script src="https://unpkg.com/htmx.org@1.9.10"></script>
   <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -87,8 +94,8 @@
       <!-- メニューヘッダー -->
       <div class="flex items-center justify-between p-6 border-b border-gray-200">
         <div class="flex items-center space-x-3">
-          <img src="/static/images/icon.png" alt="AdPaHub" class="w-8 h-8">
-          <h2 class="text-xl font-bold text-gray-800">AdPaHub</h2>
+          <img src="/static/images/icon.png" alt="アドパHub" class="w-8 h-8">
+          <h2 class="text-xl font-bold text-gray-800">アドパHub</h2>
         </div>
         <button @click="$store.mobileMenu.close()" class="text-gray-500 hover:text-gray-700">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

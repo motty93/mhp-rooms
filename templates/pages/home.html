@@ -1,5 +1,24 @@
 {{define "head"}}
-<!-- ホームページ固有のheadタグ内容 -->
+<meta name="description" content="PSPゲームのアドホックパーティを簡単に作成・参加。モンハンポータブルシリーズ対応のオンライン協力プレイサービス - アドパHub（アドパハブ）">
+<meta name="keywords" content="PSP,アドホック,パーティ,モンハン,MHP,MHP2,MHP2G,MHP3,オンライン,協力プレイ,アドパHub,アドパハブ">
+<meta property="og:title" content="PSPアドホックパーティ募集 - アドパHub">
+<meta property="og:description" content="PSPゲームのアドホックパーティを簡単に作成・参加。モンハンポータブルシリーズ対応のオンライン協力プレイサービス">
+<meta property="og:type" content="website">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "アドパHub",
+  "alternateName": "アドパハブ",
+  "url": "{{.BaseURL}}",
+  "description": "PSPゲームのアドホックパーティを簡単に作成・参加できるサービス",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "{{.BaseURL}}/rooms?q={search_term_string}",
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>
 {{end}}
 
 {{define "page"}}
