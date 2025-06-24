@@ -72,7 +72,9 @@ func main() {
 	r.HandleFunc("/terms", handler.TermsHandler).Methods("GET")
 	r.HandleFunc("/privacy", handler.PrivacyHandler).Methods("GET")
 	r.HandleFunc("/contact", handler.ContactHandler).Methods("GET", "POST")
+	r.HandleFunc("/faq", handler.FAQHandler).Methods("GET")
 	r.HandleFunc("/hello", handlers.HelloHandler).Methods("GET")
+	r.HandleFunc("/sitemap.xml", handler.SitemapHandler).Methods("GET")
 
 	r.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
