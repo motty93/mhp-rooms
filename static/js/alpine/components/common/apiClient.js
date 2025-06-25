@@ -4,11 +4,11 @@ export const apiClient = {
     const response = await fetch(url, {
       ...options,
       headers: {
-        'Accept': 'application/json',
-        ...options.headers
-      }
-    });
-    return response;
+        Accept: 'application/json',
+        ...options.headers,
+      },
+    })
+    return response
   },
 
   async post(url, data, options = {}) {
@@ -17,12 +17,12 @@ export const apiClient = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        ...options.headers
+        Accept: 'application/json',
+        ...options.headers,
       },
-      body: JSON.stringify(data)
-    });
-    return response;
+      body: JSON.stringify(data),
+    })
+    return response
   },
 
   async put(url, data, options = {}) {
@@ -31,12 +31,12 @@ export const apiClient = {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        ...options.headers
+        Accept: 'application/json',
+        ...options.headers,
       },
-      body: JSON.stringify(data)
-    });
-    return response;
+      body: JSON.stringify(data),
+    })
+    return response
   },
 
   async delete(url, options = {}) {
@@ -44,10 +44,10 @@ export const apiClient = {
       ...options,
       method: 'DELETE',
       headers: {
-        'Accept': 'application/json',
-        ...options.headers
-      }
-    });
-    return response;
-  }
-};
+        Accept: 'application/json',
+        ...options.headers,
+      },
+    })
+    return response
+  },
+}

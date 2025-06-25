@@ -6,7 +6,8 @@
 {{end}}
 
 {{define "page"}}
-<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8" x-data="completeProfile()">
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8"
+  x-data="completeProfile()">
   <div class="max-w-md w-full space-y-8">
     <!-- ヘッダー -->
     <div class="text-center">
@@ -130,4 +131,12 @@
     </p>
   </div>
 </div>
+
+<script type="module">
+  import {
+    completeProfile
+  } from '/static/js/alpine/components/auth/completeProfile.js';
+  Alpine.data('completeProfile', completeProfile);
+
+</script>
 {{end}}

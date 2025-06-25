@@ -43,38 +43,6 @@
   <!-- ローカルライブラリ -->
   <script src="/static/js/vendor/htmx.min.js"></script>
   <script src="/static/js/vendor/alpine.min.js" defer></script>
-
-  <!-- Alpine.js初期化前にストアを準備 -->
-  <script>
-    document.addEventListener('alpine:init', () => {
-      // 一時的な初期化（app.jsが読み込まれるまで）
-      if (!Alpine.store('auth')) {
-        Alpine.store('auth', {
-          isAuthenticated: false,
-          user: null,
-          init() {},
-          checkStatus() {},
-          login() {},
-          logout() {},
-          handleUnauthenticatedAction() {}
-        });
-      }
-      if (!Alpine.store('mobileMenu')) {
-        Alpine.store('mobileMenu', {
-          open: false,
-          toggle() {
-            this.open = !this.open
-          },
-          close() {
-            this.open = false
-          }
-        });
-      }
-    });
-
-  </script>
-
-  <!-- Alpine.jsアプリケーション（ESモジュールとして読み込み） -->
   <script type="module" src="/static/js/alpine/app.js"></script>
 
   <!-- Tailwind CSSは開発用にCDNを維持 -->
