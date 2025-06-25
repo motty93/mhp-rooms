@@ -28,7 +28,9 @@
       "Bash(docker exec:*)",
       "Bash(kill:*)",
       "Bash(go run:*)",
-      "Bash(true)"
+      "Bash(true)",
+      "Bash(tree:*)",
+      "Bash(wget:*)"
     ],
     "deny": []
   }

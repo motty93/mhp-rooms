@@ -13,32 +13,71 @@
   <meta property="og:description" content="PSPゲームのアドホックパーティを簡単に作成・参加できるサービス">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="アドパHub">
-  
+
   <!-- 構造化データ：サイトナビゲーション -->
   <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "WebSite",
-        "@id": "https://adpahub.com/#website",
-        "url": "https://adpahub.com/",
-        "name": "アドパHub",
-        "description": "PSPゲームのアドホックパーティを簡単に作成・参加できるサービス",
-        "inLanguage": "ja"
-      },
-      {
-        "@type": "SiteNavigationElement",
-        "@id": "https://adpahub.com/#navigation",
-        "name": ["ホーム", "部屋一覧", "ログイン", "新規登録", "お問い合わせ", "利用規約", "プライバシーポリシー"],
-        "url": ["https://adpahub.com/", "https://adpahub.com/rooms", "https://adpahub.com/auth/login", "https://adpahub.com/auth/register", "https://adpahub.com/contact", "https://adpahub.com/terms", "https://adpahub.com/privacy"]
-      }
-    ]
-  }
+    {
+      "@context": "https://schema.org",
+      "@graph": [{
+          "@type": "WebSite",
+          "@id": "https://adpahub.com/#website",
+          "url": "https://adpahub.com/",
+          "name": "アドパHub",
+          "description": "PSPゲームのアドホックパーティを簡単に作成・参加できるサービス",
+          "inLanguage": "ja"
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "@id": "https://adpahub.com/#navigation",
+          "name": ["ホーム", "部屋一覧", "ログイン", "新規登録", "お問い合わせ", "利用規約", "プライバシーポリシー"],
+          "url": ["https://adpahub.com/", "https://adpahub.com/rooms", "https://adpahub.com/auth/login",
+            "https://adpahub.com/auth/register", "https://adpahub.com/contact", "https://adpahub.com/terms",
+            "https://adpahub.com/privacy"
+          ]
+        }
+      ]
+    }
+
   </script>
-  
-  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-  <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+  <!-- ローカルライブラリ -->
+  <script src="/static/js/vendor/htmx.min.js"></script>
+  <script src="/static/js/vendor/alpine.min.js" defer></script>
+
+  <!-- Alpine.js初期化前にストアを準備 -->
+  <script>
+    document.addEventListener('alpine:init', () => {
+      // 一時的な初期化（app.jsが読み込まれるまで）
+      if (!Alpine.store('auth')) {
+        Alpine.store('auth', {
+          isAuthenticated: false,
+          user: null,
+          init() {},
+          checkStatus() {},
+          login() {},
+          logout() {},
+          handleUnauthenticatedAction() {}
+        });
+      }
+      if (!Alpine.store('mobileMenu')) {
+        Alpine.store('mobileMenu', {
+          open: false,
+          toggle() {
+            this.open = !this.open
+          },
+          close() {
+            this.open = false
+          }
+        });
+      }
+    });
+
+  </script>
+
+  <!-- Alpine.jsアプリケーション（ESモジュールとして読み込み） -->
+  <script type="module" src="/static/js/alpine/app.js"></script>
+
+  <!-- Tailwind CSSは開発用にCDNを維持 -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="icon" type="image/x-icon" href="/static/images/icons/favicon.ico">
   <link rel="icon" type="image/x-icon" sizes="32x32" href="/static/images/icons/favicon-32x32.ico">
@@ -53,50 +92,7 @@
   {{template "head" .}}
 </head>
 
-<body class="bg-gray-50 min-h-screen flex flex-col" x-data x-init="
-  Alpine.store('mobileMenu', {
-    open: false,
-    toggle() { this.open = !this.open },
-    close() { this.open = false }
-  });
-
-  Alpine.store('auth', {
-    isAuthenticated: false,
-    user: null,
-
-    init() {
-      this.checkStatus();
-    },
-
-    checkStatus() {
-      const authToken = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
-      this.isAuthenticated = authToken !== null && authToken !== '';
-      if (this.isAuthenticated && !this.user) {
-        this.user = { name: 'ユーザー名' }; // 仮実装
-      }
-    },
-
-    login(token, user = null) {
-      localStorage.setItem('auth_token', token);
-      this.isAuthenticated = true;
-      this.user = user || { name: 'ユーザー名' };
-    },
-
-    logout() {
-      localStorage.removeItem('auth_token');
-      sessionStorage.removeItem('auth_token');
-      this.isAuthenticated = false;
-      this.user = null;
-    },
-
-    handleUnauthenticatedAction() {
-      alert('この機能を利用するにはログインが必要です。');
-    }
-  });
-
-  // 初期化
-  $store.auth.init();
-">
+<body class="bg-gray-50 min-h-screen flex flex-col" x-data>
   {{template "header" .}}
 
   <!-- モバイルメニュー -->
@@ -113,7 +109,8 @@
       class="fixed top-0 right-0 h-full w-80 bg-white shadow-lg z-[9999] overflow-y-auto"
       x-transition:enter="transition ease-out duration-300" x-transition:enter-start="transform translate-x-full"
       x-transition:enter-end="transform translate-x-0" x-transition:leave="transition ease-in duration-200"
-      x-transition:leave-start="transform translate-x-0" x-transition:leave-end="transform translate-x-full" style="display: none;">
+      x-transition:leave-start="transform translate-x-0" x-transition:leave-end="transform translate-x-full"
+      style="display: none;">
 
       <!-- メニューヘッダー -->
       <div class="flex items-center justify-between p-6 border-b border-gray-200">
@@ -131,7 +128,7 @@
       <!-- メニュー内容 -->
       <div class="p-6">
         <!-- 未認証時のメニュー -->
-        <div x-show="!$store.auth.isAuthenticated" x-cloak style="display: none;">
+        <div x-show="!$store.auth.isAuthenticated" x-cloak>
           <div class="space-y-4">
             <a href="/auth/login" @click="$store.mobileMenu.close()"
               class="block w-full text-center bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors">
@@ -152,7 +149,7 @@
         </div>
 
         <!-- 認証済み時のメニュー -->
-        <div x-show="$store.auth.isAuthenticated" x-cloak style="display: none;">
+        <div x-show="$store.auth.isAuthenticated" x-cloak>
           <div class="space-y-2">
             <a href="/rooms" @click="$store.mobileMenu.close()"
               class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
@@ -198,17 +195,6 @@
   <!-- Alpine.js debug commands for development -->
   <script>
     // コンソールからテスト可能にする（開発用）
-    window.debugAuth = {
-      login: () => {
-        Alpine.store('auth').login('debug_token_' + Date.now());
-        console.log('Debug: ログイン状態にしました');
-      },
-      logout: () => {
-        Alpine.store('auth').logout();
-        console.log('Debug: ログアウト状態にしました');
-      },
-      checkStatus: () => Alpine.store('auth').checkStatus()
-    };
 
   </script>
 </body>
