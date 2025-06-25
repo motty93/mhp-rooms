@@ -24,9 +24,9 @@
 
 ### フロントエンド
 - **テンプレートエンジン**: Go HTML/Template
-- **UIライブラリ**: htmx (非同期通信)
-- **状態管理**: Alpine.js
-- **スタイリング**: Tailwind CSS
+- **UIライブラリ**: htmx (非同期通信・DOM更新)
+- **状態管理**: Alpine.js (インライン記述)
+- **スタイリング**: Tailwind CSS (CDN)
 
 ### インフラ・ツール
 - **コンテナ**: Docker & Docker Compose
@@ -42,9 +42,12 @@
 │   ├── migrate/           # DBマイグレーション
 │   └── seed/              # シードデータ投入
 ├── internal/              # 内部パッケージ
+│   ├── config/            # アプリケーション設定
 │   ├── database/          # DB接続・設定
 │   ├── handlers/          # HTTPハンドラー
-│   └── models/            # データモデル  
+│   ├── models/            # データモデル
+│   ├── repository/        # データアクセス層
+│   └── utils/             # ユーティリティ関数
 ├── templates/             # HTMLテンプレート
 │   ├── layouts/           # レイアウトテンプレート
 │   ├── pages/             # ページテンプレート
@@ -52,7 +55,9 @@
 ├── static/                # 静的ファイル
 │   ├── css/              # スタイルシート
 │   ├── js/               # JavaScript
+│   │   └── vendor/       # サードパーティライブラリ
 │   └── images/           # 画像ファイル
+│       └── icons/        # アイコン画像
 ├── scripts/               # DBスクリプト
 ├── docs/                  # ドキュメント
 │   └── logs/             # 実装ログ
@@ -60,6 +65,7 @@
 ├── Makefile              # ビルドタスク
 ├── compose.yml           # Docker Compose設定
 ├── fly.toml              # Fly.io設定
+├── CLAUDE.md             # AI開発支援ガイド
 └── README.md
 ```
 
@@ -113,17 +119,33 @@ make fmt           # コードをフォーマット
 make clean         # ビルド成果物をクリーンアップ
 make migrate       # DBマイグレーションを実行
 make seed          # シードデータを投入
-make docker-up     # Dockerコンテナを起動
-make docker-down   # Dockerコンテナを停止
+make container-up  # Dockerコンテナを起動
+make container-down # Dockerコンテナを停止
 ```
 
 ## 環境変数
 
 アプリケーションは以下の環境変数を使用します：
 
-- `DATABASE_URL`: PostgreSQL接続文字列
+### データベース設定
+- `DATABASE_URL`: PostgreSQL接続文字列（優先使用）
+- `DB_HOST`: データベースホスト
+- `DB_USER`: データベースユーザー名
+- `DB_PASSWORD`: データベースパスワード
+- `DB_NAME`: データベース名
+- `DB_PORT`: データベースポート（デフォルト: 5432）
+- `DB_SSLMODE`: SSL接続モード（デフォルト: disable）
+
+### アプリケーション設定
 - `PORT`: サーバーポート（デフォルト: 8080）
-- `APP_ENV`: 実行環境（development/production）
+- `ENV`: 実行環境（development/production）
+- `SESSION_SECRET`: セッションシークレットキー
+- `JWT_SECRET`: JWT署名用シークレットキー
+
+### Google OAuth設定
+- `GOOGLE_CLIENT_ID`: Google OAuth クライアントID
+- `GOOGLE_CLIENT_SECRET`: Google OAuth クライアントシークレット
+- `GOOGLE_REDIRECT_URL`: Google OAuth リダイレクトURL
 
 ## API仕様
 
