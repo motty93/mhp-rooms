@@ -8,6 +8,12 @@ body {
   display: none !important;
 }
 
+/* モバイルメニューの初期状態を強制的に非表示 */
+.md\\:hidden > div[class*="fixed"][class*="inset-0"],
+.md\\:hidden > div[class*="fixed"][class*="top-0"][class*="right-0"] {
+  display: none;
+}
+
 /* モーダルアニメーション */
 .modal-button {
   transition: all 0.2s ease-in-out;
@@ -72,6 +78,7 @@ body {
   min-height: 40px;
   max-width: 40px;
   max-height: 40px;
+  background-image: none;
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
@@ -79,21 +86,156 @@ body {
 }
 
 .mhp-icon {
-  background-image: url('/static/images/mhp-icon.png');
-  background-color: rgba(139, 69, 19, 0.3); /* fallback color */
+  background-color: rgba(139, 69, 19, 0.8); /* MHP色 - 茶色系 */
+  background-image: none;
+  position: relative;
+}
+.mhp-icon::before {
+  content: 'MHP';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }
 .mhp2-icon {
-  background-image: url('/static/images/mhp2-icon.png');
-  background-color: rgba(70, 130, 180, 0.3); /* fallback color */
+  background-color: rgba(70, 130, 180, 0.8); /* MHP2色 - 青色系 */
+  background-image: none;
+  position: relative;
+}
+.mhp2-icon::before {
+  content: 'MHP2';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 9px;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }
 .mhp2g-icon {
-  background-image: url('/static/images/mhp2g-icon.png');
-  background-color: rgba(34, 139, 34, 0.3); /* fallback color */
+  background-color: rgba(34, 139, 34, 0.8); /* MHP2G色 - 緑色系 */
+  background-image: none;
+  position: relative;
+}
+.mhp2g-icon::before {
+  content: 'MHP2G';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 8px;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }
 .mhp3-icon {
-  background-image: url('/static/images/mhp3-icon.png');
-  background-color: rgba(218, 165, 32, 0.3); /* fallback color */
+  background-color: rgba(218, 165, 32, 0.8); /* MHP3色 - 金色系 */
+  background-image: none;
+  position: relative;
 }
+.mhp3-icon::before {
+  content: 'MHP3';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 9px;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+/* 大文字版のゲームアイコンも対応 */
+.MHP-icon, .Mhp-icon {
+  background-color: rgba(139, 69, 19, 0.8); /* MHP色 - 茶色系 */
+  background-image: none;
+  position: relative;
+}
+.MHP-icon::before, .Mhp-icon::before {
+  content: 'MHP';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.MHP2-icon, .Mhp2-icon {
+  background-color: rgba(70, 130, 180, 0.8); /* MHP2色 - 青色系 */
+  background-image: none;
+  position: relative;
+}
+.MHP2-icon::before, .Mhp2-icon::before {
+  content: 'MHP2';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 9px;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.MHP2G-icon, .Mhp2g-icon {
+  background-color: rgba(34, 139, 34, 0.8); /* MHP2G色 - 緑色系 */
+  background-image: none;
+  position: relative;
+}
+.MHP2G-icon::before, .Mhp2g-icon::before {
+  content: 'MHP2G';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 8px;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.MHP3-icon, .Mhp3-icon {
+  background-color: rgba(218, 165, 32, 0.8); /* MHP3色 - 金色系 */
+  background-image: none;
+  position: relative;
+}
+.MHP3-icon::before, .Mhp3-icon::before {
+  content: 'MHP3';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 9px;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+/* デフォルトのゲームアイコン（未定義の場合） */
+.game-icon:not([class*="-icon"]):not(.mhp-icon):not(.mhp2-icon):not(.mhp2g-icon):not(.mhp3-icon) {
+  background-color: rgba(128, 128, 128, 0.8);
+  position: relative;
+}
+.game-icon:not([class*="-icon"]):not(.mhp-icon):not(.mhp2-icon):not(.mhp2g-icon):not(.mhp3-icon)::before {
+  content: attr(data-game);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 8px;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
 
 /* モバイルでデスクトップ認証ボタンを非表示 */
 @media (max-width: 767px) {

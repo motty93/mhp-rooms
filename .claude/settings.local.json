@@ -27,7 +27,8 @@
       "Bash(go build:*)",
       "Bash(docker exec:*)",
       "Bash(kill:*)",
-      "Bash(go run:*)"
+      "Bash(go run:*)",
+      "Bash(true)"
     ],
     "deny": []
   }

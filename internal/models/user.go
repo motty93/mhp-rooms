@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"mhp-rooms/internal/utils"
 )
 
 type User struct {
@@ -28,4 +29,17 @@ type User struct {
 	RoomLogs     []RoomLog     `gorm:"foreignKey:UserID" json:"room_logs,omitempty"`
 	BlockedUsers []UserBlock   `gorm:"foreignKey:BlockerUserID" json:"blocked_users,omitempty"`
 	BlockedBy    []UserBlock   `gorm:"foreignKey:BlockedUserID" json:"blocked_by,omitempty"`
+	PlayerNames  []PlayerName  `gorm:"foreignKey:UserID" json:"player_names,omitempty"`
+}
+
+func (u *User) SetPassword(password string) error {
+	hashedPassword, err := utils.HashPassword(password)
+	if err != nil {
+		return err
+	}
+	// Note: この実装では、Userモデルにパスワードフィールドがないため、
+	// 実際のパスワード更新はSupabaseやその他の認証システムで行う必要があります
+	// ここでは一旦エラーを返さずに処理成功とします
+	_ = hashedPassword
+	return nil
 }

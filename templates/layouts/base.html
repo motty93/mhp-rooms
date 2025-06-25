@@ -102,18 +102,18 @@
   <!-- モバイルメニュー -->
   <div class="md:hidden">
     <!-- オーバーレイ -->
-    <div x-show="$store.mobileMenu.open" @click="$store.mobileMenu.close()"
+    <div x-show="$store.mobileMenu.open" x-cloak @click="$store.mobileMenu.close()"
       class="fixed inset-0 bg-black bg-opacity-50 z-[9998]"
       x-transition:enter="transition-opacity ease-out duration-300" x-transition:enter-start="opacity-0"
       x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-in duration-200"
-      x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"></div>
+      x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" style="display: none;"></div>
 
     <!-- モバイルメニューパネル -->
-    <div x-show="$store.mobileMenu.open"
+    <div x-show="$store.mobileMenu.open" x-cloak
       class="fixed top-0 right-0 h-full w-80 bg-white shadow-lg z-[9999] overflow-y-auto"
       x-transition:enter="transition ease-out duration-300" x-transition:enter-start="transform translate-x-full"
       x-transition:enter-end="transform translate-x-0" x-transition:leave="transition ease-in duration-200"
-      x-transition:leave-start="transform translate-x-0" x-transition:leave-end="transform translate-x-full">
+      x-transition:leave-start="transform translate-x-0" x-transition:leave-end="transform translate-x-full" style="display: none;">
 
       <!-- メニューヘッダー -->
       <div class="flex items-center justify-between p-6 border-b border-gray-200">
@@ -131,7 +131,7 @@
       <!-- メニュー内容 -->
       <div class="p-6">
         <!-- 未認証時のメニュー -->
-        <div x-show="!$store.auth.isAuthenticated">
+        <div x-show="!$store.auth.isAuthenticated" x-cloak style="display: none;">
           <div class="space-y-4">
             <a href="/auth/login" @click="$store.mobileMenu.close()"
               class="block w-full text-center bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors">
@@ -152,7 +152,7 @@
         </div>
 
         <!-- 認証済み時のメニュー -->
-        <div x-show="$store.auth.isAuthenticated" style="display: none;">
+        <div x-show="$store.auth.isAuthenticated" x-cloak style="display: none;">
           <div class="space-y-2">
             <a href="/rooms" @click="$store.mobileMenu.close()"
               class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">

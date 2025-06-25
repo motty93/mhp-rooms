@@ -73,6 +73,30 @@ func main() {
 	r.HandleFunc("/privacy", handler.PrivacyHandler).Methods("GET")
 	r.HandleFunc("/contact", handler.ContactHandler).Methods("GET", "POST")
 	r.HandleFunc("/faq", handler.FAQHandler).Methods("GET")
+	
+	// 認証関連
+	r.HandleFunc("/auth/login", handler.LoginPageHandler).Methods("GET")
+	r.HandleFunc("/auth/login", handler.LoginHandler).Methods("POST")
+	r.HandleFunc("/auth/register", handler.RegisterPageHandler).Methods("GET")
+	r.HandleFunc("/auth/register", handler.RegisterHandler).Methods("POST")
+	
+	// パスワードリセット
+	r.HandleFunc("/auth/password-reset", handler.PasswordResetPageHandler).Methods("GET")
+	r.HandleFunc("/auth/password-reset", handler.PasswordResetRequestHandler).Methods("POST")
+	r.HandleFunc("/auth/password-reset/confirm", handler.PasswordResetConfirmPageHandler).Methods("GET")
+	r.HandleFunc("/auth/password-reset/confirm", handler.PasswordResetConfirmHandler).Methods("POST")
+	
+	// Google OAuth（準備中）
+	r.HandleFunc("/auth/google", handler.GoogleAuthHandler).Methods("GET")
+	r.HandleFunc("/auth/google/callback", handler.GoogleCallbackHandler).Methods("GET")
+	
+	// プロフィール補完
+	r.HandleFunc("/auth/complete-profile", handler.CompleteProfilePageHandler).Methods("GET")
+	r.HandleFunc("/auth/complete-profile", handler.CompleteProfileHandler).Methods("POST")
+	
+	// API
+	r.HandleFunc("/api/user/current", handler.CurrentUserHandler).Methods("GET")
+	
 	r.HandleFunc("/hello", handlers.HelloHandler).Methods("GET")
 	r.HandleFunc("/sitemap.xml", handler.SitemapHandler).Methods("GET")
 

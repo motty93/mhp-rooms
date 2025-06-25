@@ -77,6 +77,18 @@ func (h *Handler) SitemapHandler(w http.ResponseWriter, r *http.Request) {
 			ChangeFreq: "monthly",
 			Priority:   0.6,
 		},
+		{
+			Loc:        baseURL + "/auth/login",
+			LastMod:    now,
+			ChangeFreq: "monthly",
+			Priority:   0.8,
+		},
+		{
+			Loc:        baseURL + "/auth/register",
+			LastMod:    now,
+			ChangeFreq: "monthly",
+			Priority:   0.8,
+		},
 	}
 
 	// URLSet構造体の作成

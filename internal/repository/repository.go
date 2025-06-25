@@ -7,16 +7,18 @@ import (
 )
 
 type Repository struct {
-	User        UserRepository
-	GameVersion GameVersionRepository
-	Room        RoomRepository
+	User          UserRepository
+	GameVersion   GameVersionRepository
+	Room          RoomRepository
+	PasswordReset PasswordResetRepository
 }
 
 func NewRepository(db *database.DB) *Repository {
 	return &Repository{
-		User:        NewUserRepository(db),
-		GameVersion: NewGameVersionRepository(db),
-		Room:        NewRoomRepository(db),
+		User:          NewUserRepository(db),
+		GameVersion:   NewGameVersionRepository(db),
+		Room:          NewRoomRepository(db),
+		PasswordReset: NewPasswordResetRepository(db),
 	}
 }
 
