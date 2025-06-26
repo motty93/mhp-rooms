@@ -73,6 +73,7 @@ func main() {
 	r.HandleFunc("/privacy", h.PrivacyHandler).Methods("GET")
 	r.HandleFunc("/contact", h.ContactHandler).Methods("GET", "POST")
 	r.HandleFunc("/faq", h.FAQHandler).Methods("GET")
+	r.HandleFunc("/guide", h.GuideHandler).Methods("GET")
 
 	// 認証関連
 	r.HandleFunc("/auth/login", h.LoginPageHandler).Methods("GET")
