@@ -52,7 +52,7 @@ func main() {
 
 	// 依存関係を構築
 	repo := repository.NewRepository(db)
-	handler := handlers.NewHandler(repo)
+	h := handlers.NewHandler(repo)
 
 	// MIME type
 	mime.AddExtensionType(".css", "text/css")
@@ -63,42 +63,42 @@ func main() {
 
 	r := mux.NewRouter()
 
-	r.HandleFunc("/", handler.HomeHandler).Methods("GET")
-	r.HandleFunc("/rooms", handler.RoomsHandler).Methods("GET")
-	r.HandleFunc("/rooms", handler.CreateRoomHandler).Methods("POST")
-	r.HandleFunc("/rooms/{id}/join", handler.JoinRoomHandler).Methods("POST")
-	r.HandleFunc("/rooms/{id}/leave", handler.LeaveRoomHandler).Methods("POST")
-	r.HandleFunc("/rooms/{id}/toggle-closed", handler.ToggleRoomClosedHandler).Methods("PUT")
-	r.HandleFunc("/terms", handler.TermsHandler).Methods("GET")
-	r.HandleFunc("/privacy", handler.PrivacyHandler).Methods("GET")
-	r.HandleFunc("/contact", handler.ContactHandler).Methods("GET", "POST")
-	r.HandleFunc("/faq", handler.FAQHandler).Methods("GET")
-	
+	r.HandleFunc("/", h.HomeHandler).Methods("GET")
+	r.HandleFunc("/rooms", h.RoomsHandler).Methods("GET")
+	r.HandleFunc("/rooms", h.CreateRoomHandler).Methods("POST")
+	r.HandleFunc("/rooms/{id}/join", h.JoinRoomHandler).Methods("POST")
+	r.HandleFunc("/rooms/{id}/leave", h.LeaveRoomHandler).Methods("POST")
+	r.HandleFunc("/rooms/{id}/toggle-closed", h.ToggleRoomClosedHandler).Methods("PUT")
+	r.HandleFunc("/terms", h.TermsHandler).Methods("GET")
+	r.HandleFunc("/privacy", h.PrivacyHandler).Methods("GET")
+	r.HandleFunc("/contact", h.ContactHandler).Methods("GET", "POST")
+	r.HandleFunc("/faq", h.FAQHandler).Methods("GET")
+
 	// 認証関連
-	r.HandleFunc("/auth/login", handler.LoginPageHandler).Methods("GET")
-	r.HandleFunc("/auth/login", handler.LoginHandler).Methods("POST")
-	r.HandleFunc("/auth/register", handler.RegisterPageHandler).Methods("GET")
-	r.HandleFunc("/auth/register", handler.RegisterHandler).Methods("POST")
-	
+	r.HandleFunc("/auth/login", h.LoginPageHandler).Methods("GET")
+	r.HandleFunc("/auth/login", h.LoginHandler).Methods("POST")
+	r.HandleFunc("/auth/register", h.RegisterPageHandler).Methods("GET")
+	r.HandleFunc("/auth/register", h.RegisterHandler).Methods("POST")
+
 	// パスワードリセット
-	r.HandleFunc("/auth/password-reset", handler.PasswordResetPageHandler).Methods("GET")
-	r.HandleFunc("/auth/password-reset", handler.PasswordResetRequestHandler).Methods("POST")
-	r.HandleFunc("/auth/password-reset/confirm", handler.PasswordResetConfirmPageHandler).Methods("GET")
-	r.HandleFunc("/auth/password-reset/confirm", handler.PasswordResetConfirmHandler).Methods("POST")
-	
+	r.HandleFunc("/auth/password-reset", h.PasswordResetPageHandler).Methods("GET")
+	r.HandleFunc("/auth/password-reset", h.PasswordResetRequestHandler).Methods("POST")
+	r.HandleFunc("/auth/password-reset/confirm", h.PasswordResetConfirmPageHandler).Methods("GET")
+	r.HandleFunc("/auth/password-reset/confirm", h.PasswordResetConfirmHandler).Methods("POST")
+
 	// Google OAuth（準備中）
-	r.HandleFunc("/auth/google", handler.GoogleAuthHandler).Methods("GET")
-	r.HandleFunc("/auth/google/callback", handler.GoogleCallbackHandler).Methods("GET")
-	
+	r.HandleFunc("/auth/google", h.GoogleAuthHandler).Methods("GET")
+	r.HandleFunc("/auth/google/callback", h.GoogleCallbackHandler).Methods("GET")
+
 	// プロフィール補完
-	r.HandleFunc("/auth/complete-profile", handler.CompleteProfilePageHandler).Methods("GET")
-	r.HandleFunc("/auth/complete-profile", handler.CompleteProfileHandler).Methods("POST")
-	
+	r.HandleFunc("/auth/complete-profile", h.CompleteProfilePageHandler).Methods("GET")
+	r.HandleFunc("/auth/complete-profile", h.CompleteProfileHandler).Methods("POST")
+
 	// API
-	r.HandleFunc("/api/user/current", handler.CurrentUserHandler).Methods("GET")
-	
+	r.HandleFunc("/api/user/current", h.CurrentUserHandler).Methods("GET")
+
 	r.HandleFunc("/hello", handlers.HelloHandler).Methods("GET")
-	r.HandleFunc("/sitemap.xml", handler.SitemapHandler).Methods("GET")
+	r.HandleFunc("/sitemap.xml", h.SitemapHandler).Methods("GET")
 
 	r.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
