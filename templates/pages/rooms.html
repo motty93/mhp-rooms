@@ -1,8 +1,8 @@
 {{define "head"}}
-<meta name="description" content="PSPアドホックパーティ部屋一覧 - アドパHub（アドパハブ）。モンハンポータブルシリーズの協力プレイルームを検索・参加できます。">
-<meta name="keywords" content="PSP,部屋一覧,アドホック,モンハン,協力プレイ,オンライン,アドパHub,アドパハブ">
-<meta property="og:title" content="部屋一覧 - アドパHub">
-<meta property="og:description" content="PSPアドホックパーティの部屋一覧。モンハンポータブルシリーズの協力プレイを楽しもう">
+<meta name="description" content="モンスターハンター部屋一覧 - MonHub（モンハブ）。モンハンポータブルシリーズの協力プレイルームを検索・参加できます。">
+<meta name="keywords" content="モンハン,部屋一覧,モンスターハンター,協力プレイ,オンライン,MonHub,モンハブ">
+<meta property="og:title" content="部屋一覧 - MonHub">
+<meta property="og:description" content="モンスターハンターの部屋一覧。モンハンポータブルシリーズの協力プレイを楽しもう">
 {{end}}
 
 {{define "page"}}
@@ -13,7 +13,7 @@
       <div class="hidden md:flex items-center justify-between">
         <div>
           <h1 class="text-3xl font-bold text-gray-800 mb-2">部屋一覧</h1>
-          <p class="text-gray-600">アクティブなアドホックパーティ部屋を探そう</p>
+          <p class="text-gray-600">アクティブな部屋を探そう</p>
         </div>
 
         <a href="/rooms/create" x-show="$store.auth.isAuthenticated" x-cloak
@@ -32,7 +32,7 @@
       <div class="md:hidden">
         <div class="mb-4">
           <h1 class="text-2xl font-bold text-gray-800 mb-2">部屋一覧</h1>
-          <p class="text-gray-600 text-sm">アクティブなアドホックパーティ部屋を探そう</p>
+          <p class="text-gray-600 text-sm">アクティブな部屋を探そう</p>
         </div>
 
         <div class="flex justify-center">
@@ -56,142 +56,132 @@
     <div class="container mx-auto px-4">
       <div class="flex flex-wrap gap-4 items-center">
         <span class="text-sm font-medium text-gray-700">ゲームで絞り込み:</span>
-        <a href="/rooms"
-          class="{{if not .PageData.Filter}}bg-white text-gray-800 border{{else}}bg-gray-100 text-gray-600{{end}} px-4 py-2 rounded-full hover:bg-gray-100 transition-colors">
+        <button @click="filterRooms('')"
+          :class="activeFilter === '' ? 'bg-white text-gray-800 border' : 'bg-gray-100 text-gray-600'"
+          class="px-4 py-2 rounded-full hover:bg-gray-100 transition-colors">
           すべて
-        </a>
+        </button>
         {{range .PageData.GameVersions}}
-        <a href="/rooms?game_version={{.Code}}"
-          class="{{if eq $.PageData.Filter .Code}}bg-white text-gray-800 border{{else}}bg-gray-100 text-gray-600{{end}} px-4 py-2 rounded-full hover:bg-gray-200 transition-colors">
+        <button @click="filterRooms('{{.Code}}')"
+          :class="activeFilter === '{{.Code}}' ? 'bg-white text-gray-800 border' : 'bg-gray-100 text-gray-600'"
+          class="px-4 py-2 rounded-full hover:bg-gray-200 transition-colors">
           {{.Code}}
-        </a>
+        </button>
         {{end}}
       </div>
-      {{if .PageData.Total}}
-      <div class="mt-4 text-sm text-gray-600">
-        {{.PageData.Total}}件の部屋が見つかりました
+      <div class="mt-4 text-sm text-gray-600" x-show="filteredRooms.length > 0" x-cloak>
+        <span x-text="filteredRooms.length"></span>件の部屋が見つかりました
       </div>
-      {{end}}
     </div>
   </section>
 
   <section class="py-8">
     <div class="container mx-auto px-4">
-      {{if .PageData.Rooms}}
-      <div class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {{range .PageData.Rooms}}
-        <div
-          class="room-card bg-white rounded-lg shadow-md border border-gray-200 flex flex-col h-full hover:shadow-lg transition-shadow">
-          <div class="p-6 flex-grow">
-            <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center space-x-3">
-                <div class="{{.GameVersion.Code | lower}}-icon game-icon rounded" data-game="{{.GameVersion.Code}}">
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" x-show="filteredRooms.length > 0" x-cloak>
+        <template x-for="room in filteredRooms" :key="room.id">
+          <div
+            class="room-card bg-white rounded-lg shadow-md border border-gray-200 flex flex-col h-full hover:shadow-lg transition-shadow">
+            <div class="p-6 flex-grow">
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-3">
+                  <div :class="room.gameVersion.code.toLowerCase() + '-icon'" class="game-icon rounded"
+                    :data-game="room.gameVersion.code">
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-gray-800" x-text="room.name"></h4>
+                    <p class="text-sm text-gray-500" x-text="room.gameVersion.name"></p>
+                  </div>
                 </div>
-                <div>
-                  <h4 class="font-bold text-gray-800">{{.Name}}</h4>
-                  <p class="text-sm text-gray-500">{{.GameVersion.Name}}</p>
-                </div>
+
+                <template x-if="room.isClosed">
+                  <span class="bg-gray-100 text-gray-800 text-sm px-2 py-1 rounded-full">closed</span>
+                </template>
+                <template x-if="!room.isClosed">
+                  <span class="bg-green-100 text-green-800 text-sm px-2 py-1 rounded-full"
+                    x-text="room.currentPlayers + '/' + room.maxPlayers"></span>
+                </template>
               </div>
 
-              {{if .IsClosed}}
-              <span class="bg-gray-100 text-gray-800 text-sm px-2 py-1 rounded-full">closed</span>
-              {{else}}
-                <span
-                  class="bg-green-100 text-green-800 text-sm px-2 py-1 rounded-full">{{.CurrentPlayers}}/{{.MaxPlayers}}</span>
-                {{end}}
+              <template x-if="room.description">
+                <p class="text-gray-600 text-sm mb-3" x-text="room.description"></p>
+              </template>
+
+              <template x-if="room.questType || room.targetMonster || room.rankRequirement">
+                <div class="text-xs text-gray-500 space-y-1">
+                  <template x-if="room.questType">
+                    <div x-text="'タイプ: ' + room.questType"></div>
+                  </template>
+                  <template x-if="room.targetMonster">
+                    <div x-text="'ターゲット: ' + room.targetMonster"></div>
+                  </template>
+                  <template x-if="room.rankRequirement">
+                    <div x-text="'ランク: ' + room.rankRequirement"></div>
+                  </template>
+                </div>
+              </template>
             </div>
 
-            {{if .Description}}
-            <p class="text-gray-600 text-sm mb-3">{{.Description}}</p>
-            {{end}}
+            <div class="p-6 pt-0">
+              <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-500"
+                  x-text="'ホスト: ' + (room.host.username || room.host.displayName)"></span>
 
-            {{if or .QuestType .TargetMonster .RankRequirement}}
-            <div class="text-xs text-gray-500 space-y-1">
-              {{if .QuestType}}
-              <div>タイプ: {{.QuestType}}</div>{{end}}
-              {{if .TargetMonster}}
-              <div>ターゲット: {{.TargetMonster}}</div>{{end}}
-              {{if .RankRequirement}}
-              <div>ランク: {{.RankRequirement}}</div>{{end}}
-            </div>
-            {{end}}
-          </div>
+                <!-- 参加可能な部屋の場合 -->
+                <template x-if="!room.isClosed && room.currentPlayers < room.maxPlayers">
+                  <div>
+                    <!-- 認証済みユーザー用 -->
+                    <button x-show="$store.auth.isAuthenticated" x-cloak @click="openModal(room)"
+                      class="modal-button bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded text-sm transition-colors">
+                      参加
+                    </button>
 
-          <div class="p-6 pt-0">
-            <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-500">
-                ホスト: {{if .Host.Username}}{{.Host.Username}}
-                {{else}}{{.Host.DisplayName}}{{end}}
-              </span>
-
-              <!-- 参加可能な部屋の場合 -->
-              {{if and (not .IsClosed) (lt .CurrentPlayers .MaxPlayers)}}
-              <!-- 認証済みユーザー用 -->
-              <button x-show="$store.auth.isAuthenticated" x-cloak @click="openModal({
-                          id: '{{.ID}}',
-                          name: '{{.Name}}',
-                          description: '{{.Description}}',
-                          gameVersionCode: '{{.GameVersion.Code}}',
-                          gameVersionName: '{{.GameVersion.Name}}',
-                          hostName: '{{if .Host.Username}}{{.Host.Username}}{{else}}{{.Host.DisplayName}}{{end}}',
-                          currentPlayers: {{.CurrentPlayers}},
-                          maxPlayers: {{.MaxPlayers}},
-                          hasPassword: {{if .PasswordHash}}true{{else}}false{{end}}
-                        })"
-                class="modal-button bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded text-sm transition-colors">
-                参加
-              </button>
-
-              <!-- 未認証ユーザー用 -->
-              <button x-show="!$store.auth.isAuthenticated" x-cloak @click="openLoginModal()"
-                class="modal-button bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded text-sm transition-colors">
-                参加
-              </button>
-              {{else}}
+                    <!-- 未認証ユーザー用 -->
+                    <button x-show="!$store.auth.isAuthenticated" x-cloak @click="openLoginModal()"
+                      class="modal-button bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded text-sm transition-colors">
+                      参加
+                    </button>
+                  </div>
+                </template>
                 <!-- 参加不可の場合 -->
-                <button disabled class="bg-gray-400 text-white px-4 py-2 rounded text-sm cursor-not-allowed">
-                  参加不可
-                </button>
-                {{end}}
+                <template x-if="room.isClosed || room.currentPlayers >= room.maxPlayers">
+                  <button disabled class="bg-gray-400 text-white px-4 py-2 rounded text-sm cursor-not-allowed">
+                    参加不可
+                  </button>
+                </template>
+              </div>
             </div>
           </div>
-        </div>
-        {{end}}
+        </template>
       </div>
-      {{else}}
-        <!-- 空の状態 -->
-        <div class="text-center py-16">
-          <div class="text-gray-400 mb-4">
-            <svg class="w-16 h-16 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd"
-                d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
-                clip-rule="evenodd" />
-            </svg>
-          </div>
-
-          <h3 class="text-lg font-medium text-gray-500 mb-2">
-            {{if .PageData.Filter}}
-            {{.PageData.Filter}}の部屋が見つかりません
-            {{else}}
-              現在アクティブな部屋がありません
-              {{end}}
-          </h3>
-
-          <p class="text-gray-400 mb-6">新しい部屋を作って、ハンターを募集してみましょう！</p>
-
-          <!-- 部屋作成ボタン（認証状態で切り替え） -->
-          <a href="/rooms/create" x-show="$store.auth.isAuthenticated" x-cloak
-            class="inline-flex items-center bg-gray-800 hover:bg-gray-900 text-white font-medium py-2 px-4 rounded-lg transition-colors">
-            部屋を作る
-          </a>
-
-          <button x-show="!$store.auth.isAuthenticated" x-cloak @click="$store.auth.handleUnauthenticatedAction()"
-            title="ログインが必要です"
-            class="inline-flex items-center bg-gray-400 text-gray-500 font-medium py-2 px-4 rounded-lg cursor-not-allowed">
-            部屋を作る
-          </button>
+      <!-- 空の状態 -->
+      <div class="text-center py-16" x-show="filteredRooms.length === 0" x-cloak>
+        <div class="text-gray-400 mb-4">
+          <svg class="w-16 h-16 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd"
+              d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
+              clip-rule="evenodd" />
+          </svg>
         </div>
-        {{end}}
+
+        <h3 class="text-lg font-medium text-gray-500 mb-2">
+          <span x-show="activeFilter !== ''" x-text="activeFilter + 'の部屋が見つかりません'"></span>
+          <span x-show="activeFilter === ''">現在アクティブな部屋がありません</span>
+        </h3>
+
+        <p class="text-gray-400 mb-6">新しい部屋を作って、ハンターを募集してみましょう！</p>
+
+        <!-- 部屋作成ボタン（認証状態で切り替え） -->
+        <a href="/rooms/create" x-show="$store.auth.isAuthenticated" x-cloak
+          class="inline-flex items-center bg-gray-800 hover:bg-gray-900 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+          部屋を作る
+        </a>
+
+        <button x-show="!$store.auth.isAuthenticated" x-cloak @click="$store.auth.handleUnauthenticatedAction()"
+          title="ログインが必要です"
+          class="inline-flex items-center bg-gray-400 text-gray-500 font-medium py-2 px-4 rounded-lg cursor-not-allowed">
+          部屋を作る
+        </button>
+      </div>
     </div>
   </section>
 
@@ -315,13 +305,77 @@
         currentRoom: {},
         password: '',
         isJoining: false,
+        allRooms: [],
+        filteredRooms: [],
+        activeFilter: '',
+        // 初期化処理
+        init() {
+          const roomsData = {{.PageData.Rooms | json}};
+          console.log('部屋データ:', roomsData);
+
+          this.allRooms = roomsData.map(room => ({
+            id: room.id,
+            name: room.name,
+            description: room.description || '',
+            gameVersion: {
+              code: room.game_version?.code || '',
+              name: room.game_version?.name || ''
+            },
+            host: {
+              username: room.host?.username || '',
+              displayName: room.host?.display_name || ''
+            },
+            currentPlayers: room.current_players || 0,
+            maxPlayers: room.max_players || 4,
+            isClosed: room.is_closed || false,
+            hasPassword: room.password_hash ? true : false,
+            questType: room.quest_type || '',
+            targetMonster: room.target_monster || '',
+            rankRequirement: room.rank_requirement || ''
+          }));
+          // URLパラメータから初期フィルタを設定
+          const urlParams = new URLSearchParams(window.location.search);
+          const gameVersionFilter = urlParams.get('game_version') || '';
+          this.activeFilter = gameVersionFilter;
+          // 初期フィルタリング
+          this.filterRooms(gameVersionFilter);
+          // イベントリスナー設定
+          document.addEventListener('keydown', this.handleEsc.bind(this));
+        },
+        // フィルタリング機能
+        filterRooms(gameVersion) {
+          this.activeFilter = gameVersion;
+          if (gameVersion === '') {
+            this.filteredRooms = [...this.allRooms];
+          } else {
+            this.filteredRooms = this.allRooms.filter(room => room.gameVersion.code === gameVersion);
+          }
+          // URLを更新（履歴を追加せずに）
+          const url = new URL(window.location);
+          if (gameVersion) {
+            url.searchParams.set('game_version', gameVersion);
+          } else {
+            url.searchParams.delete('game_version');
+          }
+          window.history.replaceState({}, '', url);
+        },
         // 参加ボタンの有効/無効判定
         get isJoinDisabled() {
           return this.isJoining || (this.currentRoom.hasPassword && !this.password.trim())
         },
         // 部屋参加モーダルを開く
         openModal(room) {
-          this.currentRoom = room
+          this.currentRoom = {
+            id: room.id,
+            name: room.name,
+            description: room.description,
+            gameVersionCode: room.gameVersion.code,
+            gameVersionName: room.gameVersion.name,
+            hostName: room.host.username || room.host.displayName,
+            currentPlayers: room.currentPlayers,
+            maxPlayers: room.maxPlayers,
+            hasPassword: room.hasPassword
+          };
           this.password = ''
           this.isJoining = false
           this.showModal = true
@@ -382,10 +436,6 @@
           if (event.key === 'Escape' && this.showModal) {
             this.closeModal()
           }
-        },
-        // 初期化処理
-        init() {
-          document.addEventListener('keydown', this.handleEsc.bind(this))
         },
         // クリーンアップ処理
         destroy() {

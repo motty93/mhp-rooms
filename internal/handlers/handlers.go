@@ -36,6 +36,13 @@ func renderTemplate(w http.ResponseWriter, templateName string, data TemplateDat
 		"lower": func(s string) string {
 			return strings.ToLower(s)
 		},
+		"json": func(v interface{}) template.JS {
+			b, err := json.Marshal(v)
+			if err != nil {
+				return template.JS("[]")
+			}
+			return template.JS(b)
+		},
 	}
 
 	// 必要なテンプレートファイルを全て読み込み

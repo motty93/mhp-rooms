@@ -28,26 +28,31 @@ func (h *Handler) RoomsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var gameVersionID *uuid.UUID
-	if filter != "" {
-		gameVersion, err := h.repo.FindGameVersionByCode(filter)
-		if err == nil && gameVersion != nil {
-			gameVersionID = &gameVersion.ID
-		}
-	}
-
-	rooms, err := h.repo.GetActiveRooms(gameVersionID, 100, 0)
+	// 常にすべてのアクティブな部屋を取得
+	rooms, err := h.repo.GetActiveRooms(nil, 100, 0)
 	if err != nil {
 		log.Printf("ルーム取得エラー: %v", err)
 		http.Error(w, "ルーム一覧の取得に失敗しました", http.StatusInternalServerError)
 		return
 	}
 
-	// 総件数を計算（簡易的に）
-	total := int64(len(rooms))
+	// URLパラメータでフィルタが指定されている場合は、サーバー側でフィルタリング
+	filteredRooms := rooms
+	if filter != "" {
+		var filtered []models.Room
+		for _, room := range rooms {
+			if room.GameVersion.Code == filter {
+				filtered = append(filtered, room)
+			}
+		}
+		filteredRooms = filtered
+	}
+
+	// 総件数を計算
+	total := int64(len(filteredRooms))
 
 	pageData := RoomsPageData{
-		Rooms:        rooms,
+		Rooms:        filteredRooms,
 		GameVersions: gameVersions,
 		Filter:       filter,
 		Total:        total,

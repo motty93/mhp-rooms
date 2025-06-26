@@ -24,7 +24,7 @@ type URLSet struct {
 
 // SitemapHandler generates XML sitemap for the website
 func (h *Handler) SitemapHandler(w http.ResponseWriter, r *http.Request) {
-	baseURL := "https://adpahub.com"
+	baseURL := "https://monhub.com"
 	now := time.Now().Format("2006-01-02")
 
 	// サイトマップのURL定義
@@ -76,6 +76,12 @@ func (h *Handler) SitemapHandler(w http.ResponseWriter, r *http.Request) {
 			LastMod:    now,
 			ChangeFreq: "monthly",
 			Priority:   0.6,
+		},
+		{
+			Loc:        baseURL + "/guide",
+			LastMod:    now,
+			ChangeFreq: "monthly",
+			Priority:   0.7,
 		},
 		{
 			Loc:        baseURL + "/auth/login",
