@@ -133,117 +133,109 @@
 </div>
 
 <script>
-document.addEventListener('alpine:init', () => {
-  Alpine.data('completeProfile', () => ({
-    form: {
-      psnId: '',
-    },
-    userInfo: {
-      displayName: '',
-      email: '',
-      avatarUrl: '',
-    },
-    fieldError: false,
-    errorText: '',
-    errorMessage: '',
-    successMessage: '',
-    isLoading: false,
-
-    init() {
-      this.fetchUserInfo()
-    },
-
-    async fetchUserInfo() {
-      try {
-        const response = await fetch('/api/user/current', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'same-origin'
-        })
-        if (response.ok) {
-          const data = await response.json()
-          this.userInfo = {
-            displayName: data.display_name || data.email.split('@')[0],
-            email: data.email,
-            avatarUrl: data.avatar_url || '',
+  document.addEventListener('alpine:init', () => {
+    Alpine.data('completeProfile', () => ({
+      form: {
+        psnId: '',
+      },
+      userInfo: {
+        displayName: '',
+        email: '',
+        avatarUrl: '',
+      },
+      fieldError: false,
+      errorText: '',
+      errorMessage: '',
+      successMessage: '',
+      isLoading: false,
+      init() {
+        this.fetchUserInfo()
+      },
+      async fetchUserInfo() {
+        try {
+          const response = await fetch('/api/user/current', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'same-origin'
+          })
+          if (response.ok) {
+            const data = await response.json()
+            this.userInfo = {
+              displayName: data.display_name || data.email.split('@')[0],
+              email: data.email,
+              avatarUrl: data.avatar_url || '',
+            }
           }
+        } catch (error) {
+          console.error('Failed to fetch user info:', error)
         }
-      } catch (error) {
-        console.error('Failed to fetch user info:', error)
-      }
-    },
-
-    validatePsnId() {
-      const value = this.form.psnId
-      if (!value) {
-        this.fieldError = true
-        this.errorText = 'PSN IDを入力してください'
-        return
-      }
-      if (value.length < 3) {
-        this.fieldError = true
-        this.errorText = 'PSN IDは3文字以上で入力してください'
-        return
-      }
-      if (value.length > 16) {
-        this.fieldError = true
-        this.errorText = 'PSN IDは16文字以内で入力してください'
-        return
-      }
-      if (!/^[a-zA-Z0-9_-]+$/.test(value)) {
-        this.fieldError = true
-        this.errorText = 'PSN IDは英数字、ハイフン、アンダースコアのみ使用できます'
-        return
-      }
-      this.fieldError = false
-      this.errorText = ''
-    },
-
-    async handleSubmit() {
-      this.errorMessage = ''
-      this.successMessage = ''
-
-      this.validatePsnId()
-      if (this.fieldError) {
-        return
-      }
-
-      this.isLoading = true
-
-      try {
-        const response = await fetch('/auth/complete-profile', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'same-origin',
-          body: JSON.stringify(this.form)
-        })
-        const data = await response.json()
-
-        if (response.ok) {
-          this.successMessage = 'プロフィールが完成しました！'
-          setTimeout(() => {
-            window.location.href = data.redirectUrl || '/rooms'
-          }, 1500)
-        } else {
-          this.errorMessage = data.message || 'プロフィールの更新に失敗しました'
+      },
+      validatePsnId() {
+        const value = this.form.psnId
+        if (!value) {
+          this.fieldError = true
+          this.errorText = 'PSN IDを入力してください'
+          return
         }
-      } catch (error) {
-        this.errorMessage = 'ネットワークエラーが発生しました'
-      } finally {
-        this.isLoading = false
-      }
-    },
+        if (value.length < 3) {
+          this.fieldError = true
+          this.errorText = 'PSN IDは3文字以上で入力してください'
+          return
+        }
+        if (value.length > 16) {
+          this.fieldError = true
+          this.errorText = 'PSN IDは16文字以内で入力してください'
+          return
+        }
+        if (!/^[a-zA-Z0-9_-]+$/.test(value)) {
+          this.fieldError = true
+          this.errorText = 'PSN IDは英数字、ハイフン、アンダースコアのみ使用できます'
+          return
+        }
+        this.fieldError = false
+        this.errorText = ''
+      },
+      async handleSubmit() {
+        this.errorMessage = ''
+        this.successMessage = ''
+        this.validatePsnId()
+        if (this.fieldError) {
+          return
+        }
+        this.isLoading = true
+        try {
+          const response = await fetch('/auth/complete-profile', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify(this.form)
+          })
+          const data = await response.json()
+          if (response.ok) {
+            this.successMessage = 'プロフィールが完成しました！'
+            setTimeout(() => {
+              window.location.href = data.redirectUrl || '/rooms'
+            }, 1500)
+          } else {
+            this.errorMessage = data.message || 'プロフィールの更新に失敗しました'
+          }
+        } catch (error) {
+          this.errorMessage = 'ネットワークエラーが発生しました'
+        } finally {
+          this.isLoading = false
+        }
+      },
+      handleSkip() {
+        if (confirm('PSN IDを設定せずに続けますか？一部の機能が制限される場合があります。')) {
+          window.location.href = '/rooms'
+        }
+      },
+    }))
+  })
 
-    handleSkip() {
-      if (confirm('PSN IDを設定せずに続けますか？一部の機能が制限される場合があります。')) {
-        window.location.href = '/rooms'
-      }
-    },
-  }))
-})
 </script>
 {{end}}
