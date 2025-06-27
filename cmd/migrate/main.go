@@ -4,6 +4,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/joho/godotenv"
 	"mhp-rooms/internal/config"
 	"mhp-rooms/internal/infrastructure/persistence/postgres"
 )
@@ -11,7 +12,10 @@ import (
 func main() {
 	log.Println("マイグレーションコマンドを開始します...")
 
-	// 設定を初期化
+	if err := godotenv.Load(); err != nil {
+		log.Println(".envファイルが見つかりません。環境変数から設定を読み込みます。")
+	}
+
 	config.Init()
 
 	log.Println("データベース接続を待機中...")
@@ -19,7 +23,6 @@ func main() {
 		log.Fatalf("データベース接続待機に失敗しました: %v", err)
 	}
 
-	// データベース接続を作成
 	log.Println("データベース接続を初期化中...")
 	db, err := postgres.NewDB(config.AppConfig)
 	if err != nil {
@@ -27,7 +30,6 @@ func main() {
 	}
 	defer db.Close()
 
-	// マイグレーション実行
 	log.Println("データベースマイグレーションを実行中...")
 	if err := db.Migrate(); err != nil {
 		log.Fatalf("マイグレーションに失敗しました: %v", err)
