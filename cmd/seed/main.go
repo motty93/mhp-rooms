@@ -5,18 +5,23 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"mhp-rooms/internal/database"
+	"mhp-rooms/internal/config"
+	"mhp-rooms/internal/infrastructure/persistence/postgres"
 	"mhp-rooms/internal/models"
 )
 
 func main() {
-	// データベース接続を初期化
-	if err := database.InitDB(); err != nil {
+	log.Println("テストデータの作成を開始します...")
+
+	// configパッケージが必要
+	config.Init()
+	
+	// DB接続を取得
+	db, err := postgres.NewDB(config.AppConfig)
+	if err != nil {
 		log.Fatalf("データベース接続に失敗しました: %v", err)
 	}
-	defer database.CloseDB()
-
-	log.Println("テストデータの作成を開始します...")
+	defer db.Close()
 
 	// テストユーザーを作成
 	users := []models.User{
@@ -56,7 +61,7 @@ func main() {
 	}
 
 	for _, user := range users {
-		if err := database.DB.Create(&user).Error; err != nil {
+		if err := db.GetConn().Create(&user).Error; err != nil {
 			log.Printf("ユーザー作成エラー: %v", err)
 		} else {
 			log.Printf("ユーザー作成: %s", user.DisplayName)
@@ -65,7 +70,7 @@ func main() {
 
 	// ゲームバージョンを取得
 	var gameVersions []models.GameVersion
-	database.DB.Find(&gameVersions)
+	db.GetConn().Find(&gameVersions)
 
 	if len(gameVersions) == 0 {
 		log.Fatal("ゲームバージョンが見つかりません。先にマイグレーションを実行してください。")
@@ -132,7 +137,7 @@ func main() {
 	}
 
 	for _, room := range rooms {
-		if err := database.DB.Create(&room).Error; err != nil {
+		if err := db.GetConn().Create(&room).Error; err != nil {
 			log.Printf("ルーム作成エラー: %v", err)
 		} else {
 			log.Printf("ルーム作成: %s", room.Name)

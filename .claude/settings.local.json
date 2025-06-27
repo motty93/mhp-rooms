@@ -30,7 +30,13 @@
       "Bash(go run:*)",
       "Bash(true)",
       "Bash(tree:*)",
-      "Bash(wget:*)"
+      "Bash(wget:*)",
+      "Bash(gemini:*)",
+      "Bash(go list:*)",
+      "Bash(go doc:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(go test:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": []
   }
