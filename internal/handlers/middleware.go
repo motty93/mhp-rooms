@@ -2,99 +2,132 @@ package handlers
 
 import (
 	"context"
+	"log"
 	"net/http"
+	"strings"
+
+	"mhp-rooms/internal/models"
 
 	"github.com/google/uuid"
 )
 
-// ProfileCompleteMiddleware プロフィール完成チェックミドルウェア
+// ProfileCompleteMiddleware
 func (h *Handler) ProfileCompleteMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// 認証状態を確認
 		userID := r.Context().Value("user_id")
 		if userID == nil {
-			// 未認証の場合はそのまま通す
 			next.ServeHTTP(w, r)
 			return
 		}
 
-		// プロフィール補完関連のパスは除外
-		if r.URL.Path == "/auth/complete-profile" || 
-		   r.URL.Path == "/api/user/current" ||
-		   r.URL.Path == "/auth/logout" {
+		if r.URL.Path == "/auth/complete-profile" ||
+			r.URL.Path == "/api/user/current" ||
+			r.URL.Path == "/auth/logout" {
 			next.ServeHTTP(w, r)
 			return
 		}
 
-		// ユーザー情報を取得
 		user, err := h.repo.FindUserByID(userID.(uuid.UUID))
 		if err != nil {
-			// エラーの場合はログインページへ
 			http.Redirect(w, r, "/auth/login", http.StatusTemporaryRedirect)
 			return
 		}
 
-		// PSN IDが未設定の場合はプロフィール補完ページへ
 		if user.PSNOnlineID == nil || *user.PSNOnlineID == "" {
-			// API呼び出しの場合はエラーレスポンス
 			if r.Header.Get("Content-Type") == "application/json" {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusPreconditionRequired)
 				w.Write([]byte(`{"message":"プロフィールを完成させてください","redirect":"/auth/complete-profile"}`))
 				return
 			}
-			// 通常のリクエストはリダイレクト
 			http.Redirect(w, r, "/auth/complete-profile", http.StatusTemporaryRedirect)
 			return
 		}
 
-		// プロフィールが完成している場合は次のハンドラーへ
 		next.ServeHTTP(w, r)
 	}
 }
 
-// AuthMiddleware 認証チェックミドルウェア（例）
+type contextKey string
+
+const (
+	userContextKey  = contextKey("user")
+	tokenContextKey = contextKey("token")
+)
+
+// AuthMiddleware
 func (h *Handler) AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// セッションまたはJWTから認証情報を取得
-		// この実装は簡略化されています
-		
-		// 仮実装: セッションからuser_idを取得
-		// 実際の実装では、セッションストアやJWT検証を行う
-		userIDStr := r.Header.Get("X-User-ID") // 仮のヘッダー
-		if userIDStr == "" {
-			// 未認証
-			next.ServeHTTP(w, r)
-			return
+		var accessToken string
+
+		authHeader := r.Header.Get("Authorization")
+		if authHeader != "" && strings.HasPrefix(authHeader, "Bearer ") {
+			accessToken = strings.TrimPrefix(authHeader, "Bearer ")
+		} else {
+			cookie, err := r.Cookie("sb-access-token")
+			if err != nil {
+				next.ServeHTTP(w, r)
+				return
+			}
+			accessToken = cookie.Value
 		}
 
-		userID, err := uuid.Parse(userIDStr)
+		authClient := h.supabase.Auth.WithToken(accessToken)
+
+		userResp, err := authClient.GetUser()
 		if err != nil {
-			// 無効なユーザーID
+			log.Printf("トークン検証エラー: %v", err)
+			next.ServeHTTP(w, r)
+			return
+		}
+		user := userResp.User
+
+		supabaseUserID, err := uuid.Parse(user.ID.String())
+		if err != nil {
+			log.Printf("UUIDパースエラー: %v", err)
 			next.ServeHTTP(w, r)
 			return
 		}
 
-		// コンテキストにユーザーIDを設定
-		ctx := context.WithValue(r.Context(), "user_id", userID)
+		dbUser, err := h.repo.FindUserBySupabaseUserID(supabaseUserID)
+		if err != nil || dbUser == nil {
+			log.Printf("ユーザー情報取得エラー: %v", err)
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), userContextKey, dbUser)
+		ctx = context.WithValue(ctx, tokenContextKey, accessToken)
+		ctx = context.WithValue(ctx, "user_id", dbUser.ID)
+
 		next.ServeHTTP(w, r.WithContext(ctx))
 	}
 }
 
-// RequireAuthMiddleware 認証必須ミドルウェア
+// GetUserFromContext
+func GetUserFromContext(ctx context.Context) (*models.User, bool) {
+	user, ok := ctx.Value(userContextKey).(*models.User)
+	return user, ok
+}
+
+// GetTokenFromContext
+func GetTokenFromContext(ctx context.Context) (string, bool) {
+	token, ok := ctx.Value(tokenContextKey).(string)
+	return token, ok
+}
+
+// RequireAuthMiddleware
 func (h *Handler) RequireAuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID := r.Context().Value("user_id")
 		if userID == nil {
-			// API呼び出しの場合
 			if r.Header.Get("Content-Type") == "application/json" ||
-			   r.Header.Get("Accept") == "application/json" {
+				r.Header.Get("Accept") == "application/json" {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusUnauthorized)
 				w.Write([]byte(`{"message":"認証が必要です"}`))
 				return
 			}
-			// 通常のリクエストはログインページへリダイレクト
 			http.Redirect(w, r, "/auth/login", http.StatusTemporaryRedirect)
 			return
 		}

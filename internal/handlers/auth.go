@@ -2,10 +2,16 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
+	"time"
+
+	"mhp-rooms/internal/models"
+
+	"github.com/google/uuid"
+	"github.com/supabase-community/gotrue-go/types"
 )
 
-// LoginPageHandler renders the login page
 func (h *Handler) LoginPageHandler(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
 		Title: "ログイン",
@@ -13,7 +19,6 @@ func (h *Handler) LoginPageHandler(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "login.html", data)
 }
 
-// RegisterPageHandler renders the register page
 func (h *Handler) RegisterPageHandler(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
 		Title: "新規登録",
@@ -21,14 +26,12 @@ func (h *Handler) RegisterPageHandler(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "register.html", data)
 }
 
-// LoginRequest represents the login request payload
 type LoginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 	Remember bool   `json:"remember"`
 }
 
-// RegisterRequest represents the register request payload
 type RegisterRequest struct {
 	Email      string `json:"email"`
 	Password   string `json:"password"`
@@ -37,7 +40,6 @@ type RegisterRequest struct {
 	AgreeTerms bool   `json:"agreeTerms"`
 }
 
-// AuthResponse represents the authentication response
 type AuthResponse struct {
 	Success bool        `json:"success"`
 	Message string      `json:"message,omitempty"`
@@ -45,7 +47,6 @@ type AuthResponse struct {
 	User    interface{} `json:"user,omitempty"`
 }
 
-// LoginHandler handles login API requests
 func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -63,7 +64,6 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// バリデーション
 	if req.Email == "" {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
@@ -84,30 +84,70 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: 実際の認証ロジックを実装
-	// 現在は仮実装
-	if req.Email == "test@example.com" && req.Password == "password" {
+	resp, err := h.supabase.Auth.SignInWithEmailPassword(req.Email, req.Password)
+	if err != nil {
+		log.Printf("ログインエラー: %v", err)
 		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(AuthResponse{
-			Success: true,
-			Token:   "dummy_token_" + req.Email,
-			User: map[string]string{
-				"email": req.Email,
-				"name":  "テストユーザー",
-			},
+			Success: false,
+			Message: "メールアドレスまたはパスワードが間違っています",
 		})
 		return
 	}
 
+	expireTime := time.Now().Add(time.Duration(resp.ExpiresIn) * time.Second)
+	if req.Remember {
+		expireTime = time.Now().Add(30 * 24 * time.Hour)
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "sb-access-token",
+		Value:    resp.AccessToken,
+		Path:     "/",
+		Expires:  expireTime,
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "sb-refresh-token",
+		Value:    resp.RefreshToken,
+		Path:     "/",
+		Expires:  expireTime,
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	user, err := h.repo.FindUserByEmail(req.Email)
+	if err != nil || user == nil {
+		supabaseUserID, _ := uuid.Parse(resp.User.ID.String())
+		user = &models.User{
+			Email:          req.Email,
+			SupabaseUserID: supabaseUserID,
+			DisplayName:    req.Email,
+			IsActive:       true,
+			Role:           "user",
+		}
+		if err := h.repo.CreateUser(user); err != nil {
+			log.Printf("ユーザー作成エラー: %v", err)
+		}
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusUnauthorized)
 	json.NewEncoder(w).Encode(AuthResponse{
-		Success: false,
-		Message: "メールアドレスまたはパスワードが間違っています",
+		Success: true,
+		User: map[string]interface{}{
+			"id":          user.ID,
+			"email":       user.Email,
+			"displayName": user.DisplayName,
+			"username":    user.Username,
+		},
 	})
 }
 
-// RegisterHandler handles register API requests
 func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -125,7 +165,6 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// バリデーション
 	if req.Email == "" {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
@@ -155,7 +194,6 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-
 
 	if req.PSNId == "" {
 		w.Header().Set("Content-Type", "application/json")
@@ -187,11 +225,90 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: 実際のユーザー登録ロジックを実装
-	// 現在は仮実装
+	resp, err := h.supabase.Auth.Signup(types.SignupRequest{
+		Email:    req.Email,
+		Password: req.Password,
+	})
+	if err != nil {
+		log.Printf("新規登録エラー: %v", err)
+		message := "アカウントの作成に失敗しました"
+		if err.Error() == "User already registered" {
+			message = "このメールアドレスは既に登録されています"
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(AuthResponse{
+			Success: false,
+			Message: message,
+		})
+		return
+	}
+
+	supabaseUserID, _ := uuid.Parse(resp.User.ID.String())
+	user := models.User{
+		Email:          req.Email,
+		Username:       &req.PSNId,
+		DisplayName:    req.PlayerName,
+		SupabaseUserID: supabaseUserID,
+		IsActive:       true,
+		Role:           "user",
+	}
+
+	if err := h.repo.CreateUser(&user); err != nil {
+		log.Printf("ユーザー保存エラー: %v", err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(AuthResponse{
+			Success: false,
+			Message: "ユーザー情報の保存に失敗しました",
+		})
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(AuthResponse{
 		Success: true,
-		Message: "アカウントが作成されました",
+		Message: "アカウントが作成されました。メールで認証を完了してください。",
+	})
+}
+
+func (h *Handler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
+	_, err := r.Cookie("sb-access-token")
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(AuthResponse{
+			Success: true,
+			Message: "ログアウトしました",
+		})
+		return
+	}
+	if err := h.supabase.Auth.Logout(); err != nil {
+		log.Printf("ログアウトエラー: %v", err)
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "sb-access-token",
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Unix(0, 0),
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "sb-refresh-token",
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Unix(0, 0),
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(AuthResponse{
+		Success: true,
+		Message: "ログアウトしました",
 	})
 }

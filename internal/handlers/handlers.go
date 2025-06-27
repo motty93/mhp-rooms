@@ -12,23 +12,26 @@ import (
 	"time"
 
 	"mhp-rooms/internal/repository"
+	supa "github.com/supabase-community/supabase-go"
 )
 
 type Handler struct {
-	repo *repository.Repository
+	repo     *repository.Repository
+	supabase *supa.Client
 }
 
-func NewHandler(repo *repository.Repository) *Handler {
+func NewHandler(repo *repository.Repository, supabaseClient *supa.Client) *Handler {
 	return &Handler{
-		repo: repo,
+		repo:     repo,
+		supabase: supabaseClient,
 	}
 }
 
 type TemplateData struct {
 	Title    string
 	HasHero  bool
-	User     interface{} // 将来的にユーザー情報を格納
-	PageData interface{} // ページ固有のデータ
+	User     interface{}
+	PageData interface{}
 }
 
 func renderTemplate(w http.ResponseWriter, templateName string, data TemplateData) {
@@ -43,13 +46,27 @@ func renderTemplate(w http.ResponseWriter, templateName string, data TemplateDat
 			}
 			return template.JS(b)
 		},
+		"dict": func(values ...interface{}) (map[string]interface{}, error) {
+			if len(values)%2 != 0 {
+				return nil, fmt.Errorf("dict called with odd number of arguments")
+			}
+			dict := make(map[string]interface{}, len(values)/2)
+			for i := 0; i < len(values); i += 2 {
+				key, ok := values[i].(string)
+				if !ok {
+					return nil, fmt.Errorf("dict keys must be strings")
+				}
+				dict[key] = values[i+1]
+			}
+			return dict, nil
+		},
 	}
 
-	// 必要なテンプレートファイルを全て読み込み
 	tmpl, err := template.New("").Funcs(funcMap).ParseFiles(
 		filepath.Join("templates", "layouts", "base.html"),
 		filepath.Join("templates", "components", "header.html"),
 		filepath.Join("templates", "components", "footer.html"),
+		filepath.Join("templates", "components", "room_create_button.html"),
 		filepath.Join("templates", "pages", templateName),
 	)
 	if err != nil {

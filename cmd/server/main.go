@@ -8,8 +8,9 @@ import (
 	"time"
 
 	"mhp-rooms/internal/config"
-	"mhp-rooms/internal/database"
 	"mhp-rooms/internal/handlers"
+	"mhp-rooms/internal/infrastructure/auth/supabase"
+	"mhp-rooms/internal/infrastructure/persistence/postgres"
 	"mhp-rooms/internal/repository"
 
 	"github.com/gorilla/mux"
@@ -27,13 +28,13 @@ func main() {
 	config.Init()
 
 	log.Println("データベース接続を待機中...")
-	if err := database.WaitForDB(config.AppConfig, 30, 2*time.Second); err != nil {
+	if err := postgres.WaitForDB(config.AppConfig, 30, 2*time.Second); err != nil {
 		log.Fatalf("データベース接続待機に失敗しました: %v", err)
 	}
 
 	// データベース接続を作成
 	log.Println("データベース接続を初期化中...")
-	db, err := database.NewDB(config.AppConfig)
+	db, err := postgres.NewDB(config.AppConfig)
 	if err != nil {
 		log.Fatalf("データベース接続に失敗しました: %v", err)
 	}
@@ -50,9 +51,15 @@ func main() {
 		log.Println("マイグレーションはスキップされました（RUN_MIGRATION=trueで有効化）")
 	}
 
+	// Supabaseクライアントを初期化
+	log.Println("Supabaseクライアントを初期化中...")
+	if err := supabase.Init(); err != nil {
+		log.Fatalf("Supabaseクライアントの初期化に失敗しました: %v", err)
+	}
+
 	// 依存関係を構築
 	repo := repository.NewRepository(db)
-	h := handlers.NewHandler(repo)
+	h := handlers.NewHandler(repo, supabase.GetClient())
 
 	// MIME type
 	mime.AddExtensionType(".css", "text/css")
@@ -80,6 +87,7 @@ func main() {
 	r.HandleFunc("/auth/login", h.LoginHandler).Methods("POST")
 	r.HandleFunc("/auth/register", h.RegisterPageHandler).Methods("GET")
 	r.HandleFunc("/auth/register", h.RegisterHandler).Methods("POST")
+	r.HandleFunc("/auth/logout", h.LogoutHandler).Methods("POST")
 
 	// パスワードリセット
 	r.HandleFunc("/auth/password-reset", h.PasswordResetPageHandler).Methods("GET")

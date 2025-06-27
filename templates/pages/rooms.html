@@ -16,16 +16,7 @@
           <p class="text-gray-600">アクティブな部屋を探そう</p>
         </div>
 
-        <a href="/rooms/create" x-show="$store.auth.isAuthenticated" x-cloak
-          class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-3 px-6 rounded-lg transition-colors whitespace-nowrap">
-          新しい部屋を作る
-        </a>
-
-        <button x-show="!$store.auth.isAuthenticated" x-cloak @click="$store.auth.handleUnauthenticatedAction()"
-          title="ログインが必要です"
-          class="bg-gray-400 text-gray-500 font-medium py-3 px-6 rounded-lg cursor-not-allowed whitespace-nowrap">
-          新しい部屋を作る
-        </button>
+        {{template "room-create-button" (dict "Size" "large")}}
       </div>
 
       <!-- モバイル用レイアウト -->
@@ -37,16 +28,7 @@
 
         <div class="flex justify-center">
           <!-- 部屋作成ボタン（認証状態で切り替え） -->
-          <a href="/rooms/create" x-show="$store.auth.isAuthenticated" x-cloak
-            class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm">
-            + 部屋を作る
-          </a>
-
-          <button x-show="!$store.auth.isAuthenticated" x-cloak @click="$store.auth.handleUnauthenticatedAction()"
-            title="ログインが必要です"
-            class="bg-gray-400 text-gray-500 font-medium py-2 px-4 rounded-lg cursor-not-allowed text-sm">
-            + 部屋を作る
-          </button>
+          {{template "room-create-button" (dict "Size" "small")}}
         </div>
       </div>
     </div>
@@ -58,18 +40,23 @@
         <span class="text-sm font-medium text-gray-700">ゲームで絞り込み:</span>
         <button @click="filterRooms('')"
           :class="activeFilter === '' ? 'bg-white text-gray-800 border' : 'bg-gray-100 text-gray-600'"
+          :aria-pressed="activeFilter === ''"
+          aria-label="すべてのゲームバージョンの部屋を表示"
           class="px-4 py-2 rounded-full hover:bg-gray-100 transition-colors">
           すべて
         </button>
         {{range .PageData.GameVersions}}
         <button @click="filterRooms('{{.Code}}')"
           :class="activeFilter === '{{.Code}}' ? 'bg-white text-gray-800 border' : 'bg-gray-100 text-gray-600'"
+          :aria-pressed="activeFilter === '{{.Code}}'"
+          aria-label="{{.Code}}の部屋を表示"
           class="px-4 py-2 rounded-full hover:bg-gray-200 transition-colors">
           {{.Code}}
         </button>
         {{end}}
       </div>
-      <div class="mt-4 text-sm text-gray-600" x-show="filteredRooms.length > 0" x-cloak>
+      <div class="mt-4 text-sm text-gray-600" x-show="filteredRooms.length > 0" x-cloak
+        aria-live="polite" aria-atomic="true">
         <span x-text="filteredRooms.length"></span>件の部屋が見つかりました
       </div>
     </div>
@@ -84,7 +71,7 @@
             <div class="p-6 flex-grow">
               <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center space-x-3">
-                  <div :class="room.gameVersion.code.toLowerCase() + '-icon'" class="game-icon rounded"
+                  <div :class="getGameIconClass(room.gameVersion.code)" class="game-icon rounded"
                     :data-game="room.gameVersion.code">
                   </div>
                   <div>
@@ -131,6 +118,7 @@
                   <div>
                     <!-- 認証済みユーザー用 -->
                     <button x-show="$store.auth.isAuthenticated" x-cloak @click="openModal(room)"
+                      :aria-label="'「' + room.name + '」に参加'"
                       class="modal-button bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded text-sm transition-colors">
                       参加
                     </button>
@@ -150,7 +138,7 @@
                 </template>
               </div>
             </div>
-          </div>
+          </article>
         </template>
       </div>
       <!-- 空の状態 -->
@@ -171,16 +159,7 @@
         <p class="text-gray-400 mb-6">新しい部屋を作って、ハンターを募集してみましょう！</p>
 
         <!-- 部屋作成ボタン（認証状態で切り替え） -->
-        <a href="/rooms/create" x-show="$store.auth.isAuthenticated" x-cloak
-          class="inline-flex items-center bg-gray-800 hover:bg-gray-900 text-white font-medium py-2 px-4 rounded-lg transition-colors">
-          部屋を作る
-        </a>
-
-        <button x-show="!$store.auth.isAuthenticated" x-cloak @click="$store.auth.handleUnauthenticatedAction()"
-          title="ログインが必要です"
-          class="inline-flex items-center bg-gray-400 text-gray-500 font-medium py-2 px-4 rounded-lg cursor-not-allowed">
-          部屋を作る
-        </button>
+        {{template "room-create-button" (dict "Size" "inline")}}
       </div>
     </div>
   </section>
@@ -195,11 +174,13 @@
     <div @click.stop x-show="showModal" x-cloak x-transition:enter="transition ease-out duration-300"
       x-transition:enter-start="transform scale-95 opacity-0" x-transition:enter-end="transform scale-100 opacity-100"
       x-transition:leave="transition ease-in duration-200" x-transition:leave-start="transform scale-100 opacity-100"
-      x-transition:leave-end="transform scale-95 opacity-0" class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+      x-transition:leave-end="transform scale-95 opacity-0" 
+      role="dialog" aria-modal="true" aria-labelledby="modal-title"
+      class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
 
       <!-- ヘッダー -->
       <div class="px-6 py-4 border-b border-gray-200">
-        <h3 class="text-xl font-bold text-gray-800" x-text="currentRoom.name"></h3>
+        <h3 id="modal-title" class="text-xl font-bold text-gray-800" x-text="currentRoom.name"></h3>
         <p class="text-gray-600 mt-2 text-sm" x-show="currentRoom.description" x-text="currentRoom.description"></p>
         <span class="inline-block px-3 py-1 text-xs font-medium rounded-full mt-2 bg-gray-100 text-gray-700"
           x-text="currentRoom.gameVersionCode"></span>
@@ -230,6 +211,7 @@
             パスワードを入力してください
           </label>
           <input type="password" x-model="password" @keydown.enter="joinRoom()" placeholder="パスワード"
+            autocomplete="new-password"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent">
         </div>
       </div>
@@ -308,10 +290,10 @@
         allRooms: [],
         filteredRooms: [],
         activeFilter: '',
+        lastFocusedElement: null,
         // 初期化処理
         init() {
           const roomsData = {{.PageData.Rooms | json}};
-          console.log('部屋データ:', roomsData);
 
           this.allRooms = roomsData.map(room => ({
             id: room.id,
@@ -346,7 +328,7 @@
         filterRooms(gameVersion) {
           this.activeFilter = gameVersion;
           if (gameVersion === '') {
-            this.filteredRooms = [...this.allRooms];
+            this.filteredRooms = this.allRooms;
           } else {
             this.filteredRooms = this.allRooms.filter(room => room.gameVersion.code === gameVersion);
           }
@@ -365,6 +347,8 @@
         },
         // 部屋参加モーダルを開く
         openModal(room) {
+          // 現在のフォーカス位置を保存
+          this.lastFocusedElement = document.activeElement;
           this.currentRoom = {
             id: room.id,
             name: room.name,
@@ -379,18 +363,32 @@
           this.password = ''
           this.isJoining = false
           this.showModal = true
-          if (room.hasPassword) {
-            this.$nextTick(() => {
-              const passwordInput = this.$el.querySelector("input[type='password']")
-              if (passwordInput) passwordInput.focus()
-            })
-          }
+          
+          // フォーカス管理
+          this.$nextTick(() => {
+            const modal = this.$el.querySelector('[role="dialog"]')
+            if (modal) {
+              // フォーカスをモーダル内にトラップ
+              const focusableElements = modal.querySelectorAll('button, input, a');
+              if (room.hasPassword) {
+                const passwordInput = modal.querySelector("input[type='password']")
+                if (passwordInput) passwordInput.focus()
+              } else if (focusableElements.length > 0) {
+                focusableElements[focusableElements.length - 1].focus() // 参加ボタンにフォーカス
+              }
+            }
+          })
         },
         closeModal() {
           this.showModal = false
           this.currentRoom = {}
           this.password = ''
           this.isJoining = false
+          // フォーカスを元の要素に戻す
+          if (this.lastFocusedElement) {
+            this.lastFocusedElement.focus()
+            this.lastFocusedElement = null
+          }
         },
         openLoginModal() {
           this.showLoginModal = true
@@ -416,11 +414,15 @@
             if (!response.ok) {
               throw new Error('参加に失敗しました')
             }
-            alert('部屋に参加しました！')
+            // 成功メッセージを表示（将来的にトースト通知に置き換え可能）
+            this.showSuccessMessage('部屋に参加しました！')
             this.closeModal()
-            window.location.reload()
+            // 1秒後にリロード
+            setTimeout(() => {
+              window.location.reload()
+            }, 1000)
           } catch (error) {
-            alert(error.message || '参加に失敗しました。もう一度お試しください。')
+            this.showErrorMessage(error.message || '参加に失敗しました。もう一度お試しください。')
             this.isJoining = false
             if (this.currentRoom.hasPassword) {
               this.password = ''
@@ -436,6 +438,25 @@
           if (event.key === 'Escape' && this.showModal) {
             this.closeModal()
           }
+        },
+        // ゲームアイコンクラスを安全に取得
+        getGameIconClass(code) {
+          const validCodes = ['mhp', 'mhp2', 'mhp2g', 'mhp3'];
+          const lowerCode = code.toLowerCase();
+          if (validCodes.includes(lowerCode)) {
+            return lowerCode + '-icon';
+          }
+          return 'default-icon';
+        },
+        // 成功メッセージ表示（今はアラート、将来トーストに変更可）
+        showSuccessMessage(message) {
+          // 将来的にトースト通知コンポーネントに置き換え
+          alert(message)
+        },
+        // エラーメッセージ表示
+        showErrorMessage(message) {
+          // 将来的にトースト通知コンポーネントに置き換え
+          alert(message)
         },
         // クリーンアップ処理
         destroy() {
