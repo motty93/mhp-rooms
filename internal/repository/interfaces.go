@@ -22,6 +22,11 @@ type GameVersionRepository interface {
 	GetActiveGameVersions() ([]models.GameVersion, error)
 }
 
+// PlatformRepository はプラットフォーム関連の操作を定義するインターフェース
+type PlatformRepository interface {
+	GetActivePlatforms() ([]models.Platform, error)
+}
+
 // RoomRepository はルーム関連の操作を定義するインターフェース
 type RoomRepository interface {
 	CreateRoom(room *models.Room) error

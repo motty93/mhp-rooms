@@ -55,6 +55,7 @@ func (db *DB) Close() error {
 func (db *DB) Migrate() error {
 	// テーブル作成順序に注意（外部キー制約のため）
 	err := db.conn.AutoMigrate(
+		&models.Platform{},
 		&models.User{},
 		&models.GameVersion{},
 		&models.PlayerName{},

@@ -21,7 +21,7 @@ type RoomsPageData struct {
 
 func (h *Handler) Rooms(w http.ResponseWriter, r *http.Request) {
 	filter := r.URL.Query().Get("game_version")
-	
+
 	gameVersions, err := h.repo.GetActiveGameVersions()
 	if err != nil {
 		log.Printf("ゲームバージョン取得エラー: %v", err)

@@ -50,6 +50,7 @@ func (r *gameVersionRepository) FindGameVersionByCode(code string) (*models.Game
 func (r *gameVersionRepository) GetActiveGameVersions() ([]models.GameVersion, error) {
 	var versions []models.GameVersion
 	err := r.db.GetConn().
+		Preload("Platform").
 		Where("is_active = ?", true).
 		Order("display_order ASC").
 		Find(&versions).Error

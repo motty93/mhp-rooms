@@ -11,10 +11,12 @@ type GameVersion struct {
 	Code         string    `gorm:"type:varchar(10);uniqueIndex;not null" json:"code"`
 	Name         string    `gorm:"type:varchar(50);not null" json:"name"`
 	DisplayOrder int       `gorm:"not null" json:"display_order"`
+	PlatformID   uuid.UUID `gorm:"type:uuid;not null" json:"platform_id"`
 	IsActive     bool      `gorm:"not null;default:true" json:"is_active"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 
 	// リレーション
-	Rooms []Room `gorm:"foreignKey:GameVersionID" json:"rooms,omitempty"`
+	Platform Platform `gorm:"foreignKey:PlatformID" json:"platform,omitempty"`
+	Rooms    []Room   `gorm:"foreignKey:GameVersionID" json:"rooms,omitempty"`
 }

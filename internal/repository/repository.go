@@ -9,6 +9,7 @@ import (
 type Repository struct {
 	User          UserRepository
 	GameVersion   GameVersionRepository
+	Platform      PlatformRepository
 	Room          RoomRepository
 	PasswordReset PasswordResetRepository
 	PlayerName    PlayerNameRepository
@@ -18,6 +19,7 @@ func NewRepository(db *postgres.DB) *Repository {
 	return &Repository{
 		User:          NewUserRepository(db),
 		GameVersion:   NewGameVersionRepository(db),
+		Platform:      NewPlatformRepository(db),
 		Room:          NewRoomRepository(db),
 		PasswordReset: NewPasswordResetRepository(db),
 		PlayerName:    NewPlayerNameRepository(db),
@@ -60,6 +62,10 @@ func (r *Repository) FindGameVersionByCode(code string) (*models.GameVersion, er
 
 func (r *Repository) GetActiveGameVersions() ([]models.GameVersion, error) {
 	return r.GameVersion.GetActiveGameVersions()
+}
+
+func (r *Repository) GetActivePlatforms() ([]models.Platform, error) {
+	return r.Platform.GetActivePlatforms()
 }
 
 func (r *Repository) CreateRoom(room *models.Room) error {
