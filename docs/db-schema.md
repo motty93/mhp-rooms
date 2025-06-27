@@ -110,13 +110,13 @@ MonHubのデータベーススキーマ設計書です。PostgreSQL（開発環�
 | created_at | TIMESTAMP | NOT NULL | 作成日時 |
 
 ### player_names（プレイヤー名）
-ゲームバージョンごとのプレイヤー名管理。
+ゲームバージョンごとのプレイヤー名管理。各ユーザーはゲームバージョンごとに異なるプレイヤー名を設定可能。
 
 | カラム名 | 型 | 制約 | 説明 |
 |---------|-----|------|------|
 | id | UUID | PRIMARY KEY | 主キー |
-| user_id | UUID | NOT NULL, FOREIGN KEY | ユーザーID |
-| game_version_id | UUID | NOT NULL, FOREIGN KEY | ゲームバージョンID |
+| user_id | UUID | NOT NULL, FOREIGN KEY, INDEX | ユーザーID |
+| game_version_id | UUID | NOT NULL, FOREIGN KEY, INDEX | ゲームバージョンID |
 | name | VARCHAR(50) | NOT NULL | プレイヤー名 |
 | created_at | TIMESTAMP | NOT NULL | 作成日時 |
 | updated_at | TIMESTAMP | NOT NULL | 更新日時 |
