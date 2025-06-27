@@ -11,6 +11,7 @@ type Repository struct {
 	GameVersion   GameVersionRepository
 	Room          RoomRepository
 	PasswordReset PasswordResetRepository
+	PlayerName    PlayerNameRepository
 }
 
 func NewRepository(db *postgres.DB) *Repository {
@@ -19,6 +20,7 @@ func NewRepository(db *postgres.DB) *Repository {
 		GameVersion:   NewGameVersionRepository(db),
 		Room:          NewRoomRepository(db),
 		PasswordReset: NewPasswordResetRepository(db),
+		PlayerName:    NewPlayerNameRepository(db),
 	}
 }
 
@@ -98,4 +100,30 @@ func (r *Repository) JoinRoom(roomID, userID uuid.UUID, password string) error {
 
 func (r *Repository) LeaveRoom(roomID, userID uuid.UUID) error {
 	return r.Room.LeaveRoom(roomID, userID)
+}
+
+// PlayerName関連の委譲メソッド
+
+func (r *Repository) CreatePlayerName(playerName *models.PlayerName) error {
+	return r.PlayerName.CreatePlayerName(playerName)
+}
+
+func (r *Repository) UpdatePlayerName(playerName *models.PlayerName) error {
+	return r.PlayerName.UpdatePlayerName(playerName)
+}
+
+func (r *Repository) FindPlayerNameByUserAndGame(userID, gameVersionID uuid.UUID) (*models.PlayerName, error) {
+	return r.PlayerName.FindPlayerNameByUserAndGame(userID, gameVersionID)
+}
+
+func (r *Repository) FindAllPlayerNamesByUser(userID uuid.UUID) ([]models.PlayerName, error) {
+	return r.PlayerName.FindAllPlayerNamesByUser(userID)
+}
+
+func (r *Repository) DeletePlayerName(id uuid.UUID) error {
+	return r.PlayerName.DeletePlayerName(id)
+}
+
+func (r *Repository) UpsertPlayerName(playerName *models.PlayerName) error {
+	return r.PlayerName.UpsertPlayerName(playerName)
 }

@@ -97,6 +97,7 @@ func (db *DB) addConstraintsAndIndexes() error {
 		"ALTER TABLE room_logs ADD CONSTRAINT IF NOT EXISTS fk_room_logs_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL",
 		"ALTER TABLE password_resets ADD CONSTRAINT IF NOT EXISTS fk_password_resets_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE",
 		"ALTER TABLE player_names ADD CONSTRAINT IF NOT EXISTS fk_player_names_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE",
+		"ALTER TABLE player_names ADD CONSTRAINT IF NOT EXISTS fk_player_names_game_version FOREIGN KEY (game_version_id) REFERENCES game_versions(id) ON DELETE CASCADE",
 	}
 
 	// チェック制約
@@ -129,8 +130,8 @@ func (db *DB) addConstraintsAndIndexes() error {
 		"CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token)",
 		"CREATE INDEX IF NOT EXISTS idx_password_resets_user_id ON password_resets(user_id)",
 		"CREATE INDEX IF NOT EXISTS idx_password_resets_expires_at ON password_resets(expires_at)",
-		"CREATE INDEX IF NOT EXISTS idx_player_names_user_id_game_version ON player_names(user_id, game_version)",
-		"CREATE UNIQUE INDEX IF NOT EXISTS idx_player_names_unique ON player_names(user_id, game_version)",
+		"CREATE INDEX IF NOT EXISTS idx_player_names_user_game ON player_names(user_id, game_version_id)",
+		"CREATE UNIQUE INDEX IF NOT EXISTS uk_player_names_user_game ON player_names(user_id, game_version_id)",
 	}
 
 	// すべてのSQL文を実行

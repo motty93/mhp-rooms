@@ -19,8 +19,9 @@ type RoomsPageData struct {
 	Total        int64                `json:"total"`
 }
 
-func (h *Handler) RoomsHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Rooms(w http.ResponseWriter, r *http.Request) {
 	filter := r.URL.Query().Get("game_version")
+	
 	gameVersions, err := h.repo.GetActiveGameVersions()
 	if err != nil {
 		log.Printf("ゲームバージョン取得エラー: %v", err)
@@ -28,7 +29,7 @@ func (h *Handler) RoomsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 常にすべてのアクティブな部屋を取得
+	// 常にすべてのアクティブな部屋を取得（フィルタリングはフロントエンドで行う）
 	rooms, err := h.repo.GetActiveRooms(nil, 100, 0)
 	if err != nil {
 		log.Printf("ルーム取得エラー: %v", err)
@@ -36,23 +37,11 @@ func (h *Handler) RoomsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// URLパラメータでフィルタが指定されている場合は、サーバー側でフィルタリング
-	filteredRooms := rooms
-	if filter != "" {
-		var filtered []models.Room
-		for _, room := range rooms {
-			if room.GameVersion.Code == filter {
-				filtered = append(filtered, room)
-			}
-		}
-		filteredRooms = filtered
-	}
-
-	// 総件数を計算
-	total := int64(len(filteredRooms))
+	// 総件数を計算（フィルタリング前の全件数）
+	total := int64(len(rooms))
 
 	pageData := RoomsPageData{
-		Rooms:        filteredRooms,
+		Rooms:        rooms,
 		GameVersions: gameVersions,
 		Filter:       filter,
 		Total:        total,
@@ -77,7 +66,7 @@ type CreateRoomRequest struct {
 	RankRequirement string `json:"rank_requirement"`
 }
 
-func (h *Handler) CreateRoomHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	var req CreateRoomRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "リクエストの解析に失敗しました", http.StatusBadRequest)
@@ -134,7 +123,7 @@ type JoinRoomRequest struct {
 	Password string `json:"password"`
 }
 
-func (h *Handler) JoinRoomHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) JoinRoom(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	roomID, err := uuid.Parse(vars["id"])
 	if err != nil {
@@ -161,7 +150,7 @@ func (h *Handler) JoinRoomHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"message": "ルームに参加しました"}`))
 }
 
-func (h *Handler) LeaveRoomHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) LeaveRoom(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	roomID, err := uuid.Parse(vars["id"])
 	if err != nil {
@@ -186,7 +175,7 @@ type ToggleRoomClosedRequest struct {
 	IsClosed bool `json:"is_closed"`
 }
 
-func (h *Handler) ToggleRoomClosedHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ToggleRoomClosed(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	roomID, err := uuid.Parse(vars["id"])
 	if err != nil {
@@ -230,4 +219,29 @@ func (h *Handler) ToggleRoomClosedHandler(w http.ResponseWriter, r *http.Request
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(fmt.Sprintf(`{"message": "ルームを%s状態にしました"}`, status)))
+}
+
+// GetAllRoomsAPIHandler APIエンドポイント：常に全データを返す
+func (h *Handler) GetAllRoomsAPI(w http.ResponseWriter, r *http.Request) {
+	gameVersions, err := h.repo.GetActiveGameVersions()
+	if err != nil {
+		log.Printf("ゲームバージョン取得エラー: %v", err)
+		http.Error(w, "ゲームバージョンの取得に失敗しました", http.StatusInternalServerError)
+		return
+	}
+
+	// 常にすべてのアクティブな部屋を取得
+	rooms, err := h.repo.GetActiveRooms(nil, 100, 0)
+	if err != nil {
+		log.Printf("ルーム取得エラー: %v", err)
+		http.Error(w, "ルーム一覧の取得に失敗しました", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"rooms":        rooms,
+		"game_versions": gameVersions,
+		"total":        len(rooms),
+	})
 }

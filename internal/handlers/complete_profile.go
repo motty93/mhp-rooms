@@ -13,7 +13,7 @@ type CompleteProfileRequest struct {
 }
 
 // CompleteProfilePageHandler プロフィール補完ページを表示
-func (h *Handler) CompleteProfilePageHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CompleteProfilePage(w http.ResponseWriter, r *http.Request) {
 	// セッションからユーザー情報を取得
 	userID := r.Context().Value("user_id")
 	if userID == nil {
@@ -41,7 +41,7 @@ func (h *Handler) CompleteProfilePageHandler(w http.ResponseWriter, r *http.Requ
 }
 
 // CompleteProfileHandler プロフィール補完処理
-func (h *Handler) CompleteProfileHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CompleteProfile(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id")
 	if userID == nil {
 		w.Header().Set("Content-Type", "application/json")
@@ -112,7 +112,7 @@ func (h *Handler) CompleteProfileHandler(w http.ResponseWriter, r *http.Request)
 }
 
 // CurrentUserHandler 現在のユーザー情報を返すAPI
-func (h *Handler) CurrentUserHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CurrentUser(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("user_id")
 	if userID == nil {
 		w.Header().Set("Content-Type", "application/json")

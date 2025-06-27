@@ -12,14 +12,14 @@ import (
 	"github.com/supabase-community/gotrue-go/types"
 )
 
-func (h *Handler) LoginPageHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) LoginPage(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
 		Title: "ログイン",
 	}
 	renderTemplate(w, "login.html", data)
 }
 
-func (h *Handler) RegisterPageHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) RegisterPage(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
 		Title: "新規登録",
 	}
@@ -47,7 +47,7 @@ type AuthResponse struct {
 	User    interface{} `json:"user,omitempty"`
 }
 
-func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -148,7 +148,7 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -265,6 +265,32 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// デフォルトのゲームバージョン（MHP3）でプレイヤー名を保存
+	gameVersions, err := h.repo.GetActiveGameVersions()
+	if err == nil && len(gameVersions) > 0 {
+		// MHP3を探す、なければ最初のゲームバージョンを使用
+		var defaultGameVersion *models.GameVersion
+		for _, gv := range gameVersions {
+			if gv.Code == "MHP3" {
+				defaultGameVersion = &gv
+				break
+			}
+		}
+		if defaultGameVersion == nil {
+			defaultGameVersion = &gameVersions[0]
+		}
+
+		playerName := &models.PlayerName{
+			UserID:        user.ID,
+			GameVersionID: defaultGameVersion.ID,
+			Name:          req.PlayerName,
+		}
+		if err := h.repo.CreatePlayerName(playerName); err != nil {
+			log.Printf("プレイヤー名保存エラー: %v", err)
+			// エラーが発生してもユーザー登録は成功しているので続行
+		}
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(AuthResponse{
 		Success: true,
@@ -272,7 +298,7 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (h *Handler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	_, err := r.Cookie("sb-access-token")
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")

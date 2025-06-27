@@ -4,8 +4,9 @@ import (
 	"net/http"
 )
 
-// GoogleAuthHandler handles Google OAuth initiation
-func (h *Handler) GoogleAuthHandler(w http.ResponseWriter, r *http.Request) {
+// GoogleAuthDirectHandler handles Google OAuth initiation (Direct implementation)
+// NOTE: 現在は google_auth_supabase.go の実装を使用中
+func (h *Handler) GoogleAuthDirect(w http.ResponseWriter, r *http.Request) {
 	// 一旦コメントアウト（将来実装用）
 	
 	/* Google OAuth実装（コメントアウト中）
@@ -53,8 +54,9 @@ func (h *Handler) GoogleAuthHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"error": "Google認証は準備中です"}`))
 }
 
-// GoogleCallbackHandler handles Google OAuth callback
-func (h *Handler) GoogleCallbackHandler(w http.ResponseWriter, r *http.Request) {
+// GoogleCallbackDirectHandler handles Google OAuth callback (Direct implementation)
+// NOTE: 現在は google_auth_supabase.go の実装を使用中
+func (h *Handler) GoogleCallbackDirect(w http.ResponseWriter, r *http.Request) {
 	// 一旦コメントアウト（将来実装用）
 	
 	/* Google OAuth実装（コメントアウト中）

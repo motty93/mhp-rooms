@@ -23,14 +23,14 @@ type PasswordResetConfirmRequest struct {
 }
 
 // パスワードリセットリクエストページを表示
-func (h *Handler) PasswordResetPageHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) PasswordResetPage(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "password_reset.html", TemplateData{
 		Title: "パスワードリセット",
 	})
 }
 
 // パスワードリセットリクエストを処理
-func (h *Handler) PasswordResetRequestHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) PasswordResetRequest(w http.ResponseWriter, r *http.Request) {
 	var req PasswordResetRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.Header().Set("Content-Type", "application/json")
@@ -102,7 +102,7 @@ func (h *Handler) PasswordResetRequestHandler(w http.ResponseWriter, r *http.Req
 }
 
 // パスワードリセット確認ページを表示
-func (h *Handler) PasswordResetConfirmPageHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) PasswordResetConfirmPage(w http.ResponseWriter, r *http.Request) {
 	token := r.URL.Query().Get("token")
 	if token == "" {
 		http.Error(w, "無効なトークンです", http.StatusBadRequest)
@@ -125,7 +125,7 @@ func (h *Handler) PasswordResetConfirmPageHandler(w http.ResponseWriter, r *http
 }
 
 // パスワードリセット確認を処理
-func (h *Handler) PasswordResetConfirmHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) PasswordResetConfirm(w http.ResponseWriter, r *http.Request) {
 	var req PasswordResetConfirmRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.Header().Set("Content-Type", "application/json")

@@ -35,3 +35,13 @@ type RoomRepository interface {
 	JoinRoom(roomID, userID uuid.UUID, password string) error
 	LeaveRoom(roomID, userID uuid.UUID) error
 }
+
+// PlayerNameRepository はプレイヤー名関連の操作を定義するインターフェース
+type PlayerNameRepository interface {
+	CreatePlayerName(playerName *models.PlayerName) error
+	UpdatePlayerName(playerName *models.PlayerName) error
+	FindPlayerNameByUserAndGame(userID, gameVersionID uuid.UUID) (*models.PlayerName, error)
+	FindAllPlayerNamesByUser(userID uuid.UUID) ([]models.PlayerName, error)
+	DeletePlayerName(id uuid.UUID) error
+	UpsertPlayerName(playerName *models.PlayerName) error
+}
