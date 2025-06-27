@@ -10,6 +10,7 @@ BUILD_DIR=bin
 # メインファイルのパス
 MAIN_PATH=./cmd/server
 MIGRATE_PATH=./cmd/migrate
+SEED_PATH=./cmd/seed
 
 # アプリケーションをビルド
 build:
@@ -59,6 +60,11 @@ migrate: build
 migrate-dev:
 	@echo "開発モードでマイグレーションを実行中..."
 	@go run $(MIGRATE_PATH)/main.go -migrate
+
+# seeds
+seeds:
+	@echo "シードデータを挿入中..."
+	@go run $(SEED_PATH)/main.go -seed
 
 # 依存関係を取得
 deps:
