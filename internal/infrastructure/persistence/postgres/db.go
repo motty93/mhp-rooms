@@ -84,109 +84,144 @@ func (db *DB) Migrate() error {
 }
 
 func (db *DB) addConstraintsAndIndexes() error {
-	// 外部キー制約
-	constraints := []string{
-		"ALTER TABLE rooms ADD CONSTRAINT IF NOT EXISTS fk_rooms_game_version FOREIGN KEY (game_version_id) REFERENCES game_versions(id)",
-		"ALTER TABLE rooms ADD CONSTRAINT IF NOT EXISTS fk_rooms_host_user FOREIGN KEY (host_user_id) REFERENCES users(id)",
-		"ALTER TABLE room_members ADD CONSTRAINT IF NOT EXISTS fk_room_members_room FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE",
-		"ALTER TABLE room_members ADD CONSTRAINT IF NOT EXISTS fk_room_members_user FOREIGN KEY (user_id) REFERENCES users(id)",
-		"ALTER TABLE room_messages ADD CONSTRAINT IF NOT EXISTS fk_room_messages_room FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE",
-		"ALTER TABLE room_messages ADD CONSTRAINT IF NOT EXISTS fk_room_messages_user FOREIGN KEY (user_id) REFERENCES users(id)",
-		"ALTER TABLE user_blocks ADD CONSTRAINT IF NOT EXISTS fk_user_blocks_blocker FOREIGN KEY (blocker_user_id) REFERENCES users(id)",
-		"ALTER TABLE user_blocks ADD CONSTRAINT IF NOT EXISTS fk_user_blocks_blocked FOREIGN KEY (blocked_user_id) REFERENCES users(id)",
-		"ALTER TABLE room_logs ADD CONSTRAINT IF NOT EXISTS fk_room_logs_room FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE",
-		"ALTER TABLE room_logs ADD CONSTRAINT IF NOT EXISTS fk_room_logs_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL",
-		"ALTER TABLE password_resets ADD CONSTRAINT IF NOT EXISTS fk_password_resets_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE",
-		"ALTER TABLE player_names ADD CONSTRAINT IF NOT EXISTS fk_player_names_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE",
-		"ALTER TABLE player_names ADD CONSTRAINT IF NOT EXISTS fk_player_names_game_version FOREIGN KEY (game_version_id) REFERENCES game_versions(id) ON DELETE CASCADE",
-	}
-
-	// チェック制約
-	checks := []string{
-		"ALTER TABLE users ADD CONSTRAINT IF NOT EXISTS chk_users_supabase_user_id CHECK (supabase_user_id IS NOT NULL)",
-		"ALTER TABLE rooms ADD CONSTRAINT IF NOT EXISTS chk_rooms_max_players CHECK (max_players = 4)",
-	}
-
-	// ユニーク制約
-	uniques := []string{
-		"CREATE UNIQUE INDEX IF NOT EXISTS idx_room_members_active ON room_members(room_id, user_id) WHERE status = 'active'",
-		"CREATE UNIQUE INDEX IF NOT EXISTS idx_user_blocks_unique ON user_blocks(blocker_user_id, blocked_user_id)",
-	}
-
-	// 一般的なインデックス
-	indexes := []string{
-		"CREATE INDEX IF NOT EXISTS idx_users_is_active_created_at ON users(is_active, created_at)",
-		"CREATE INDEX IF NOT EXISTS idx_game_versions_is_active_display_order ON game_versions(is_active, display_order)",
-		"CREATE INDEX IF NOT EXISTS idx_rooms_game_version_status_is_active ON rooms(game_version_id, status, is_active)",
-		"CREATE INDEX IF NOT EXISTS idx_rooms_host_user_id ON rooms(host_user_id)",
-		"CREATE INDEX IF NOT EXISTS idx_rooms_created_at ON rooms(created_at DESC)",
-		"CREATE INDEX IF NOT EXISTS idx_room_members_user_id_status ON room_members(user_id, status)",
-		"CREATE INDEX IF NOT EXISTS idx_room_members_room_id_player_number ON room_members(room_id, player_number)",
-		"CREATE INDEX IF NOT EXISTS idx_room_messages_room_id_created_at ON room_messages(room_id, created_at DESC)",
-		"CREATE INDEX IF NOT EXISTS idx_room_messages_user_id ON room_messages(user_id)",
-		"CREATE INDEX IF NOT EXISTS idx_user_blocks_blocked_user_id ON user_blocks(blocked_user_id)",
-		"CREATE INDEX IF NOT EXISTS idx_room_logs_room_id_created_at ON room_logs(room_id, created_at DESC)",
-		"CREATE INDEX IF NOT EXISTS idx_room_logs_user_id ON room_logs(user_id)",
-		"CREATE INDEX IF NOT EXISTS idx_room_logs_action ON room_logs(action)",
-		"CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token)",
-		"CREATE INDEX IF NOT EXISTS idx_password_resets_user_id ON password_resets(user_id)",
-		"CREATE INDEX IF NOT EXISTS idx_password_resets_expires_at ON password_resets(expires_at)",
-		"CREATE INDEX IF NOT EXISTS idx_player_names_user_game ON player_names(user_id, game_version_id)",
-		"CREATE UNIQUE INDEX IF NOT EXISTS uk_player_names_user_game ON player_names(user_id, game_version_id)",
-	}
-
-	// すべてのSQL文を実行
-	allStatements := append(append(constraints, checks...), append(uniques, indexes...)...)
-
-	for _, stmt := range allStatements {
-		if err := db.conn.Exec(stmt).Error; err != nil {
-			// 制約やインデックスの失敗は警告レベルで継続
+	// GORMのAutoMigrateが外部キー制約を自動で作成するため、
+	// ここでの手動追加はコメントアウトします。
+	// 必要な場合は、GORMの命名規則に従っているか確認してください。
+	/*
+		// 外部キー制約
+		constraints := []string{
+			"ALTER TABLE game_versions ADD CONSTRAINT fk_game_versions_platform FOREIGN KEY (platform_id) REFERENCES platforms(id)",
+			"ALTER TABLE rooms ADD CONSTRAINT fk_rooms_game_version FOREIGN KEY (game_version_id) REFERENCES game_versions(id)",
+			"ALTER TABLE rooms ADD CONSTRAINT fk_rooms_host_user FOREIGN KEY (host_user_id) REFERENCES users(id)",
+			"ALTER TABLE room_members ADD CONSTRAINT fk_room_members_room FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE",
+			"ALTER TABLE room_members ADD CONSTRAINT fk_room_members_user FOREIGN KEY (user_id) REFERENCES users(id)",
+			"ALTER TABLE room_messages ADD CONSTRAINT fk_room_messages_room FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE",
+			"ALTER TABLE room_messages ADD CONSTRAINT fk_room_messages_user FOREIGN KEY (user_id) REFERENCES users(id)",
+			"ALTER TABLE user_blocks ADD CONSTRAINT fk_user_blocks_blocker FOREIGN KEY (blocker_user_id) REFERENCES users(id)",
+			"ALTER TABLE user_blocks ADD CONSTRAINT fk_user_blocks_blocked FOREIGN KEY (blocked_user_id) REFERENCES users(id)",
+			"ALTER TABLE room_logs ADD CONSTRAINT fk_room_logs_room FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE",
+			"ALTER TABLE room_logs ADD CONSTRAINT fk_room_logs_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL",
+			"ALTER TABLE password_resets ADD CONSTRAINT fk_password_resets_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE",
+			"ALTER TABLE player_names ADD CONSTRAINT fk_player_names_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE",
+			"ALTER TABLE player_names ADD CONSTRAINT fk_player_names_game_version FOREIGN KEY (game_version_id) REFERENCES game_versions(id) ON DELETE CASCADE",
 		}
-	}
 
+		// チェック制約
+		checks := []string{
+			"ALTER TABLE users ADD CONSTRAINT chk_users_supabase_user_id CHECK (supabase_user_id IS NOT NULL)",
+			"ALTER TABLE rooms ADD CONSTRAINT chk_rooms_max_players CHECK (max_players = 4)",
+		}
+
+		// ユニーク制約
+		uniques := []string{
+			"CREATE UNIQUE INDEX IF NOT EXISTS idx_room_members_active ON room_members(room_id, user_id) WHERE status = 'active'",
+			"CREATE UNIQUE INDEX IF NOT EXISTS idx_user_blocks_unique ON user_blocks(blocker_user_id, blocked_user_id)",
+		}
+
+		// 一般的なインデックス
+		indexes := []string{
+			"CREATE INDEX IF NOT EXISTS idx_users_is_active_created_at ON users(is_active, created_at)",
+			"CREATE INDEX IF NOT EXISTS idx_game_versions_is_active_display_order ON game_versions(is_active, display_order)",
+			"CREATE INDEX IF NOT EXISTS idx_rooms_game_version_status_is_active ON rooms(game_version_id, status, is_active)",
+			"CREATE INDEX IF NOT EXISTS idx_rooms_host_user_id ON rooms(host_user_id)",
+			"CREATE INDEX IF NOT EXISTS idx_rooms_created_at ON rooms(created_at DESC)",
+			"CREATE INDEX IF NOT EXISTS idx_room_members_user_id_status ON room_members(user_id, status)",
+			"CREATE INDEX IF NOT EXISTS idx_room_members_room_id_player_number ON room_members(room_id, player_number)",
+			"CREATE INDEX IF NOT EXISTS idx_room_messages_room_id_created_at ON room_messages(room_id, created_at DESC)",
+			"CREATE INDEX IF NOT EXISTS idx_room_messages_user_id ON room_messages(user_id)",
+			"CREATE INDEX IF NOT EXISTS idx_user_blocks_blocked_user_id ON user_blocks(blocked_user_id)",
+			"CREATE INDEX IF NOT EXISTS idx_room_logs_room_id_created_at ON room_logs(room_id, created_at DESC)",
+			"CREATE INDEX IF NOT EXISTS idx_room_logs_user_id ON room_logs(user_id)",
+			"CREATE INDEX IF NOT EXISTS idx_room_logs_action ON room_logs(action)",
+			"CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token)",
+			"CREATE INDEX IF NOT EXISTS idx_password_resets_user_id ON password_resets(user_id)",
+			"CREATE INDEX IF NOT EXISTS idx_password_resets_expires_at ON password_resets(expires_at)",
+			"CREATE INDEX IF NOT EXISTS idx_player_names_user_game ON player_names(user_id, game_version_id)",
+			"CREATE UNIQUE INDEX IF NOT EXISTS uk_player_names_user_game ON player_names(user_id, game_version_id)",
+		}
+
+		// すべてのSQL文を実行
+		allStatements := append(append(constraints, checks...), append(uniques, indexes...)...)
+
+		for _, stmt := range allStatements {
+			if err := db.conn.Exec(stmt).Error; err != nil {
+				// 制約やインデックスの失敗は警告レベルで継続
+			}
+		}
+	*/
 	return nil
 }
 
 func (db *DB) insertInitialData() error {
-	// game_versionsの初期データが既に存在するかチェック
-	var count int64
-	db.conn.Model(&models.GameVersion{}).Count(&count)
-	if count > 0 {
-		return nil
+	tx := db.conn.Begin()
+	if tx.Error != nil {
+		return tx.Error
 	}
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
 
-	gameVersions := []models.GameVersion{
-		{
-			Code:         "MHP",
-			Name:         "モンスターハンターポータブル",
+	// Platforms
+	var platformCount int64
+	tx.Model(&models.Platform{}).Count(&platformCount)
+	var playstationPlatform models.Platform
+	if platformCount == 0 {
+		playstationPlatform = models.Platform{
+			Name:         "PlayStation",
 			DisplayOrder: 1,
-			IsActive:     true,
-		},
-		{
-			Code:         "MHP2",
-			Name:         "モンスターハンターポータブル 2nd",
-			DisplayOrder: 2,
-			IsActive:     true,
-		},
-		{
-			Code:         "MHP2G",
-			Name:         "モンスターハンターポータブル 2ndG",
-			DisplayOrder: 3,
-			IsActive:     true,
-		},
-		{
-			Code:         "MHP3",
-			Name:         "モンスターハンターポータブル 3rd",
-			DisplayOrder: 4,
-			IsActive:     true,
-		},
+		}
+		if err := tx.Create(&playstationPlatform).Error; err != nil {
+			tx.Rollback()
+			return fmt.Errorf("プラットフォームの挿入に失敗しました: %w", err)
+		}
+	} else {
+		tx.First(&playstationPlatform, "name = ?", "PlayStation")
 	}
 
-	for _, gv := range gameVersions {
-		if err := db.conn.Create(&gv).Error; err != nil {
-			return fmt.Errorf("ゲームバージョンの挿入に失敗しました: %w", err)
+	// GameVersions
+	var gameVersionCount int64
+	tx.Model(&models.GameVersion{}).Count(&gameVersionCount)
+	if gameVersionCount == 0 {
+		gameVersions := []models.GameVersion{
+			{
+				Code:         "MHP",
+				Name:         "モンスターハンターポータブル",
+				DisplayOrder: 1,
+				IsActive:     true,
+				PlatformID:   playstationPlatform.ID,
+			},
+			{
+				Code:         "MHP2",
+				Name:         "モンスターハンターポータブル 2nd",
+				DisplayOrder: 2,
+				IsActive:     true,
+				PlatformID:   playstationPlatform.ID,
+			},
+			{
+				Code:         "MHP2G",
+				Name:         "モンスターハンターポータブル 2ndG",
+				DisplayOrder: 3,
+				IsActive:     true,
+				PlatformID:   playstationPlatform.ID,
+			},
+			{
+				Code:         "MHP3",
+				Name:         "モンスターハンターポータブル 3rd",
+				DisplayOrder: 4,
+				IsActive:     true,
+				PlatformID:   playstationPlatform.ID,
+			},
+		}
+
+		for _, gv := range gameVersions {
+			if err := tx.Create(&gv).Error; err != nil {
+				tx.Rollback()
+				return fmt.Errorf("ゲームバージョンの挿入に失敗しました: %w", err)
+			}
 		}
 	}
 
-	return nil
+	return tx.Commit().Error
 }
