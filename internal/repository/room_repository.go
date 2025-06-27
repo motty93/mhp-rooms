@@ -6,15 +6,15 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"mhp-rooms/internal/database"
+	"mhp-rooms/internal/infrastructure/persistence/postgres"
 	"mhp-rooms/internal/models"
 )
 
 type roomRepository struct {
-	db *database.DB
+	db *postgres.DB
 }
 
-func NewRoomRepository(db *database.DB) RoomRepository {
+func NewRoomRepository(db *postgres.DB) RoomRepository {
 	return &roomRepository{db: db}
 }
 

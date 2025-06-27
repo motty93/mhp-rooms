@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"mhp-rooms/internal/database"
+	"mhp-rooms/internal/infrastructure/persistence/postgres"
 	"mhp-rooms/internal/models"
 )
 
@@ -21,11 +21,11 @@ type PasswordResetRepository interface {
 
 // passwordResetRepository はPasswordResetRepositoryの実装
 type passwordResetRepository struct {
-	db *database.DB
+	db *postgres.DB
 }
 
 // NewPasswordResetRepository は新しいPasswordResetRepositoryインスタンスを作成
-func NewPasswordResetRepository(db *database.DB) PasswordResetRepository {
+func NewPasswordResetRepository(db *postgres.DB) PasswordResetRepository {
 	return &passwordResetRepository{db: db}
 }
 

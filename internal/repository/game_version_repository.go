@@ -6,17 +6,17 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"mhp-rooms/internal/database"
+	"mhp-rooms/internal/infrastructure/persistence/postgres"
 	"mhp-rooms/internal/models"
 )
 
 // gameVersionRepository はゲームバージョン関連の操作を行うリポジトリの実装
 type gameVersionRepository struct {
-	db *database.DB
+	db *postgres.DB
 }
 
 // NewGameVersionRepository は新しいGameVersionRepositoryインスタンスを作成
-func NewGameVersionRepository(db *database.DB) GameVersionRepository {
+func NewGameVersionRepository(db *postgres.DB) GameVersionRepository {
 	return &gameVersionRepository{db: db}
 }
 

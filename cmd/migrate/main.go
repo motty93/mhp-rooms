@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"mhp-rooms/internal/config"
-	"mhp-rooms/internal/database"
+	"mhp-rooms/internal/infrastructure/persistence/postgres"
 )
 
 func main() {
@@ -15,13 +15,13 @@ func main() {
 	config.Init()
 
 	log.Println("データベース接続を待機中...")
-	if err := database.WaitForDB(config.AppConfig, 30, 2*time.Second); err != nil {
+	if err := postgres.WaitForDB(config.AppConfig, 30, 2*time.Second); err != nil {
 		log.Fatalf("データベース接続待機に失敗しました: %v", err)
 	}
 
 	// データベース接続を作成
 	log.Println("データベース接続を初期化中...")
-	db, err := database.NewDB(config.AppConfig)
+	db, err := postgres.NewDB(config.AppConfig)
 	if err != nil {
 		log.Fatalf("データベース接続に失敗しました: %v", err)
 	}

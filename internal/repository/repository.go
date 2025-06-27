@@ -2,7 +2,7 @@ package repository
 
 import (
 	"github.com/google/uuid"
-	"mhp-rooms/internal/database"
+	"mhp-rooms/internal/infrastructure/persistence/postgres"
 	"mhp-rooms/internal/models"
 )
 
@@ -13,7 +13,7 @@ type Repository struct {
 	PasswordReset PasswordResetRepository
 }
 
-func NewRepository(db *database.DB) *Repository {
+func NewRepository(db *postgres.DB) *Repository {
 	return &Repository{
 		User:          NewUserRepository(db),
 		GameVersion:   NewGameVersionRepository(db),
