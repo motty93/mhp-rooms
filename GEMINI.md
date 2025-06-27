@@ -1,30 +1,151 @@
-# Gemini Project Brief: mhp-rooms
+# CLAUDE.md
 
-This file provides a brief overview of the project for the Gemini agent.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## 言語設定
 
-`mhp-rooms` appears to be a web application written in Go. It uses HTML templates for the frontend and seems to have features related to user authentication, rooms, and profiles. The database schema is likely defined in `scripts/init.sql`.
+このリポジトリでは日本語でのやり取りを基本とします。コメント、ドキュメント、コミットメッセージ等も日本語で記述してください。
 
-## Common Commands
+## プロジェクト概要
 
-Based on the `Makefile` and `cmd` directory, here are some likely commands:
+モンスターハンターポータブルシリーズ（MHP、MHP2、MHP2G、MHP3）のアドホックパーティのルームを管理するWebアプリケーションです。
 
-*   `make server`: To build and run the server.
-*   `make migrate`: To run database migrations.
-*   `make seed`: To seed the database with initial data.
-*   `go run ./cmd/server/main.go`: To run the server directly.
-*   `go test ./...`: To run tests.
+## 技術スタック
 
-## Key Files
+- **言語**: Go 1.22.2
+- **Webフレームワーク**: Gorilla Mux
+- **データベース**: 
+  - **開発環境**: PostgreSQL (Docker Compose)
+  - **本番環境**: Neon (Serverless PostgreSQL)
+  - **ORM**: GORM v2
+- **フロントエンド**: 
+  - HTML/CSS/JavaScript (テンプレートエンジン使用)
+  - htmx (非同期通信・DOM更新)
+  - Alpine.js (UIの状態管理)
+  - Tailwind CSS (スタイリング)
+- **コンテナ**: Docker + Docker Compose
+- **デプロイ**: Fly.io
 
-*   `go.mod`, `go.sum`: Go module dependencies.
-*   `compose.yml`: Docker Compose configuration for local development.
-*   `Dockerfile`: Docker configuration for building the application container.
-*   `cmd/server/main.go`: The main entry point for the web server.
-*   `internal/handlers/`: Contains the HTTP handlers for different routes.
-*   `internal/repository/`: Contains the database access logic.
-*   `internal/models/`: Defines the data structures used in the application.
-*   `templates/`: HTML templates for the user interface.
-*   `static/`: Static assets like CSS, JavaScript, and images.
-*   `scripts/init.sql`: SQL script for initializing the database schema.
+## プロジェクト構造
+
+```
+.
+├── cmd/                    # メインアプリケーションのエントリーポイント
+│   ├── server/            # Webサーバー
+│   ├── migrate/           # DBマイグレーション
+│   └── seed/              # DBシード
+├── internal/              # 内部パッケージ
+│   ├── database/          # DB接続・設定
+│   ├── handlers/          # HTTPハンドラー
+│   └── models/            # データモデル
+├── templates/             # HTMLテンプレート
+│   ├── layouts/           # レイアウトテンプレート
+│   ├── pages/             # ページテンプレート
+│   └── components/        # 共通コンポーネント
+├── static/                # 静的ファイル
+│   ├── css/              # スタイルシート
+│   ├── js/               # JavaScript
+│   └── images/           # 画像ファイル
+├── scripts/               # DBスクリプト
+├── docs/                  # ドキュメント
+│   └── logs/             # 実装ログ
+└── bin/                   # ビルド済みバイナリ
+```
+
+## 開発環境のセットアップ
+
+1. **Docker Composeでの起動**
+   ```bash
+   docker-compose up -d
+   ```
+
+2. **マイグレーションの実行**
+   ```bash
+   make migrate
+   ```
+
+3. **シードデータの投入**
+   ```bash
+   make seed
+   ```
+
+4. **開発サーバーの起動**
+   ```bash
+   make run
+   ```
+
+## 主要機能
+
+- ユーザー認証・管理
+- ルーム作成・参加・管理
+- ゲームバージョン別ルーム表示
+- 日本語対応UI
+
+## 開発時の考慮事項
+
+- **データベース**: PostgreSQLを使用し、GORMでORMマッピング
+- **セキュリティ**: ユーザー認証とセッション管理の実装
+- **パフォーマンス**: ルーム一覧の効率的な取得とキャッシュ
+- **UI/UX**: モバイル対応レスポンシブデザイン
+- **国際化**: 日本語を基本言語として設計
+
+## データベース設定
+
+### 開発環境
+Docker Composeで起動するPostgreSQLを使用します。
+```bash
+make container-up  # DBとRedisを起動
+make migrate       # マイグレーション実行
+```
+
+### 本番環境（Neon）
+Neonデータベースを使用します。以下の2つの方法で設定できます：
+
+#### 方法1: DATABASE_URL（推奨・最も簡単）
+```bash
+# NeonコンソールからConnection Stringをコピーして設定
+fly secrets set DATABASE_URL="postgresql://username:password@ep-xxx.region.neon.tech/database?sslmode=require"
+fly secrets set ENV="production"
+```
+
+#### 方法2: 個別の環境変数
+```bash
+fly secrets set DB_HOST="ep-xxx.region.neon.tech"
+fly secrets set DB_USER="your-username"
+fly secrets set DB_PASSWORD="your-password"
+fly secrets set DB_NAME="your-database"
+fly secrets set DB_SSLMODE="require"
+fly secrets set ENV="production"
+```
+
+**注意**: DATABASE_URLが設定されている場合は、個別の環境変数より優先して使用されます。
+
+
+## コーディング規約
+
+- Go標準のフォーマッタを使用
+- htmlのフォーマッタには `html-beautify` を使用
+- エラーハンドリングは明示的に行う
+- テストコードを必ず書く
+- 日本語でのコメントを推奨
+    - 特に重要なロジックや複雑な処理には詳細なコメントを追加
+    - 明示的なコメントは可読性が悪くなるので、必要な箇所に限定
+
+
+## 実装完了後のログ作成
+
+実装完了後、 `docs/logs` ディレクトリに実装ログを**必ず**残してください。
+
+- `yyyy-mm-dd/n_機能名.md` の形式でファイルを作成してください
+  - nは連番であり、01から始めてください
+  - yyyy-mm-ddは実装日付です
+  - 例: `2025-06-21/01_ルーム作成機能.md`
+- ログには以下の内容を含めてください：
+  - 実装した機能の概要
+  - 特に注意した点や工夫した点
+  - テスト結果や動作確認の内容
+- ログ最初に実装開始から完了までの時間を記録してください。
+
+
+## その他
+必要であれば、GeminiCLIに相談して、プロジェクトの詳細や特定の実装方法についてアドバイスを受けてください。

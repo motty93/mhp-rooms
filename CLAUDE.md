@@ -78,7 +78,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - ユーザー認証・管理
 - ルーム作成・参加・管理
-- リアルタイムルーム状態更新
 - ゲームバージョン別ルーム表示
 - 日本語対応UI
 
