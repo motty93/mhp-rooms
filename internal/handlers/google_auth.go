@@ -6,7 +6,7 @@ import (
 
 // GoogleAuthDirectHandler handles Google OAuth initiation (Direct implementation)
 // NOTE: 現在は google_auth_supabase.go の実装を使用中
-func (h *Handler) GoogleAuthDirect(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) GoogleAuthDirect(w http.ResponseWriter, r *http.Request) {
 	// 一旦コメントアウト（将来実装用）
 	
 	/* Google OAuth実装（コメントアウト中）
@@ -56,7 +56,7 @@ func (h *Handler) GoogleAuthDirect(w http.ResponseWriter, r *http.Request) {
 
 // GoogleCallbackDirectHandler handles Google OAuth callback (Direct implementation)
 // NOTE: 現在は google_auth_supabase.go の実装を使用中
-func (h *Handler) GoogleCallbackDirect(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) GoogleCallbackDirect(w http.ResponseWriter, r *http.Request) {
 	// 一旦コメントアウト（将来実装用）
 	
 	/* Google OAuth実装（コメントアウト中）

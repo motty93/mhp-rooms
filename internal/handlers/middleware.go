@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"strings"
 
@@ -11,8 +10,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// ProfileCompleteMiddleware
-func (h *Handler) ProfileCompleteMiddleware(next http.HandlerFunc) http.HandlerFunc {
+func (h *BaseHandler) ProfileCompleteMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID := r.Context().Value("user_id")
 		if userID == nil {
@@ -55,8 +53,7 @@ const (
 	tokenContextKey = contextKey("token")
 )
 
-// AuthMiddleware
-func (h *Handler) AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
+func (h *BaseHandler) AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var accessToken string
 
@@ -76,7 +73,6 @@ func (h *Handler) AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 		userResp, err := authClient.GetUser()
 		if err != nil {
-			log.Printf("トークン検証エラー: %v", err)
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -84,14 +80,12 @@ func (h *Handler) AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 		supabaseUserID, err := uuid.Parse(user.ID.String())
 		if err != nil {
-			log.Printf("UUIDパースエラー: %v", err)
 			next.ServeHTTP(w, r)
 			return
 		}
 
 		dbUser, err := h.repo.FindUserBySupabaseUserID(supabaseUserID)
 		if err != nil || dbUser == nil {
-			log.Printf("ユーザー情報取得エラー: %v", err)
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -104,20 +98,17 @@ func (h *Handler) AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-// GetUserFromContext
 func GetUserFromContext(ctx context.Context) (*models.User, bool) {
 	user, ok := ctx.Value(userContextKey).(*models.User)
 	return user, ok
 }
 
-// GetTokenFromContext
 func GetTokenFromContext(ctx context.Context) (string, bool) {
 	token, ok := ctx.Value(tokenContextKey).(string)
 	return token, ok
 }
 
-// RequireAuthMiddleware
-func (h *Handler) RequireAuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
+func (h *BaseHandler) RequireAuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID := r.Context().Value("user_id")
 		if userID == nil {

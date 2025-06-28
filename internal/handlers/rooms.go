@@ -3,14 +3,28 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	supa "github.com/supabase-community/supabase-go"
 
 	"mhp-rooms/internal/models"
+	"mhp-rooms/internal/repository"
 )
+
+type RoomHandler struct {
+	BaseHandler
+}
+
+func NewRoomHandler(repo *repository.Repository, supabaseClient *supa.Client) *RoomHandler {
+	return &RoomHandler{
+		BaseHandler: BaseHandler{
+			repo:     repo,
+			supabase: supabaseClient,
+		},
+	}
+}
 
 type RoomsPageData struct {
 	Rooms        []models.Room        `json:"rooms"`
@@ -19,12 +33,11 @@ type RoomsPageData struct {
 	Total        int64                `json:"total"`
 }
 
-func (h *Handler) Rooms(w http.ResponseWriter, r *http.Request) {
+func (h *RoomHandler) Rooms(w http.ResponseWriter, r *http.Request) {
 	filter := r.URL.Query().Get("game_version")
 
 	gameVersions, err := h.repo.GetActiveGameVersions()
 	if err != nil {
-		log.Printf("ゲームバージョン取得エラー: %v", err)
 		http.Error(w, "ゲームバージョンの取得に失敗しました", http.StatusInternalServerError)
 		return
 	}
@@ -32,7 +45,6 @@ func (h *Handler) Rooms(w http.ResponseWriter, r *http.Request) {
 	// 常にすべてのアクティブな部屋を取得（フィルタリングはフロントエンドで行う）
 	rooms, err := h.repo.GetActiveRooms(nil, 100, 0)
 	if err != nil {
-		log.Printf("ルーム取得エラー: %v", err)
 		http.Error(w, "ルーム一覧の取得に失敗しました", http.StatusInternalServerError)
 		return
 	}
@@ -66,7 +78,7 @@ type CreateRoomRequest struct {
 	RankRequirement string `json:"rank_requirement"`
 }
 
-func (h *Handler) CreateRoom(w http.ResponseWriter, r *http.Request) {
+func (h *RoomHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	var req CreateRoomRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "リクエストの解析に失敗しました", http.StatusBadRequest)
@@ -104,13 +116,11 @@ func (h *Handler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := room.SetPassword(req.Password); err != nil {
-		log.Printf("パスワード設定エラー: %v", err)
 		http.Error(w, "パスワードの設定に失敗しました", http.StatusInternalServerError)
 		return
 	}
 
 	if err := h.repo.CreateRoom(room); err != nil {
-		log.Printf("ルーム作成エラー: %v", err)
 		http.Error(w, "ルームの作成に失敗しました", http.StatusInternalServerError)
 		return
 	}
@@ -123,7 +133,7 @@ type JoinRoomRequest struct {
 	Password string `json:"password"`
 }
 
-func (h *Handler) JoinRoom(w http.ResponseWriter, r *http.Request) {
+func (h *RoomHandler) JoinRoom(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	roomID, err := uuid.Parse(vars["id"])
 	if err != nil {
@@ -141,7 +151,6 @@ func (h *Handler) JoinRoom(w http.ResponseWriter, r *http.Request) {
 	userID := uuid.New() // 仮のユーザーID
 
 	if err := h.repo.JoinRoom(roomID, userID, req.Password); err != nil {
-		log.Printf("ルーム参加エラー: %v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -150,7 +159,7 @@ func (h *Handler) JoinRoom(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"message": "ルームに参加しました"}`))
 }
 
-func (h *Handler) LeaveRoom(w http.ResponseWriter, r *http.Request) {
+func (h *RoomHandler) LeaveRoom(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	roomID, err := uuid.Parse(vars["id"])
 	if err != nil {
@@ -162,7 +171,6 @@ func (h *Handler) LeaveRoom(w http.ResponseWriter, r *http.Request) {
 	userID := uuid.New() // 仮のユーザーID
 
 	if err := h.repo.LeaveRoom(roomID, userID); err != nil {
-		log.Printf("ルーム退室エラー: %v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -175,7 +183,7 @@ type ToggleRoomClosedRequest struct {
 	IsClosed bool `json:"is_closed"`
 }
 
-func (h *Handler) ToggleRoomClosed(w http.ResponseWriter, r *http.Request) {
+func (h *RoomHandler) ToggleRoomClosed(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	roomID, err := uuid.Parse(vars["id"])
 	if err != nil {
@@ -195,7 +203,6 @@ func (h *Handler) ToggleRoomClosed(w http.ResponseWriter, r *http.Request) {
 	// ルームを取得してホストチェック
 	_, err = h.repo.FindRoomByID(roomID)
 	if err != nil {
-		log.Printf("ルーム取得エラー: %v", err)
 		http.Error(w, "ルームが見つかりません", http.StatusNotFound)
 		return
 	}
@@ -207,7 +214,6 @@ func (h *Handler) ToggleRoomClosed(w http.ResponseWriter, r *http.Request) {
 	// }
 
 	if err := h.repo.ToggleRoomClosed(roomID, req.IsClosed); err != nil {
-		log.Printf("ルーム開閉状態変更エラー: %v", err)
 		http.Error(w, "ルームの開閉状態変更に失敗しました", http.StatusInternalServerError)
 		return
 	}
@@ -222,10 +228,9 @@ func (h *Handler) ToggleRoomClosed(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetAllRoomsAPIHandler APIエンドポイント：常に全データを返す
-func (h *Handler) GetAllRoomsAPI(w http.ResponseWriter, r *http.Request) {
+func (h *RoomHandler) GetAllRoomsAPI(w http.ResponseWriter, r *http.Request) {
 	gameVersions, err := h.repo.GetActiveGameVersions()
 	if err != nil {
-		log.Printf("ゲームバージョン取得エラー: %v", err)
 		http.Error(w, "ゲームバージョンの取得に失敗しました", http.StatusInternalServerError)
 		return
 	}
@@ -233,7 +238,6 @@ func (h *Handler) GetAllRoomsAPI(w http.ResponseWriter, r *http.Request) {
 	// 常にすべてのアクティブな部屋を取得
 	rooms, err := h.repo.GetActiveRooms(nil, 100, 0)
 	if err != nil {
-		log.Printf("ルーム取得エラー: %v", err)
 		http.Error(w, "ルーム一覧の取得に失敗しました", http.StatusInternalServerError)
 		return
 	}

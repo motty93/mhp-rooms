@@ -2,24 +2,38 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"time"
 
 	"mhp-rooms/internal/models"
+	"mhp-rooms/internal/repository"
 
 	"github.com/google/uuid"
+	supa "github.com/supabase-community/supabase-go"
 	"github.com/supabase-community/gotrue-go/types"
 )
 
-func (h *Handler) LoginPage(w http.ResponseWriter, r *http.Request) {
+type AuthHandler struct {
+	BaseHandler
+}
+
+func NewAuthHandler(repo *repository.Repository, supabaseClient *supa.Client) *AuthHandler {
+	return &AuthHandler{
+		BaseHandler: BaseHandler{
+			repo:     repo,
+			supabase: supabaseClient,
+		},
+	}
+}
+
+func (h *AuthHandler) LoginPage(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
 		Title: "ログイン",
 	}
 	renderTemplate(w, "login.html", data)
 }
 
-func (h *Handler) RegisterPage(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) RegisterPage(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
 		Title: "新規登録",
 	}
@@ -47,7 +61,7 @@ type AuthResponse struct {
 	User    interface{} `json:"user,omitempty"`
 }
 
-func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -86,7 +100,6 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := h.supabase.Auth.SignInWithEmailPassword(req.Email, req.Password)
 	if err != nil {
-		log.Printf("ログインエラー: %v", err)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(AuthResponse{
@@ -131,9 +144,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 			IsActive:       true,
 			Role:           "user",
 		}
-		if err := h.repo.CreateUser(user); err != nil {
-			log.Printf("ユーザー作成エラー: %v", err)
-		}
+		h.repo.CreateUser(user)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -148,7 +159,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -175,7 +186,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.isValidEmail(req.Email) {
+	if !isValidEmail(req.Email) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(AuthResponse{
@@ -230,7 +241,6 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		Password: req.Password,
 	})
 	if err != nil {
-		log.Printf("新規登録エラー: %v", err)
 		message := "アカウントの作成に失敗しました"
 		if err.Error() == "User already registered" {
 			message = "このメールアドレスは既に登録されています"
@@ -255,7 +265,6 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.repo.CreateUser(&user); err != nil {
-		log.Printf("ユーザー保存エラー: %v", err)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(AuthResponse{
@@ -265,10 +274,8 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// デフォルトのゲームバージョン（MHP3）でプレイヤー名を保存
 	gameVersions, err := h.repo.GetActiveGameVersions()
 	if err == nil && len(gameVersions) > 0 {
-		// MHP3を探す、なければ最初のゲームバージョンを使用
 		var defaultGameVersion *models.GameVersion
 		for _, gv := range gameVersions {
 			if gv.Code == "MHP3" {
@@ -285,10 +292,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 			GameVersionID: defaultGameVersion.ID,
 			Name:          req.PlayerName,
 		}
-		if err := h.repo.CreatePlayerName(playerName); err != nil {
-			log.Printf("プレイヤー名保存エラー: %v", err)
-			// エラーが発生してもユーザー登録は成功しているので続行
-		}
+		h.repo.CreatePlayerName(playerName)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -298,7 +302,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	_, err := r.Cookie("sb-access-token")
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
@@ -308,9 +312,7 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	if err := h.supabase.Auth.Logout(); err != nil {
-		log.Printf("ログアウトエラー: %v", err)
-	}
+	h.supabase.Auth.Logout()
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     "sb-access-token",

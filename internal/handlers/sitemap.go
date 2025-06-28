@@ -23,7 +23,7 @@ type URLSet struct {
 }
 
 // SitemapHandler generates XML sitemap for the website
-func (h *Handler) Sitemap(w http.ResponseWriter, r *http.Request) {
+func (h *PageHandler) Sitemap(w http.ResponseWriter, r *http.Request) {
 	baseURL := "https://monhub.com"
 	now := time.Now().Format("2006-01-02")
 

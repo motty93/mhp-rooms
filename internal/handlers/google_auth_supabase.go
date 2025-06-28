@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -12,7 +11,7 @@ import (
 	"mhp-rooms/internal/models"
 )
 
-func (h *Handler) GoogleAuth(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) GoogleAuth(w http.ResponseWriter, r *http.Request) {
 	// Supabase OAuth URL を環境変数から取得
 	supabaseURL := os.Getenv("SUPABASE_URL")
 	if supabaseURL == "" {
@@ -33,11 +32,10 @@ func (h *Handler) GoogleAuth(w http.ResponseWriter, r *http.Request) {
 	
 	authURL := fmt.Sprintf("%s/auth/v1/authorize?%s", supabaseURL, params.Encode())
 	
-	log.Printf("Google OAuth リダイレクト: %s", authURL)
 	http.Redirect(w, r, authURL, http.StatusTemporaryRedirect)
 }
 
-func (h *Handler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	html := `
 <!DOCTYPE html>
 <html>
@@ -95,7 +93,7 @@ func (h *Handler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(html))
 }
 
-func (h *Handler) Session(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) Session(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		AccessToken  string `json:"access_token"`
 		RefreshToken string `json:"refresh_token"`
@@ -125,7 +123,6 @@ func (h *Handler) Session(w http.ResponseWriter, r *http.Request) {
 		}
 		
 		if err := h.repo.CreateUser(user); err != nil {
-			log.Printf("ユーザー作成エラー: %v", err)
 			http.Error(w, "Failed to create user", http.StatusInternalServerError)
 			return
 		}
