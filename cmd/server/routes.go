@@ -68,10 +68,28 @@ func (app *Application) setupAuthRoutes(r *mux.Router) {
 func (app *Application) setupAPIRoutes(r *mux.Router) {
 	apiRoutes := r.PathPrefix("/api").Subrouter()
 
-	apiRoutes.HandleFunc("/user/current", app.authHandler.CurrentUser).Methods("GET")
-	apiRoutes.HandleFunc("/rooms", app.roomHandler.GetAllRoomsAPI).Methods("GET")
+	// 公開エンドポイント
+	apiRoutes.HandleFunc("/config/supabase", app.configHandler.GetSupabaseConfig).Methods("GET")
 	apiRoutes.HandleFunc("/health", app.healthCheck).Methods("GET")
-
+	
+	// 認証が必要なエンドポイント
+	if app.authMiddleware != nil {
+		// 保護されたルート
+		protected := apiRoutes.PathPrefix("").Subrouter()
+		protected.Use(app.authMiddleware.Middleware)
+		
+		protected.HandleFunc("/user/current", app.authHandler.CurrentUser).Methods("GET")
+		
+		// オプショナル認証のルート（認証があれば使用、なくても通る）
+		optional := apiRoutes.PathPrefix("").Subrouter()
+		optional.Use(app.authMiddleware.OptionalMiddleware)
+		
+		optional.HandleFunc("/rooms", app.roomHandler.GetAllRoomsAPI).Methods("GET")
+	} else {
+		// ミドルウェアが初期化されていない場合（開発環境など）
+		apiRoutes.HandleFunc("/user/current", app.authHandler.CurrentUser).Methods("GET")
+		apiRoutes.HandleFunc("/rooms", app.roomHandler.GetAllRoomsAPI).Methods("GET")
+	}
 }
 
 func (app *Application) setupStaticRoutes(r *mux.Router) {
