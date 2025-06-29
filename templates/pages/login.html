@@ -207,46 +207,34 @@ function loginPage() {
       this.isLoading = true;
       
       try {
-        const response = await fetch('/auth/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(this.form)
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          // ログイン成功
-          if (data.token) {
-            $store.auth.login(data.token, data.user);
-          }
-          window.location.href = '/rooms';
-        } else {
-          this.errorMessage = data.message || 'ログインに失敗しました';
-        }
+        // Supabaseでログイン
+        await $store.auth.signIn(this.form.email, this.form.password);
+        
+        // ログイン成功後、リダイレクト
+        window.location.href = '/rooms';
       } catch (error) {
-        this.errorMessage = 'ネットワークエラーが発生しました';
+        console.error('ログインエラー:', error);
+        
+        // エラーメッセージの設定
+        if (error.message.includes('Invalid login credentials')) {
+          this.errorMessage = 'メールアドレスまたはパスワードが正しくありません';
+        } else if (error.message.includes('Email not confirmed')) {
+          this.errorMessage = 'メールアドレスの確認が完了していません。確認メールをご確認ください。';
+        } else {
+          this.errorMessage = error.message || 'ログインに失敗しました';
+        }
       } finally {
         this.isLoading = false;
       }
     },
 
-    handleGoogleLogin() {
-      // 一旦alertで代替（本実装は以下をコメントアウト）
-      alert('Google認証は準備中です');
-      
-      /* Google OAuth実装（コメントアウト中）
-      // Google認証では常にログイン状態を保持
-      const params = new URLSearchParams({
-        remember: 'true', // 常にtrue
-        redirect_uri: window.location.origin + '/auth/google/callback'
-      });
-      
-      // Google OAuth認証画面にリダイレクト
-      window.location.href = `/auth/google?${params}`;
-      */
+    async handleGoogleLogin() {
+      try {
+        await $store.auth.signInWithGoogle();
+      } catch (error) {
+        console.error('Googleログインエラー:', error);
+        this.errorMessage = error.message || 'Googleログインに失敗しました';
+      }
     }
   }
 }

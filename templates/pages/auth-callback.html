@@ -1,0 +1,59 @@
+{{define "head"}}
+<meta name="description" content="認証中...">
+<meta name="robots" content="noindex, nofollow">
+{{end}}
+
+{{define "page"}}
+<div class="min-h-screen flex items-center justify-center bg-gray-50" x-data="authCallback()">
+  <div class="text-center">
+    <div class="mb-4">
+      <svg class="animate-spin h-8 w-8 text-gray-600 mx-auto" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+    </div>
+    <h2 class="text-xl font-semibold text-gray-900 mb-2">認証中...</h2>
+    <p class="text-gray-600">しばらくお待ちください</p>
+  </div>
+</div>
+
+<script>
+function authCallback() {
+  return {
+    init() {
+      // URLフラグメントからSupabaseの認証情報を取得して処理
+      this.handleAuthCallback();
+    },
+
+    async handleAuthCallback() {
+      try {
+        // Supabaseの認証状態変更を待機
+        if (window.supabase) {
+          const { data, error } = await window.supabase.auth.getSession();
+          
+          if (error) {
+            console.error('認証エラー:', error);
+            window.location.href = '/auth/login?error=' + encodeURIComponent(error.message);
+            return;
+          }
+
+          if (data.session) {
+            // 認証成功
+            window.location.href = '/rooms';
+          } else {
+            // セッションが無い場合はログインページへ
+            window.location.href = '/auth/login';
+          }
+        } else {
+          // Supabaseが初期化されていない場合はメインページへ
+          window.location.href = '/';
+        }
+      } catch (error) {
+        console.error('コールバック処理エラー:', error);
+        window.location.href = '/auth/login?error=' + encodeURIComponent('認証に失敗しました');
+      }
+    }
+  }
+}
+</script>
+{{end}}

@@ -245,45 +245,45 @@ function registerPage() {
       this.isLoading = true;
       
       try {
-        const response = await fetch('/auth/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(this.form)
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          // 登録成功
-          alert('アカウントが作成されました。ログインページに移動します。');
+        // Supabaseでサインアップ
+        const metadata = {
+          psn_id: this.form.psnId
+        };
+        
+        const data = await $store.auth.signUp(this.form.email, this.form.password, metadata);
+        
+        // 登録成功
+        if (data.user && !data.session) {
+          // メール確認が必要な場合
+          alert('確認メールを送信しました。メールを確認してアカウントを有効化してください。');
           window.location.href = '/auth/login';
-        } else {
-          this.errorMessage = data.message || '登録に失敗しました';
+        } else if (data.session) {
+          // すぐにログイン状態になった場合
+          window.location.href = '/rooms';
         }
       } catch (error) {
-        this.errorMessage = 'ネットワークエラーが発生しました';
+        console.error('登録エラー:', error);
+        
+        // エラーメッセージの設定
+        if (error.message.includes('already registered')) {
+          this.errorMessage = 'このメールアドレスは既に登録されています';
+        } else if (error.message.includes('weak password')) {
+          this.errorMessage = 'パスワードが弱すぎます。より強力なパスワードを設定してください';
+        } else {
+          this.errorMessage = error.message || '登録に失敗しました';
+        }
       } finally {
         this.isLoading = false;
       }
     },
 
-    handleGoogleRegister() {
-      // 一旦alertで代替（本実装は以下をコメントアウト）
-      alert('Google認証は準備中です');
-      
-      /* Google OAuth実装（コメントアウト中）
-      // Google認証では常にログイン状態を保持
-      const params = new URLSearchParams({
-        remember: 'true', // 常にtrue
-        redirect_uri: window.location.origin + '/auth/google/callback',
-        type: 'register' // 新規登録フラグ
-      });
-      
-      // Google OAuth認証画面にリダイレクト
-      window.location.href = `/auth/google?${params}`;
-      */
+    async handleGoogleRegister() {
+      try {
+        await $store.auth.signInWithGoogle();
+      } catch (error) {
+        console.error('Google登録エラー:', error);
+        this.errorMessage = error.message || 'Google登録に失敗しました';
+      }
     }
   }
 }
