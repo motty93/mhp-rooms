@@ -16,9 +16,30 @@ func NewConfigHandler() *ConfigHandler {
 
 // GetSupabaseConfig はフロントエンド用のSupabase設定を返す
 func (h *ConfigHandler) GetSupabaseConfig(w http.ResponseWriter, r *http.Request) {
-	config := map[string]string{
-		"url":     os.Getenv("SUPABASE_URL"),
-		"anonKey": os.Getenv("SUPABASE_ANON_KEY"),
+	supabaseURL := os.Getenv("SUPABASE_URL")
+	supabaseAnonKey := os.Getenv("SUPABASE_ANON_KEY")
+	
+	// 環境変数が設定されていない場合の処理
+	if supabaseURL == "" || supabaseAnonKey == "" {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"error": true,
+			"message": "Supabase設定が未設定です。SUPABASE_URLとSUPABASE_ANON_KEYを設定してください。",
+			"config": map[string]string{
+				"url":     "",
+				"anonKey": "",
+			},
+		})
+		return
+	}
+
+	config := map[string]interface{}{
+		"error": false,
+		"config": map[string]string{
+			"url":     supabaseURL,
+			"anonKey": supabaseAnonKey,
+		},
 	}
 
 	w.Header().Set("Content-Type", "application/json")
