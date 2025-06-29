@@ -6,20 +6,19 @@ import (
 
 	"mhp-rooms/internal/config"
 	"mhp-rooms/internal/handlers"
-	"mhp-rooms/internal/infrastructure/auth/supabase"
 	"mhp-rooms/internal/infrastructure/persistence/postgres"
 	"mhp-rooms/internal/middleware"
 	"mhp-rooms/internal/repository"
 )
 
 type Application struct {
-	config        *config.Config
-	db            *postgres.DB
-	repo          *repository.Repository
-	authHandler   *handlers.AuthHandler
-	roomHandler   *handlers.RoomHandler
-	pageHandler   *handlers.PageHandler
-	configHandler *handlers.ConfigHandler
+	config         *config.Config
+	db             *postgres.DB
+	repo           *repository.Repository
+	authHandler    *handlers.AuthHandler
+	roomHandler    *handlers.RoomHandler
+	pageHandler    *handlers.PageHandler
+	configHandler  *handlers.ConfigHandler
 	authMiddleware *middleware.JWTAuth
 }
 
@@ -30,11 +29,6 @@ func NewApplication(cfg *config.Config) (*Application, error) {
 
 	if err := app.initDatabase(); err != nil {
 		return nil, fmt.Errorf("データベース初期化エラー: %w", err)
-	}
-
-	if err := supabase.Init(); err != nil {
-		app.Close()
-		return nil, fmt.Errorf("Supabaseクライアントの初期化に失敗しました: %w", err)
 	}
 
 	app.initHandlers()
@@ -67,12 +61,11 @@ func (app *Application) initDatabase() error {
 func (app *Application) initHandlers() {
 	app.repo = repository.NewRepository(app.db)
 
-	sc := supabase.GetClient()
-	app.authHandler = handlers.NewAuthHandler(app.repo, sc)
-	app.roomHandler = handlers.NewRoomHandler(app.repo, sc)
-	app.pageHandler = handlers.NewPageHandler(app.repo, sc)
+	app.authHandler = handlers.NewAuthHandler(app.repo)
+	app.roomHandler = handlers.NewRoomHandler(app.repo)
+	app.pageHandler = handlers.NewPageHandler(app.repo)
 	app.configHandler = handlers.NewConfigHandler()
-	
+
 	// JWT認証ミドルウェアを初期化
 	authMiddleware, err := middleware.NewJWTAuth()
 	if err != nil {

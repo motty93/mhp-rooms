@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	supa "github.com/supabase-community/supabase-go"
 	"mhp-rooms/internal/repository"
 )
 
@@ -12,11 +11,10 @@ type PageHandler struct {
 	BaseHandler
 }
 
-func NewPageHandler(repo *repository.Repository, supabaseClient *supa.Client) *PageHandler {
+func NewPageHandler(repo *repository.Repository) *PageHandler {
 	return &PageHandler{
 		BaseHandler: BaseHandler{
-			repo:     repo,
-			supabase: supabaseClient,
+			repo: repo,
 		},
 	}
 }

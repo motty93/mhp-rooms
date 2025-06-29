@@ -9,14 +9,12 @@ import (
 	"regexp"
 	"strings"
 
-	supa "github.com/supabase-community/supabase-go"
 	"mhp-rooms/internal/repository"
 )
 
 // BaseHandler は全てのハンドラーが共通で使用する構造体
 type BaseHandler struct {
-	repo     *repository.Repository
-	supabase *supa.Client
+	repo *repository.Repository
 }
 
 type TemplateData struct {

@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	supa "github.com/supabase-community/supabase-go"
 
 	"mhp-rooms/internal/models"
 	"mhp-rooms/internal/repository"
@@ -17,11 +16,10 @@ type RoomHandler struct {
 	BaseHandler
 }
 
-func NewRoomHandler(repo *repository.Repository, supabaseClient *supa.Client) *RoomHandler {
+func NewRoomHandler(repo *repository.Repository) *RoomHandler {
 	return &RoomHandler{
 		BaseHandler: BaseHandler{
-			repo:     repo,
-			supabase: supabaseClient,
+			repo: repo,
 		},
 	}
 }
