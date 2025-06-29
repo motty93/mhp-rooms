@@ -43,6 +43,12 @@
   <!-- ローカルライブラリ -->
   <script src="/static/js/vendor/htmx.min.js"></script>
   <script src="/static/js/vendor/alpine.min.js" defer></script>
+  
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/static/js/supabase.js"></script>
+  <script src="/static/js/auth-store.js"></script>
+  <script src="/static/js/htmx-auth.js"></script>
   <script>
     document.addEventListener('alpine:init', () => {
       // モバイルメニューストア
@@ -55,87 +61,17 @@
           this.open = false
         }
       })
-      
-      // 認証ストア
-      Alpine.store('auth', {
-        isAuthenticated: false,
-        user: null,
-        token: null,
-
-        init() {
-          this.loadFromStorage()
-          this.checkStatus()
-        },
-
-        loadFromStorage() {
-          const storedData = localStorage.getItem('authData')
-          if (storedData) {
-            const data = JSON.parse(storedData)
-            this.token = data.token
-            this.user = data.user
-            this.isAuthenticated = !!data.token
-          }
-        },
-
-        saveToStorage() {
-          localStorage.setItem('authData', JSON.stringify({
-            token: this.token,
-            user: this.user
-          }))
-        },
-
-        login(token, user = null) {
-          this.token = token
-          this.user = user
-          this.isAuthenticated = true
-          this.saveToStorage()
-        },
-
-        logout() {
-          this.token = null
-          this.user = null
-          this.isAuthenticated = false
-          localStorage.removeItem('authData')
-          window.location.href = '/'
-        },
-
-        async checkStatus() {
-          if (!this.token) {
-            this.isAuthenticated = false
-            return
-          }
-
-          try {
-            const response = await fetch('/api/user/current', {
-              headers: {
-                'Authorization': `Bearer ${this.token}`,
-                'Content-Type': 'application/json'
-              }
-            })
-
-            if (response.ok) {
-              const userData = await response.json()
-              this.user = userData
-              this.isAuthenticated = true
-            } else {
-              this.logout()
-            }
-          } catch (error) {
-            console.error('Auth check failed:', error)
-            this.isAuthenticated = false
-          }
-        },
-
-        handleUnauthenticatedAction() {
-          if (confirm('この機能を使用するにはログインが必要です。ログインページに移動しますか？')) {
-            window.location.href = '/auth/login'
-          }
-        }
-      })
-      
-      // 認証ストアの初期化
-      Alpine.store('auth').init()
     })
+    
+    // Supabase初期化完了を通知
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        await window.initializeSupabase();
+        document.dispatchEvent(new CustomEvent('supabase-initialized'));
+      } catch (error) {
+        console.error('Supabase初期化エラー:', error);
+      }
+    });
   </script>
 
   <!-- Tailwind CSSは開発用にCDNを維持 -->
