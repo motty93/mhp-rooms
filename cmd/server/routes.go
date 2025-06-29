@@ -58,6 +58,7 @@ func (app *Application) setupAuthRoutes(r *mux.Router) {
 	ar.HandleFunc("/password-reset/confirm", ah.PasswordResetConfirmPage).Methods("GET")
 	ar.HandleFunc("/password-reset/confirm", ah.PasswordResetConfirm).Methods("POST")
 
+	ar.HandleFunc("/callback", ah.AuthCallback).Methods("GET")
 	ar.HandleFunc("/google", ah.GoogleAuth).Methods("GET")
 	ar.HandleFunc("/google/callback", ah.GoogleCallback).Methods("GET")
 

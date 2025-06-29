@@ -109,3 +109,33 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		"message": "このエンドポイントは使用されません。フロントエンド認証をご利用ください。",
 	})
 }
+
+func (h *AuthHandler) AuthCallback(w http.ResponseWriter, r *http.Request) {
+	data := TemplateData{
+		Title: "認証中",
+	}
+	renderTemplate(w, "auth-callback.html", data)
+}
+
+func (h *AuthHandler) CurrentUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusNotImplemented)
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "このエンドポイントは使用されません。フロントエンド認証をご利用ください。",
+	})
+}
+
+func (h *AuthHandler) CompleteProfilePage(w http.ResponseWriter, r *http.Request) {
+	data := TemplateData{
+		Title: "プロフィール完成",
+	}
+	renderTemplate(w, "complete-profile.html", data)
+}
+
+func (h *AuthHandler) CompleteProfile(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusNotImplemented)
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "このエンドポイントは使用されません。フロントエンド認証をご利用ください。",
+	})
+}
