@@ -38,7 +38,8 @@
       "Bash(go test:*)",
       "Bash(git checkout:*)",
       "WebFetch(domain:pkg.go.dev)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:supabase.com)"
     ],
     "deny": []
   }
