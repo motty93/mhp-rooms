@@ -7,7 +7,7 @@ async function initializeSupabase() {
 
     if (data.error || !data.config || !data.config.url || !data.config.anonKey) {
       console.info('認証機能を無効化しました。本番環境ではSupabase設定を確認してください。')
-      
+
       window.supabaseAuth = createDummyAuth()
 
       if (window.Alpine && window.Alpine.store('auth')) {
@@ -18,13 +18,15 @@ async function initializeSupabase() {
       return null
     }
 
-    supabase = window.supabase.createClient(data.config.url, data.config.anonKey, {
+    window.supabaseClient = window.supabase.createClient(data.config.url, data.config.anonKey, {
       auth: {
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: true,
       },
     })
+
+    supabase = window.supabaseClient
 
     supabase.auth.onAuthStateChange((event, session) => {
       if (window.Alpine && window.Alpine.store('auth')) {
@@ -44,7 +46,7 @@ async function initializeSupabase() {
     if (window.Alpine && window.Alpine.store('auth')) {
       window.Alpine.store('auth').updateSession(session)
     }
-    
+
     window.supabaseAuth = auth
     return supabase
   } catch (error) {
@@ -167,17 +169,19 @@ const auth = {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`
-      }
+        redirectTo: `${window.location.origin}/auth/callback`,
+        skipBrowserRedirect: false,
+      },
     })
-    if (error) throw error
+
+    if (error) {
+      console.error('Google認証エラー:', error)
+      throw error
+    }
+
     return data
   },
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  initializeSupabase().catch(console.error)
-})
-
+// 重複を避けるため、ここでは初期化しない（base.htmlで初期化）
 window.initializeSupabase = initializeSupabase
-// window.supabaseAuthは初期化時に設定される

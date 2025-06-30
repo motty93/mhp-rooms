@@ -49,6 +49,23 @@
   <script src="/static/js/supabase.js"></script>
   <script src="/static/js/auth-store.js"></script>
   <script src="/static/js/htmx-auth.js"></script>
+  
+  <!-- 初期化スクリプト -->
+  <script>
+    // 直接ここで初期化を実行
+    document.addEventListener('DOMContentLoaded', async () => {
+      // window.initializeSupabaseを明示的に呼び出す
+      if (typeof window.initializeSupabase === 'function') {
+        try {
+          await window.initializeSupabase();
+          // 初期化成功後にイベントを発火
+          document.dispatchEvent(new CustomEvent('supabase-initialized'));
+        } catch (e) {
+          console.error('Supabase初期化エラー:', e);
+        }
+      }
+    });
+  </script>
   <script>
     document.addEventListener('alpine:init', () => {
       // モバイルメニューストア
@@ -61,17 +78,12 @@
           this.open = false
         }
       })
-    })
-    
-    // Supabase初期化完了を通知
-    document.addEventListener('DOMContentLoaded', async () => {
-      try {
-        await window.initializeSupabase();
-        document.dispatchEvent(new CustomEvent('supabase-initialized'));
-      } catch (error) {
-        console.error('Supabase初期化エラー:', error);
+      
+      // Auth storeの初期化を手動で呼び出す
+      if (Alpine.store('auth')) {
+        Alpine.store('auth').init();
       }
-    });
+    })
   </script>
 
   <!-- Tailwind CSSは開発用にCDNを維持 -->
@@ -125,7 +137,7 @@
       <!-- メニュー内容 -->
       <div class="p-6">
         <!-- 未認証時のメニュー -->
-        <div x-show="!$store.auth.isAuthenticated" x-cloak>
+        <div x-show="$store.auth.initialized && !$store.auth.isAuthenticated" x-cloak>
           <div class="space-y-4">
             <a href="/auth/login" @click="$store.mobileMenu.close()"
               class="block w-full text-center bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors">
@@ -146,7 +158,7 @@
         </div>
 
         <!-- 認証済み時のメニュー -->
-        <div x-show="$store.auth.isAuthenticated" x-cloak>
+        <div x-show="$store.auth.initialized && $store.auth.isAuthenticated" x-cloak>
           <div class="space-y-2">
             <a href="/rooms" @click="$store.mobileMenu.close()"
               class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
@@ -173,7 +185,7 @@
             </a>
           </div>
           <hr class="my-6 border-gray-200">
-          <button @click="if(confirm('ログアウトしますか？')) { $store.auth.logout(); $store.mobileMenu.close(); }"
+          <button @click="if(confirm('ログアウトしますか？')) { $store.auth.signOut(); $store.mobileMenu.close(); }"
             class="block w-full text-left px-4 py-3 text-red-600 hover:bg-gray-100 rounded-lg transition-colors">
             ログアウト
           </button>

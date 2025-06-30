@@ -6,7 +6,7 @@
 {{end}}
 
 {{define "page"}}
-<div x-data="rooms()">
+<div x-data="rooms()" x-init="checkPSNIdRequired()">
   <section class="bg-white py-8 border-b border-gray-200">
     <div class="container mx-auto px-4">
 
@@ -288,6 +288,21 @@
         filteredRooms: [],
         activeFilter: '',
         lastFocusedElement: null,
+
+        async checkPSNIdRequired() {
+          try {
+            const authStore = Alpine.store('auth');
+            await authStore.checkAuth();
+            
+            if (authStore.needsPSNId) {
+              console.log('PSN IDが未設定です。プロフィール設定画面へリダイレクトします。');
+              window.location.href = '/auth/complete-profile';
+            }
+          } catch (error) {
+            console.error('PSN IDチェックエラー:', error);
+          }
+        },
+
         // 初期化処理
         init() {
           // サーバーサイドレンダリングのデータを使用

@@ -6,7 +6,7 @@
 {{end}}
 
 {{define "page"}}
-<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8" x-data="registerPage()">
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8" x-data="registerPage()" x-init="checkAuthAndRedirect()">
   <div class="max-w-md w-full space-y-8">
     <!-- ヘッダー -->
     <div class="text-center">
@@ -181,6 +181,19 @@ function registerPage() {
     errorMessage: '',
     isLoading: false,
 
+    async checkAuthAndRedirect() {
+      try {
+        const authStore = Alpine.store('auth');
+        await authStore.checkAuth();
+        
+        if (authStore.isAuthenticated) {
+          window.location.href = '/rooms';
+        }
+      } catch (error) {
+        console.error('認証状態確認エラー:', error);
+      }
+    },
+
     validateField(fieldName) {
       this.fieldErrors[fieldName] = false;
       this.fieldErrorMessages[fieldName] = '';
@@ -250,7 +263,7 @@ function registerPage() {
           psn_id: this.form.psnId
         };
         
-        const data = await $store.auth.signUp(this.form.email, this.form.password, metadata);
+        const data = await Alpine.store('auth').signUp(this.form.email, this.form.password, metadata);
         
         // 登録成功
         if (data.user && !data.session) {
@@ -279,7 +292,7 @@ function registerPage() {
 
     async handleGoogleRegister() {
       try {
-        await $store.auth.signInWithGoogle();
+        await Alpine.store('auth').signInWithGoogle();
       } catch (error) {
         console.error('Google登録エラー:', error);
         this.errorMessage = error.message || 'Google登録に失敗しました';

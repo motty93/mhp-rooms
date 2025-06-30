@@ -35,9 +35,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     document.addEventListener('refresh-auth-token', async () => {
-        if (window.supabase) {
+        if (window.supabaseClient) {
             try {
-                const { data, error } = await window.supabase.auth.refreshSession();
+                const { data, error } = await window.supabaseClient.auth.refreshSession();
                 if (error) throw error;
             } catch (error) {
                 console.error('トークンリフレッシュエラー:', error);

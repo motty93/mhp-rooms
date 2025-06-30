@@ -127,7 +127,7 @@ func (h *AuthHandler) CurrentUser(w http.ResponseWriter, r *http.Request) {
 
 func (h *AuthHandler) CompleteProfilePage(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
-		Title: "プロフィール完成",
+		Title: "プロフィール設定",
 	}
 	renderTemplate(w, "complete-profile.html", data)
 }

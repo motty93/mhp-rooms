@@ -6,7 +6,7 @@
 {{end}}
 
 {{define "page"}}
-<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8" x-data="loginPage()">
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8" x-data="loginPage()" x-init="checkAuthAndRedirect()">
   <div class="max-w-md w-full space-y-8">
     <!-- ヘッダー -->
     <div class="text-center">
@@ -163,6 +163,19 @@ function loginPage() {
     errorMessage: '',
     isLoading: false,
 
+    async checkAuthAndRedirect() {
+      try {
+        const authStore = Alpine.store('auth');
+        await authStore.checkAuth();
+        
+        if (authStore.isAuthenticated) {
+          window.location.href = '/rooms';
+        }
+      } catch (error) {
+        console.error('認証状態確認エラー:', error);
+      }
+    },
+
     validateField(fieldName) {
       this.fieldErrors[fieldName] = false;
       this.fieldErrorMessages[fieldName] = '';
@@ -208,7 +221,7 @@ function loginPage() {
       
       try {
         // Supabaseでログイン
-        await $store.auth.signIn(this.form.email, this.form.password);
+        await Alpine.store('auth').signIn(this.form.email, this.form.password);
         
         // ログイン成功後、リダイレクト
         window.location.href = '/rooms';
@@ -230,7 +243,7 @@ function loginPage() {
 
     async handleGoogleLogin() {
       try {
-        await $store.auth.signInWithGoogle();
+        await Alpine.store('auth').signInWithGoogle();
       } catch (error) {
         console.error('Googleログインエラー:', error);
         this.errorMessage = error.message || 'Googleログインに失敗しました';

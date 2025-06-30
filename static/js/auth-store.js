@@ -5,9 +5,10 @@ document.addEventListener('alpine:init', () => {
         loading: true,
         error: null,
         configError: null,
+        initialized: false,
         
         init() {
-            if (window.supabase) {
+            if (window.supabaseClient) {
                 this.checkAuth();
             } else {
                 document.addEventListener('supabase-initialized', () => {
@@ -33,6 +34,7 @@ document.addEventListener('alpine:init', () => {
                 this.updateSession(null);
             } finally {
                 this.loading = false;
+                this.initialized = true;
             }
         },
         
@@ -48,6 +50,10 @@ document.addEventListener('alpine:init', () => {
         
         get username() {
             return this.user?.email?.split('@')[0] || this.user?.user_metadata?.name || 'ゲスト';
+        },
+
+        get needsPSNId() {
+            return this.isAuthenticated && (!this.user?.user_metadata?.psn_id);
         },
         
         async signIn(email, password) {

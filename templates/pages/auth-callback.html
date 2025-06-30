@@ -4,12 +4,14 @@
 {{end}}
 
 {{define "page"}}
-<div class="min-h-screen flex items-center justify-center bg-gray-50" x-data="authCallback()">
+<div class="min-h-screen flex items-center justify-center bg-gray-50">
   <div class="text-center">
     <div class="mb-4">
       <svg class="animate-spin h-8 w-8 text-gray-600 mx-auto" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        <path class="opacity-75" fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+        </path>
       </svg>
     </div>
     <h2 class="text-xl font-semibold text-gray-900 mb-2">認証中...</h2>
@@ -17,43 +19,76 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-function authCallback() {
-  return {
-    init() {
-      // URLフラグメントからSupabaseの認証情報を取得して処理
-      this.handleAuthCallback();
-    },
-
-    async handleAuthCallback() {
-      try {
-        // Supabaseの認証状態変更を待機
-        if (window.supabase) {
-          const { data, error } = await window.supabase.auth.getSession();
-          
-          if (error) {
-            console.error('認証エラー:', error);
-            window.location.href = '/auth/login?error=' + encodeURIComponent(error.message);
-            return;
-          }
-
-          if (data.session) {
-            // 認証成功
-            window.location.href = '/rooms';
-          } else {
-            // セッションが無い場合はログインページへ
-            window.location.href = '/auth/login';
-          }
-        } else {
-          // Supabaseが初期化されていない場合はメインページへ
-          window.location.href = '/';
-        }
-      } catch (error) {
-        console.error('コールバック処理エラー:', error);
-        window.location.href = '/auth/login?error=' + encodeURIComponent('認証に失敗しました');
+  // コールバックページ専用の処理
+  (async function() {
+    console.log('Auth callback ページ初期化');
+    console.log('現在のURL:', window.location.href);
+    console.log('URLハッシュ:', window.location.hash);
+    
+    try {
+      // Supabase設定を取得
+      const configResponse = await fetch('/api/config/supabase');
+      const configData = await configResponse.json();
+      
+      if (configData.error || !configData.config) {
+        console.error('Supabase設定の取得に失敗しました');
+        window.location.href = '/auth/login?error=' + encodeURIComponent('認証設定エラー');
+        return;
       }
+      
+      // Supabaseクライアントを初期化
+      const supabaseClient = window.supabase.createClient(configData.config.url, configData.config.anonKey, {
+        auth: {
+          autoRefreshToken: true,
+          persistSession: true,
+          detectSessionInUrl: true
+        }
+      });
+      
+      console.log('Supabaseクライアント初期化完了');
+      
+      // 少し待ってからセッションを取得（URLハッシュの処理を待つ）
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      console.log('Supabaseセッション取得中...');
+      const { data, error } = await supabaseClient.auth.getSession();
+      
+      if (error) {
+        console.error('認証エラー:', error);
+        window.location.href = '/auth/login?error=' + encodeURIComponent(error.message);
+        return;
+      }
+      
+      if (data.session) {
+        console.log('認証成功。セッション取得完了。');
+        
+        // Supabaseからユーザー情報を取得
+        const user = data.session.user;
+        console.log('ユーザー情報:', {
+          email: user.email,
+          provider: user.app_metadata?.provider,
+          psn_id: user.user_metadata?.psn_id
+        });
+        
+        // PSN IDの確認（user_metadataに保存されている場合）
+        if (!user.user_metadata?.psn_id) {
+          console.log('PSN IDが未設定です。プロフィール設定画面へリダイレクトします。');
+          window.location.href = '/auth/complete-profile';
+        } else {
+          console.log('PSN ID設定済み。ルーム一覧へリダイレクトします。');
+          window.location.href = '/rooms';
+        }
+      } else {
+        console.log('セッションが存在しません。ログインページへリダイレクトします。');
+        window.location.href = '/auth/login';
+      }
+    } catch (error) {
+      console.error('コールバック処理エラー:', error);
+      window.location.href = '/auth/login?error=' + encodeURIComponent('認証に失敗しました');
     }
-  }
-}
+  })();
+
 </script>
 {{end}}
