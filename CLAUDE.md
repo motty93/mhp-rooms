@@ -85,7 +85,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **データベース**: PostgreSQLを使用し、GORMでORMマッピング
 - **セキュリティ**: ユーザー認証とセッション管理の実装
-- **パフォーマンス**: ルーム一覧の効率的な取得とキャッシュ
+- **パフォーマンス**: ルーム一覧の効率的な取得
 - **UI/UX**: モバイル対応レスポンシブデザイン
 - **国際化**: 日本語を基本言語として設計
 
@@ -94,7 +94,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### 開発環境
 Docker Composeで起動するPostgreSQLを使用します。
 ```bash
-make container-up  # DBとRedisを起動
+make container-up  # DBを起動
 make migrate       # マイグレーション実行
 ```
 

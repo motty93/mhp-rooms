@@ -1,4 +1,4 @@
-.PHONY: build run dev test lint fmt clean migrate migrate-dev container-up container-down
+.PHONY: build run dev test lint fmt clean migrate migrate-dev container-up container-down init setup
 
 # バイナリ名
 BINARY_NAME=mhp-rooms
@@ -73,7 +73,7 @@ deps:
 
 # Docker開発環境コマンド（app以外のコンテナのみ）
 container-up:
-	@echo "DBとRedisコンテナを起動中..."
+	@echo "DBコンテナを起動中..."
 	@docker compose up -d
 
 container-down:
@@ -89,6 +89,28 @@ container-reset:
 	@docker compose down -v
 	@docker compose up -d
 
+# 初期設定コマンド
+init: setup
+
+setup:
+	@echo "🚀 開発環境の初期設定を開始します..."
+	@echo "1️⃣ 依存関係をインストール中..."
+	@go mod download
+	@go mod tidy
+	@echo "2️⃣ DBコンテナを起動中..."
+	@docker compose up -d
+	@echo "3️⃣ コンテナの起動を待機中..."
+	@sleep 5
+	@echo "4️⃣ データベースマイグレーションを実行中..."
+	@go run $(MIGRATE_PATH)/main.go -migrate
+	@echo "5️⃣ シードデータを投入中..."
+	@go run $(SEED_PATH)/main.go -seed
+	@echo "✅ 初期設定が完了しました！"
+	@echo ""
+	@echo "開発サーバーを起動するには以下のコマンドを実行してください:"
+	@echo "  make dev    # ホットリロード開発サーバー"
+	@echo "  make run    # 通常のサーバー"
+
 # 旧コマンド（互換性のため残す）
 docker-up: container-up
 docker-down: container-down
@@ -96,17 +118,19 @@ docker-down: container-down
 # ヘルプを表示
 help:
 	@echo "利用可能なコマンド:"
+	@echo "  setup/init    - 🚀 開発環境の初期設定（コンテナ起動、マイグレーション、シード）"
 	@echo "  build         - アプリケーションをビルド"
 	@echo "  run           - アプリケーションを実行"
 	@echo "  dev           - ホットリロード開発サーバーを起動（air使用）"
 	@echo "  migrate       - マイグレーションを実行"
 	@echo "  migrate-dev   - 開発モードでマイグレーションを実行"
+	@echo "  seeds         - シードデータを投入"
 	@echo "  test          - テストを実行"
 	@echo "  lint          - リンターを実行"
 	@echo "  fmt           - コードをフォーマット"
 	@echo "  clean         - ビルド成果物をクリーンアップ"
 	@echo "  deps          - 依存関係を取得"
-	@echo "  container-up  - DBとRedisコンテナを起動"
+	@echo "  container-up  - DBコンテナを起動"
 	@echo "  container-down- コンテナを停止"
 	@echo "  container-logs- コンテナログを表示"
 	@echo "  container-reset- コンテナ環境をリセット"
