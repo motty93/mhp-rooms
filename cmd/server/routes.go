@@ -22,7 +22,13 @@ func (app *Application) setupPageRoutes(r *mux.Router) {
 	pr := r.PathPrefix("").Subrouter()
 	ph := app.pageHandler
 
+	// 認証ミドルウェアを適用（オプション）
+	if app.authMiddleware != nil {
+		pr.Use(app.authMiddleware.OptionalMiddleware)
+	}
+
 	pr.HandleFunc("/", ph.Home).Methods("GET")
+
 	pr.HandleFunc("/terms", ph.Terms).Methods("GET")
 	pr.HandleFunc("/privacy", ph.Privacy).Methods("GET")
 	pr.HandleFunc("/contact", ph.Contact).Methods("GET", "POST")
@@ -71,18 +77,18 @@ func (app *Application) setupAPIRoutes(r *mux.Router) {
 
 	apiRoutes.HandleFunc("/config/supabase", app.configHandler.GetSupabaseConfig).Methods("GET")
 	apiRoutes.HandleFunc("/health", app.healthCheck).Methods("GET")
-	
+
 	if app.authMiddleware != nil {
 		protected := apiRoutes.PathPrefix("").Subrouter()
 		protected.Use(app.authMiddleware.Middleware)
-		
+
 		protected.HandleFunc("/user/current", app.authHandler.CurrentUser).Methods("GET")
 		protected.HandleFunc("/auth/sync", app.authHandler.SyncUser).Methods("POST")
 		protected.HandleFunc("/auth/psn-id", app.authHandler.UpdatePSNId).Methods("PUT")
-		
+
 		optional := apiRoutes.PathPrefix("").Subrouter()
 		optional.Use(app.authMiddleware.OptionalMiddleware)
-		
+
 		optional.HandleFunc("/rooms", app.roomHandler.GetAllRoomsAPI).Methods("GET")
 	} else {
 		apiRoutes.HandleFunc("/user/current", app.authHandler.CurrentUser).Methods("GET")
