@@ -40,7 +40,7 @@ func (r *Room) SetPassword(password string) error {
 		r.PasswordHash = nil
 		return nil
 	}
-	
+
 	hash, err := utils.HashPassword(password)
 	if err != nil {
 		return err

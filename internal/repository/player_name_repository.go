@@ -71,16 +71,16 @@ func (r *playerNameRepository) UpsertPlayerName(playerName *models.PlayerName) e
 	// 既存のレコードを検索
 	var existing models.PlayerName
 	err := r.db.GetConn().Where("user_id = ? AND game_version_id = ?", playerName.UserID, playerName.GameVersionID).First(&existing).Error
-	
+
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		// 存在しない場合は新規作成
 		return r.db.GetConn().Create(playerName).Error
 	}
-	
+
 	if err != nil {
 		return err
 	}
-	
+
 	// 存在する場合は更新
 	existing.Name = playerName.Name
 	return r.db.GetConn().Save(&existing).Error

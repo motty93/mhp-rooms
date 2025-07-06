@@ -242,8 +242,8 @@ func (h *RoomHandler) GetAllRoomsAPI(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"rooms":        rooms,
+		"rooms":         rooms,
 		"game_versions": gameVersions,
-		"total":        len(rooms),
+		"total":         len(rooms),
 	})
 }

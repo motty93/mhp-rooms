@@ -20,4 +20,3 @@ type RoomMember struct {
 	Room Room `gorm:"foreignKey:RoomID" json:"room"`
 	User User `gorm:"foreignKey:UserID" json:"user"`
 }
-

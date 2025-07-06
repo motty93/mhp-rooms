@@ -71,6 +71,7 @@ func (app *Application) initHandlers() {
 		log.Printf("JWT認証ミドルウェアの初期化に失敗しました: %v", err)
 	}
 	app.authMiddleware = authMiddleware
+
 }
 
 func (app *Application) Close() {

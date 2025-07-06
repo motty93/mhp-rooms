@@ -20,9 +20,9 @@ const UserContextKey contextKey = "user"
 
 type SupabaseJWTClaims struct {
 	jwt.RegisteredClaims
-	Email      string                 `json:"email"`
-	Phone      string                 `json:"phone"`
-	AppMetadata map[string]interface{} `json:"app_metadata"`
+	Email        string                 `json:"email"`
+	Phone        string                 `json:"phone"`
+	AppMetadata  map[string]interface{} `json:"app_metadata"`
 	UserMetadata map[string]interface{} `json:"user_metadata"`
 }
 
@@ -42,7 +42,7 @@ func NewJWTAuth(repo *repository.Repository) (*JWTAuth, error) {
 	if secret == "" {
 		return nil, fmt.Errorf("SUPABASE_JWT_SECRET環境変数が設定されていません")
 	}
-	
+
 	return &JWTAuth{
 		jwtSecret: []byte(secret),
 		repo:      repo,
@@ -56,43 +56,43 @@ func (j *JWTAuth) Middleware(next http.Handler) http.Handler {
 			http.Error(w, "認証が必要です", http.StatusUnauthorized)
 			return
 		}
-		
+
 		tokenParts := strings.Split(authHeader, " ")
 		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
 			http.Error(w, "無効な認証ヘッダー形式です", http.StatusUnauthorized)
 			return
 		}
-		
+
 		tokenString := tokenParts[1]
-		
+
 		token, err := jwt.ParseWithClaims(tokenString, &SupabaseJWTClaims{}, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("予期しない署名方式: %v", token.Header["alg"])
 			}
 			return j.jwtSecret, nil
 		})
-		
+
 		if err != nil || !token.Valid {
 			http.Error(w, "無効なトークンです", http.StatusUnauthorized)
 			return
 		}
-		
+
 		claims, ok := token.Claims.(*SupabaseJWTClaims)
 		if !ok {
 			http.Error(w, "トークンのクレームが無効です", http.StatusUnauthorized)
 			return
 		}
-		
+
 		user := &AuthUser{
 			ID:       claims.Subject,
 			Email:    claims.Email,
 			Metadata: claims.UserMetadata,
 		}
-		
+
 		if j.repo != nil {
 			go j.ensureUserExists(user)
 		}
-		
+
 		ctx := context.WithValue(r.Context(), UserContextKey, user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -105,18 +105,18 @@ func (j *JWTAuth) OptionalMiddleware(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-		
+
 		tokenParts := strings.Split(authHeader, " ")
 		if len(tokenParts) == 2 && tokenParts[0] == "Bearer" {
 			tokenString := tokenParts[1]
-			
-				token, err := jwt.ParseWithClaims(tokenString, &SupabaseJWTClaims{}, func(token *jwt.Token) (interface{}, error) {
+
+			token, err := jwt.ParseWithClaims(tokenString, &SupabaseJWTClaims{}, func(token *jwt.Token) (interface{}, error) {
 				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 					return nil, fmt.Errorf("予期しない署名方式: %v", token.Header["alg"])
 				}
 				return j.jwtSecret, nil
 			})
-			
+
 			if err == nil && token.Valid {
 				if claims, ok := token.Claims.(*SupabaseJWTClaims); ok {
 					user := &AuthUser{
@@ -124,17 +124,17 @@ func (j *JWTAuth) OptionalMiddleware(next http.Handler) http.Handler {
 						Email:    claims.Email,
 						Metadata: claims.UserMetadata,
 					}
-					
-								if j.repo != nil {
+
+					if j.repo != nil {
 						go j.ensureUserExists(user)
 					}
-					
+
 					ctx := context.WithValue(r.Context(), UserContextKey, user)
 					r = r.WithContext(ctx)
 				}
 			}
 		}
-		
+
 		next.ServeHTTP(w, r)
 	})
 }
@@ -150,24 +150,24 @@ func (j *JWTAuth) ensureUserExists(authUser *AuthUser) {
 		fmt.Printf("Invalid Supabase user ID: %v\n", err)
 		return
 	}
-	
+
 	existingUser, err := j.repo.User.FindUserBySupabaseUserID(supabaseUserID)
 	if err == nil && existingUser != nil {
 		return
 	}
-	
+
 	var psnOnlineID *string
 	if authUser.Metadata != nil {
 		if val, ok := authUser.Metadata["psn_id"].(string); ok && val != "" {
 			psnOnlineID = &val
 		}
 	}
-	
+
 	displayName := authUser.Email
 	if idx := strings.Index(authUser.Email, "@"); idx > 0 {
 		displayName = authUser.Email[:idx]
 	}
-	
+
 	now := time.Now()
 	newUser := &models.User{
 		SupabaseUserID: supabaseUserID,
@@ -178,7 +178,7 @@ func (j *JWTAuth) ensureUserExists(authUser *AuthUser) {
 		CreatedAt:      now,
 		UpdatedAt:      now,
 	}
-	
+
 	if err := j.repo.User.CreateUser(newUser); err != nil {
 		fmt.Printf("Failed to create user: %v\n", err)
 	}

@@ -38,7 +38,6 @@ func (h *AuthHandler) RegisterPage(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "register.html", data)
 }
 
-
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNotImplemented)
@@ -62,7 +61,6 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		"message": "このエンドポイントは使用されません。フロントエンド認証をご利用ください。",
 	})
 }
-
 
 func (h *AuthHandler) PasswordResetPage(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
@@ -93,7 +91,6 @@ func (h *AuthHandler) PasswordResetConfirm(w http.ResponseWriter, r *http.Reques
 		"message": "このエンドポイントは使用されません。フロントエンド認証をご利用ください。",
 	})
 }
-
 
 func (h *AuthHandler) GoogleAuth(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -205,9 +202,9 @@ func (h *AuthHandler) SyncUser(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"message": "ユーザーが正常に作成されました",
 			"user": map[string]interface{}{
-				"id":      newUser.ID,
-				"email":   newUser.Email,
-				"psn_id":  newUser.PSNOnlineID,
+				"id":     newUser.ID,
+				"email":  newUser.Email,
+				"psn_id": newUser.PSNOnlineID,
 			},
 		})
 		return
@@ -228,9 +225,9 @@ func (h *AuthHandler) SyncUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"message": "ユーザー情報が正常に更新されました",
 		"user": map[string]interface{}{
-			"id":      existingUser.ID,
-			"email":   existingUser.Email,
-			"psn_id":  existingUser.PSNOnlineID,
+			"id":     existingUser.ID,
+			"email":  existingUser.Email,
+			"psn_id": existingUser.PSNOnlineID,
 		},
 	})
 }
@@ -269,7 +266,7 @@ func (h *AuthHandler) UpdatePSNId(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if existingUser == nil {
-			displayName := user.Email
+		displayName := user.Email
 		if idx := strings.Index(user.Email, "@"); idx > 0 {
 			displayName = user.Email[:idx]
 		}
