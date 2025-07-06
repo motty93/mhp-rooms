@@ -42,6 +42,31 @@ document.addEventListener('alpine:init', () => {
             this.session = session;
             this.user = session?.user || null;
             this.error = null;
+            
+            if (this.user && session?.access_token) {
+                this.syncUser(session.access_token);
+            }
+        },
+        
+        async syncUser(accessToken) {
+            try {
+                const response = await fetch('/api/auth/sync', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}`
+                    },
+                    body: JSON.stringify({
+                        psn_id: this.user?.user_metadata?.psn_id || ''
+                    })
+                });
+                
+                if (!response.ok) {
+                    console.error('ユーザー同期に失敗しました:', response.status);
+                }
+            } catch (error) {
+                console.error('ユーザー同期エラー:', error);
+            }
         },
         
         get isAuthenticated() {
@@ -144,6 +169,47 @@ document.addEventListener('alpine:init', () => {
             try {
                 const data = await window.supabaseAuth.signInWithGoogle();
                 return data;
+            } catch (error) {
+                this.error = error.message;
+                throw error;
+            } finally {
+                this.loading = false;
+            }
+        },
+        
+        async updatePSNId(psnId) {
+            if (!this.session?.access_token) {
+                throw new Error('認証が必要です');
+            }
+            
+            this.loading = true;
+            this.error = null;
+            
+            try {
+                const response = await fetch('/api/auth/psn-id', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${this.session.access_token}`
+                    },
+                    body: JSON.stringify({
+                        psn_id: psnId
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('PSN IDの更新に失敗しました');
+                }
+                
+                // Supabaseのメタデータも更新
+                if (window.supabaseAuth) {
+                    await window.supabaseAuth.updateUserMetadata({ psn_id: psnId });
+                }
+                
+                // ユーザー情報を再取得
+                await this.checkAuth();
+                
+                return response.json();
             } catch (error) {
                 this.error = error.message;
                 throw error;

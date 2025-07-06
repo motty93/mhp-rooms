@@ -66,11 +66,9 @@ func (app *Application) initHandlers() {
 	app.pageHandler = handlers.NewPageHandler(app.repo)
 	app.configHandler = handlers.NewConfigHandler()
 
-	// JWT認証ミドルウェアを初期化
-	authMiddleware, err := middleware.NewJWTAuth()
+	authMiddleware, err := middleware.NewJWTAuth(app.repo)
 	if err != nil {
 		log.Printf("JWT認証ミドルウェアの初期化に失敗しました: %v", err)
-		// エラーを無視して続行（SUPABASE_JWT_SECRETが設定されていない場合）
 	}
 	app.authMiddleware = authMiddleware
 }

@@ -6,16 +6,18 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/google/uuid"
+	"mhp-rooms/internal/models"
+	"mhp-rooms/internal/repository"
 )
 
-// ユーザー情報をコンテキストに格納するためのキー
 type contextKey string
 
 const UserContextKey contextKey = "user"
 
-// SupabaseJWTClaims はSupabaseのJWTクレーム構造
 type SupabaseJWTClaims struct {
 	jwt.RegisteredClaims
 	Email      string                 `json:"email"`
@@ -24,20 +26,18 @@ type SupabaseJWTClaims struct {
 	UserMetadata map[string]interface{} `json:"user_metadata"`
 }
 
-// AuthUser は認証されたユーザー情報
 type AuthUser struct {
 	ID       string
 	Email    string
 	Metadata map[string]interface{}
 }
 
-// JWTAuth はJWT認証ミドルウェアを提供
 type JWTAuth struct {
 	jwtSecret []byte
+	repo      *repository.Repository
 }
 
-// NewJWTAuth は新しいJWT認証ミドルウェアを作成
-func NewJWTAuth() (*JWTAuth, error) {
+func NewJWTAuth(repo *repository.Repository) (*JWTAuth, error) {
 	secret := os.Getenv("SUPABASE_JWT_SECRET")
 	if secret == "" {
 		return nil, fmt.Errorf("SUPABASE_JWT_SECRET環境変数が設定されていません")
@@ -45,20 +45,18 @@ func NewJWTAuth() (*JWTAuth, error) {
 	
 	return &JWTAuth{
 		jwtSecret: []byte(secret),
+		repo:      repo,
 	}, nil
 }
 
-// Middleware はJWT認証を行うミドルウェア
 func (j *JWTAuth) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Authorizationヘッダーからトークンを取得
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
 			http.Error(w, "認証が必要です", http.StatusUnauthorized)
 			return
 		}
 		
-		// Bearer トークンの形式をチェック
 		tokenParts := strings.Split(authHeader, " ")
 		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
 			http.Error(w, "無効な認証ヘッダー形式です", http.StatusUnauthorized)
@@ -67,9 +65,7 @@ func (j *JWTAuth) Middleware(next http.Handler) http.Handler {
 		
 		tokenString := tokenParts[1]
 		
-		// JWTトークンをパース・検証
 		token, err := jwt.ParseWithClaims(tokenString, &SupabaseJWTClaims{}, func(token *jwt.Token) (interface{}, error) {
-			// 署名方式の確認
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("予期しない署名方式: %v", token.Header["alg"])
 			}
@@ -81,52 +77,46 @@ func (j *JWTAuth) Middleware(next http.Handler) http.Handler {
 			return
 		}
 		
-		// クレームからユーザー情報を抽出
 		claims, ok := token.Claims.(*SupabaseJWTClaims)
 		if !ok {
 			http.Error(w, "トークンのクレームが無効です", http.StatusUnauthorized)
 			return
 		}
 		
-		// ユーザー情報を作成
 		user := &AuthUser{
 			ID:       claims.Subject,
 			Email:    claims.Email,
 			Metadata: claims.UserMetadata,
 		}
 		
-		// コンテキストにユーザー情報を格納
+		if j.repo != nil {
+			go j.ensureUserExists(user)
+		}
+		
 		ctx := context.WithValue(r.Context(), UserContextKey, user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
-// OptionalMiddleware はオプショナルなJWT認証を行うミドルウェア
-// トークンがある場合は検証し、ない場合もリクエストを通す
 func (j *JWTAuth) OptionalMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Authorizationヘッダーを確認
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
-			// トークンがない場合はそのまま次へ
 			next.ServeHTTP(w, r)
 			return
 		}
 		
-		// トークンがある場合は検証を試みる
 		tokenParts := strings.Split(authHeader, " ")
 		if len(tokenParts) == 2 && tokenParts[0] == "Bearer" {
 			tokenString := tokenParts[1]
 			
-			// JWTトークンをパース・検証
-			token, err := jwt.ParseWithClaims(tokenString, &SupabaseJWTClaims{}, func(token *jwt.Token) (interface{}, error) {
+				token, err := jwt.ParseWithClaims(tokenString, &SupabaseJWTClaims{}, func(token *jwt.Token) (interface{}, error) {
 				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 					return nil, fmt.Errorf("予期しない署名方式: %v", token.Header["alg"])
 				}
 				return j.jwtSecret, nil
 			})
 			
-			// 検証に成功した場合のみユーザー情報を設定
 			if err == nil && token.Valid {
 				if claims, ok := token.Claims.(*SupabaseJWTClaims); ok {
 					user := &AuthUser{
@@ -134,6 +124,11 @@ func (j *JWTAuth) OptionalMiddleware(next http.Handler) http.Handler {
 						Email:    claims.Email,
 						Metadata: claims.UserMetadata,
 					}
+					
+								if j.repo != nil {
+						go j.ensureUserExists(user)
+					}
+					
 					ctx := context.WithValue(r.Context(), UserContextKey, user)
 					r = r.WithContext(ctx)
 				}
@@ -144,8 +139,47 @@ func (j *JWTAuth) OptionalMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// GetUserFromContext はコンテキストからユーザー情報を取得
 func GetUserFromContext(ctx context.Context) (*AuthUser, bool) {
 	user, ok := ctx.Value(UserContextKey).(*AuthUser)
 	return user, ok
+}
+
+func (j *JWTAuth) ensureUserExists(authUser *AuthUser) {
+	supabaseUserID, err := uuid.Parse(authUser.ID)
+	if err != nil {
+		fmt.Printf("Invalid Supabase user ID: %v\n", err)
+		return
+	}
+	
+	existingUser, err := j.repo.User.FindUserBySupabaseUserID(supabaseUserID)
+	if err == nil && existingUser != nil {
+		return
+	}
+	
+	var psnOnlineID *string
+	if authUser.Metadata != nil {
+		if val, ok := authUser.Metadata["psn_id"].(string); ok && val != "" {
+			psnOnlineID = &val
+		}
+	}
+	
+	displayName := authUser.Email
+	if idx := strings.Index(authUser.Email, "@"); idx > 0 {
+		displayName = authUser.Email[:idx]
+	}
+	
+	now := time.Now()
+	newUser := &models.User{
+		SupabaseUserID: supabaseUserID,
+		Email:          authUser.Email,
+		DisplayName:    displayName,
+		PSNOnlineID:    psnOnlineID,
+		IsActive:       true,
+		CreatedAt:      now,
+		UpdatedAt:      now,
+	}
+	
+	if err := j.repo.User.CreateUser(newUser); err != nil {
+		fmt.Printf("Failed to create user: %v\n", err)
+	}
 }

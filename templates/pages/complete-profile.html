@@ -157,7 +157,6 @@ function completeProfilePage() {
       this.errorMessage = '';
       this.successMessage = '';
       
-      // バリデーション
       this.validateField('psnId');
       
       if (this.fieldErrors.psnId) {
@@ -167,28 +166,21 @@ function completeProfilePage() {
       this.isLoading = true;
       
       try {
-        // Supabaseでユーザーメタデータを更新
-        if (window.supabaseClient) {
-          const { data, error } = await window.supabaseClient.auth.updateUser({
-            data: { psn_id: this.form.psnId }
-          });
-          
-          if (error) {
-            throw error;
-          }
-          
-          this.successMessage = 'プロフィールが登録されました！';
-          
-          // 成功後、少し待ってからリダイレクト
-          setTimeout(() => {
-            window.location.href = '/rooms';
-          }, 1500);
-        } else {
-          throw new Error('認証システムが初期化されていません');
+        const authStore = Alpine.store('auth');
+        if (!authStore) {
+          throw new Error('認証ストアが初期化されていません');
         }
+        
+        await authStore.updatePSNId(this.form.psnId);
+        
+        this.successMessage = 'プロフィールが登録されました！';
+        
+        setTimeout(() => {
+          window.location.href = '/rooms';
+        }, 1500);
       } catch (error) {
         console.error('プロフィール登録エラー:', error);
-        this.errorMessage = 'プロフィールの登録に失敗しました。もう一度お試しください。';
+        this.errorMessage = error.message || 'プロフィールの登録に失敗しました。もう一度お試しください。';
       } finally {
         this.isLoading = false;
       }
