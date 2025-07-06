@@ -201,8 +201,7 @@ document.addEventListener('alpine:init', () => {
                     throw new Error('PSN IDの更新に失敗しました');
                 }
                 
-                // Supabaseのメタデータも更新
-                if (window.supabaseAuth) {
+                if (window.supabaseAuth && typeof window.supabaseAuth.updateUserMetadata === 'function') {
                     await window.supabaseAuth.updateUserMetadata({ psn_id: psnId });
                 }
                 

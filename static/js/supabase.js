@@ -92,6 +92,9 @@ function createDummyAuth() {
     signInWithGoogle: async () => {
       throw new Error('認証機能が無効です。Supabase設定を確認してください。')
     },
+    updateUserMetadata: async () => {
+      throw new Error('認証機能が無効です。Supabase設定を確認してください。')
+    },
   }
 }
 
@@ -181,7 +184,15 @@ const auth = {
 
     return data
   },
+
+  async updateUserMetadata(metadata) {
+    const { data, error } = await supabase.auth.updateUser({
+      data: metadata,
+    })
+
+    if (error) throw error
+    return data
+  },
 }
 
-// 重複を避けるため、ここでは初期化しない（base.htmlで初期化）
 window.initializeSupabase = initializeSupabase

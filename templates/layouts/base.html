@@ -50,15 +50,11 @@
   <script src="/static/js/auth-store.js"></script>
   <script src="/static/js/htmx-auth.js"></script>
   
-  <!-- 初期化スクリプト -->
   <script>
-    // 直接ここで初期化を実行
     document.addEventListener('DOMContentLoaded', async () => {
-      // window.initializeSupabaseを明示的に呼び出す
       if (typeof window.initializeSupabase === 'function') {
         try {
           await window.initializeSupabase();
-          // 初期化成功後にイベントを発火
           document.dispatchEvent(new CustomEvent('supabase-initialized'));
         } catch (e) {
           console.error('Supabase初期化エラー:', e);
@@ -68,7 +64,6 @@
   </script>
   <script>
     document.addEventListener('alpine:init', () => {
-      // モバイルメニューストア
       Alpine.store('mobileMenu', {
         open: false,
         toggle() {
@@ -79,7 +74,6 @@
         }
       })
       
-      // Auth storeの初期化を手動で呼び出す
       if (Alpine.store('auth')) {
         Alpine.store('auth').init();
       }
@@ -201,11 +195,6 @@
 
   {{template "footer" .}}
 
-  <!-- Alpine.js debug commands for development -->
-  <script>
-    // コンソールからテスト可能にする（開発用）
-
-  </script>
 </body>
 
 </html>
