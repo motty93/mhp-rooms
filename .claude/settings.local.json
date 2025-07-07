@@ -40,7 +40,8 @@
       "WebFetch(domain:pkg.go.dev)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebFetch(domain:supabase.com)",
-      "Bash(docker logs:*)"
+      "Bash(docker logs:*)",
+      "Bash(go fmt:*)"
     ],
     "deny": []
   }

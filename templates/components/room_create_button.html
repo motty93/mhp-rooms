@@ -1,49 +1,77 @@
-{{define "room-create-button"}}
-{{if .Size}}
-  {{if eq .Size "large"}}
-    <!-- 大きいボタン（デスクトップ用） -->
-    <a href="/rooms/create" x-show="$store.auth.isAuthenticated" x-cloak
-      class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-3 px-6 rounded-lg transition-colors whitespace-nowrap">
-      新しい部屋を作る
-    </a>
-    <button x-show="!$store.auth.isAuthenticated" x-cloak @click="$store.auth.handleUnauthenticatedAction()"
-      title="ログインが必要です"
-      class="bg-gray-400 text-gray-500 font-medium py-3 px-6 rounded-lg cursor-not-allowed whitespace-nowrap">
-      新しい部屋を作る
-    </button>
-  {{else if eq .Size "small"}}
-    <!-- 小さいボタン（モバイル用） -->
-    <a href="/rooms/create" x-show="$store.auth.isAuthenticated" x-cloak
-      class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm">
-      + 部屋を作る
-    </a>
-    <button x-show="!$store.auth.isAuthenticated" x-cloak @click="$store.auth.handleUnauthenticatedAction()"
-      title="ログインが必要です"
-      class="bg-gray-400 text-gray-500 font-medium py-2 px-4 rounded-lg cursor-not-allowed text-sm">
-      + 部屋を作る
-    </button>
-  {{else if eq .Size "inline"}}
-    <!-- インラインボタン（空の状態用） -->
-    <a href="/rooms/create" x-show="$store.auth.isAuthenticated" x-cloak
-      class="inline-flex items-center bg-gray-800 hover:bg-gray-900 text-white font-medium py-2 px-4 rounded-lg transition-colors">
-      部屋を作る
-    </a>
-    <button x-show="!$store.auth.isAuthenticated" x-cloak @click="$store.auth.handleUnauthenticatedAction()"
-      title="ログインが必要です"
-      class="inline-flex items-center bg-gray-400 text-gray-500 font-medium py-2 px-4 rounded-lg cursor-not-allowed">
-      部屋を作る
-    </button>
-  {{end}}
-{{else}}
-  <!-- デフォルト（大きいボタン） -->
-  <a href="/rooms/create" x-show="$store.auth.isAuthenticated" x-cloak
-    class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-3 px-6 rounded-lg transition-colors whitespace-nowrap">
-    新しい部屋を作る
-  </a>
-  <button x-show="!$store.auth.isAuthenticated" x-cloak @click="$store.auth.handleUnauthenticatedAction()"
-    title="ログインが必要です"
-    class="bg-gray-400 text-gray-500 font-medium py-3 px-6 rounded-lg cursor-not-allowed whitespace-nowrap">
-    新しい部屋を作る
-  </button>
-{{end}}
-{{end}}
+{{define "room-create-button"}} {{if .Size}} {{if eq .Size "large"}}
+<!-- 大きいボタン（デスクトップ用） -->
+<a
+  href="/rooms/create"
+  x-show="$store.auth.isAuthenticated"
+  x-cloak
+  class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-3 px-6 rounded-lg transition-colors whitespace-nowrap"
+>
+  新しい部屋を作る
+</a>
+<button
+  x-show="!$store.auth.isAuthenticated"
+  x-cloak
+  @click="$store.auth.handleUnauthenticatedAction()"
+  title="ログインが必要です"
+  class="bg-gray-400 text-gray-500 font-medium py-3 px-6 rounded-lg cursor-not-allowed whitespace-nowrap"
+>
+  新しい部屋を作る
+</button>
+{{else if eq .Size "small"}}
+<!-- 小さいボタン（モバイル用） -->
+<a
+  href="/rooms/create"
+  x-show="$store.auth.isAuthenticated"
+  x-cloak
+  class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm"
+>
+  + 部屋を作る
+</a>
+<button
+  x-show="!$store.auth.isAuthenticated"
+  x-cloak
+  @click="$store.auth.handleUnauthenticatedAction()"
+  title="ログインが必要です"
+  class="bg-gray-400 text-gray-500 font-medium py-2 px-4 rounded-lg cursor-not-allowed text-sm"
+>
+  + 部屋を作る
+</button>
+{{else if eq .Size "inline"}}
+<!-- インラインボタン（空の状態用） -->
+<a
+  href="/rooms/create"
+  x-show="$store.auth.isAuthenticated"
+  x-cloak
+  class="inline-flex items-center bg-gray-800 hover:bg-gray-900 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+>
+  部屋を作る
+</a>
+<button
+  x-show="!$store.auth.isAuthenticated"
+  x-cloak
+  @click="$store.auth.handleUnauthenticatedAction()"
+  title="ログインが必要です"
+  class="inline-flex items-center bg-gray-400 text-gray-500 font-medium py-2 px-4 rounded-lg cursor-not-allowed"
+>
+  部屋を作る
+</button>
+{{end}} {{else}}
+<!-- デフォルト（大きいボタン） -->
+<a
+  href="/rooms/create"
+  x-show="$store.auth.isAuthenticated"
+  x-cloak
+  class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-3 px-6 rounded-lg transition-colors whitespace-nowrap"
+>
+  新しい部屋を作る
+</a>
+<button
+  x-show="!$store.auth.isAuthenticated"
+  x-cloak
+  @click="$store.auth.handleUnauthenticatedAction()"
+  title="ログインが必要です"
+  class="bg-gray-400 text-gray-500 font-medium py-3 px-6 rounded-lg cursor-not-allowed whitespace-nowrap"
+>
+  新しい部屋を作る
+</button>
+{{end}} {{end}}
