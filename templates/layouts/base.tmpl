@@ -202,8 +202,8 @@
           <div class="p-6">
             <!-- 未認証時のメニュー -->
             <div
-              x-show="$store.auth.initialized && !$store.auth.isAuthenticated"
-              x-cloak
+              x-show="!$store.auth.loading && !$store.auth.isAuthenticated"
+              style="display: none;"
             >
               <div class="space-y-4">
                 <a
@@ -235,8 +235,8 @@
 
             <!-- 認証済み時のメニュー -->
             <div
-              x-show="$store.auth.initialized && $store.auth.isAuthenticated"
-              x-cloak
+              x-show="!$store.auth.loading && $store.auth.isAuthenticated"
+              style="display: none;"
             >
               <div class="space-y-2">
                 <a

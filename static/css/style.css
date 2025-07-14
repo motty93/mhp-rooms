@@ -243,3 +243,15 @@ body {
     display: none !important;
   }
 }
+
+/* ちらつき防止用のスタイル */
+.auth-controls-wrapper {
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out, visibility 0.2s;
+}
+
+.auth-controls-wrapper.loaded {
+  visibility: visible;
+  opacity: 1;
+}
