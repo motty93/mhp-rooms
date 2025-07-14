@@ -303,11 +303,7 @@
         // 初期化処理
         init() {
           // サーバーサイドレンダリングのデータを使用
-          const roomsData = {
-            {
-              .PageData.Rooms | json
-            }
-          };
+          const roomsData = {{.PageData.Rooms | json}};
           this.allRooms = roomsData.map(room => ({
             id: room.id,
             name: room.name,
