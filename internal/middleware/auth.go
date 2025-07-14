@@ -8,15 +8,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
-	"github.com/google/uuid"
 	"mhp-rooms/internal/models"
 	"mhp-rooms/internal/repository"
+
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/google/uuid"
 )
 
 type contextKey string
 
-const UserContextKey contextKey = "user"
+const (
+	UserContextKey   contextKey = "user"
+	DBUserContextKey contextKey = "dbUser"
+)
 
 type SupabaseJWTClaims struct {
 	jwt.RegisteredClaims
@@ -89,11 +93,15 @@ func (j *JWTAuth) Middleware(next http.Handler) http.Handler {
 			Metadata: claims.UserMetadata,
 		}
 
-		if j.repo != nil {
-			go j.ensureUserExists(user)
-		}
-
+		// ユーザー情報をコンテキストに保存
 		ctx := context.WithValue(r.Context(), UserContextKey, user)
+
+		// DBからユーザー情報を取得してコンテキストに保存（同期的に実行）
+		if j.repo != nil {
+			if dbUser := j.loadDBUser(user); dbUser != nil {
+				ctx = context.WithValue(ctx, DBUserContextKey, dbUser)
+			}
+		}
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -125,11 +133,16 @@ func (j *JWTAuth) OptionalMiddleware(next http.Handler) http.Handler {
 						Metadata: claims.UserMetadata,
 					}
 
+					// ユーザー情報をコンテキストに保存
+					ctx := context.WithValue(r.Context(), UserContextKey, user)
+
+					// DBからユーザー情報を取得してコンテキストに保存（同期的に実行）
 					if j.repo != nil {
-						go j.ensureUserExists(user)
+						if dbUser := j.loadDBUser(user); dbUser != nil {
+							ctx = context.WithValue(ctx, DBUserContextKey, dbUser)
+						}
 					}
 
-					ctx := context.WithValue(r.Context(), UserContextKey, user)
 					r = r.WithContext(ctx)
 				}
 			}
@@ -144,18 +157,41 @@ func GetUserFromContext(ctx context.Context) (*AuthUser, bool) {
 	return user, ok
 }
 
-func (j *JWTAuth) ensureUserExists(authUser *AuthUser) {
+// GetDBUserFromContext はコンテキストからDB上のユーザー情報を取得
+func GetDBUserFromContext(ctx context.Context) (*models.User, bool) {
+	dbUser, ok := ctx.Value(DBUserContextKey).(*models.User)
+	return dbUser, ok
+}
+
+// loadDBUser はDBからユーザー情報を同期的に取得（存在しない場合はnil）
+func (j *JWTAuth) loadDBUser(authUser *AuthUser) *models.User {
 	supabaseUserID, err := uuid.Parse(authUser.ID)
 	if err != nil {
-		fmt.Printf("Invalid Supabase user ID: %v\n", err)
-		return
+		return nil
 	}
 
 	existingUser, err := j.repo.User.FindUserBySupabaseUserID(supabaseUserID)
-	if err == nil && existingUser != nil {
-		return
+	if err != nil || existingUser == nil {
+		return nil
 	}
 
+	return existingUser
+}
+
+// EnsureUserExists は新規ユーザーを作成（SyncUserエンドポイントから呼ばれる）
+func (j *JWTAuth) EnsureUserExists(authUser *AuthUser) (*models.User, error) {
+	supabaseUserID, err := uuid.Parse(authUser.ID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid Supabase user ID: %v", err)
+	}
+
+	// 既存ユーザーをチェック
+	existingUser, err := j.repo.User.FindUserBySupabaseUserID(supabaseUserID)
+	if err == nil && existingUser != nil {
+		return existingUser, nil
+	}
+
+	// PSN IDを取得
 	var psnOnlineID *string
 	if authUser.Metadata != nil {
 		if val, ok := authUser.Metadata["psn_id"].(string); ok && val != "" {
@@ -163,11 +199,13 @@ func (j *JWTAuth) ensureUserExists(authUser *AuthUser) {
 		}
 	}
 
+	// 表示名を生成
 	displayName := authUser.Email
 	if idx := strings.Index(authUser.Email, "@"); idx > 0 {
 		displayName = authUser.Email[:idx]
 	}
 
+	// 新規ユーザーを作成
 	now := time.Now()
 	newUser := &models.User{
 		SupabaseUserID: supabaseUserID,
@@ -180,6 +218,7 @@ func (j *JWTAuth) ensureUserExists(authUser *AuthUser) {
 	}
 
 	if err := j.repo.User.CreateUser(newUser); err != nil {
-		fmt.Printf("Failed to create user: %v\n", err)
+		return nil, fmt.Errorf("failed to create user: %v", err)
 	}
+	return newUser, nil
 }

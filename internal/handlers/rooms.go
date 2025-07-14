@@ -71,7 +71,6 @@ type CreateRoomRequest struct {
 	GameVersionID   string `json:"game_version_id"`
 	MaxPlayers      int    `json:"max_players"`
 	Password        string `json:"password"`
-	QuestType       string `json:"quest_type"`
 	TargetMonster   string `json:"target_monster"`
 	RankRequirement string `json:"rank_requirement"`
 }
@@ -102,9 +101,6 @@ func (h *RoomHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 
 	if req.Description != "" {
 		room.Description = &req.Description
-	}
-	if req.QuestType != "" {
-		room.QuestType = &req.QuestType
 	}
 	if req.TargetMonster != "" {
 		room.TargetMonster = &req.TargetMonster

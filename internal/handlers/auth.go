@@ -6,14 +6,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"mhp-rooms/internal/middleware"
 	"mhp-rooms/internal/models"
 	"mhp-rooms/internal/repository"
+
+	"github.com/google/uuid"
 )
 
 type AuthHandler struct {
 	BaseHandler
+	authMiddleware *middleware.JWTAuth
 }
 
 func NewAuthHandler(repo *repository.Repository) *AuthHandler {
@@ -22,6 +24,11 @@ func NewAuthHandler(repo *repository.Repository) *AuthHandler {
 			repo: repo,
 		},
 	}
+}
+
+// SetAuthMiddleware は認証ミドルウェアを設定
+func (h *AuthHandler) SetAuthMiddleware(auth *middleware.JWTAuth) {
+	h.authMiddleware = auth
 }
 
 func (h *AuthHandler) LoginPage(w http.ResponseWriter, r *http.Request) {
@@ -146,11 +153,8 @@ func (h *AuthHandler) SyncUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	supabaseUserID, err := uuid.Parse(user.ID)
-	if err != nil {
-		http.Error(w, "無効なユーザーIDです", http.StatusBadRequest)
-		return
-	}
+	// コンテキストからDBユーザー情報を取得
+	dbUser, hasDBUser := middleware.GetDBUserFromContext(r.Context())
 
 	var req struct {
 		PSNId string `json:"psn_id"`
@@ -160,19 +164,50 @@ func (h *AuthHandler) SyncUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// PSN IDの優先度: メタデータ > リクエスト
 	if psnId, ok := user.Metadata["psn_id"].(string); ok && psnId != "" {
 		req.PSNId = psnId
 	}
 
-	existingUser, err := h.repo.User.FindUserBySupabaseUserID(supabaseUserID)
-	if err != nil {
-		http.Error(w, "ユーザー情報の取得に失敗しました", http.StatusInternalServerError)
-		return
-	}
-
 	now := time.Now()
 
-	if existingUser == nil {
+	// DBユーザーが存在しない場合は新規作成
+	if !hasDBUser || dbUser == nil {
+		// ミドルウェアのメソッドを使用してユーザーを作成
+		if h.authMiddleware != nil {
+			// PSN IDをメタデータに追加
+			if req.PSNId != "" {
+				if user.Metadata == nil {
+					user.Metadata = make(map[string]interface{})
+				}
+				user.Metadata["psn_id"] = req.PSNId
+			}
+
+			newUser, err := h.authMiddleware.EnsureUserExists(user)
+			if err != nil {
+				http.Error(w, "ユーザーの作成に失敗しました", http.StatusInternalServerError)
+				return
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"message": "ユーザーが正常に作成されました",
+				"user": map[string]interface{}{
+					"id":     newUser.ID,
+					"email":  newUser.Email,
+					"psn_id": newUser.PSNOnlineID,
+				},
+			})
+			return
+		}
+
+		// フォールバック: ミドルウェアがない場合は直接作成
+		supabaseUserID, err := uuid.Parse(user.ID)
+		if err != nil {
+			http.Error(w, "無効なユーザーIDです", http.StatusBadRequest)
+			return
+		}
+
 		displayName := user.Email
 		if idx := strings.Index(user.Email, "@"); idx > 0 {
 			displayName = user.Email[:idx]
@@ -210,13 +245,14 @@ func (h *AuthHandler) SyncUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	existingUser.Email = user.Email
+	// 既存ユーザーの情報を更新
+	dbUser.Email = user.Email
 	if req.PSNId != "" {
-		existingUser.PSNOnlineID = &req.PSNId
+		dbUser.PSNOnlineID = &req.PSNId
 	}
-	existingUser.UpdatedAt = now
+	dbUser.UpdatedAt = now
 
-	if err := h.repo.User.UpdateUser(existingUser); err != nil {
+	if err := h.repo.User.UpdateUser(dbUser); err != nil {
 		http.Error(w, "ユーザー情報の更新に失敗しました", http.StatusInternalServerError)
 		return
 	}
@@ -225,9 +261,9 @@ func (h *AuthHandler) SyncUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"message": "ユーザー情報が正常に更新されました",
 		"user": map[string]interface{}{
-			"id":     existingUser.ID,
-			"email":  existingUser.Email,
-			"psn_id": existingUser.PSNOnlineID,
+			"id":     dbUser.ID,
+			"email":  dbUser.Email,
+			"psn_id": dbUser.PSNOnlineID,
 		},
 	})
 }
@@ -240,11 +276,8 @@ func (h *AuthHandler) UpdatePSNId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	supabaseUserID, err := uuid.Parse(user.ID)
-	if err != nil {
-		http.Error(w, "無効なユーザーIDです", http.StatusBadRequest)
-		return
-	}
+	// コンテキストからDBユーザー情報を取得
+	dbUser, hasDBUser := middleware.GetDBUserFromContext(r.Context())
 
 	var req struct {
 		PSNId string `json:"psn_id"`
@@ -259,13 +292,37 @@ func (h *AuthHandler) UpdatePSNId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	existingUser, err := h.repo.User.FindUserBySupabaseUserID(supabaseUserID)
-	if err != nil {
-		http.Error(w, "ユーザー情報の取得に失敗しました", http.StatusInternalServerError)
-		return
-	}
+	// DBユーザーが存在しない場合は新規作成
+	if !hasDBUser || dbUser == nil {
+		// ミドルウェアのメソッドを使用してユーザーを作成
+		if h.authMiddleware != nil {
+			// PSN IDをメタデータに追加
+			if user.Metadata == nil {
+				user.Metadata = make(map[string]interface{})
+			}
+			user.Metadata["psn_id"] = req.PSNId
 
-	if existingUser == nil {
+			newUser, err := h.authMiddleware.EnsureUserExists(user)
+			if err != nil {
+				http.Error(w, "ユーザーの作成に失敗しました", http.StatusInternalServerError)
+				return
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"message": "PSN IDが正常に設定されました",
+				"psn_id":  newUser.PSNOnlineID,
+			})
+			return
+		}
+
+		// フォールバック: ミドルウェアがない場合は直接作成
+		supabaseUserID, err := uuid.Parse(user.ID)
+		if err != nil {
+			http.Error(w, "無効なユーザーIDです", http.StatusBadRequest)
+			return
+		}
+
 		displayName := user.Email
 		if idx := strings.Index(user.Email, "@"); idx > 0 {
 			displayName = user.Email[:idx]
@@ -295,10 +352,11 @@ func (h *AuthHandler) UpdatePSNId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	existingUser.PSNOnlineID = &req.PSNId
-	existingUser.UpdatedAt = time.Now()
+	// 既存ユーザーのPSN IDを更新
+	dbUser.PSNOnlineID = &req.PSNId
+	dbUser.UpdatedAt = time.Now()
 
-	if err := h.repo.User.UpdateUser(existingUser); err != nil {
+	if err := h.repo.User.UpdateUser(dbUser); err != nil {
 		http.Error(w, "PSN IDの更新に失敗しました", http.StatusInternalServerError)
 		return
 	}
@@ -306,6 +364,6 @@ func (h *AuthHandler) UpdatePSNId(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"message": "PSN IDが正常に更新されました",
-		"psn_id":  existingUser.PSNOnlineID,
+		"psn_id":  dbUser.PSNOnlineID,
 	})
 }
