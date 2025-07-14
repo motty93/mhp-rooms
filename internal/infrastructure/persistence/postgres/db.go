@@ -151,7 +151,6 @@ func (db *DB) insertInitialData() error {
 		}
 	}()
 
-	// Platforms
 	var platformCount int64
 	tx.Model(&models.Platform{}).Count(&platformCount)
 	var playstationPlatform models.Platform
@@ -169,7 +168,6 @@ func (db *DB) insertInitialData() error {
 		tx.First(&playstationPlatform, "name = ?", "PlayStation")
 	}
 
-	// GameVersions
 	var gameVersionCount int64
 	tx.Model(&models.GameVersion{}).Count(&gameVersionCount)
 	if gameVersionCount == 0 {

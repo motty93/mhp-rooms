@@ -47,7 +47,6 @@ func (h *RoomHandler) Rooms(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 総件数を計算（フィルタリング前の全件数）
 	total := int64(len(rooms))
 
 	pageData := RoomsPageData{
@@ -229,7 +228,6 @@ func (h *RoomHandler) GetAllRoomsAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 常にすべてのアクティブな部屋を取得
 	rooms, err := h.repo.GetActiveRooms(nil, 100, 0)
 	if err != nil {
 		http.Error(w, "ルーム一覧の取得に失敗しました", http.StatusInternalServerError)

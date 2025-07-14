@@ -153,7 +153,6 @@ func (h *AuthHandler) SyncUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// コンテキストからDBユーザー情報を取得
 	dbUser, hasDBUser := middleware.GetDBUserFromContext(r.Context())
 
 	var req struct {
@@ -164,18 +163,14 @@ func (h *AuthHandler) SyncUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// PSN IDの優先度: メタデータ > リクエスト
 	if psnId, ok := user.Metadata["psn_id"].(string); ok && psnId != "" {
 		req.PSNId = psnId
 	}
 
 	now := time.Now()
 
-	// DBユーザーが存在しない場合は新規作成
 	if !hasDBUser || dbUser == nil {
-		// ミドルウェアのメソッドを使用してユーザーを作成
 		if h.authMiddleware != nil {
-			// PSN IDをメタデータに追加
 			if req.PSNId != "" {
 				if user.Metadata == nil {
 					user.Metadata = make(map[string]interface{})
@@ -183,7 +178,7 @@ func (h *AuthHandler) SyncUser(w http.ResponseWriter, r *http.Request) {
 				user.Metadata["psn_id"] = req.PSNId
 			}
 
-			newUser, err := h.authMiddleware.EnsureUserExists(user)
+			newUser, err := h.authMiddleware.EnsureUserExistsWithContext(r.Context(), user)
 			if err != nil {
 				http.Error(w, "ユーザーの作成に失敗しました", http.StatusInternalServerError)
 				return
@@ -201,7 +196,6 @@ func (h *AuthHandler) SyncUser(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// フォールバック: ミドルウェアがない場合は直接作成
 		supabaseUserID, err := uuid.Parse(user.ID)
 		if err != nil {
 			http.Error(w, "無効なユーザーIDです", http.StatusBadRequest)
@@ -245,7 +239,6 @@ func (h *AuthHandler) SyncUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 既存ユーザーの情報を更新
 	dbUser.Email = user.Email
 	if req.PSNId != "" {
 		dbUser.PSNOnlineID = &req.PSNId
@@ -276,7 +269,6 @@ func (h *AuthHandler) UpdatePSNId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// コンテキストからDBユーザー情報を取得
 	dbUser, hasDBUser := middleware.GetDBUserFromContext(r.Context())
 
 	var req struct {
@@ -292,17 +284,14 @@ func (h *AuthHandler) UpdatePSNId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// DBユーザーが存在しない場合は新規作成
 	if !hasDBUser || dbUser == nil {
-		// ミドルウェアのメソッドを使用してユーザーを作成
 		if h.authMiddleware != nil {
-			// PSN IDをメタデータに追加
 			if user.Metadata == nil {
 				user.Metadata = make(map[string]interface{})
 			}
 			user.Metadata["psn_id"] = req.PSNId
 
-			newUser, err := h.authMiddleware.EnsureUserExists(user)
+			newUser, err := h.authMiddleware.EnsureUserExistsWithContext(r.Context(), user)
 			if err != nil {
 				http.Error(w, "ユーザーの作成に失敗しました", http.StatusInternalServerError)
 				return
@@ -316,7 +305,6 @@ func (h *AuthHandler) UpdatePSNId(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// フォールバック: ミドルウェアがない場合は直接作成
 		supabaseUserID, err := uuid.Parse(user.ID)
 		if err != nil {
 			http.Error(w, "無効なユーザーIDです", http.StatusBadRequest)
@@ -352,7 +340,6 @@ func (h *AuthHandler) UpdatePSNId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 既存ユーザーのPSN IDを更新
 	dbUser.PSNOnlineID = &req.PSNId
 	dbUser.UpdatedAt = time.Now()
 

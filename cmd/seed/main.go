@@ -76,7 +76,6 @@ func main() {
 		}
 	}
 
-	// ゲームバージョンを取得
 	var gameVersions []models.GameVersion
 	db.GetConn().Find(&gameVersions)
 
@@ -84,7 +83,6 @@ func main() {
 		log.Fatal("ゲームバージョンが見つかりません。先にマイグレーションを実行してください。")
 	}
 
-	// テストルームを作成
 	rooms := []models.Room{
 		{
 			ID:              uuid.New(),

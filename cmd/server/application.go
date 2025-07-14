@@ -72,7 +72,6 @@ func (app *Application) initHandlers() {
 	}
 	app.authMiddleware = authMiddleware
 
-	// AuthHandlerにミドルウェアを設定
 	app.authHandler.SetAuthMiddleware(authMiddleware)
 }
 

@@ -19,7 +19,6 @@ func (h *ConfigHandler) GetSupabaseConfig(w http.ResponseWriter, r *http.Request
 	supabaseURL := os.Getenv("SUPABASE_URL")
 	supabaseAnonKey := os.Getenv("SUPABASE_ANON_KEY")
 
-	// 環境変数が設定されていない場合の処理
 	if supabaseURL == "" || supabaseAnonKey == "" {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusServiceUnavailable)
