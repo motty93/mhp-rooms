@@ -145,7 +145,6 @@ GET /api/rooms
       "host_user_id": "uuid",
       "max_players": 4,
       "current_players": 2,
-      "quest_type": "キークエスト",
       "target_monster": "リオレウス",
       "rank_requirement": "HR4以上",
       "is_active": true,
@@ -187,7 +186,6 @@ POST /rooms
   "game_version_id": "uuid",
   "max_players": 4,
   "password": "string (optional)",
-  "quest_type": "キークエスト",
   "target_monster": "リオレウス",
   "rank_requirement": "HR4以上"
 }
@@ -204,7 +202,6 @@ POST /rooms
   "host_user_id": "uuid",
   "max_players": 4,
   "current_players": 1,
-  "quest_type": "キークエスト",
   "target_monster": "リオレウス",
   "rank_requirement": "HR4以上",
   "is_active": true,
@@ -405,7 +402,6 @@ interface Room {
   max_players: number;
   current_players: number;
   password_hash?: string;        // パスワードハッシュ（レスポンスには含まれない）
-  quest_type?: string;
   target_monster?: string;
   rank_requirement?: string;
   is_active: boolean;

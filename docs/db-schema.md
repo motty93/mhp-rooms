@@ -51,7 +51,6 @@ MonHubのデータベーススキーマ設計書です。PostgreSQL（開発環�
 | host_user_id | UUID | NOT NULL, FOREIGN KEY | ホストユーザーID |
 | max_players | INTEGER | NOT NULL, DEFAULT 4, CHECK (1-4) | 最大人数 |
 | password_hash | VARCHAR(255) | | パスワードハッシュ |
-| quest_type | VARCHAR(50) | NOT NULL | クエストタイプ |
 | target_monster | VARCHAR(100) | | ターゲットモンスター |
 | rank_requirement | VARCHAR(20) | | ランク条件 |
 | is_active | BOOLEAN | NOT NULL, DEFAULT true | アクティブフラグ |

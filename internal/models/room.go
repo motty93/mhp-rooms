@@ -18,7 +18,6 @@ type Room struct {
 	MaxPlayers      int        `gorm:"not null;default:4" json:"max_players"`
 	CurrentPlayers  int        `gorm:"not null;default:0" json:"current_players"`
 	PasswordHash    *string    `gorm:"type:varchar(255)" json:"password_hash,omitempty"`
-	QuestType       *string    `gorm:"type:varchar(50)" json:"quest_type"`
 	TargetMonster   *string    `gorm:"type:varchar(100)" json:"target_monster"`
 	RankRequirement *string    `gorm:"type:varchar(20)" json:"rank_requirement"`
 	IsActive        bool       `gorm:"not null;default:true" json:"is_active"`

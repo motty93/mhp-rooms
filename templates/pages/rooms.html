@@ -288,12 +288,10 @@
         filteredRooms: [],
         activeFilter: '',
         lastFocusedElement: null,
-
         async checkPSNIdRequired() {
           try {
             const authStore = Alpine.store('auth');
             await authStore.checkAuth();
-            
             if (authStore.needsPSNId) {
               console.log('PSN IDが未設定です。プロフィール設定画面へリダイレクトします。');
               window.location.href = '/auth/complete-profile';
@@ -302,11 +300,14 @@
             console.error('PSN IDチェックエラー:', error);
           }
         },
-
         // 初期化処理
         init() {
           // サーバーサイドレンダリングのデータを使用
-          const roomsData = {{.PageData.Rooms | json}};
+          const roomsData = {
+            {
+              .PageData.Rooms | json
+            }
+          };
           this.allRooms = roomsData.map(room => ({
             id: room.id,
             name: room.name,
@@ -323,7 +324,6 @@
             maxPlayers: room.max_players || 4,
             isClosed: room.is_closed || false,
             hasPassword: room.password_hash ? true : false,
-            questType: room.quest_type || '',
             targetMonster: room.target_monster || '',
             rankRequirement: room.rank_requirement || ''
           }));

@@ -59,7 +59,6 @@ erDiagram
         uuid host_user_id FK
         integer max_players
         string password_hash "NULL可"
-        string quest_type
         string target_monster "NULL可"
         string rank_requirement "NULL可"
         boolean is_active
