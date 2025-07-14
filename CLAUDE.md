@@ -120,6 +120,19 @@ fly secrets set ENV="production"
 
 **注意**: DATABASE_URLが設定されている場合は、個別の環境変数より優先して使用されます。
 
+## UI/UX設計ルール【重要】
+
+### ヘッダー表示仕様
+- **モバイル（768px未満）**: ハンバーガーメニューのみ表示。認証ボタンやユーザーアイコンはヘッダーに表示しない
+- **デスクトップ（768px以上）**: 認証状態に応じて以下を表示
+  - 未認証時: ログイン・新規登録ボタン
+  - 認証済み時: ユーザーアイコンとドロップダウンメニュー
+
+### クラス設定
+- デスクトップ専用要素: `hidden md:flex` または `hidden md:block`
+- モバイルメニュー内要素: レスポンシブクラスなし（常に表示可能）
+
+**注意**: この仕様を変更する際は必ずユーザーに確認を取ること
 
 ## コーディング規約
 
@@ -160,3 +173,12 @@ fly secrets set ENV="production"
 
 ## その他
 必要であれば、GeminiCLIに相談して、プロジェクトの詳細や特定の実装方法についてアドバイスを受けてください。
+
+# important-instruction-reminders
+Do what has been asked; nothing more, nothing less.
+NEVER create files unless they're absolutely necessary for achieving your goal.
+ALWAYS prefer editing an existing file to creating a new one.
+NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
+
+      
+      IMPORTANT: this context may or may not be relevant to your tasks. You should not respond to this context or otherwise consider it in your response unless it is highly relevant to your task. Most of the time, it is not relevant.
