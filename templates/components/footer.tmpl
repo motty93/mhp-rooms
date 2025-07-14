@@ -1,0 +1,81 @@
+{{ define "footer" }}
+  <!-- 固定フッター -->
+  <footer class="bg-gray-800 text-white py-8">
+    <div class="container mx-auto px-4">
+      <div class="grid md:grid-cols-3 gap-16 text-center md:text-left">
+        <div>
+          <h5 class="text-base font-bold mb-3">MonHub</h5>
+          <p class="text-gray-400 text-sm">
+            モンスターハンターをより楽しく、より便利に。みんなで集まってゲームを楽しもう！
+          </p>
+        </div>
+        <div>
+          <h5 class="text-base font-bold mb-3">対応ゲーム</h5>
+          <ul class="text-gray-400 text-sm space-y-1">
+            <li>
+              <a
+                href="/rooms?game_version=MHP"
+                class="hover:text-white transition-colors"
+                >モンスターハンターポータブル</a
+              >
+            </li>
+            <li>
+              <a
+                href="/rooms?game_version=MHP2"
+                class="hover:text-white transition-colors"
+                >モンスターハンターポータブル 2nd</a
+              >
+            </li>
+            <li>
+              <a
+                href="/rooms?game_version=MHP2G"
+                class="hover:text-white transition-colors"
+                >モンスターハンターポータブル 2nd G</a
+              >
+            </li>
+            <li>
+              <a
+                href="/rooms?game_version=MHP3"
+                class="hover:text-white transition-colors"
+                >モンスターハンターポータブル 3rd</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h5 class="text-base font-bold mb-3">リンク</h5>
+          <ul class="text-gray-400 text-sm space-y-1">
+            <li>
+              <a href="/guide" class="hover:text-white transition-colors"
+                >使い方ガイド</a
+              >
+            </li>
+            <li>
+              <a href="/faq" class="hover:text-white transition-colors"
+                >よくある質問</a
+              >
+            </li>
+            <li>
+              <a href="/contact" class="hover:text-white transition-colors"
+                >お問い合わせ</a
+              >
+            </li>
+            <li>
+              <a href="/terms" class="hover:text-white transition-colors"
+                >利用規約</a
+              >
+            </li>
+            <li>
+              <a href="/privacy" class="hover:text-white transition-colors"
+                >プライバシーポリシー</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+        <p class="text-xs">&copy; 2025 MonHub. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+{{ end }}

@@ -1,0 +1,15 @@
+{
+  "plugins": ["prettier-plugin-go-template"],
+  "overrides": [
+    {
+      "files": "*.tmpl",
+      "options": {
+        "parser": "go-template"
+      }
+    }
+  ],
+  "tabWidth": 2,
+  "semi": false,
+  "singleQuote": true
+}
+

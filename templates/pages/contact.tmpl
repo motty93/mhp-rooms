@@ -1,0 +1,497 @@
+{{ define "head" }}
+  <meta
+    name="description"
+    content="MonHub（モンハブ）へのお問い合わせ。モンスターハンターパーティ募集サービスに関するご質問、バグ報告、機能要望などお気軽にお問い合わせください。"
+  />
+  <meta property="og:title" content="お問い合わせ - MonHub" />
+  <meta
+    property="og:description"
+    content="モンスターハンターパーティ募集サービス「MonHub」へのお問い合わせページ"
+  />
+{{ end }}
+
+{{ define "page" }}
+  <div class="container mx-auto px-4 py-16" x-data="contactForm()" x-cloak>
+    <div class="max-w-2xl mx-auto">
+      <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-4">お問い合わせ</h1>
+        <p class="text-gray-600">
+          MonHubに関するご質問、ご意見、バグ報告など、お気軽にお問い合わせください。
+        </p>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-lg p-8">
+        <form @submit.prevent="submitForm()" class="space-y-6">
+          <div>
+            <label
+              for="inquiry-type"
+              class="block text-sm font-medium text-gray-700 mb-2"
+            >
+              お問い合わせ種類 <span class="text-red-500">*</span>
+            </label>
+            <select
+              x-model="formData.inquiryType"
+              @change="validateForm()"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent"
+            >
+              <option value="">選択してください</option>
+              <option value="bug">バグ報告</option>
+              <option value="feature">機能要望・改善提案</option>
+              <option value="usage">使い方についての質問</option>
+              <option value="account">アカウント・ログインの問題</option>
+              <option value="room">部屋作成・参加の問題</option>
+              <option value="inappropriate">不適切な内容の報告</option>
+              <option value="technical">技術的な問題</option>
+              <option value="other">その他</option>
+            </select>
+          </div>
+
+          <div>
+            <label
+              for="name"
+              class="block text-sm font-medium text-gray-700 mb-2"
+            >
+              お名前 <span class="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              x-model="formData.name"
+              @blur="validateField('name')"
+              @input="updateFormValidation()"
+              required
+              maxlength="100"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent"
+              :class="{'border-red-500': fieldErrors.name}"
+              placeholder="山田太郎"
+            />
+            <div
+              class="mt-1 text-sm"
+              :class="fieldErrors.name ? 'text-red-500' : 'text-gray-500'"
+            >
+              <span x-show="fieldErrors.name" x-text="fieldErrorMessages.name">
+              </span>
+              <span x-show="!fieldErrors.name">
+                <span x-text="formData.name.length">0</span> / 100文字
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <label
+              for="email"
+              class="block text-sm font-medium text-gray-700 mb-2"
+            >
+              メールアドレス <span class="text-red-500">*</span>
+            </label>
+            <input
+              type="email"
+              x-model="formData.email"
+              @blur="validateField('email')"
+              @input="updateFormValidation()"
+              required
+              maxlength="254"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent"
+              :class="{'border-red-500': fieldErrors.email}"
+              placeholder="example@email.com"
+            />
+            <div
+              class="mt-1 text-sm"
+              :class="fieldErrors.email ? 'text-red-500' : 'text-gray-500'"
+            >
+              <span x-show="!fieldErrors.email">
+                お返事のために使用します。
+              </span>
+              <span
+                x-show="fieldErrors.email"
+                x-text="fieldErrorMessages.email"
+              >
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <label
+              for="subject"
+              class="block text-sm font-medium text-gray-700 mb-2"
+            >
+              件名 <span class="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              x-model="formData.subject"
+              @blur="validateField('subject')"
+              @input="updateFormValidation()"
+              required
+              maxlength="200"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent"
+              :class="{'border-red-500': fieldErrors.subject}"
+              placeholder="お問い合わせの件名"
+            />
+            <div
+              class="mt-1 text-sm"
+              :class="fieldErrors.subject ? 'text-red-500' : 'text-gray-500'"
+            >
+              <span
+                x-show="fieldErrors.subject"
+                x-text="fieldErrorMessages.subject"
+              >
+              </span>
+              <span x-show="!fieldErrors.subject">
+                <span x-text="formData.subject.length">0</span> / 200文字
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <label
+              for="message"
+              class="block text-sm font-medium text-gray-700 mb-2"
+            >
+              お問い合わせ内容 <span class="text-red-500">*</span>
+            </label>
+            <textarea
+              x-model="formData.message"
+              @blur="validateField('message')"
+              @input="updateFormValidation()"
+              required
+              rows="6"
+              maxlength="2000"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent resize-vertical"
+              :class="{'border-red-500': fieldErrors.message}"
+              placeholder="お問い合わせ内容を詳しくご記入ください。バグ報告の場合は、発生手順や使用環境（ブラウザ、OSなど）もお教えください。"
+            ></textarea>
+            <div
+              class="mt-2 text-sm"
+              :class="fieldErrors.message ? 'text-red-500' : 'text-gray-500'"
+            >
+              <div class="flex justify-between">
+                <span
+                  x-show="fieldErrors.message"
+                  x-text="fieldErrorMessages.message"
+                >
+                </span>
+                <span x-show="!fieldErrors.message">
+                  <span x-text="formData.message.length">0</span> / 2000文字
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-start space-x-3">
+            <input
+              type="checkbox"
+              x-model="formData.privacyAgreed"
+              @change="updateFormValidation()"
+              required
+              class="mt-1 w-4 h-4 text-gray-800 border-gray-300 rounded focus:ring-gray-800"
+            />
+            <label class="text-sm text-gray-700">
+              <a
+                href="/privacy"
+                target="_blank"
+                class="text-blue-600 hover:text-blue-800 underline"
+                >プライバシーポリシー</a
+              >に同意します
+              <span class="text-red-500">*</span>
+            </label>
+          </div>
+
+          <div class="pt-4">
+            <button
+              type="submit"
+              :disabled="!isFormValid || isSubmitting"
+              x-text="isSubmitting ? '送信中...' : '送信する'"
+              class="w-full bg-gray-800 hover:bg-gray-900 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-colors"
+            >
+              送信する
+            </button>
+          </div>
+        </form>
+
+        <div
+          x-show="showSuccessMessage"
+          x-cloak
+          x-transition:enter="transition ease-out duration-300"
+          x-transition:enter-start="opacity-0 transform scale-95"
+          x-transition:enter-end="opacity-100 transform scale-100"
+          x-transition:leave="transition ease-in duration-200"
+          x-transition:leave-start="opacity-100 transform scale-100"
+          x-transition:leave-end="opacity-0 transform scale-95"
+          class="mt-6 bg-green-50 border border-green-200 rounded-lg p-4"
+        >
+          <div class="flex items-center">
+            <svg
+              class="w-5 h-5 text-green-600 mr-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              ></path>
+            </svg>
+            <div>
+              <h3 class="text-sm font-medium text-green-800">
+                お問い合わせを送信しました
+              </h3>
+              <p class="text-sm text-green-700 mt-1">
+                お問い合わせありがとうございます。内容を確認後、順次お返事させていただきます。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div
+          x-show="showErrorMessage"
+          x-cloak
+          x-transition:enter="transition ease-out duration-300"
+          x-transition:enter-start="opacity-0 transform scale-95"
+          x-transition:enter-end="opacity-100 transform scale-100"
+          x-transition:leave="transition ease-in duration-200"
+          x-transition:leave-start="opacity-100 transform scale-100"
+          x-transition:leave-end="opacity-0 transform scale-95"
+          class="mt-6 bg-red-50 border border-red-200 rounded-lg p-4"
+        >
+          <div class="flex items-center">
+            <svg
+              class="w-5 h-5 text-red-600 mr-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              ></path>
+            </svg>
+            <div>
+              <h3 class="text-sm font-medium text-red-800">
+                送信に失敗しました
+              </h3>
+              <p class="text-sm text-red-700 mt-1" x-text="errorMessage">
+                エラーが発生しました。しばらく後に再度お試しください。
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <h3 class="text-lg font-semibold text-blue-800 mb-3">
+          お問い合わせの前に
+        </h3>
+        <ul class="text-sm text-blue-700 space-y-2">
+          <li>
+            ・
+            バグ報告の場合は、発生手順や使用環境（ブラウザ、OSなど）を詳しくお教えください。
+          </li>
+          <li>・ お返事は通常2～5営業日程度いただいております。</li>
+          <li>・ 緊急性の高いセキュリティの問題は優先的に対応いたします。</li>
+          <li>・ ご質問内容によってはお答えできない場合がございます。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('alpine:init', () => {
+      Alpine.data('contactForm', () => ({
+        formData: {
+          inquiryType: '',
+          name: '',
+          email: '',
+          subject: '',
+          message: '',
+          privacyAgreed: false,
+        },
+        fieldErrors: {
+          name: false,
+          email: false,
+          subject: false,
+          message: false,
+        },
+        fieldErrorMessages: {
+          name: '',
+          email: '',
+          subject: '',
+          message: '',
+        },
+        isFormValid: false,
+        isSubmitting: false,
+        showSuccessMessage: false,
+        showErrorMessage: false,
+        errorMessage: '',
+
+        validateField(fieldName) {
+          this.fieldErrors[fieldName] = false
+          this.fieldErrorMessages[fieldName] = ''
+
+          switch (fieldName) {
+            case 'name':
+              if (this.formData.name.trim() === '') {
+                this.fieldErrors.name = true
+                this.fieldErrorMessages.name = 'お名前を入力してください'
+              } else if (this.formData.name.trim().length > 100) {
+                this.fieldErrors.name = true
+                this.fieldErrorMessages.name =
+                  'お名前は100文字以内で入力してください'
+              }
+              break
+
+            case 'email':
+              if (this.formData.email.trim() === '') {
+                this.fieldErrors.email = true
+                this.fieldErrorMessages.email =
+                  'メールアドレスを入力してください'
+              } else if (!this.isValidEmail(this.formData.email.trim())) {
+                this.fieldErrors.email = true
+                this.fieldErrorMessages.email =
+                  '正しいメールアドレスの形式で入力してください'
+              }
+              break
+
+            case 'subject':
+              if (this.formData.subject.trim() === '') {
+                this.fieldErrors.subject = true
+                this.fieldErrorMessages.subject = '件名を入力してください'
+              } else if (this.formData.subject.trim().length > 200) {
+                this.fieldErrors.subject = true
+                this.fieldErrorMessages.subject =
+                  '件名は200文字以内で入力してください'
+              }
+              break
+
+            case 'message':
+              if (this.formData.message.trim() === '') {
+                this.fieldErrors.message = true
+                this.fieldErrorMessages.message =
+                  'お問い合わせ内容を入力してください'
+              } else if (this.formData.message.trim().length < 10) {
+                this.fieldErrors.message = true
+                this.fieldErrorMessages.message =
+                  'お問い合わせ内容は10文字以上で入力してください'
+              } else if (this.formData.message.length > 2000) {
+                this.fieldErrors.message = true
+                this.fieldErrorMessages.message =
+                  'お問い合わせ内容は2000文字以内で入力してください'
+              }
+              break
+          }
+
+          this.updateFormValidation()
+        },
+
+        updateFormValidation() {
+          this.isFormValid =
+            this.formData.inquiryType !== '' &&
+            this.formData.name.trim() !== '' &&
+            this.formData.name.trim().length <= 100 &&
+            this.formData.email.trim() !== '' &&
+            this.isValidEmail(this.formData.email.trim()) &&
+            this.formData.subject.trim() !== '' &&
+            this.formData.subject.trim().length <= 200 &&
+            this.formData.message.trim() !== '' &&
+            this.formData.message.trim().length >= 10 &&
+            this.formData.message.length <= 2000 &&
+            this.formData.privacyAgreed
+        },
+
+        isValidEmail(email) {
+          const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+
+          if (email.length > 254) return false
+          if (!emailRegex.test(email)) return false
+          if ((email.match(/@/g) || []).length !== 1) return false
+
+          const parts = email.split('@')
+          if (parts.length !== 2) return false
+
+          const localPart = parts[0]
+          const domainPart = parts[1]
+
+          if (localPart.length === 0 || localPart.length > 64) return false
+          if (domainPart.length === 0 || domainPart.length > 253) return false
+          if (domainPart.startsWith('.') || domainPart.endsWith('.'))
+            return false
+          if (domainPart.includes('..')) return false
+
+          return true
+        },
+
+        async submitForm() {
+          if (!this.isFormValid || this.isSubmitting) return
+
+          this.isSubmitting = true
+          this.showSuccessMessage = false
+          this.showErrorMessage = false
+
+          try {
+            const response = await fetch('/contact', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(this.formData),
+            })
+
+            if (!response.ok) {
+              throw new Error('送信に失敗しました')
+            }
+
+            const result = await response.json()
+
+            this.showSuccessMessage = true
+            this.resetForm()
+
+            this.$nextTick(() => {
+              const successElement = this.$el.querySelector('.bg-green-50')
+              if (successElement) {
+                successElement.scrollIntoView({
+                  behavior: 'smooth',
+                  block: 'nearest',
+                })
+              }
+            })
+          } catch (error) {
+            this.showErrorMessage = true
+            this.errorMessage =
+              error.message ||
+              'エラーが発生しました。しばらく後に再度お試しください。'
+          } finally {
+            this.isSubmitting = false
+          }
+        },
+
+        resetForm() {
+          this.formData = {
+            inquiryType: '',
+            name: '',
+            email: '',
+            subject: '',
+            message: '',
+            privacyAgreed: false,
+          }
+          this.fieldErrors = {
+            name: false,
+            email: false,
+            subject: false,
+            message: false,
+          }
+          this.fieldErrorMessages = {
+            name: '',
+            email: '',
+            subject: '',
+            message: '',
+          }
+          this.isFormValid = false
+        },
+      }))
+    })
+  </script>
+{{ end }}

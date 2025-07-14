@@ -35,14 +35,14 @@ func (h *AuthHandler) LoginPage(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
 		Title: "ログイン",
 	}
-	renderTemplate(w, "login.html", data)
+	renderTemplate(w, "login.tmpl", data)
 }
 
 func (h *AuthHandler) RegisterPage(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
 		Title: "新規登録",
 	}
-	renderTemplate(w, "register.html", data)
+	renderTemplate(w, "register.tmpl", data)
 }
 
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
@@ -73,7 +73,7 @@ func (h *AuthHandler) PasswordResetPage(w http.ResponseWriter, r *http.Request) 
 	data := TemplateData{
 		Title: "パスワードリセット",
 	}
-	renderTemplate(w, "password_reset.html", data)
+	renderTemplate(w, "password_reset.tmpl", data)
 }
 
 func (h *AuthHandler) PasswordResetRequest(w http.ResponseWriter, r *http.Request) {
@@ -88,7 +88,7 @@ func (h *AuthHandler) PasswordResetConfirmPage(w http.ResponseWriter, r *http.Re
 	data := TemplateData{
 		Title: "パスワードリセット確認",
 	}
-	renderTemplate(w, "password_reset_confirm.html", data)
+	renderTemplate(w, "password_reset_confirm.tmpl", data)
 }
 
 func (h *AuthHandler) PasswordResetConfirm(w http.ResponseWriter, r *http.Request) {
@@ -119,7 +119,7 @@ func (h *AuthHandler) AuthCallback(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
 		Title: "認証中",
 	}
-	renderTemplate(w, "auth-callback.html", data)
+	renderTemplate(w, "auth-callback.tmpl", data)
 }
 
 func (h *AuthHandler) CurrentUser(w http.ResponseWriter, r *http.Request) {
@@ -134,7 +134,7 @@ func (h *AuthHandler) CompleteProfilePage(w http.ResponseWriter, r *http.Request
 	data := TemplateData{
 		Title: "プロフィール設定",
 	}
-	renderTemplate(w, "complete-profile.html", data)
+	renderTemplate(w, "complete-profile.tmpl", data)
 }
 
 func (h *AuthHandler) CompleteProfile(w http.ResponseWriter, r *http.Request) {

@@ -23,14 +23,14 @@ func (h *PageHandler) Terms(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
 		Title: "利用規約",
 	}
-	renderTemplate(w, "terms.html", data)
+	renderTemplate(w, "terms.tmpl", data)
 }
 
 func (h *PageHandler) Privacy(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
 		Title: "プライバシーポリシー",
 	}
-	renderTemplate(w, "privacy.html", data)
+	renderTemplate(w, "privacy.tmpl", data)
 }
 
 func (h *PageHandler) Hello(w http.ResponseWriter, r *http.Request) {

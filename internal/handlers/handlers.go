@@ -54,10 +54,10 @@ func renderTemplate(w http.ResponseWriter, templateName string, data TemplateDat
 	}
 
 	tmpl, err := template.New("").Funcs(funcMap).ParseFiles(
-		filepath.Join("templates", "layouts", "base.html"),
-		filepath.Join("templates", "components", "header.html"),
-		filepath.Join("templates", "components", "footer.html"),
-		filepath.Join("templates", "components", "room_create_button.html"),
+		filepath.Join("templates", "layouts", "base.tmpl"),
+		filepath.Join("templates", "components", "header.tmpl"),
+		filepath.Join("templates", "components", "footer.tmpl"),
+		filepath.Join("templates", "components", "room_create_button.tmpl"),
 		filepath.Join("templates", "pages", templateName),
 	)
 	if err != nil {

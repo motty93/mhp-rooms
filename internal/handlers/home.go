@@ -7,5 +7,5 @@ func (h *PageHandler) Home(w http.ResponseWriter, r *http.Request) {
 		Title:   "ホーム",
 		HasHero: true,
 	}
-	renderTemplate(w, "home.html", data)
+	renderTemplate(w, "home.tmpl", data)
 }

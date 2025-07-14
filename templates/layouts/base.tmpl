@@ -1,0 +1,301 @@
+{{ define "base" }}
+  <!doctype html>
+  <html lang="ja">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>{{ .Title }} - MonHub</title>
+      <meta
+        name="description"
+        content="PSPゲームのアドホックパーティを簡単に作成・参加できるサービス。モンハンポータブルシリーズでオンライン対戦を楽しもう。"
+      />
+      <meta
+        name="keywords"
+        content="MonHub,モンハブ,PSP,アドホック,パーティ,モンハン,モンスターハンター,ポータブル,オンライン,対戦,協力プレイ"
+      />
+      <meta name="author" content="MonHub" />
+      <meta property="og:title" content="{{ .Title }} - MonHub" />
+      <meta
+        property="og:description"
+        content="PSPゲームのアドホックパーティを簡単に作成・参加できるサービス"
+      />
+      <meta property="og:type" content="website" />
+      <meta property="og:site_name" content="MonHub" />
+
+      <!-- 構造化データ：サイトナビゲーション -->
+      <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "WebSite",
+              "@id": "https://monhub.com/#website",
+              "url": "https://monhub.com/",
+              "name": "MonHub",
+              "description": "PSPゲームのアドホックパーティを簡単に作成・参加できるサービス",
+              "inLanguage": "ja"
+            },
+            {
+              "@type": "SiteNavigationElement",
+              "@id": "https://monhub.com/#navigation",
+              "name": [
+                "ホーム",
+                "部屋一覧",
+                "ログイン",
+                "新規登録",
+                "お問い合わせ",
+                "利用規約",
+                "プライバシーポリシー"
+              ],
+              "url": [
+                "https://monhub.com/",
+                "https://monhub.com/rooms",
+                "https://monhub.com/auth/login",
+                "https://monhub.com/auth/register",
+                "https://monhub.com/contact",
+                "https://monhub.com/terms",
+                "https://monhub.com/privacy"
+              ]
+            }
+          ]
+        }
+      </script>
+
+      <!-- ローカルライブラリ -->
+      <script src="/static/js/vendor/htmx.min.js"></script>
+      <script src="/static/js/vendor/alpine.min.js" defer></script>
+
+      <!-- Supabase -->
+      <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+      <script src="/static/js/supabase.js"></script>
+      <script src="/static/js/auth-store.js"></script>
+      <script src="/static/js/htmx-auth.js"></script>
+
+      <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+          if (typeof window.initializeSupabase === 'function') {
+            try {
+              await window.initializeSupabase()
+              document.dispatchEvent(new CustomEvent('supabase-initialized'))
+            } catch (e) {
+              console.error('Supabase初期化エラー:', e)
+            }
+          }
+        })
+      </script>
+      <script>
+        document.addEventListener('alpine:init', () => {
+          Alpine.store('mobileMenu', {
+            open: false,
+            toggle() {
+              this.open = !this.open
+            },
+            close() {
+              this.open = false
+            },
+          })
+
+          if (Alpine.store('auth')) {
+            Alpine.store('auth').init()
+          }
+        })
+      </script>
+
+      <!-- Tailwind CSSは開発用にCDNを維持 -->
+      <script src="https://cdn.tailwindcss.com"></script>
+      <link
+        rel="icon"
+        type="image/x-icon"
+        href="/static/images/icons/favicon.ico"
+      />
+      <link
+        rel="icon"
+        type="image/x-icon"
+        sizes="32x32"
+        href="/static/images/icons/favicon-32x32.ico"
+      />
+      <link
+        rel="icon"
+        type="image/x-icon"
+        sizes="16x16"
+        href="/static/images/icons/favicon-16x16.ico"
+      />
+      <link
+        rel="apple-touch-icon"
+        sizes="180x180"
+        href="/static/images/icons/apple-touch-icon.png"
+      />
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+      <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap"
+        rel="stylesheet"
+      />
+      <link rel="stylesheet" href="/static/css/style.css" />
+
+      {{ template "head" . }}
+    </head>
+
+    <body class="bg-gray-50 min-h-screen flex flex-col" x-data>
+      {{ template "header" . }}
+
+
+      <!-- モバイルメニュー -->
+      <div class="md:hidden">
+        <!-- オーバーレイ -->
+        <div
+          x-show="$store.mobileMenu.open"
+          x-cloak
+          @click="$store.mobileMenu.close()"
+          class="fixed inset-0 bg-black bg-opacity-50 z-[9998]"
+          x-transition:enter="transition-opacity ease-out duration-300"
+          x-transition:enter-start="opacity-0"
+          x-transition:enter-end="opacity-100"
+          x-transition:leave="transition-opacity ease-in duration-200"
+          x-transition:leave-start="opacity-100"
+          x-transition:leave-end="opacity-0"
+          style="display: none"
+        ></div>
+
+        <!-- モバイルメニューパネル -->
+        <div
+          x-show="$store.mobileMenu.open"
+          x-cloak
+          class="fixed top-0 right-0 h-full w-80 bg-white shadow-lg z-[9999] overflow-y-auto"
+          x-transition:enter="transition ease-out duration-300"
+          x-transition:enter-start="transform translate-x-full"
+          x-transition:enter-end="transform translate-x-0"
+          x-transition:leave="transition ease-in duration-200"
+          x-transition:leave-start="transform translate-x-0"
+          x-transition:leave-end="transform translate-x-full"
+          style="display: none"
+        >
+          <!-- メニューヘッダー -->
+          <div
+            class="flex items-center justify-between p-6 border-b border-gray-200"
+          >
+            <div class="flex items-center space-x-3">
+              <img src="/static/images/icon.png" alt="MonHub" class="w-8 h-8" />
+              <h2 class="text-xl font-bold text-gray-800">MonHub</h2>
+            </div>
+            <button
+              @click="$store.mobileMenu.close()"
+              class="text-gray-500 hover:text-gray-700"
+            >
+              <svg
+                class="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                ></path>
+              </svg>
+            </button>
+          </div>
+
+          <!-- メニュー内容 -->
+          <div class="p-6">
+            <!-- 未認証時のメニュー -->
+            <div
+              x-show="$store.auth.initialized && !$store.auth.isAuthenticated"
+              x-cloak
+            >
+              <div class="space-y-4">
+                <a
+                  href="/auth/login"
+                  @click="$store.mobileMenu.close()"
+                  class="block w-full text-center bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                >
+                  ログイン
+                </a>
+                <a
+                  href="/auth/register"
+                  @click="$store.mobileMenu.close()"
+                  class="block w-full text-center bg-gray-800 text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-900 transition-colors"
+                >
+                  新規登録
+                </a>
+              </div>
+              <hr class="my-6 border-gray-200" />
+              <div class="space-y-2">
+                <a
+                  href="/rooms"
+                  @click="$store.mobileMenu.close()"
+                  class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  部屋一覧
+                </a>
+              </div>
+            </div>
+
+            <!-- 認証済み時のメニュー -->
+            <div
+              x-show="$store.auth.initialized && $store.auth.isAuthenticated"
+              x-cloak
+            >
+              <div class="space-y-2">
+                <a
+                  href="/rooms"
+                  @click="$store.mobileMenu.close()"
+                  class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  部屋一覧
+                </a>
+                <a
+                  href="/rooms/create"
+                  @click="$store.mobileMenu.close()"
+                  class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  部屋作成
+                </a>
+              </div>
+              <hr class="my-6 border-gray-200" />
+              <div class="space-y-2">
+                <a
+                  href="/profile"
+                  @click="$store.mobileMenu.close()"
+                  class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  プロフィール
+                </a>
+                <a
+                  href="/rooms/my"
+                  @click="$store.mobileMenu.close()"
+                  class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  マイ部屋
+                </a>
+                <a
+                  href="/settings"
+                  @click="$store.mobileMenu.close()"
+                  class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  設定
+                </a>
+              </div>
+              <hr class="my-6 border-gray-200" />
+              <button
+                @click="if(confirm('ログアウトしますか？')) { $store.auth.signOut(); $store.mobileMenu.close(); }"
+                class="block w-full text-left px-4 py-3 text-red-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                ログアウト
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- メインコンテンツエリア -->
+      <main class="{{ if .HasHero }}{{ else }}pt-16{{ end }} grow">
+        {{ template "page" . }}
+      </main>
+
+      {{ template "footer" . }}
+    </body>
+  </html>
+{{ end }}
