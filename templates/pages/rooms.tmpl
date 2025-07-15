@@ -164,7 +164,7 @@
                     <div>
                       <!-- 認証済みユーザー用 -->
                       <button
-                        x-show="$store.auth.isAuthenticated"
+                        x-show="$store.auth.initialized && $store.auth.isAuthenticated"
                         x-cloak
                         @click="openModal(room)"
                         :aria-label="'「' + room.name + '」に参加'"
@@ -175,7 +175,7 @@
 
                       <!-- 未認証ユーザー用 -->
                       <button
-                        x-show="!$store.auth.isAuthenticated"
+                        x-show="$store.auth.initialized && !$store.auth.isAuthenticated"
                         x-cloak
                         @click="openLoginModal()"
                         class="modal-button bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded text-sm transition-colors"
@@ -449,7 +449,10 @@
         async checkPSNIdRequired() {
           try {
             const authStore = Alpine.store('auth');
-            await authStore.checkAuth();
+            // 既に初期化済みの場合は、再度checkAuth()を呼ばない
+            if (!authStore.initialized) {
+              return; // まだ初期化されていない場合は何もしない
+            }
             if (authStore.needsPSNId) {
               console.log('PSN IDが未設定です。プロフィール設定画面へリダイレクトします。');
               window.location.href = '/auth/complete-profile';

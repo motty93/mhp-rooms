@@ -95,8 +95,20 @@
             },
           })
 
+          // 認証ストアの初期化は、supabase初期化完了後に実行
           if (Alpine.store('auth')) {
-            Alpine.store('auth').init()
+            // 初期状態では認証未完了として表示
+            Alpine.store('auth').loading = true;
+            Alpine.store('auth').initialized = false;
+            
+            // Supabase初期化完了後に認証チェックを実行
+            if (window.supabaseClient || window.supabaseAuth) {
+              Alpine.store('auth').init();
+            } else {
+              document.addEventListener('supabase-initialized', () => {
+                Alpine.store('auth').init();
+              });
+            }
           }
         })
       </script>
@@ -202,7 +214,7 @@
           <div class="p-6">
             <!-- 未認証時のメニュー -->
             <div
-              x-show="!$store.auth.loading && !$store.auth.isAuthenticated"
+              x-show="$store.auth.initialized && !$store.auth.loading && !$store.auth.isAuthenticated"
               style="display: none;"
             >
               <div class="space-y-4">
@@ -235,7 +247,7 @@
 
             <!-- 認証済み時のメニュー -->
             <div
-              x-show="!$store.auth.loading && $store.auth.isAuthenticated"
+              x-show="$store.auth.initialized && !$store.auth.loading && $store.auth.isAuthenticated"
               style="display: none;"
             >
               <div class="space-y-2">
