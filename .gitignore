@@ -93,3 +93,6 @@ coverage.html
 
 # Binary
 mhp-rooms
+
+# Local authentication data
+local-storage.json
