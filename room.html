@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>アドホックパーティ - 部屋詳細</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
+    <style>
+      @import url('https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css');
+    </style>
+  </head>
+  <body class="bg-gray-50 h-screen overflow-hidden">
+    <div class="flex h-full">
+      <!-- 左側パネル -->
+      <div class="w-96 h-full border-r border-gray-200 flex flex-col bg-white">
+        <!-- ヘッダー部分 -->
+        <div
+          class="bg-white border-b border-gray-200 px-4 py-3 min-h-0 flex-shrink-0"
+        >
+          <div class="flex items-center space-x-3 mb-2">
+            <div
+              class="w-12 h-12 bg-gray-800 rounded flex items-center justify-center flex-shrink-0"
+            >
+              <div
+                class="w-8 h-8 bg-white rounded flex items-center justify-center text-gray-800 text-xs font-bold"
+              >
+                <svg viewBox="0 0 24 24" class="w-6 h-6 fill-gray-800">
+                  <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+                </svg>
+              </div>
+            </div>
+            <div class="text-gray-800 font-bold text-lg">
+              【初心者歓迎】モンハン3rd まったり狩り部屋
+            </div>
+          </div>
+          <div class="text-gray-600 text-sm leading-relaxed">
+            <div id="description-preview" class="overflow-hidden">
+              <div class="max-h-10 overflow-hidden">
+                初心者歓迎！モンスターハンター3rdでまったり狩りしませんか？初心者の方でも丁寧にサポートします。クエスト選択は相談して決めましょう。ボイスチャット使用予定です。
+              </div>
+              <button
+                id="expand-btn"
+                class="text-gray-800 hover:text-gray-600 text-xs mt-1 underline"
+                onclick="toggleDescription()"
+              >
+                続きを表示
+              </button>
+            </div>
+            <div id="description-full" class="hidden">
+              初心者歓迎！モンスターハンター3rdでまったり狩りしませんか？初心者の方でも丁寧にサポートします。クエスト選択は相談して決めましょう。ボイスチャット使用予定です。
+              <button
+                class="text-gray-800 hover:text-gray-600 text-xs mt-1 underline block"
+                onclick="toggleDescription()"
+              >
+                閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ユーザーリスト -->
+        <div class="flex-1 px-4 pt-4 space-y-3 overflow-y-auto">
+          <button
+            class="w-full flex items-center space-x-3 p-2 bg-gray-100 hover:bg-gray-200 rounded border border-gray-200 transition-colors cursor-pointer"
+          >
+            <div
+              class="w-6 h-8 bg-gray-800 rounded flex items-center justify-center"
+            >
+              <div class="w-4 h-6 bg-white rounded-sm"></div>
+            </div>
+            <span class="text-gray-800 text-sm font-medium">HUNTER1</span>
+          </button>
+
+          <div
+            class="flex items-center space-x-3 p-2 bg-gray-50 rounded border border-gray-200 opacity-60"
+          >
+            <div
+              class="w-6 h-8 bg-gray-300 rounded flex items-center justify-center"
+            >
+              <div class="w-4 h-6 bg-gray-500 rounded-sm"></div>
+            </div>
+            <span class="text-gray-400 text-sm">－</span>
+          </div>
+
+          <div
+            class="flex items-center space-x-3 p-2 bg-gray-50 rounded border border-gray-200 opacity-60"
+          >
+            <div
+              class="w-6 h-8 bg-gray-300 rounded flex items-center justify-center"
+            >
+              <div class="w-4 h-6 bg-gray-500 rounded-sm"></div>
+            </div>
+            <span class="text-gray-400 text-sm">－</span>
+          </div>
+
+          <div
+            class="flex items-center space-x-3 p-2 bg-gray-50 rounded border border-gray-200 opacity-60"
+          >
+            <div
+              class="w-6 h-8 bg-gray-300 rounded flex items-center justify-center"
+            >
+              <div class="w-4 h-6 bg-gray-500 rounded-sm"></div>
+            </div>
+            <span class="text-gray-400 text-sm">－</span>
+          </div>
+        </div>
+
+        <!-- 部屋一覧に戻るボタン -->
+        <div class="p-4 flex-shrink-0">
+          <button
+            class="w-full flex items-center justify-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-4 rounded border border-gray-300 font-medium transition-colors"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+              />
+            </svg>
+            <span>部屋一覧に戻る</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 右側メインエリア -->
+      <div class="flex-1 h-full flex flex-col">
+        <!-- チャットエリア -->
+        <div class="flex-1 relative bg-gray-100 overflow-y-auto">
+          <!-- メッセージリスト -->
+          <div class="p-4 space-y-4">
+            <!-- システムメッセージ -->
+            <div class="text-center">
+              <span
+                class="bg-gray-200 text-gray-600 px-3 py-1 rounded-full text-sm"
+              >
+                HUNTER1さんが部屋を作成しました
+              </span>
+            </div>
+
+            <!-- ユーザーメッセージ1（自分のメッセージ - 右寄せ） -->
+            <div class="flex justify-end">
+              <div class="max-w-xs">
+                <div class="flex items-center mb-1 justify-end">
+                  <span class="text-gray-500 text-xs">14:20</span>
+                </div>
+                <div class="bg-gray-800 rounded-lg p-3 text-sm text-white">
+                  初心者歓迎です！一緒にリオレウスを狩りませんか？
+                </div>
+              </div>
+            </div>
+
+            <!-- 参加メッセージ -->
+            <div class="text-center">
+              <span
+                class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm"
+              >
+                HUNTER2さんが部屋に参加しました
+              </span>
+            </div>
+
+            <!-- ユーザーメッセージ2（他の人のメッセージ - 左寄せ） -->
+            <div class="flex items-start space-x-3">
+              <div
+                class="w-8 h-8 bg-gray-600 rounded flex items-center justify-center flex-shrink-0"
+              >
+                <div class="w-6 h-6 bg-white rounded-sm"></div>
+              </div>
+              <div class="flex-1 max-w-xs">
+                <div class="flex items-center space-x-2 mb-1">
+                  <button
+                    class="font-medium text-gray-800 text-sm hover:text-gray-600 hover:underline transition-colors"
+                  >
+                    HUNTER2
+                  </button>
+                  <span class="text-gray-500 text-xs">14:22</span>
+                </div>
+                <div class="bg-gray-200 rounded-lg p-3 text-sm text-gray-800">
+                  参加します！装備はどのくらいのレベルが必要ですか？
+                </div>
+              </div>
+            </div>
+
+            <!-- ユーザーメッセージ3（自分のメッセージ - 右寄せ） -->
+            <div class="flex justify-end">
+              <div class="max-w-xs">
+                <div class="flex items-center mb-1 justify-end">
+                  <span class="text-gray-500 text-xs">14:23</span>
+                </div>
+                <div class="bg-gray-800 rounded-lg p-3 text-sm text-white">
+                  HR3以上あれば大丈夫です！一緒に頑張りましょう！
+                </div>
+              </div>
+            </div>
+
+            <!-- 参加メッセージ -->
+            <div class="text-center">
+              <span
+                class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm"
+              >
+                HUNTER3さんが部屋に参加しました
+              </span>
+            </div>
+
+            <!-- 新しいユーザーメッセージ（他の人のメッセージ - 左寄せ） -->
+            <div class="flex items-start space-x-3">
+              <div
+                class="w-8 h-8 bg-gray-700 rounded flex items-center justify-center flex-shrink-0"
+              >
+                <div class="w-6 h-6 bg-white rounded-sm"></div>
+              </div>
+              <div class="flex-1 max-w-xs">
+                <div class="flex items-center space-x-2 mb-1">
+                  <button
+                    class="font-medium text-gray-800 text-sm hover:text-gray-600 hover:underline transition-colors"
+                  >
+                    HUNTER3
+                  </button>
+                  <span class="text-gray-500 text-xs">14:25</span>
+                </div>
+                <div class="bg-gray-200 rounded-lg p-3 text-sm text-gray-800">
+                  こんにちは！よろしくお願いします。
+                </div>
+              </div>
+            </div>
+
+            <!-- 長いメッセージのテスト（他の人のメッセージ - 左寄せ） -->
+            <div class="flex items-start space-x-3">
+              <div
+                class="w-8 h-8 bg-gray-600 rounded flex items-center justify-center flex-shrink-0"
+              >
+                <div class="w-6 h-6 bg-white rounded-sm"></div>
+              </div>
+              <div class="flex-1 max-w-xs">
+                <div class="flex items-center space-x-2 mb-1">
+                  <button
+                    class="font-medium text-gray-800 text-sm hover:text-gray-600 hover:underline transition-colors"
+                  >
+                    HUNTER2
+                  </button>
+                  <span class="text-gray-500 text-xs">14:26</span>
+                </div>
+                <div class="bg-gray-200 rounded-lg p-3 text-sm text-gray-800">
+                  ありがとうございます！火属性の装備で挑みます。リオレウスの弱点はどこでしたっけ？頭部でしたでしょうか？攻撃パターンも教えていただけると助かります。
+                </div>
+              </div>
+            </div>
+
+            <!-- 追加メッセージ（自分のメッセージ - 右寄せ） -->
+            <div class="flex justify-end">
+              <div class="max-w-xs">
+                <div class="flex items-center mb-1 justify-end">
+                  <span class="text-gray-500 text-xs">14:27</span>
+                </div>
+                <div class="bg-gray-800 rounded-lg p-3 text-sm text-white">
+                  頭部と翼が弱点ですね。空中にいる時は音爆弾を使うと落とせます。
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-start space-x-3">
+              <div
+                class="w-8 h-8 bg-gray-700 rounded flex items-center justify-center flex-shrink-0"
+              >
+                <div class="w-6 h-6 bg-white rounded-sm"></div>
+              </div>
+              <div class="flex-1 max-w-xs">
+                <div class="flex items-center space-x-2 mb-1">
+                  <button
+                    class="font-medium text-gray-800 text-sm hover:text-gray-600 hover:underline transition-colors"
+                  >
+                    HUNTER3
+                  </button>
+                  <span class="text-gray-500 text-xs">14:28</span>
+                </div>
+                <div class="bg-gray-200 rounded-lg p-3 text-sm text-gray-800">
+                  音爆弾持ってきました！タイミング任せてください。
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-start space-x-3">
+              <div
+                class="w-8 h-8 bg-gray-600 rounded flex items-center justify-center flex-shrink-0"
+              >
+                <div class="w-6 h-6 bg-white rounded-sm"></div>
+              </div>
+              <div class="flex-1 max-w-xs">
+                <div class="flex items-center space-x-2 mb-1">
+                  <button
+                    class="font-medium text-gray-800 text-sm hover:text-gray-600 hover:underline transition-colors"
+                  >
+                    HUNTER2
+                  </button>
+                  <span class="text-gray-500 text-xs">14:29</span>
+                </div>
+                <div class="bg-gray-200 rounded-lg p-3 text-sm text-gray-800">
+                  準備できました！いつでも出発できます。
+                </div>
+              </div>
+            </div>
+
+            <!-- 参加メッセージ -->
+            <div class="text-center">
+              <span
+                class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm"
+              >
+                HUNTER4さんが部屋に参加しました
+              </span>
+            </div>
+
+            <div class="flex items-start space-x-3">
+              <div
+                class="w-8 h-8 bg-gray-500 rounded flex items-center justify-center flex-shrink-0"
+              >
+                <div class="w-6 h-6 bg-white rounded-sm"></div>
+              </div>
+              <div class="flex-1 max-w-xs">
+                <div class="flex items-center space-x-2 mb-1">
+                  <button
+                    class="font-medium text-gray-800 text-sm hover:text-gray-600 hover:underline transition-colors"
+                  >
+                    HUNTER4
+                  </button>
+                  <span class="text-gray-500 text-xs">14:30</span>
+                </div>
+                <div class="bg-gray-200 rounded-lg p-3 text-sm text-gray-800">
+                  最後の一人です！よろしくお願いします！
+                </div>
+              </div>
+            </div>
+
+            <div class="flex justify-end">
+              <div class="max-w-xs">
+                <div class="flex items-center mb-1 justify-end">
+                  <span class="text-gray-500 text-xs">14:31</span>
+                </div>
+                <div class="bg-gray-800 rounded-lg p-3 text-sm text-white">
+                  4人揃いましたね！それでは出発しましょう！
+                </div>
+              </div>
+            </div>
+
+            <!-- 退出メッセージ -->
+            <div class="text-center">
+              <span
+                class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm"
+              >
+                HUNTER3さんが部屋から退出しました
+              </span>
+            </div>
+
+            <div class="flex items-start space-x-3">
+              <div
+                class="w-8 h-8 bg-gray-600 rounded flex items-center justify-center flex-shrink-0"
+              >
+                <div class="w-6 h-6 bg-white rounded-sm"></div>
+              </div>
+              <div class="flex-1 max-w-xs">
+                <div class="flex items-center space-x-2 mb-1">
+                  <button
+                    class="font-medium text-gray-800 text-sm hover:text-gray-600 hover:underline transition-colors"
+                  >
+                    HUNTER2
+                  </button>
+                  <span class="text-gray-500 text-xs">14:32</span>
+                </div>
+                <div class="bg-gray-200 rounded-lg p-3 text-sm text-gray-800">
+                  あれ？HUNTER3さん急用でしょうか？
+                </div>
+              </div>
+            </div>
+
+            <div class="flex justify-end">
+              <div class="max-w-xs">
+                <div class="flex items-center mb-1 justify-end">
+                  <span class="text-gray-500 text-xs">14:33</span>
+                </div>
+                <div class="bg-gray-800 rounded-lg p-3 text-sm text-white">
+                  3人でも大丈夫です。頑張りましょう！
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-start space-x-3">
+              <div
+                class="w-8 h-8 bg-gray-500 rounded flex items-center justify-center flex-shrink-0"
+              >
+                <div class="w-6 h-6 bg-white rounded-sm"></div>
+              </div>
+              <div class="flex-1 max-w-xs">
+                <div class="flex items-center space-x-2 mb-1">
+                  <button
+                    class="font-medium text-gray-800 text-sm hover:text-gray-600 hover:underline transition-colors"
+                  >
+                    HUNTER4
+                  </button>
+                  <span class="text-gray-500 text-xs">14:34</span>
+                </div>
+                <div class="bg-gray-200 rounded-lg p-3 text-sm text-gray-800">
+                  はい！3人でもいけると思います。出発しましょう！
+                </div>
+              </div>
+            </div>
+
+            <!-- 最新のメッセージ -->
+            <div class="flex items-start space-x-3">
+              <div
+                class="w-8 h-8 bg-gray-600 rounded flex items-center justify-center flex-shrink-0"
+              >
+                <div class="w-6 h-6 bg-white rounded-sm"></div>
+              </div>
+              <div class="flex-1 max-w-xs">
+                <div class="flex items-center space-x-2 mb-1">
+                  <button
+                    class="font-medium text-gray-800 text-sm hover:text-gray-600 hover:underline transition-colors"
+                  >
+                    HUNTER2
+                  </button>
+                  <span class="text-gray-500 text-xs">14:35</span>
+                </div>
+                <div class="bg-gray-200 rounded-lg p-3 text-sm text-gray-800">
+                  アドホックパーティ起動しました！みなさんも起動お願いします。
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- メッセージフォーム -->
+        <div class="bg-white border-t border-gray-200 p-4 flex-shrink-0">
+          <form class="flex space-x-3">
+            <input
+              type="text"
+              placeholder="メッセージを入力..."
+              class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent"
+            />
+            <button
+              type="submit"
+              class="bg-gray-800 hover:bg-gray-900 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+            >
+              送信
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function toggleDescription() {
+        const preview = document.getElementById('description-preview')
+        const full = document.getElementById('description-full')
+
+        if (preview.style.display === 'none') {
+          preview.style.display = 'block'
+          full.style.display = 'none'
+        } else {
+          preview.style.display = 'none'
+          full.style.display = 'block'
+        }
+      }
+    </script>
+  </body>
+</html>
