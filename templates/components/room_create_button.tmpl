@@ -20,24 +20,36 @@
         新しい部屋を作る
       </button>
     {{ else if eq .Size "small" }}
-      <!-- 小さいボタン（モバイル用） -->
-      <a
-        href="/rooms/create"
-        x-show="$store.auth.initialized && $store.auth.isAuthenticated"
-        x-cloak
-        class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm"
-      >
-        + 部屋を作る
-      </a>
-      <button
-        x-show="$store.auth.initialized && !$store.auth.isAuthenticated"
-        x-cloak
-        @click="$store.auth.handleUnauthenticatedAction()"
-        title="ログインが必要です"
-        class="bg-gray-400 text-gray-500 font-medium py-2 px-4 rounded-lg cursor-not-allowed text-sm"
-      >
-        + 部屋を作る
-      </button>
+      <!-- 小さいボタン（モバイル用） - 非表示 -->
+      <div class="hidden"></div>
+    {{ else if eq .Size "floating" }}
+      <!-- フローティングボタン（モバイル用右下固定） -->
+      <div class="fixed bottom-6 right-6 z-40 md:hidden">
+        <a
+          href="/rooms/create"
+          x-show="$store.auth.initialized && $store.auth.isAuthenticated"
+          x-cloak
+          class="flex items-center justify-center w-14 h-14 bg-gray-800 hover:bg-gray-900 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+          title="部屋を作る"
+          aria-label="新しい部屋を作成"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+        </a>
+        <button
+          x-show="$store.auth.initialized && !$store.auth.isAuthenticated"
+          x-cloak
+          @click="$store.auth.handleUnauthenticatedAction()"
+          title="ログインが必要です"
+          aria-label="部屋を作るにはログインが必要です"
+          class="flex items-center justify-center w-14 h-14 bg-gray-400 text-gray-500 rounded-full shadow-lg cursor-not-allowed"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+      </div>
     {{ else if eq .Size "inline" }}
       <!-- インラインボタン（空の状態用） -->
       <a
