@@ -51,7 +51,10 @@
       "mcp__playwright__browser_console_messages",
       "mcp__playwright__browser_wait_for",
       "mcp__playwright__browser_click",
-      "mcp__playwright__browser_snapshot"
+      "mcp__playwright__browser_snapshot",
+      "Bash(gh auth:*)",
+      "mcp__github__list_issues",
+      "mcp__github__get_issue"
     ],
     "deny": []
   }
