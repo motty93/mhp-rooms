@@ -86,15 +86,28 @@ func (app *Application) setupAPIRoutes(r *mux.Router) {
 		protected.HandleFunc("/auth/sync", app.authHandler.SyncUser).Methods("POST")
 		protected.HandleFunc("/auth/psn-id", app.authHandler.UpdatePSNId).Methods("PUT")
 
+		// リアクション関連API（認証必須）
+		protected.HandleFunc("/messages/{messageId}/reactions", app.reactionHandler.AddReaction).Methods("POST")
+		protected.HandleFunc("/messages/{messageId}/reactions/{reactionType}", app.reactionHandler.RemoveReaction).Methods("DELETE")
+
 		optional := apiRoutes.PathPrefix("").Subrouter()
 		optional.Use(app.authMiddleware.OptionalMiddleware)
 
 		optional.HandleFunc("/rooms", app.roomHandler.GetAllRoomsAPI).Methods("GET")
+		// リアクション関連API（認証オプション）
+		optional.HandleFunc("/messages/{messageId}/reactions", app.reactionHandler.GetMessageReactions).Methods("GET")
+		optional.HandleFunc("/reactions/types", app.reactionHandler.GetAvailableReactions).Methods("GET")
 	} else {
 		apiRoutes.HandleFunc("/user/current", app.authHandler.CurrentUser).Methods("GET")
 		apiRoutes.HandleFunc("/auth/sync", app.authHandler.SyncUser).Methods("POST")
 		apiRoutes.HandleFunc("/auth/psn-id", app.authHandler.UpdatePSNId).Methods("PUT")
 		apiRoutes.HandleFunc("/rooms", app.roomHandler.GetAllRoomsAPI).Methods("GET")
+		
+		// リアクション関連API（認証なし環境）
+		apiRoutes.HandleFunc("/messages/{messageId}/reactions", app.reactionHandler.AddReaction).Methods("POST")
+		apiRoutes.HandleFunc("/messages/{messageId}/reactions/{reactionType}", app.reactionHandler.RemoveReaction).Methods("DELETE")
+		apiRoutes.HandleFunc("/messages/{messageId}/reactions", app.reactionHandler.GetMessageReactions).Methods("GET")
+		apiRoutes.HandleFunc("/reactions/types", app.reactionHandler.GetAvailableReactions).Methods("GET")
 	}
 }
 

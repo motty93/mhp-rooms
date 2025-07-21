@@ -13,6 +13,7 @@ type Repository struct {
 	Room          RoomRepository
 	PasswordReset PasswordResetRepository
 	PlayerName    PlayerNameRepository
+	Reaction      ReactionRepository
 }
 
 func NewRepository(db *postgres.DB) *Repository {
@@ -23,6 +24,7 @@ func NewRepository(db *postgres.DB) *Repository {
 		Room:          NewRoomRepository(db),
 		PasswordReset: NewPasswordResetRepository(db),
 		PlayerName:    NewPlayerNameRepository(db),
+		Reaction:      NewReactionRepository(db),
 	}
 }
 

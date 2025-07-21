@@ -12,14 +12,15 @@ import (
 )
 
 type Application struct {
-	config         *config.Config
-	db             *postgres.DB
-	repo           *repository.Repository
-	authHandler    *handlers.AuthHandler
-	roomHandler    *handlers.RoomHandler
-	pageHandler    *handlers.PageHandler
-	configHandler  *handlers.ConfigHandler
-	authMiddleware *middleware.JWTAuth
+	config           *config.Config
+	db               *postgres.DB
+	repo             *repository.Repository
+	authHandler      *handlers.AuthHandler
+	roomHandler      *handlers.RoomHandler
+	pageHandler      *handlers.PageHandler
+	configHandler    *handlers.ConfigHandler
+	reactionHandler  *handlers.ReactionHandler
+	authMiddleware   *middleware.JWTAuth
 }
 
 func NewApplication(cfg *config.Config) (*Application, error) {
@@ -65,6 +66,7 @@ func (app *Application) initHandlers() {
 	app.roomHandler = handlers.NewRoomHandler(app.repo)
 	app.pageHandler = handlers.NewPageHandler(app.repo)
 	app.configHandler = handlers.NewConfigHandler()
+	app.reactionHandler = handlers.NewReactionHandler(app.repo)
 
 	authMiddleware, err := middleware.NewJWTAuth(app.repo)
 	if err != nil {
