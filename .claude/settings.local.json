@@ -54,7 +54,8 @@
       "mcp__playwright__browser_snapshot",
       "Bash(gh auth:*)",
       "mcp__github__list_issues",
-      "mcp__github__get_issue"
+      "mcp__github__get_issue",
+      "mcp__playwright__browser_install"
     ],
     "deny": []
   }

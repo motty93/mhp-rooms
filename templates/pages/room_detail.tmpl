@@ -1,0 +1,240 @@
+{{ define "room_detail_page" }}
+<div class="flex h-full" x-data="roomDetail()">
+  <!-- 左側パネル -->
+  <div class="w-96 h-full border-r border-gray-200 flex flex-col bg-white">
+    <!-- ヘッダー部分 -->
+    <div class="bg-white border-b border-gray-200 px-4 py-3 min-h-0 flex-shrink-0">
+      <div class="flex items-center space-x-3 mb-2">
+        <div class="w-12 h-12 bg-gray-800 rounded flex items-center justify-center flex-shrink-0">
+          <div class="w-8 h-8 bg-white rounded flex items-center justify-center text-gray-800 text-xs font-bold">
+            <svg viewBox="0 0 24 24" class="w-6 h-6 fill-gray-800">
+              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+            </svg>
+          </div>
+        </div>
+        <div class="text-gray-800 font-bold text-lg">
+          {{ .PageData.Room.Name }}
+        </div>
+      </div>
+      <div class="text-gray-600 text-sm leading-relaxed">
+        <div x-show="!descriptionExpanded" class="overflow-hidden">
+          <div class="max-h-10 overflow-hidden">
+            {{ .PageData.Room.Description }}
+          </div>
+          <button
+            @click="descriptionExpanded = true"
+            x-show="needsExpansion"
+            class="text-gray-800 hover:text-gray-600 text-xs mt-1 underline"
+          >
+            続きを表示
+          </button>
+        </div>
+        <div x-show="descriptionExpanded" x-cloak>
+          {{ .PageData.Room.Description }}
+          <button
+            @click="descriptionExpanded = false"
+            class="text-gray-800 hover:text-gray-600 text-xs mt-1 underline block"
+          >
+            閉じる
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ユーザーリスト -->
+    <div class="flex-1 px-4 pt-4 space-y-3 overflow-y-auto">
+      {{ range $index, $member := .PageData.Members }}
+        {{ if $member }}
+          <button class="w-full flex items-center space-x-3 p-2 bg-gray-100 hover:bg-gray-200 rounded border border-gray-200 transition-colors cursor-pointer">
+            <div class="w-6 h-8 bg-gray-800 rounded flex items-center justify-center">
+              <div class="w-4 h-6 bg-white rounded-sm"></div>
+            </div>
+            <span class="text-gray-800 text-sm font-medium">{{ $member.DisplayName }}</span>
+            {{ if $member.IsHost }}
+              <span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded">ホスト</span>
+            {{ end }}
+          </button>
+        {{ else }}
+          <div class="flex items-center space-x-3 p-2 bg-gray-50 rounded border border-gray-200 opacity-60">
+            <div class="w-6 h-8 bg-gray-300 rounded flex items-center justify-center">
+              <div class="w-4 h-6 bg-gray-500 rounded-sm"></div>
+            </div>
+            <span class="text-gray-400 text-sm">－</span>
+          </div>
+        {{ end }}
+      {{ end }}
+    </div>
+
+    <!-- 部屋一覧に戻るボタン -->
+    <div class="p-4 flex-shrink-0">
+      <a href="/rooms" class="w-full flex items-center justify-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-4 rounded border border-gray-300 font-medium transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+        </svg>
+        <span>部屋一覧に戻る</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- 右側メインエリア -->
+  <div class="flex-1 h-full flex flex-col">
+    <!-- チャットエリア -->
+    <div class="flex-1 relative bg-gray-100 overflow-y-auto" id="chat-container">
+      <!-- メッセージリスト -->
+      <div class="p-4 space-y-4">
+        <template x-for="message in messages" :key="message.id">
+          <div>
+            <!-- システムメッセージ -->
+            <template x-if="message.type === 'system'">
+              <div class="text-center">
+                <span 
+                  class="px-3 py-1 rounded-full text-sm"
+                  :class="{
+                    'bg-gray-200 text-gray-600': message.subtype === 'create',
+                    'bg-green-100 text-green-700': message.subtype === 'join',
+                    'bg-red-100 text-red-700': message.subtype === 'leave'
+                  }"
+                  x-text="message.content"
+                ></span>
+              </div>
+            </template>
+
+            <!-- ユーザーメッセージ -->
+            <template x-if="message.type === 'user'">
+              <div :class="message.isOwn ? 'flex justify-end' : 'flex items-start space-x-3'">
+                <!-- 他人のメッセージ -->
+                <template x-if="!message.isOwn">
+                  <div class="w-8 h-8 bg-gray-600 rounded flex items-center justify-center flex-shrink-0">
+                    <div class="w-6 h-6 bg-white rounded-sm"></div>
+                  </div>
+                </template>
+
+                <div :class="message.isOwn ? 'max-w-xs' : 'flex-1 max-w-xs'">
+                  <div class="flex items-center mb-1" :class="message.isOwn ? 'justify-end' : 'space-x-2'">
+                    <template x-if="!message.isOwn">
+                      <button class="font-medium text-gray-800 text-sm hover:text-gray-600 hover:underline transition-colors" x-text="message.userName"></button>
+                    </template>
+                    <span class="text-gray-500 text-xs" x-text="formatTime(message.timestamp)"></span>
+                  </div>
+                  <div 
+                    class="rounded-lg p-3 text-sm"
+                    :class="message.isOwn ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-800'"
+                    x-text="message.content"
+                  ></div>
+                </div>
+              </div>
+            </template>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- メッセージフォーム -->
+    <div class="bg-white border-t border-gray-200 p-4 flex-shrink-0">
+      <form @submit.prevent="sendMessage" class="flex space-x-3">
+        <input
+          type="text"
+          x-model="messageInput"
+          placeholder="メッセージを入力..."
+          class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent"
+          :disabled="!isAuthenticated"
+        />
+        <button
+          type="submit"
+          :disabled="!messageInput.trim() || !isAuthenticated"
+          class="bg-gray-800 hover:bg-gray-900 text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          送信
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function roomDetail() {
+  return {
+    descriptionExpanded: false,
+    needsExpansion: false,
+    messages: [],
+    messageInput: '',
+    isAuthenticated: false,
+    currentUserId: null,
+    roomId: '{{ .PageData.Room.ID }}',
+
+    init() {
+      // 説明文の展開が必要かチェック
+      this.checkDescriptionLength();
+      
+      // 認証状態の確認
+      this.checkAuth();
+      
+      // 初期メッセージのロード
+      this.loadInitialMessages();
+      
+      // チャットの最下部にスクロール
+      this.$nextTick(() => this.scrollToBottom());
+    },
+
+    checkDescriptionLength() {
+      // 説明文が長い場合は展開ボタンを表示
+      const description = '{{ .PageData.Room.Description }}';
+      this.needsExpansion = description.length > 100;
+    },
+
+    async checkAuth() {
+      // 認証状態の確認
+      if (window.Alpine && Alpine.store('auth')) {
+        await Alpine.store('auth').checkAuth();
+        this.isAuthenticated = Alpine.store('auth').isAuthenticated;
+        this.currentUserId = Alpine.store('auth').user?.id;
+      }
+    },
+
+    loadInitialMessages() {
+      // サーバーから初期メッセージをロード（仮データ）
+      this.messages = [
+        {
+          id: 1,
+          type: 'system',
+          subtype: 'create',
+          content: '{{ .PageData.Room.Host.DisplayName }}さんが部屋を作成しました',
+          timestamp: new Date()
+        }
+      ];
+    },
+
+    sendMessage() {
+      if (!this.messageInput.trim() || !this.isAuthenticated) return;
+
+      // メッセージを送信（仮実装）
+      const newMessage = {
+        id: Date.now(),
+        type: 'user',
+        content: this.messageInput,
+        userName: Alpine.store('auth').user?.displayName || 'ゲスト',
+        isOwn: true,
+        timestamp: new Date()
+      };
+
+      this.messages.push(newMessage);
+      this.messageInput = '';
+      
+      this.$nextTick(() => this.scrollToBottom());
+    },
+
+    formatTime(timestamp) {
+      const date = new Date(timestamp);
+      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    },
+
+    scrollToBottom() {
+      const container = document.getElementById('chat-container');
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+  };
+}
+</script>
+{{ end }}

@@ -105,6 +105,12 @@ func (j *JWTAuth) Middleware(next http.Handler) http.Handler {
 
 func (j *JWTAuth) OptionalMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// 既にコンテキストにユーザー情報がある場合はスキップ
+		if _, exists := GetUserFromContext(r.Context()); exists {
+			next.ServeHTTP(w, r)
+			return
+		}
+		
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
 			next.ServeHTTP(w, r)
@@ -130,10 +136,13 @@ func (j *JWTAuth) OptionalMiddleware(next http.Handler) http.Handler {
 						Metadata: claims.UserMetadata,
 					}
 
-							ctx := context.WithValue(r.Context(), UserContextKey, user)
+					ctx := context.WithValue(r.Context(), UserContextKey, user)
 					if j.repo != nil {
-						if dbUser := j.loadDBUser(user); dbUser != nil {
-							ctx = context.WithValue(ctx, DBUserContextKey, dbUser)
+						// DBユーザーの取得はコンテキストにない場合のみ
+						if _, hasDBUser := GetDBUserFromContext(ctx); !hasDBUser {
+							if dbUser := j.loadDBUser(user); dbUser != nil {
+								ctx = context.WithValue(ctx, DBUserContextKey, dbUser)
+							}
 						}
 					}
 

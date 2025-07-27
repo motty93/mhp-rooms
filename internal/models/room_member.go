@@ -19,4 +19,7 @@ type RoomMember struct {
 	// リレーション
 	Room Room `gorm:"foreignKey:RoomID" json:"room"`
 	User User `gorm:"foreignKey:UserID" json:"user"`
+
+	// 表示用フィールド（DBには保存されない）
+	DisplayName string `gorm:"-" json:"display_name,omitempty"`
 }

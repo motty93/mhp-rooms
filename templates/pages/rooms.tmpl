@@ -157,9 +157,19 @@
                     x-text="'ホスト: ' + (room.host.username || room.host.displayName)"
                   ></span>
 
+                  <!-- 参加済みの部屋の場合 -->
+                  <template x-if="room.isJoined">
+                    <button
+                      @click="window.location.href = '/rooms/' + room.id"
+                      class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm transition-colors"
+                    >
+                      入室する
+                    </button>
+                  </template>
+                  
                   <!-- 参加可能な部屋の場合 -->
                   <template
-                    x-if="!room.isClosed && room.currentPlayers < room.maxPlayers"
+                    x-if="!room.isJoined && !room.isClosed && room.currentPlayers < room.maxPlayers"
                   >
                     <div>
                       <!-- 認証済みユーザー用 -->
@@ -186,7 +196,7 @@
                   </template>
                   <!-- 参加不可の場合 -->
                   <template
-                    x-if="room.isClosed || room.currentPlayers >= room.maxPlayers"
+                    x-if="!room.isJoined && (room.isClosed || room.currentPlayers >= room.maxPlayers)"
                   >
                     <button
                       disabled
@@ -331,7 +341,7 @@
 
         <!-- アクションボタン -->
         <div
-          class="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-end space-x-3"
+          class="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-end space-x-3 relative"
         >
           <button
             @click="closeModal()"
@@ -339,12 +349,31 @@
           >
             キャンセル
           </button>
-          <button
-            @click="joinRoom()"
-            :disabled="isJoinDisabled"
-            x-text="isJoining ? '参加中...' : '参加する'"
-            class="modal-button px-6 py-2 bg-gray-800 hover:bg-gray-900 text-white font-medium rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-          ></button>
+          <div class="relative">
+            <button
+              @click="joinRoom()"
+              :disabled="isJoinDisabled"
+              x-text="isJoining ? '参加中...' : '参加する'"
+              class="modal-button px-6 py-2 bg-gray-800 hover:bg-gray-900 text-white font-medium rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+            ></button>
+            
+            <!-- エラーtooltip -->
+            <div
+              x-show="showError"
+              x-transition:enter="transition ease-out duration-200"
+              x-transition:enter-start="opacity-0 transform scale-95"
+              x-transition:enter-end="opacity-100 transform scale-100"
+              x-transition:leave="transition ease-in duration-150"
+              x-transition:leave-start="opacity-100 transform scale-100"
+              x-transition:leave-end="opacity-0 transform scale-95"
+              class="absolute bottom-full right-0 mb-2 px-3 py-2 bg-red-600 text-white text-sm rounded-lg shadow-lg whitespace-nowrap z-50 max-w-xs"
+              x-cloak
+            >
+              <div x-text="errorMessage"></div>
+              <!-- ツールチップの矢印 -->
+              <div class="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-red-600"></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -445,6 +474,8 @@
         currentRoom: {},
         password: '',
         isJoining: false,
+        showError: false,
+        errorMessage: '',
         allRooms: [],
         filteredRooms: [],
         activeFilter: '',
@@ -485,7 +516,8 @@
             isClosed: room.is_closed || false,
             hasPassword: room.password_hash ? true : false,
             targetMonster: room.target_monster || '',
-            rankRequirement: room.rank_requirement || ''
+            rankRequirement: room.rank_requirement || '',
+            isJoined: room.is_joined || false
           }));
           // URLパラメータから初期フィルタを設定
           const urlParams = new URLSearchParams(window.location.search);
@@ -555,6 +587,8 @@
           this.currentRoom = {}
           this.password = ''
           this.isJoining = false
+          this.showError = false
+          this.errorMessage = ''
           // フォーカスを元の要素に戻す
           if (this.lastFocusedElement) {
             this.lastFocusedElement.focus()
@@ -569,29 +603,55 @@
         },
         async joinRoom() {
           if (this.isJoinDisabled) return
+          
+          // 認証状態をチェック
+          if (!Alpine.store('auth').isAuthenticated) {
+            this.closeModal()
+            this.openLoginModal()
+            return
+          }
+          
           this.isJoining = true
           const requestData = {}
           if (this.currentRoom.hasPassword) {
             requestData.password = this.password
           }
           try {
+            // 認証ヘッダーを準備
+            const headers = {
+              'Content-Type': 'application/json'
+            }
+            
+            if (Alpine.store('auth').session?.access_token) {
+              headers['Authorization'] = `Bearer ${Alpine.store('auth').session.access_token}`
+            }
+            
             const response = await fetch(`/rooms/${this.currentRoom.id}/join`, {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
+              headers: headers,
               body: JSON.stringify(requestData),
             })
             if (!response.ok) {
+              if (response.status === 401) {
+                throw new Error('認証が必要です。ログインしてください。')
+              } else if (response.status === 400) {
+                const errorData = await response.text()
+                throw new Error(errorData || '参加に失敗しました')
+              }
               throw new Error('参加に失敗しました')
             }
-            // 成功メッセージを表示（将来的にトースト通知に置き換え可能）
-            this.showSuccessMessage('部屋に参加しました！')
+            
+            const result = await response.json()
+            
+            // 成功時は直接遷移（alertなし）
             this.closeModal()
-            // 1秒後にリロード
-            setTimeout(() => {
+            
+            // 部屋詳細画面に遷移
+            if (result.redirect) {
+              window.location.href = result.redirect
+            } else {
               window.location.reload()
-            }, 1000)
+            }
           } catch (error) {
             this.showErrorMessage(error.message || '参加に失敗しました。もう一度お試しください。')
             this.isJoining = false
@@ -619,15 +679,16 @@
           }
           return 'default-icon';
         },
-        // 成功メッセージ表示（今はアラート、将来トーストに変更可）
-        showSuccessMessage(message) {
-          // 将来的にトースト通知コンポーネントに置き換え
-          alert(message)
-        },
-        // エラーメッセージ表示
+        // エラーメッセージ表示（tooltip形式）
         showErrorMessage(message) {
-          // 将来的にトースト通知コンポーネントに置き換え
-          alert(message)
+          this.errorMessage = message
+          this.showError = true
+          
+          // 3秒後に自動で非表示
+          setTimeout(() => {
+            this.showError = false
+            this.errorMessage = ''
+          }, 3000)
         },
         // クリーンアップ処理
         destroy() {

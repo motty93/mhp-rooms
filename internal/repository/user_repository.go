@@ -38,6 +38,17 @@ func (r *userRepository) FindUserByID(id uuid.UUID) (*models.User, error) {
 	return &user, nil
 }
 
+// FindUsersByIDs は複数のIDでユーザーを一括取得
+func (r *userRepository) FindUsersByIDs(ids []uuid.UUID) ([]models.User, error) {
+	var users []models.User
+	if len(ids) == 0 {
+		return users, nil
+	}
+	
+	err := r.db.GetConn().Where("id IN ?", ids).Find(&users).Error
+	return users, err
+}
+
 // FindUserBySupabaseUserID はSupabaseユーザーIDでユーザーを検索
 func (r *userRepository) FindUserBySupabaseUserID(supabaseUserID uuid.UUID) (*models.User, error) {
 	var user models.User

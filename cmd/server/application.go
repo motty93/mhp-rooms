@@ -12,15 +12,19 @@ import (
 )
 
 type Application struct {
-	config           *config.Config
-	db               *postgres.DB
-	repo             *repository.Repository
-	authHandler      *handlers.AuthHandler
-	roomHandler      *handlers.RoomHandler
-	pageHandler      *handlers.PageHandler
-	configHandler    *handlers.ConfigHandler
-	reactionHandler  *handlers.ReactionHandler
-	authMiddleware   *middleware.JWTAuth
+	config            *config.Config
+	db                *postgres.DB
+	repo              *repository.Repository
+	authHandler       *handlers.AuthHandler
+	roomHandler       *handlers.RoomHandler
+	roomDetailHandler *handlers.RoomDetailHandler
+	pageHandler       *handlers.PageHandler
+	configHandler     *handlers.ConfigHandler
+	reactionHandler   *handlers.ReactionHandler
+	authMiddleware    *middleware.JWTAuth
+	securityConfig    *middleware.SecurityConfig
+	generalLimiter    *middleware.RateLimiter
+	authLimiter       *middleware.RateLimiter
 }
 
 func NewApplication(cfg *config.Config) (*Application, error) {
@@ -64,15 +68,25 @@ func (app *Application) initHandlers() {
 
 	app.authHandler = handlers.NewAuthHandler(app.repo)
 	app.roomHandler = handlers.NewRoomHandler(app.repo)
+	app.roomDetailHandler = handlers.NewRoomDetailHandler(app.repo)
 	app.pageHandler = handlers.NewPageHandler(app.repo)
 	app.configHandler = handlers.NewConfigHandler()
 	app.reactionHandler = handlers.NewReactionHandler(app.repo)
 
+	// 認証ミドルウェアの初期化
 	authMiddleware, err := middleware.NewJWTAuth(app.repo)
 	if err != nil {
 		log.Printf("JWT認証ミドルウェアの初期化に失敗しました: %v", err)
 	}
 	app.authMiddleware = authMiddleware
+
+	// セキュリティ設定の初期化
+	app.securityConfig = middleware.NewSecurityConfig()
+
+	// レート制限器の初期化
+	rateLimitConfig := middleware.DefaultRateLimitConfig()
+	app.generalLimiter = middleware.NewRateLimiter(rateLimitConfig.General)
+	app.authLimiter = middleware.NewRateLimiter(rateLimitConfig.Auth)
 
 	app.authHandler.SetAuthMiddleware(authMiddleware)
 }

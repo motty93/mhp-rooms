@@ -9,6 +9,7 @@ import (
 type UserRepository interface {
 	CreateUser(user *models.User) error
 	FindUserByID(id uuid.UUID) (*models.User, error)
+	FindUsersByIDs(ids []uuid.UUID) ([]models.User, error)
 	FindUserBySupabaseUserID(supabaseUserID uuid.UUID) (*models.User, error)
 	FindUserByEmail(email string) (*models.User, error)
 	UpdateUser(user *models.User) error
@@ -39,6 +40,7 @@ type RoomRepository interface {
 	DecrementRoomPlayerCount(id uuid.UUID) error
 	JoinRoom(roomID, userID uuid.UUID, password string) error
 	LeaveRoom(roomID, userID uuid.UUID) error
+	IsUserJoinedRoom(roomID, userID uuid.UUID) bool
 }
 
 // PlayerNameRepository はプレイヤー名関連の操作を定義するインターフェース

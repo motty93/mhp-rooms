@@ -94,22 +94,6 @@
               this.open = false
             },
           })
-
-          // 認証ストアの初期化は、supabase初期化完了後に実行
-          if (Alpine.store('auth')) {
-            // 初期状態では認証未完了として表示
-            Alpine.store('auth').loading = true;
-            Alpine.store('auth').initialized = false;
-            
-            // Supabase初期化完了後に認証チェックを実行
-            if (window.supabaseClient || window.supabaseAuth) {
-              Alpine.store('auth').init();
-            } else {
-              document.addEventListener('supabase-initialized', () => {
-                Alpine.store('auth').init();
-              });
-            }
-          }
         })
       </script>
 
