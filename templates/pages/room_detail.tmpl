@@ -200,12 +200,12 @@
             name="message"
             placeholder="メッセージを入力..."
             class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent"
-            :disabled="!isAuthenticated"
+            :disabled="!$store.auth.initialized || !$store.auth.isAuthenticated"
             required
           />
           <button
             type="submit"
-            :disabled="!isAuthenticated"
+            :disabled="!$store.auth.initialized || !$store.auth.isAuthenticated"
             class="bg-gray-800 hover:bg-gray-900 text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             送信
@@ -263,6 +263,14 @@ function roomDetail() {
         await Alpine.store('auth').checkAuth();
         this.isAuthenticated = Alpine.store('auth').isAuthenticated;
         this.currentUserId = Alpine.store('auth').user?.id;
+        
+        // Alpine.jsが反応するように強制的に更新を通知
+        this.$nextTick(() => {
+          this.isAuthenticated = Alpine.store('auth').isAuthenticated;
+        });
+      } else {
+        // Alpine.jsまたはauthストアが利用できない場合は少し待ってリトライ
+        setTimeout(() => this.checkAuth(), 100);
       }
     },
 
@@ -399,7 +407,7 @@ function roomDetail() {
       const messageInput = document.getElementById('message-input');
       const messageText = messageInput.value.trim();
 
-      if (!messageText || !this.isAuthenticated) return;
+      if (!messageText || !Alpine.store('auth').isAuthenticated) return;
 
       // メッセージを即座に表示（楽観的更新）
       const newMessage = {
