@@ -42,3 +42,7 @@ clean_on_exit = false
 [screen]
 clear_on_rebuild = false
 keep_scroll = true
+
+[watch]
+dirs = ["."]
+extensions = ["go", "tpl", "tmpl", "html", "css", "js"]
