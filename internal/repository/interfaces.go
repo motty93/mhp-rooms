@@ -55,3 +55,10 @@ type PlayerNameRepository interface {
 	DeletePlayerName(id uuid.UUID) error
 	UpsertPlayerName(playerName *models.PlayerName) error
 }
+
+// RoomMessageRepository はルームメッセージ関連の操作を定義するインターフェース
+type RoomMessageRepository interface {
+	CreateMessage(message *models.RoomMessage) error
+	GetMessages(roomID uuid.UUID, limit int, beforeID *uuid.UUID) ([]models.RoomMessage, error)
+	DeleteMessage(id uuid.UUID) error
+}

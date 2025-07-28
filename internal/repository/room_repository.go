@@ -87,16 +87,19 @@ func (r *roomRepository) FindRoomByRoomCode(roomCode string) (*models.Room, erro
 func (r *roomRepository) GetActiveRooms(gameVersionID *uuid.UUID, limit, offset int) ([]models.Room, error) {
 	var rooms []models.Room
 	query := r.db.GetConn().
+		Select("rooms.*, COUNT(room_members.id) as current_players").
+		Joins("LEFT JOIN room_members ON rooms.id = room_members.room_id AND room_members.status = 'active'").
 		Preload("GameVersion").
 		Preload("Host").
-		Where("is_active = ?", true)
+		Where("rooms.is_active = ?", true).
+		Group("rooms.id")
 
 	if gameVersionID != nil {
-		query = query.Where("game_version_id = ?", *gameVersionID)
+		query = query.Where("rooms.game_version_id = ?", *gameVersionID)
 	}
 
 	err := query.
-		Order("created_at DESC").
+		Order("rooms.created_at DESC").
 		Limit(limit).
 		Offset(offset).
 		Find(&rooms).Error

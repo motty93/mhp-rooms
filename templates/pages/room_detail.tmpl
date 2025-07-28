@@ -11,9 +11,9 @@
             class="w-12 h-12 {{ gameVersionColor .PageData.Room.GameVersion.Code }} rounded flex items-center justify-center flex-shrink-0"
           >
             <div
-              class="w-8 h-8 flex items-center justify-center text-white text-xl font-bold"
+              class="w-8 h-8 flex items-center justify-center text-white text-sm font-bold"
             >
-              {{ gameVersionAbbr .PageData.Room.GameVersion.Code }}
+              {{ .PageData.Room.GameVersion.Code }}
             </div>
           </div>
           <div class="text-gray-800 font-bold text-lg">
@@ -61,11 +61,11 @@
                 false
               {{ end }}}"
             >
-              <div
-                class="w-6 h-8 bg-gray-800 rounded flex items-center justify-center"
-              >
-                <div class="w-4 h-6 bg-white rounded-sm"></div>
-              </div>
+              <img
+                src="/static/images/default-avatar.png"
+                class="w-8 h-8 rounded-full object-cover"
+                alt="ユーザーアバター"
+              />
               <span class="text-gray-800 text-sm font-medium"
                 >{{ $member.DisplayName }}</span
               >
@@ -186,17 +186,26 @@
 
       <!-- メッセージフォーム -->
       <div class="bg-white border-t border-gray-200 p-4 flex-shrink-0">
-        <form @submit.prevent="sendMessage" class="flex space-x-3">
+        <form
+          hx-post="/rooms/{{ .PageData.Room.ID }}/messages"
+          hx-trigger="submit"
+          hx-on::before-request="roomDetail.addOptimisticMessage()"
+          hx-on::after-request="this.reset(); document.getElementById('message-input').focus()"
+          class="flex space-x-3"
+          @submit.prevent
+        >
           <input
+            id="message-input"
             type="text"
-            x-model="messageInput"
+            name="message"
             placeholder="メッセージを入力..."
             class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent"
             :disabled="!isAuthenticated"
+            required
           />
           <button
             type="submit"
-            :disabled="!messageInput.trim() || !isAuthenticated"
+            :disabled="!isAuthenticated"
             class="bg-gray-800 hover:bg-gray-900 text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             送信
@@ -216,6 +225,7 @@ function roomDetail() {
     isAuthenticated: false,
     currentUserId: null,
     roomId: '{{ .PageData.Room.ID }}',
+    eventSource: null,
 
     init() {
       // 説明文の展開が必要かチェック
@@ -227,8 +237,18 @@ function roomDetail() {
       // 初期メッセージのロード
       this.loadInitialMessages();
 
+      // SSE接続を確立
+      this.connectSSE();
+
       // チャットの最下部にスクロール
       this.$nextTick(() => this.scrollToBottom());
+
+      // ページを離れる時にSSE接続を閉じる
+      window.addEventListener('beforeunload', () => {
+        if (this.eventSource) {
+          this.eventSource.close();
+        }
+      });
     },
 
     checkDescriptionLength() {
@@ -246,8 +266,8 @@ function roomDetail() {
       }
     },
 
-    loadInitialMessages() {
-      // ログからメッセージを生成
+    async loadInitialMessages() {
+      // ログからシステムメッセージを生成
       this.messages = [];
 
       {{ range .PageData.Logs }}
@@ -277,6 +297,28 @@ function roomDetail() {
           });
         {{ end }}
       {{ end }}
+
+      // 既存のメッセージを取得
+      if (this.isAuthenticated) {
+        try {
+          const response = await fetch(`/rooms/${this.roomId}/messages?limit=20`);
+          if (response.ok) {
+            const messages = await response.json();
+            messages.forEach(msg => {
+              this.messages.push({
+                id: msg.id,
+                type: 'user',
+                content: msg.message,
+                userName: msg.user.display_name,
+                isOwn: msg.user_id === this.currentUserId,
+                timestamp: new Date(msg.created_at)
+              });
+            });
+          }
+        } catch (err) {
+          console.error('メッセージの取得に失敗しました:', err);
+        }
+      }
     },
 
     sendMessage() {
@@ -308,6 +350,69 @@ function roomDetail() {
       if (container) {
         container.scrollTop = container.scrollHeight;
       }
+    },
+
+    connectSSE() {
+      if (!this.isAuthenticated) return;
+
+      const url = `/rooms/${this.roomId}/messages/stream`;
+      this.eventSource = new EventSource(url);
+
+      this.eventSource.addEventListener('message', (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'message') {
+            this.handleNewMessage(data.data);
+          }
+        } catch (err) {
+          console.error('SSEメッセージの解析エラー:', err);
+        }
+      });
+
+      this.eventSource.addEventListener('error', (event) => {
+        console.error('SSE接続エラー:', event);
+        // 再接続処理
+        if (this.eventSource.readyState === EventSource.CLOSED) {
+          setTimeout(() => this.connectSSE(), 5000);
+        }
+      });
+    },
+
+    handleNewMessage(message) {
+      // 自分のメッセージの場合はスキップ（すでに送信時に追加されている）
+      if (message.user_id === this.currentUserId) return;
+
+      // メッセージを追加
+      this.messages.push({
+        id: message.id,
+        type: 'user',
+        content: message.message,
+        userName: message.user.display_name,
+        isOwn: false,
+        timestamp: new Date(message.created_at)
+      });
+
+      this.$nextTick(() => this.scrollToBottom());
+    },
+
+    addOptimisticMessage() {
+      const messageInput = document.getElementById('message-input');
+      const messageText = messageInput.value.trim();
+
+      if (!messageText || !this.isAuthenticated) return;
+
+      // メッセージを即座に表示（楽観的更新）
+      const newMessage = {
+        id: Date.now(),
+        type: 'user',
+        content: messageText,
+        userName: Alpine.store('auth').user?.displayName || 'ゲスト',
+        isOwn: true,
+        timestamp: new Date()
+      };
+
+      this.messages.push(newMessage);
+      this.$nextTick(() => this.scrollToBottom());
     }
   };
 }

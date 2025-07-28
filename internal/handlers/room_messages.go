@@ -1,0 +1,243 @@
+package handlers
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
+	"mhp-rooms/internal/models"
+	"mhp-rooms/internal/repository"
+	"mhp-rooms/internal/sse"
+)
+
+type RoomMessageHandler struct {
+	BaseHandler
+	hub *sse.Hub
+}
+
+func NewRoomMessageHandler(repo *repository.Repository, hub *sse.Hub) *RoomMessageHandler {
+	return &RoomMessageHandler{
+		BaseHandler: BaseHandler{
+			repo: repo,
+		},
+		hub: hub,
+	}
+}
+
+// SendMessage はメッセージを送信
+func (h *RoomMessageHandler) SendMessage(w http.ResponseWriter, r *http.Request) {
+	// URLパラメータから部屋IDを取得
+	vars := mux.Vars(r)
+	roomIDStr := vars["id"]
+	
+	roomID, err := uuid.Parse(roomIDStr)
+	if err != nil {
+		http.Error(w, "無効な部屋IDです", http.StatusBadRequest)
+		return
+	}
+
+	// 認証チェック
+	user, ok := r.Context().Value("user").(*models.User)
+	if !ok || user == nil {
+		http.Error(w, "認証が必要です", http.StatusUnauthorized)
+		return
+	}
+
+	// 部屋のメンバーチェック
+	if !h.repo.Room.IsUserJoinedRoom(roomID, user.ID) {
+		http.Error(w, "部屋のメンバーではありません", http.StatusForbidden)
+		return
+	}
+
+	// フォームデータの取得
+	err = r.ParseForm()
+	if err != nil {
+		http.Error(w, "リクエストの解析に失敗しました", http.StatusBadRequest)
+		return
+	}
+
+	messageText := strings.TrimSpace(r.FormValue("message"))
+	if messageText == "" {
+		http.Error(w, "メッセージが空です", http.StatusBadRequest)
+		return
+	}
+
+	// メッセージ長制限（1000文字）
+	if len(messageText) > 1000 {
+		http.Error(w, "メッセージは1000文字以内で入力してください", http.StatusBadRequest)
+		return
+	}
+
+	// メッセージを作成
+	message := &models.RoomMessage{
+		RoomID:      roomID,
+		UserID:      user.ID,
+		Message:     messageText,
+		MessageType: "chat",
+	}
+
+	// DBに保存
+	err = h.repo.RoomMessage.CreateMessage(message)
+	if err != nil {
+		http.Error(w, "メッセージの送信に失敗しました", http.StatusInternalServerError)
+		return
+	}
+
+	// ユーザー情報を設定
+	message.User = *user
+
+	// SSEでブロードキャスト
+	event := sse.Event{
+		ID:   message.ID.String(),
+		Type: "message",
+		Data: message,
+	}
+	h.hub.BroadcastToRoom(roomID, event)
+
+	// htmx用のHTMLレスポンス（自分の画面には即座に反映）
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte("")) // htmxはフォームリセットのみ行う
+}
+
+// StreamMessages はSSEでメッセージをストリーミング
+func (h *RoomMessageHandler) StreamMessages(w http.ResponseWriter, r *http.Request) {
+	// URLパラメータから部屋IDを取得
+	vars := mux.Vars(r)
+	roomIDStr := vars["id"]
+	
+	roomID, err := uuid.Parse(roomIDStr)
+	if err != nil {
+		http.Error(w, "無効な部屋IDです", http.StatusBadRequest)
+		return
+	}
+
+	// 認証チェック
+	user, ok := r.Context().Value("user").(*models.User)
+	if !ok || user == nil {
+		http.Error(w, "認証が必要です", http.StatusUnauthorized)
+		return
+	}
+
+	// 部屋のメンバーチェック
+	if !h.repo.Room.IsUserJoinedRoom(roomID, user.ID) {
+		http.Error(w, "部屋のメンバーではありません", http.StatusForbidden)
+		return
+	}
+
+	// SSEヘッダーの設定
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("X-Accel-Buffering", "no") // Nginxのバッファリングを無効化
+
+	// クライアントの作成
+	client := &sse.Client{
+		ID:     uuid.New(),
+		UserID: user.ID,
+		RoomID: roomID,
+		Send:   make(chan sse.Event, 10),
+	}
+
+	// Hubに登録
+	h.hub.Register(client)
+	defer func() {
+		h.hub.Unregister(client)
+	}()
+
+	// 接続確認用のping
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+
+	// フラッシャーの取得
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "ストリーミングがサポートされていません", http.StatusInternalServerError)
+		return
+	}
+
+	// クライアントの切断を検出
+	notify := r.Context().Done()
+
+	for {
+		select {
+		case event := <-client.Send:
+			// イベントを送信
+			data, err := sse.SerializeEvent(event)
+			if err != nil {
+				continue
+			}
+			fmt.Fprint(w, data)
+			flusher.Flush()
+
+		case <-ticker.C:
+			// キープアライブ
+			fmt.Fprintf(w, ":ping\n\n")
+			flusher.Flush()
+
+		case <-notify:
+			// クライアントが切断
+			return
+		}
+	}
+}
+
+// GetMessages はメッセージ履歴を取得
+func (h *RoomMessageHandler) GetMessages(w http.ResponseWriter, r *http.Request) {
+	// URLパラメータから部屋IDを取得
+	vars := mux.Vars(r)
+	roomIDStr := vars["id"]
+	
+	roomID, err := uuid.Parse(roomIDStr)
+	if err != nil {
+		http.Error(w, "無効な部屋IDです", http.StatusBadRequest)
+		return
+	}
+
+	// 認証チェック
+	user, ok := r.Context().Value("user").(*models.User)
+	if !ok || user == nil {
+		http.Error(w, "認証が必要です", http.StatusUnauthorized)
+		return
+	}
+
+	// 部屋のメンバーチェック
+	if !h.repo.Room.IsUserJoinedRoom(roomID, user.ID) {
+		http.Error(w, "部屋のメンバーではありません", http.StatusForbidden)
+		return
+	}
+
+	// クエリパラメータの取得
+	beforeIDStr := r.URL.Query().Get("before")
+	limitStr := r.URL.Query().Get("limit")
+
+	var beforeID *uuid.UUID
+	if beforeIDStr != "" {
+		id, err := uuid.Parse(beforeIDStr)
+		if err == nil {
+			beforeID = &id
+		}
+	}
+
+	limit := 20
+	if limitStr != "" {
+		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 && l <= 100 {
+			limit = l
+		}
+	}
+
+	// メッセージを取得
+	messages, err := h.repo.RoomMessage.GetMessages(roomID, limit, beforeID)
+	if err != nil {
+		http.Error(w, "メッセージの取得に失敗しました", http.StatusInternalServerError)
+		return
+	}
+
+	// JSON形式で返却
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(messages)
+}

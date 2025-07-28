@@ -151,60 +151,63 @@
               </div>
 
               <div class="p-6 pt-0">
-                <div class="flex items-center justify-between">
+                <div class="flex items-center justify-between min-h-[40px]">
                   <span
                     class="text-sm text-gray-500"
                     x-text="'ホスト: ' + (room.host.username || room.host.displayName)"
                   ></span>
 
-                  <!-- 参加済みの部屋の場合 -->
-                  <template x-if="room.isJoined">
-                    <button
-                      @click="window.location.href = '/rooms/' + room.id"
-                      class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm transition-colors"
-                    >
-                      入室する
-                    </button>
-                  </template>
-
-                  <!-- 参加可能な部屋の場合 -->
-                  <template
-                    x-if="!room.isJoined && !room.isClosed && room.currentPlayers < room.maxPlayers"
-                  >
-                    <div>
-                      <!-- 認証済みユーザー用 -->
+                  <!-- ボタン領域 - 固定高さを確保 -->
+                  <div class="h-[36px] flex items-center justify-end">
+                    <!-- 参加済みの部屋の場合 -->
+                    <template x-if="room.isJoined">
                       <button
-                        x-show="$store.auth.initialized && $store.auth.isAuthenticated"
-                        x-cloak
-                        @click="openModal(room)"
-                        :aria-label="'「' + room.name + '」に参加'"
-                        class="modal-button bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded text-sm transition-colors"
+                        @click="window.location.href = '/rooms/' + room.id"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm transition-colors h-full"
                       >
-                        参加
+                        入室する
                       </button>
+                    </template>
 
-                      <!-- 未認証ユーザー用 -->
-                      <button
-                        x-show="$store.auth.initialized && !$store.auth.isAuthenticated"
-                        x-cloak
-                        @click="openLoginModal()"
-                        class="modal-button bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded text-sm transition-colors"
-                      >
-                        参加
-                      </button>
-                    </div>
-                  </template>
-                  <!-- 参加不可の場合 -->
-                  <template
-                    x-if="!room.isJoined && (room.isClosed || room.currentPlayers >= room.maxPlayers)"
-                  >
-                    <button
-                      disabled
-                      class="bg-gray-400 text-white px-4 py-2 rounded text-sm cursor-not-allowed"
+                    <!-- 参加可能な部屋の場合 -->
+                    <template
+                      x-if="!room.isJoined && !room.isClosed && room.currentPlayers < room.maxPlayers"
                     >
-                      参加不可
-                    </button>
-                  </template>
+                      <div class="h-full flex items-center">
+                        <!-- 認証済みユーザー用 -->
+                        <button
+                          x-show="$store.auth.initialized && $store.auth.isAuthenticated"
+                          x-cloak
+                          @click="openModal(room)"
+                          :aria-label="'「' + room.name + '」に参加'"
+                          class="modal-button bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded text-sm transition-colors h-full"
+                        >
+                          参加
+                        </button>
+
+                        <!-- 未認証ユーザー用 -->
+                        <button
+                          x-show="$store.auth.initialized && !$store.auth.isAuthenticated"
+                          x-cloak
+                          @click="openLoginModal()"
+                          class="modal-button bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded text-sm transition-colors h-full"
+                        >
+                          参加
+                        </button>
+                      </div>
+                    </template>
+                    <!-- 参加不可の場合 -->
+                    <template
+                      x-if="!room.isJoined && (room.isClosed || room.currentPlayers >= room.maxPlayers)"
+                    >
+                      <button
+                        disabled
+                        class="bg-gray-400 text-white px-4 py-2 rounded text-sm cursor-not-allowed h-full"
+                      >
+                        参加不可
+                      </button>
+                    </template>
+                  </div>
                 </div>
               </div>
             </div>

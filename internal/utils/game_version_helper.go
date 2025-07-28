@@ -4,13 +4,13 @@ package utils
 func GetGameVersionColor(code string) string {
 	switch code {
 	case "MHP":
-		return "bg-blue-600"
+		return "bg-amber-800" // 茶色系に近い色
 	case "MHP2":
-		return "bg-red-600"
+		return "bg-sky-600" // 青色系
 	case "MHP2G":
-		return "bg-purple-600"
+		return "bg-green-700" // 緑色系
 	case "MHP3":
-		return "bg-green-600"
+		return "bg-yellow-600" // 金色系
 	default:
 		return "bg-gray-600"
 	}

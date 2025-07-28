@@ -84,11 +84,16 @@ func (h *RoomDetailHandler) RoomDetail(w http.ResponseWriter, r *http.Request) {
 	// メンバー情報を設定
 	for i := range members {
 		if members[i].PlayerNumber >= 1 && members[i].PlayerNumber <= 4 {
-			// DisplayNameを設定
-			members[i].DisplayName = members[i].User.DisplayName
+			// DisplayNameを設定（username > display_name の優先順位）
+			displayName := members[i].User.DisplayName
 			if members[i].User.Username != nil && *members[i].User.Username != "" {
-				members[i].DisplayName = *members[i].User.Username
+				displayName = *members[i].User.Username
 			}
+			// display_nameが空の場合のフォールバック
+			if displayName == "" {
+				displayName = members[i].User.DisplayName
+			}
+			members[i].DisplayName = displayName
 			memberSlots[members[i].PlayerNumber-1] = &members[i]
 		}
 	}

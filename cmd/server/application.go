@@ -9,6 +9,7 @@ import (
 	"mhp-rooms/internal/infrastructure/persistence/postgres"
 	"mhp-rooms/internal/middleware"
 	"mhp-rooms/internal/repository"
+	"mhp-rooms/internal/sse"
 )
 
 type Application struct {
@@ -18,6 +19,7 @@ type Application struct {
 	authHandler       *handlers.AuthHandler
 	roomHandler       *handlers.RoomHandler
 	roomDetailHandler *handlers.RoomDetailHandler
+	roomMessageHandler *handlers.RoomMessageHandler
 	pageHandler       *handlers.PageHandler
 	configHandler     *handlers.ConfigHandler
 	reactionHandler   *handlers.ReactionHandler
@@ -25,6 +27,7 @@ type Application struct {
 	securityConfig    *middleware.SecurityConfig
 	generalLimiter    *middleware.RateLimiter
 	authLimiter       *middleware.RateLimiter
+	sseHub            *sse.Hub
 }
 
 func NewApplication(cfg *config.Config) (*Application, error) {
@@ -66,9 +69,14 @@ func (app *Application) initDatabase() error {
 func (app *Application) initHandlers() {
 	app.repo = repository.NewRepository(app.db)
 
+	// SSE Hubを初期化
+	app.sseHub = sse.NewHub()
+	go app.sseHub.Run()
+
 	app.authHandler = handlers.NewAuthHandler(app.repo)
 	app.roomHandler = handlers.NewRoomHandler(app.repo)
 	app.roomDetailHandler = handlers.NewRoomDetailHandler(app.repo)
+	app.roomMessageHandler = handlers.NewRoomMessageHandler(app.repo, app.sseHub)
 	app.pageHandler = handlers.NewPageHandler(app.repo)
 	app.configHandler = handlers.NewConfigHandler()
 	app.reactionHandler = handlers.NewReactionHandler(app.repo)

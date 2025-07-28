@@ -55,6 +55,7 @@ func (app *Application) setupRoomRoutes(r *mux.Router) {
 	rr := r.PathPrefix("/rooms").Subrouter()
 	rh := app.roomHandler
 	rdh := app.roomDetailHandler
+	rmh := app.roomMessageHandler
 
 	// 認証不要なルート
 	rr.HandleFunc("", rh.Rooms).Methods("GET")
@@ -69,12 +70,22 @@ func (app *Application) setupRoomRoutes(r *mux.Router) {
 		protected.HandleFunc("/{id}/join", rh.JoinRoom).Methods("POST")
 		protected.HandleFunc("/{id}/leave", rh.LeaveRoom).Methods("POST")
 		protected.HandleFunc("/{id}/toggle-closed", rh.ToggleRoomClosed).Methods("PUT")
+		
+		// メッセージ関連
+		protected.HandleFunc("/{id}/messages", rmh.SendMessage).Methods("POST")
+		protected.HandleFunc("/{id}/messages", rmh.GetMessages).Methods("GET")
+		protected.HandleFunc("/{id}/messages/stream", rmh.StreamMessages).Methods("GET")
 	} else {
 		// 認証ミドルウェアがない場合（開発環境など）
 		rr.HandleFunc("", rh.CreateRoom).Methods("POST")
 		rr.HandleFunc("/{id}/join", rh.JoinRoom).Methods("POST")
 		rr.HandleFunc("/{id}/leave", rh.LeaveRoom).Methods("POST")
 		rr.HandleFunc("/{id}/toggle-closed", rh.ToggleRoomClosed).Methods("PUT")
+		
+		// メッセージ関連
+		rr.HandleFunc("/{id}/messages", rmh.SendMessage).Methods("POST")
+		rr.HandleFunc("/{id}/messages", rmh.GetMessages).Methods("GET")
+		rr.HandleFunc("/{id}/messages/stream", rmh.StreamMessages).Methods("GET")
 	}
 }
 

@@ -1,0 +1,36 @@
+{{ define "message_item" }}
+  <div class="message-item" data-message-id="{{ .ID }}">
+    <!-- システムメッセージ -->
+    {{ if eq .MessageType "system" }}
+      <div class="text-center">
+        <span class="px-3 py-1 rounded-full text-sm bg-gray-200 text-gray-600">
+          {{ .Message }}
+        </span>
+      </div>
+    {{ else }}
+      <!-- ユーザーメッセージ -->
+      <div class="flex items-start space-x-3">
+        <div
+          class="w-8 h-8 bg-gray-600 rounded flex items-center justify-center flex-shrink-0"
+        >
+          <div class="w-6 h-6 bg-white rounded-sm"></div>
+        </div>
+        <div class="flex-1">
+          <div class="flex items-center mb-1 space-x-2">
+            <button
+              class="font-medium text-gray-800 text-sm hover:text-gray-600 hover:underline transition-colors"
+            >
+              {{ .User.DisplayName }}
+            </button>
+            <span class="text-gray-500 text-xs">
+              {{ .CreatedAt.Format "15:04" }}
+            </span>
+          </div>
+          <div class="rounded-lg p-3 text-sm bg-gray-200 text-gray-800">
+            {{ .Message }}
+          </div>
+        </div>
+      </div>
+    {{ end }}
+  </div>
+{{ end }}
