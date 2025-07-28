@@ -107,12 +107,12 @@ func (app *Application) setupAuthRoutes(r *mux.Router) {
 func (app *Application) setupAPIRoutes(r *mux.Router) {
 	apiRoutes := r.PathPrefix("/api").Subrouter()
 
-	// 一般的なAPIエンドポイント
+	// 認証不要なAPIエンドポイント
 	apiRoutes.HandleFunc("/config/supabase", app.configHandler.GetSupabaseConfig).Methods("GET")
 	apiRoutes.HandleFunc("/health", app.healthCheck).Methods("GET")
 
 	if app.authMiddleware != nil {
-		// 認証関連API（厳しいレート制限）
+		// 認証関連API（厳しいレート制限 + 認証必須）
 		authAPIRoutes := apiRoutes.PathPrefix("/auth").Subrouter()
 		authAPIRoutes.Use(middleware.AuthRateLimitMiddleware(app.authLimiter))
 		authAPIRoutes.Use(app.authMiddleware.Middleware)
@@ -120,24 +120,17 @@ func (app *Application) setupAPIRoutes(r *mux.Router) {
 		authAPIRoutes.HandleFunc("/sync", app.authHandler.SyncUser).Methods("POST")
 		authAPIRoutes.HandleFunc("/psn-id", app.authHandler.UpdatePSNId).Methods("PUT")
 
-		// 保護されたAPI
-		protected := apiRoutes.PathPrefix("").Subrouter()
-		protected.Use(app.authMiddleware.Middleware)
-
-		protected.HandleFunc("/user/current", app.authHandler.CurrentUser).Methods("GET")
+		// 認証必須のAPIエンドポイント
+		apiRoutes.HandleFunc("/user/current", app.authMiddleware.Middleware(http.HandlerFunc(app.authHandler.CurrentUser)).ServeHTTP).Methods("GET")
 
 		// リアクション関連API（認証必須）
-		protected.HandleFunc("/messages/{messageId}/reactions", app.reactionHandler.AddReaction).Methods("POST")
-		protected.HandleFunc("/messages/{messageId}/reactions/{reactionType}", app.reactionHandler.RemoveReaction).Methods("DELETE")
+		apiRoutes.HandleFunc("/messages/{messageId}/reactions", app.authMiddleware.Middleware(http.HandlerFunc(app.reactionHandler.AddReaction)).ServeHTTP).Methods("POST")
+		apiRoutes.HandleFunc("/messages/{messageId}/reactions/{reactionType}", app.authMiddleware.Middleware(http.HandlerFunc(app.reactionHandler.RemoveReaction)).ServeHTTP).Methods("DELETE")
 
-		// オプション認証API
-		optional := apiRoutes.PathPrefix("").Subrouter()
-		optional.Use(app.authMiddleware.OptionalMiddleware)
-
-		optional.HandleFunc("/rooms", app.roomHandler.GetAllRoomsAPI).Methods("GET")
-		// リアクション関連API（認証オプション）
-		optional.HandleFunc("/messages/{messageId}/reactions", app.reactionHandler.GetMessageReactions).Methods("GET")
-		optional.HandleFunc("/reactions/types", app.reactionHandler.GetAvailableReactions).Methods("GET")
+		// 認証オプションのAPIエンドポイント
+		apiRoutes.HandleFunc("/rooms", app.authMiddleware.OptionalMiddleware(http.HandlerFunc(app.roomHandler.GetAllRoomsAPI)).ServeHTTP).Methods("GET")
+		apiRoutes.HandleFunc("/messages/{messageId}/reactions", app.authMiddleware.OptionalMiddleware(http.HandlerFunc(app.reactionHandler.GetMessageReactions)).ServeHTTP).Methods("GET")
+		apiRoutes.HandleFunc("/reactions/types", app.authMiddleware.OptionalMiddleware(http.HandlerFunc(app.reactionHandler.GetAvailableReactions)).ServeHTTP).Methods("GET")
 	} else {
 		// 認証ミドルウェアがない場合（開発環境）
 		apiRoutes.HandleFunc("/user/current", app.authHandler.CurrentUser).Methods("GET")

@@ -1,51 +1,47 @@
 {{ define "room_detail" }}
-<!doctype html>
-<html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{{ .Title }} - MonHub</title>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Alpine.js -->
-    <script src="/static/js/vendor/alpine.min.js" defer></script>
-    
-    <!-- Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/static/js/supabase.js"></script>
-    <script src="/static/js/auth-store.js"></script>
-    
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap"
-      rel="stylesheet"
-    />
-    
-    <!-- Icons -->
-    <link rel="icon" type="image/x-icon" href="/static/images/icons/favicon.ico" />
-    
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="/static/css/style.css" />
-    
-    <script>
-      document.addEventListener('DOMContentLoaded', async () => {
-        if (typeof window.initializeSupabase === 'function') {
-          try {
-            await window.initializeSupabase()
-            document.dispatchEvent(new CustomEvent('supabase-initialized'))
-          } catch (e) {
-            console.error('Supabase初期化エラー:', e)
+  <!doctype html>
+  <html lang="ja">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>{{ .Title }} - MonHub</title>
+
+      <script src="https://cdn.tailwindcss.com"></script>
+      <script src="/static/js/vendor/alpine.min.js" defer></script>
+      <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+      <script src="/static/js/supabase.js"></script>
+      <script src="/static/js/auth-store.js"></script>
+
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+      <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap"
+        rel="stylesheet"
+      />
+
+      <link
+        rel="icon"
+        type="image/x-icon"
+        href="/static/images/icons/favicon.ico"
+      />
+
+      <link rel="stylesheet" href="/static/css/style.css" />
+
+      <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+          if (typeof window.initializeSupabase === 'function') {
+            try {
+              await window.initializeSupabase()
+              document.dispatchEvent(new CustomEvent('supabase-initialized'))
+            } catch (e) {
+              console.error('Supabase初期化エラー:', e)
+            }
           }
-        }
-      })
-    </script>
-  </head>
-  <body class="bg-gray-50 h-screen overflow-hidden">
-    {{ template "room_detail_page" . }}
-  </body>
-</html>
+        })
+      </script>
+    </head>
+    <body class="bg-gray-50 h-screen overflow-hidden">
+      {{ template "room_detail_page" . }}
+    </body>
+  </html>
 {{ end }}

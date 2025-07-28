@@ -166,7 +166,7 @@
                       入室する
                     </button>
                   </template>
-                  
+
                   <!-- 参加可能な部屋の場合 -->
                   <template
                     x-if="!room.isJoined && !room.isClosed && room.currentPlayers < room.maxPlayers"
@@ -356,7 +356,7 @@
               x-text="isJoining ? '参加中...' : '参加する'"
               class="modal-button px-6 py-2 bg-gray-800 hover:bg-gray-900 text-white font-medium rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
             ></button>
-            
+
             <!-- エラーtooltip -->
             <div
               x-show="showError"
@@ -371,7 +371,9 @@
             >
               <div x-text="errorMessage"></div>
               <!-- ツールチップの矢印 -->
-              <div class="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-red-600"></div>
+              <div
+                class="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-red-600"
+              ></div>
             </div>
           </div>
         </div>
@@ -603,14 +605,14 @@
         },
         async joinRoom() {
           if (this.isJoinDisabled) return
-          
+
           // 認証状態をチェック
           if (!Alpine.store('auth').isAuthenticated) {
             this.closeModal()
             this.openLoginModal()
             return
           }
-          
+
           this.isJoining = true
           const requestData = {}
           if (this.currentRoom.hasPassword) {
@@ -621,11 +623,11 @@
             const headers = {
               'Content-Type': 'application/json'
             }
-            
+
             if (Alpine.store('auth').session?.access_token) {
               headers['Authorization'] = `Bearer ${Alpine.store('auth').session.access_token}`
             }
-            
+
             const response = await fetch(`/rooms/${this.currentRoom.id}/join`, {
               method: 'POST',
               headers: headers,
@@ -640,12 +642,12 @@
               }
               throw new Error('参加に失敗しました')
             }
-            
+
             const result = await response.json()
-            
+
             // 成功時は直接遷移（alertなし）
             this.closeModal()
-            
+
             // 部屋詳細画面に遷移
             if (result.redirect) {
               window.location.href = result.redirect
@@ -683,7 +685,7 @@
         showErrorMessage(message) {
           this.errorMessage = message
           this.showError = true
-          
+
           // 3秒後に自動で非表示
           setTimeout(() => {
             this.showError = false

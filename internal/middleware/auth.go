@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"mhp-rooms/internal/models"
@@ -36,9 +37,57 @@ type AuthUser struct {
 	Metadata map[string]interface{}
 }
 
+// UserCache は短時間のユーザーキャッシュ
+type UserCache struct {
+	users  map[uuid.UUID]*models.User
+	mutex  sync.RWMutex
+	expiry map[uuid.UUID]time.Time
+}
+
+func NewUserCache() *UserCache {
+	return &UserCache{
+		users:  make(map[uuid.UUID]*models.User),
+		expiry: make(map[uuid.UUID]time.Time),
+	}
+}
+
+func (c *UserCache) Get(userID uuid.UUID) (*models.User, bool) {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+	
+	if expTime, exists := c.expiry[userID]; !exists || time.Now().After(expTime) {
+		return nil, false
+	}
+	
+	user, exists := c.users[userID]
+	return user, exists
+}
+
+func (c *UserCache) Set(userID uuid.UUID, user *models.User, ttl time.Duration) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	
+	c.users[userID] = user
+	c.expiry[userID] = time.Now().Add(ttl)
+}
+
+func (c *UserCache) Cleanup() {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	
+	now := time.Now()
+	for userID, expTime := range c.expiry {
+		if now.After(expTime) {
+			delete(c.users, userID)
+			delete(c.expiry, userID)
+		}
+	}
+}
+
 type JWTAuth struct {
 	jwtSecret []byte
 	repo      *repository.Repository
+	userCache *UserCache
 }
 
 func NewJWTAuth(repo *repository.Repository) (*JWTAuth, error) {
@@ -47,9 +96,24 @@ func NewJWTAuth(repo *repository.Repository) (*JWTAuth, error) {
 		return nil, fmt.Errorf("SUPABASE_JWT_SECRET環境変数が設定されていません")
 	}
 
+	userCache := NewUserCache()
+	
+	// 定期的にキャッシュをクリーンアップ
+	go func() {
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				userCache.Cleanup()
+			}
+		}
+	}()
+
 	return &JWTAuth{
 		jwtSecret: []byte(secret),
 		repo:      repo,
+		userCache: userCache,
 	}, nil
 }
 
@@ -94,8 +158,9 @@ func (j *JWTAuth) Middleware(next http.Handler) http.Handler {
 		}
 
 		ctx := context.WithValue(r.Context(), UserContextKey, user)
+		ctx = context.WithValue(ctx, "request", r) // デバッグ用
 		if j.repo != nil {
-			if dbUser := j.loadDBUser(user); dbUser != nil {
+			if dbUser := j.loadDBUser(ctx, user); dbUser != nil {
 				ctx = context.WithValue(ctx, DBUserContextKey, dbUser)
 			}
 		}
@@ -105,8 +170,20 @@ func (j *JWTAuth) Middleware(next http.Handler) http.Handler {
 
 func (j *JWTAuth) OptionalMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// 既にコンテキストにユーザー情報がある場合はスキップ
-		if _, exists := GetUserFromContext(r.Context()); exists {
+		// 既にコンテキストにユーザー情報とDBユーザー情報の両方がある場合はスキップ
+		if user, userExists := GetUserFromContext(r.Context()); userExists {
+			if _, dbUserExists := GetDBUserFromContext(r.Context()); dbUserExists {
+				next.ServeHTTP(w, r)
+				return
+			}
+			// ユーザーはいるがDBユーザーがない場合は、DBユーザーのみ取得
+			if j.repo != nil {
+				ctx := context.WithValue(r.Context(), "request", r) // デバッグ用
+				if dbUser := j.loadDBUser(ctx, user); dbUser != nil {
+					ctx = context.WithValue(ctx, DBUserContextKey, dbUser)
+					r = r.WithContext(ctx)
+				}
+			}
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -137,12 +214,10 @@ func (j *JWTAuth) OptionalMiddleware(next http.Handler) http.Handler {
 					}
 
 					ctx := context.WithValue(r.Context(), UserContextKey, user)
+					ctx = context.WithValue(ctx, "request", r) // デバッグ用
 					if j.repo != nil {
-						// DBユーザーの取得はコンテキストにない場合のみ
-						if _, hasDBUser := GetDBUserFromContext(ctx); !hasDBUser {
-							if dbUser := j.loadDBUser(user); dbUser != nil {
-								ctx = context.WithValue(ctx, DBUserContextKey, dbUser)
-							}
+						if dbUser := j.loadDBUser(ctx, user); dbUser != nil {
+							ctx = context.WithValue(ctx, DBUserContextKey, dbUser)
 						}
 					}
 
@@ -165,16 +240,37 @@ func GetDBUserFromContext(ctx context.Context) (*models.User, bool) {
 	return dbUser, ok
 }
 
-func (j *JWTAuth) loadDBUser(authUser *AuthUser) *models.User {
+func (j *JWTAuth) loadDBUser(ctx context.Context, authUser *AuthUser) *models.User {
+	// 既にコンテキストにDBユーザーが存在する場合は再利用
+	if dbUser, exists := GetDBUserFromContext(ctx); exists && dbUser != nil {
+		return dbUser
+	}
+
 	supabaseUserID, err := uuid.Parse(authUser.ID)
 	if err != nil {
 		return nil
+	}
+
+	// キャッシュから取得を試行
+	if cachedUser, exists := j.userCache.Get(supabaseUserID); exists {
+		return cachedUser
+	}
+
+	// デバッグ用ログ：どのリクエストでSQLが実行されているかを追跡
+	if req := ctx.Value("request"); req != nil {
+		if httpReq, ok := req.(*http.Request); ok {
+			fmt.Printf("DEBUG: SQL実行 - Path: %s, Method: %s, UserAgent: %s\n", 
+				httpReq.URL.Path, httpReq.Method, httpReq.Header.Get("User-Agent"))
+		}
 	}
 
 	existingUser, err := j.repo.User.FindUserBySupabaseUserID(supabaseUserID)
 	if err != nil || existingUser == nil {
 		return nil
 	}
+
+	// キャッシュに保存（30秒間）
+	j.userCache.Set(supabaseUserID, existingUser, 30*time.Second)
 
 	return existingUser
 }

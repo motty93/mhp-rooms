@@ -51,7 +51,7 @@ document.addEventListener('alpine:init', () => {
       this.user = session?.user || null
       this.error = null
 
-      if (this.user && session?.access_token) {
+      if (this.user && session?.access_token && !this._syncInProgress) {
         this.syncUser(session.access_token)
       }
     },
@@ -221,8 +221,11 @@ document.addEventListener('alpine:init', () => {
           await window.supabaseAuth.updateUserMetadata({ psn_id: psnId })
         }
 
-        // ユーザー情報を再取得
-        await this.checkAuth()
+        // PSN ID更新後はcheckAuth()を呼ばずに、ユーザーメタデータのみ更新
+        // 重複SQLを避けるため、フル認証チェックは行わない
+        if (this.user && this.user.user_metadata) {
+          this.user.user_metadata.psn_id = psnId
+        }
 
         return response.json()
       } catch (error) {
