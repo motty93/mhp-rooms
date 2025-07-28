@@ -589,11 +589,14 @@
         },
         closeModal() {
           this.showModal = false
-          this.currentRoom = {}
-          this.password = ''
-          this.isJoining = false
-          this.showError = false
-          this.errorMessage = ''
+          // トランジション完了後にデータをクリア
+          setTimeout(() => {
+            this.currentRoom = {}
+            this.password = ''
+            this.isJoining = false
+            this.showError = false
+            this.errorMessage = ''
+          }, 300) // トランジション時間と同じ
           // フォーカスを元の要素に戻す
           if (this.lastFocusedElement) {
             this.lastFocusedElement.focus()
@@ -648,10 +651,7 @@
 
             const result = await response.json()
 
-            // 成功時は直接遷移（alertなし）
-            this.closeModal()
-
-            // 部屋詳細画面に遷移
+            // 成功時は部屋詳細画面に遷移（モーダルは閉じない）
             if (result.redirect) {
               window.location.href = result.redirect
             } else {
