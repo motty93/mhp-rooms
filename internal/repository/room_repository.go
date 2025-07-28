@@ -44,7 +44,7 @@ func (r *roomRepository) CreateRoom(room *models.Room) error {
 			RoomID: room.ID,
 			UserID: &room.HostUserID,
 			Action: "create",
-			Details: map[string]interface{}{
+			Details: models.JSONB{
 				"room_name": room.Name,
 			},
 		}
@@ -223,7 +223,7 @@ func (r *roomRepository) JoinRoom(roomID, userID uuid.UUID, password string) err
 			RoomID: roomID,
 			UserID: &userID,
 			Action: "join",
-			Details: map[string]interface{}{
+			Details: models.JSONB{
 				"user_name": user.DisplayName,
 			},
 		}
@@ -268,7 +268,7 @@ func (r *roomRepository) LeaveRoom(roomID, userID uuid.UUID) error {
 			RoomID: roomID,
 			UserID: &userID,
 			Action: "leave",
-			Details: map[string]interface{}{
+			Details: models.JSONB{
 				"user_name": user.DisplayName,
 			},
 		}
