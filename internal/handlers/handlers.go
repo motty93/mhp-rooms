@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"mhp-rooms/internal/repository"
+	"mhp-rooms/internal/utils"
 )
 
 // BaseHandler は全てのハンドラーが共通で使用する構造体
@@ -51,6 +52,11 @@ func renderTemplate(w http.ResponseWriter, templateName string, data TemplateDat
 			}
 			return dict, nil
 		},
+		"gameVersionColor": utils.GetGameVersionColor,
+		"gameVersionIcon": func(code string) template.HTML {
+			return template.HTML(utils.GetGameVersionIcon(code))
+		},
+		"gameVersionAbbr": utils.GetGameVersionAbbreviation,
 	}
 
 	tmpl, err := template.New("").Funcs(funcMap).ParseFiles(

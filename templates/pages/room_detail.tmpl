@@ -8,14 +8,12 @@
       >
         <div class="flex items-center space-x-3 mb-2">
           <div
-            class="w-12 h-12 bg-gray-800 rounded flex items-center justify-center flex-shrink-0"
+            class="w-12 h-12 {{ gameVersionColor .PageData.Room.GameVersion.Code }} rounded flex items-center justify-center flex-shrink-0"
           >
             <div
-              class="w-8 h-8 bg-white rounded flex items-center justify-center text-gray-800 text-xs font-bold"
+              class="w-8 h-8 flex items-center justify-center text-white text-xl font-bold"
             >
-              <svg viewBox="0 0 24 24" class="w-6 h-6 fill-gray-800">
-                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
-              </svg>
+              {{ gameVersionAbbr .PageData.Room.GameVersion.Code }}
             </div>
           </div>
           <div class="text-gray-800 font-bold text-lg">
@@ -52,7 +50,16 @@
         {{ range $index, $member := .PageData.Members }}
           {{ if $member }}
             <button
-              class="w-full flex items-center space-x-3 p-2 bg-gray-100 hover:bg-gray-200 rounded border border-gray-200 transition-colors cursor-pointer"
+              class="w-full flex items-center space-x-3 p-2 bg-gray-100 hover:bg-gray-200 rounded border-2 transition-colors cursor-pointer"
+              :class="{'border-yellow-500': {{ if $member.IsHost }}
+                true
+              {{ else }}
+                false
+              {{ end }}, 'border-gray-200': {{ if not $member.IsHost }}
+                true
+              {{ else }}
+                false
+              {{ end }}}"
             >
               <div
                 class="w-6 h-8 bg-gray-800 rounded flex items-center justify-center"
@@ -240,16 +247,36 @@ function roomDetail() {
     },
 
     loadInitialMessages() {
-      // サーバーから初期メッセージをロード（仮データ）
-      this.messages = [
-        {
-          id: 1,
-          type: 'system',
-          subtype: 'create',
-          content: '{{ .PageData.Room.Host.DisplayName }}さんが部屋を作成しました',
-          timestamp: new Date()
-        }
-      ];
+      // ログからメッセージを生成
+      this.messages = [];
+
+      {{ range .PageData.Logs }}
+        {{ if eq .Action "create" }}
+          this.messages.push({
+            id: '{{ .ID }}',
+            type: 'system',
+            subtype: 'create',
+            content: '{{ if .User }}{{ .User.DisplayName }}{{ else }}ユーザー{{ end }}さんが部屋を作成しました',
+            timestamp: new Date('{{ .CreatedAt.Format "2006-01-02T15:04:05Z07:00" }}')
+          });
+        {{ else if eq .Action "join" }}
+          this.messages.push({
+            id: '{{ .ID }}',
+            type: 'system',
+            subtype: 'join',
+            content: '{{ index .Details "user_name" }}さんが入室しました',
+            timestamp: new Date('{{ .CreatedAt.Format "2006-01-02T15:04:05Z07:00" }}')
+          });
+        {{ else if eq .Action "leave" }}
+          this.messages.push({
+            id: '{{ .ID }}',
+            type: 'system',
+            subtype: 'leave',
+            content: '{{ index .Details "user_name" }}さんが退室しました',
+            timestamp: new Date('{{ .CreatedAt.Format "2006-01-02T15:04:05Z07:00" }}')
+          });
+        {{ end }}
+      {{ end }}
     },
 
     sendMessage() {

@@ -1,8 +1,9 @@
 package repository
 
 import (
-	"github.com/google/uuid"
 	"mhp-rooms/internal/models"
+
+	"github.com/google/uuid"
 )
 
 // UserRepository はユーザー関連の操作を定義するインターフェース
@@ -41,6 +42,8 @@ type RoomRepository interface {
 	JoinRoom(roomID, userID uuid.UUID, password string) error
 	LeaveRoom(roomID, userID uuid.UUID) error
 	IsUserJoinedRoom(roomID, userID uuid.UUID) bool
+	GetRoomMembers(roomID uuid.UUID) ([]models.RoomMember, error)
+	GetRoomLogs(roomID uuid.UUID) ([]models.RoomLog, error)
 }
 
 // PlayerNameRepository はプレイヤー名関連の操作を定義するインターフェース

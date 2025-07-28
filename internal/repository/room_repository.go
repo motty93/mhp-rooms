@@ -20,7 +20,36 @@ func NewRoomRepository(db *postgres.DB) RoomRepository {
 }
 
 func (r *roomRepository) CreateRoom(room *models.Room) error {
-	return r.db.GetConn().Create(room).Error
+	return r.db.GetConn().Transaction(func(tx *gorm.DB) error {
+		// 部屋を作成
+		if err := tx.Create(room).Error; err != nil {
+			return err
+		}
+
+		// ホストユーザーをメンバーとして追加
+		member := models.RoomMember{
+			RoomID:       room.ID,
+			UserID:       room.HostUserID,
+			PlayerNumber: 1,
+			IsHost:       true,
+			Status:       "active",
+			JoinedAt:     time.Now(),
+		}
+		if err := tx.Create(&member).Error; err != nil {
+			return err
+		}
+
+		// 部屋作成ログを記録
+		log := models.RoomLog{
+			RoomID: room.ID,
+			UserID: &room.HostUserID,
+			Action: "create",
+			Details: map[string]interface{}{
+				"room_name": room.Name,
+			},
+		}
+		return tx.Create(&log).Error
+	})
 }
 
 func (r *roomRepository) FindRoomByID(id uuid.UUID) (*models.Room, error) {
@@ -166,7 +195,7 @@ func (r *roomRepository) JoinRoom(roomID, userID uuid.UUID, password string) err
 				Where("room_id = ? AND status = ?", roomID, "active").
 				Select("COALESCE(MAX(player_number), 0)").
 				Scan(&maxPlayerNumber)
-			
+
 			member := models.RoomMember{
 				RoomID:       roomID,
 				UserID:       userID,
@@ -179,9 +208,23 @@ func (r *roomRepository) JoinRoom(roomID, userID uuid.UUID, password string) err
 			}
 		}
 
-		return tx.Model(&models.Room{}).
+		// 部屋のプレイヤー数を更新
+		if err := tx.Model(&models.Room{}).
 			Where("id = ?", roomID).
-			Update("current_players", gorm.Expr("current_players + ?", 1)).Error
+			Update("current_players", gorm.Expr("current_players + ?", 1)).Error; err != nil {
+			return err
+		}
+
+		// 入室ログを記録
+		log := models.RoomLog{
+			RoomID: roomID,
+			UserID: &userID,
+			Action: "join",
+			Details: map[string]interface{}{
+				"user_name": user.DisplayName,
+			},
+		}
+		return tx.Create(&log).Error
 	})
 }
 
@@ -203,16 +246,70 @@ func (r *roomRepository) LeaveRoom(roomID, userID uuid.UUID) error {
 			return fmt.Errorf("ルームメンバーが見つかりません")
 		}
 
-		return tx.Model(&models.Room{}).
+		// ユーザー情報を取得
+		var user models.User
+		if err := tx.Where("id = ?", userID).First(&user).Error; err != nil {
+			return err
+		}
+
+		// 部屋のプレイヤー数を更新
+		if err := tx.Model(&models.Room{}).
 			Where("id = ?", roomID).
 			Where("current_players > ?", 0).
-			Update("current_players", gorm.Expr("current_players - ?", 1)).Error
+			Update("current_players", gorm.Expr("current_players - ?", 1)).Error; err != nil {
+			return err
+		}
+
+		// 退室ログを記録
+		log := models.RoomLog{
+			RoomID: roomID,
+			UserID: &userID,
+			Action: "leave",
+			Details: map[string]interface{}{
+				"user_name": user.DisplayName,
+			},
+		}
+		return tx.Create(&log).Error
 	})
 }
 
 func (r *roomRepository) IsUserJoinedRoom(roomID, userID uuid.UUID) bool {
 	var member models.RoomMember
-	err := r.db.GetConn().Where("room_id = ? AND user_id = ? AND status = ?", 
+	err := r.db.GetConn().Where("room_id = ? AND user_id = ? AND status = ?",
 		roomID, userID, "active").First(&member).Error
 	return err == nil
+}
+
+func (r *roomRepository) GetRoomMembers(roomID uuid.UUID) ([]models.RoomMember, error) {
+	var members []models.RoomMember
+	err := r.db.GetConn().
+		Preload("User").
+		Where("room_id = ? AND status = ?", roomID, "active").
+		Order("is_host DESC, joined_at ASC").
+		Find(&members).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	// ホストユーザーの確認と設定
+	var room models.Room
+	if err := r.db.GetConn().Where("id = ?", roomID).First(&room).Error; err == nil {
+		for i := range members {
+			members[i].IsHost = members[i].UserID == room.HostUserID
+		}
+	}
+
+	return members, nil
+}
+
+func (r *roomRepository) GetRoomLogs(roomID uuid.UUID) ([]models.RoomLog, error) {
+	var logs []models.RoomLog
+	err := r.db.GetConn().
+		Preload("User").
+		Where("room_id = ?", roomID).
+		Order("created_at ASC").
+		Find(&logs).Error
+
+	return logs, err
 }

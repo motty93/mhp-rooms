@@ -5,10 +5,12 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 	"mhp-rooms/internal/models"
 	"mhp-rooms/internal/repository"
+	"mhp-rooms/internal/utils"
+
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 )
 
 type RoomDetailHandler struct {
@@ -26,6 +28,7 @@ func NewRoomDetailHandler(repo *repository.Repository) *RoomDetailHandler {
 type RoomDetailPageData struct {
 	Room    *models.Room         `json:"room"`
 	Members []*models.RoomMember `json:"members"`
+	Logs    []models.RoomLog     `json:"logs"`
 }
 
 func (h *RoomDetailHandler) RoomDetail(w http.ResponseWriter, r *http.Request) {
@@ -68,46 +71,33 @@ func (h *RoomDetailHandler) RoomDetail(w http.ResponseWriter, r *http.Request) {
 	}
 	room.GameVersion = *gameVersion
 
-	// 部屋のメンバーを取得（仮実装）
-	members := []*models.RoomMember{}
-	// TODO: 実際のメンバー取得メソッドを実装
+	// 部屋のメンバーを取得
+	members, err := h.repo.Room.GetRoomMembers(roomID)
+	if err != nil {
+		// エラーがあってもページ表示は続行
+		members = []models.RoomMember{}
+	}
 
 	// メンバー配列を作成（4人分の枠を確保）
 	memberSlots := make([]*models.RoomMember, 4)
 
-	// メンバーのユーザーIDを収集
-	var userIDs []uuid.UUID
-	for _, member := range members {
-		if member.PlayerNumber >= 1 && member.PlayerNumber <= 4 {
-			userIDs = append(userIDs, member.UserID)
-		}
-	}
-
-	// ユーザー情報を一括取得
-	users, err := h.repo.User.FindUsersByIDs(userIDs)
-	if err != nil {
-		// エラーがあってもメンバー表示は続行
-		users = []models.User{}
-	}
-
-	// ユーザー情報のマップを作成（高速検索用）
-	userMap := make(map[uuid.UUID]models.User)
-	for _, user := range users {
-		userMap[user.ID] = user
-	}
-
-	// メンバー情報にユーザー情報を設定
-	for _, member := range members {
-		if member.PlayerNumber >= 1 && member.PlayerNumber <= 4 {
-			if user, exists := userMap[member.UserID]; exists {
-				member.User = user
-				member.DisplayName = user.DisplayName
-				if user.Username != nil && *user.Username != "" {
-					member.DisplayName = *user.Username
-				}
+	// メンバー情報を設定
+	for i := range members {
+		if members[i].PlayerNumber >= 1 && members[i].PlayerNumber <= 4 {
+			// DisplayNameを設定
+			members[i].DisplayName = members[i].User.DisplayName
+			if members[i].User.Username != nil && *members[i].User.Username != "" {
+				members[i].DisplayName = *members[i].User.Username
 			}
-			memberSlots[member.PlayerNumber-1] = member
+			memberSlots[members[i].PlayerNumber-1] = &members[i]
 		}
+	}
+
+	// 部屋のログを取得
+	logs, err := h.repo.Room.GetRoomLogs(roomID)
+	if err != nil {
+		// エラーがあってもページ表示は続行
+		logs = []models.RoomLog{}
 	}
 
 	// テンプレート用のデータを準備
@@ -118,6 +108,7 @@ func (h *RoomDetailHandler) RoomDetail(w http.ResponseWriter, r *http.Request) {
 		PageData: RoomDetailPageData{
 			Room:    room,
 			Members: memberSlots,
+			Logs:    logs,
 		},
 	}
 
@@ -127,7 +118,15 @@ func (h *RoomDetailHandler) RoomDetail(w http.ResponseWriter, r *http.Request) {
 
 // renderRoomDetailTemplate は部屋詳細専用のテンプレートレンダリング関数
 func renderRoomDetailTemplate(w http.ResponseWriter, templateName string, data interface{}) {
-	tmpl, err := template.ParseFiles(
+	funcMap := template.FuncMap{
+		"gameVersionColor": utils.GetGameVersionColor,
+		"gameVersionIcon": func(code string) template.HTML {
+			return template.HTML(utils.GetGameVersionIcon(code))
+		},
+		"gameVersionAbbr": utils.GetGameVersionAbbreviation,
+	}
+
+	tmpl, err := template.New("").Funcs(funcMap).ParseFiles(
 		filepath.Join("templates", "layouts", "room_detail.tmpl"),
 		filepath.Join("templates", "pages", templateName),
 	)
