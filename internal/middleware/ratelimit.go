@@ -145,10 +145,10 @@ func RateLimitMiddleware(limiter *RateLimiter) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ip := getClientIP(r)
-			
+
 			if !limiter.Allow(ip) {
 				w.Header().Set("Content-Type", "application/json")
-				w.Header().Set("Retry-After", "60")
+				w.Header().Set("Retry-After", "300")
 				w.WriteHeader(http.StatusTooManyRequests)
 				w.Write([]byte(`{"error":"リクエストが多すぎます。しばらく待ってから再試行してください。"}`))
 				return
@@ -164,10 +164,10 @@ func AuthRateLimitMiddleware(limiter *RateLimiter) func(http.Handler) http.Handl
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ip := getClientIP(r)
-			
+
 			if !limiter.Allow(ip) {
 				w.Header().Set("Content-Type", "application/json")
-				w.Header().Set("Retry-After", "60")
+				w.Header().Set("Retry-After", "300")
 				w.WriteHeader(http.StatusTooManyRequests)
 				w.Write([]byte(`{"error":"認証試行回数が上限に達しました。しばらく待ってから再試行してください。"}`))
 				return
@@ -205,7 +205,7 @@ func getClientIP(r *http.Request) string {
 	if err != nil {
 		return r.RemoteAddr
 	}
-	
+
 	return ip
 }
 
