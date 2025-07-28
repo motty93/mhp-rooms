@@ -12,17 +12,20 @@ import (
 	"mhp-rooms/internal/middleware"
 	"mhp-rooms/internal/models"
 	"mhp-rooms/internal/repository"
+	"mhp-rooms/internal/sse"
 )
 
 type RoomHandler struct {
 	BaseHandler
+	hub *sse.Hub
 }
 
-func NewRoomHandler(repo *repository.Repository) *RoomHandler {
+func NewRoomHandler(repo *repository.Repository, hub *sse.Hub) *RoomHandler {
 	return &RoomHandler{
 		BaseHandler: BaseHandler{
 			repo: repo,
 		},
+		hub: hub,
 	}
 }
 
@@ -52,35 +55,35 @@ func (h *RoomHandler) Rooms(w http.ResponseWriter, r *http.Request) {
 	// 認証されたユーザーの場合、参加状態を含めるため拡張データを作成
 	var enhancedRooms []interface{}
 	dbUser, isAuthenticated := middleware.GetDBUserFromContext(r.Context())
-	
+
 	for _, room := range rooms {
 		roomData := map[string]interface{}{
-			"id":              room.ID,
-			"room_code":       room.RoomCode,
-			"name":            room.Name,
-			"description":     room.Description,
-			"game_version_id": room.GameVersionID,
-			"game_version":    room.GameVersion,
-			"host_user_id":    room.HostUserID,
-			"host":            room.Host,
-			"max_players":     room.MaxPlayers,
-			"current_players": room.CurrentPlayers,
-			"target_monster":  room.TargetMonster,
+			"id":               room.ID,
+			"room_code":        room.RoomCode,
+			"name":             room.Name,
+			"description":      room.Description,
+			"game_version_id":  room.GameVersionID,
+			"game_version":     room.GameVersion,
+			"host_user_id":     room.HostUserID,
+			"host":             room.Host,
+			"max_players":      room.MaxPlayers,
+			"current_players":  room.CurrentPlayers,
+			"target_monster":   room.TargetMonster,
 			"rank_requirement": room.RankRequirement,
-			"is_active":       room.IsActive,
-			"is_closed":       room.IsClosed,
-			"created_at":      room.CreatedAt,
-			"updated_at":      room.UpdatedAt,
-			"password_hash":   room.PasswordHash,
+			"is_active":        room.IsActive,
+			"is_closed":        room.IsClosed,
+			"created_at":       room.CreatedAt,
+			"updated_at":       room.UpdatedAt,
+			"password_hash":    room.PasswordHash,
 		}
-		
+
 		// 認証済みユーザーの場合、参加状態を追加
 		if isAuthenticated && dbUser != nil {
 			roomData["is_joined"] = h.isUserJoinedRoom(room.ID, dbUser.ID)
 		} else {
 			roomData["is_joined"] = false
 		}
-		
+
 		enhancedRooms = append(enhancedRooms, roomData)
 	}
 
@@ -145,7 +148,7 @@ func (h *RoomHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "認証されていないか、ユーザー情報が見つかりません", http.StatusUnauthorized)
 		return
 	}
-	
+
 	hostUserID := dbUser.ID
 
 	room := &models.Room{
@@ -205,15 +208,15 @@ func (h *RoomHandler) JoinRoom(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "認証されていないか、ユーザー情報が見つかりません", http.StatusUnauthorized)
 		return
 	}
-	
+
 	userID := dbUser.ID
 
 	if err := h.repo.Room.JoinRoom(roomID, userID, req.Password); err != nil {
 		// 既に参加している場合は部屋詳細に遷移
 		if strings.HasPrefix(err.Error(), "ALREADY_JOINED:") {
 			response := map[string]interface{}{
-				"message": "既に参加しています。部屋に移動します。",
-				"roomId":  roomID.String(),
+				"message":  "既に参加しています。部屋に移動します。",
+				"roomId":   roomID.String(),
 				"redirect": fmt.Sprintf("/rooms/%s", roomID.String()),
 			}
 			w.Header().Set("Content-Type", "application/json")
@@ -225,10 +228,29 @@ func (h *RoomHandler) JoinRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 入室メッセージをSSEで通知
+	if h.hub != nil {
+		joinMessage := models.RoomMessage{
+			ID:          uuid.New(),
+			RoomID:      roomID,
+			UserID:      userID,
+			Message:     fmt.Sprintf("%sさんが入室しました", dbUser.DisplayName),
+			MessageType: "system",
+		}
+		joinMessage.User = *dbUser
+
+		event := sse.Event{
+			ID:   joinMessage.ID.String(),
+			Type: "system_message",
+			Data: joinMessage,
+		}
+		h.hub.BroadcastToRoom(roomID, event)
+	}
+
 	// 参加成功時には部屋詳細URLを返す
 	response := map[string]interface{}{
-		"message": "ルームに参加しました",
-		"roomId":  roomID.String(),
+		"message":  "ルームに参加しました",
+		"roomId":   roomID.String(),
 		"redirect": fmt.Sprintf("/rooms/%s", roomID.String()),
 	}
 
@@ -251,7 +273,7 @@ func (h *RoomHandler) LeaveRoom(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "認証されていないか、ユーザー情報が見つかりません", http.StatusUnauthorized)
 		return
 	}
-	
+
 	userID := dbUser.ID
 
 	if err := h.repo.LeaveRoom(roomID, userID); err != nil {
@@ -287,7 +309,7 @@ func (h *RoomHandler) ToggleRoomClosed(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "認証されていないか、ユーザー情報が見つかりません", http.StatusUnauthorized)
 		return
 	}
-	
+
 	currentUserID := dbUser.ID
 
 	// ルームを取得してホストチェック
@@ -334,28 +356,28 @@ func (h *RoomHandler) GetAllRoomsAPI(w http.ResponseWriter, r *http.Request) {
 	// 認証されたユーザーの場合、参加状態を含める
 	var enhancedRooms []interface{}
 	dbUser, isAuthenticated := middleware.GetDBUserFromContext(r.Context())
-	
+
 	for _, room := range rooms {
 		roomData := map[string]interface{}{
-			"id":              room.ID,
-			"room_code":       room.RoomCode,
-			"name":            room.Name,
-			"description":     room.Description,
-			"game_version_id": room.GameVersionID,
-			"host_user_id":    room.HostUserID,
-			"max_players":     room.MaxPlayers,
-			"current_players": room.CurrentPlayers,
-			"target_monster":  room.TargetMonster,
+			"id":               room.ID,
+			"room_code":        room.RoomCode,
+			"name":             room.Name,
+			"description":      room.Description,
+			"game_version_id":  room.GameVersionID,
+			"host_user_id":     room.HostUserID,
+			"max_players":      room.MaxPlayers,
+			"current_players":  room.CurrentPlayers,
+			"target_monster":   room.TargetMonster,
 			"rank_requirement": room.RankRequirement,
-			"is_active":       room.IsActive,
-			"is_closed":       room.IsClosed,
-			"created_at":      room.CreatedAt,
-			"updated_at":      room.UpdatedAt,
-			"game_version":    room.GameVersion,
-			"host":            room.Host,
-			"has_password":    room.HasPassword(),
+			"is_active":        room.IsActive,
+			"is_closed":        room.IsClosed,
+			"created_at":       room.CreatedAt,
+			"updated_at":       room.UpdatedAt,
+			"game_version":     room.GameVersion,
+			"host":             room.Host,
+			"has_password":     room.HasPassword(),
 		}
-		
+
 		// 認証済みユーザーの場合、参加状態を追加
 		if isAuthenticated && dbUser != nil {
 			// 簡単な参加チェック：RoomMemberを直接確認する代わりに、別の方法を使用
@@ -363,7 +385,7 @@ func (h *RoomHandler) GetAllRoomsAPI(w http.ResponseWriter, r *http.Request) {
 		} else {
 			roomData["is_joined"] = false
 		}
-		
+
 		enhancedRooms = append(enhancedRooms, roomData)
 	}
 

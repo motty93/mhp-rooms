@@ -19,8 +19,14 @@ type DB struct {
 func NewDB(cfg *config.Config) (*DB, error) {
 	dsn := cfg.GetDSN()
 
+	// ログレベルを設定で制御
+	logLevel := logger.Warn // デフォルトは警告のみ
+	if cfg.Debug.SQLLogs {
+		logLevel = logger.Info // デバッグ時は詳細ログ
+	}
+
 	conn, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger: logger.Default.LogMode(logLevel),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("データベース接続に失敗しました: %w", err)

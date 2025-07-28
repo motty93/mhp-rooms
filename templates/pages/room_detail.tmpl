@@ -148,11 +148,11 @@
                 >
                   <!-- 他人のメッセージ -->
                   <template x-if="!message.isOwn">
-                    <div
-                      class="w-8 h-8 bg-gray-600 rounded flex items-center justify-center flex-shrink-0"
-                    >
-                      <div class="w-6 h-6 bg-white rounded-sm"></div>
-                    </div>
+                    <img
+                      :src="message.userAvatar || '/static/images/default-avatar.png'"
+                      class="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                      :alt="message.userName + 'のアバター'"
+                    />
                   </template>
 
                   <div :class="message.isOwn ? 'max-w-xs' : 'flex-1 max-w-xs'">
@@ -187,12 +187,13 @@
       <!-- メッセージフォーム -->
       <div class="bg-white border-t border-gray-200 p-4 flex-shrink-0">
         <form
+          method="post"
           hx-post="/rooms/{{ .PageData.Room.ID }}/messages"
           hx-trigger="submit"
-          hx-on::before-request="roomDetail.addOptimisticMessage()"
+          hx-swap="none"
+          hx-on::before-request="window.roomDetailInstance?.addOptimisticMessage()"
           hx-on::after-request="this.reset(); document.getElementById('message-input').focus()"
           class="flex space-x-3"
-          @submit.prevent
         >
           <input
             id="message-input"
@@ -227,18 +228,21 @@ function roomDetail() {
     roomId: '{{ .PageData.Room.ID }}',
     eventSource: null,
 
-    init() {
+    async init() {
+      // グローバルインスタンスとして登録
+      window.roomDetailInstance = this;
+
       // 説明文の展開が必要かチェック
       this.checkDescriptionLength();
 
-      // 認証状態の確認
-      this.checkAuth();
+      // Alpine.jsの初期化を確実に待つ
+      await this.waitForAlpineAuth();
 
       // 初期メッセージのロード
-      this.loadInitialMessages();
+      await this.loadInitialMessages();
 
       // SSE接続を確立
-      this.connectSSE();
+      await this.connectSSE();
 
       // チャットの最下部にスクロール
       this.$nextTick(() => this.scrollToBottom());
@@ -249,6 +253,31 @@ function roomDetail() {
           this.eventSource.close();
         }
       });
+    },
+
+    async waitForAlpineAuth() {
+      // Alpine.jsの認証ストアが確実に初期化されるまで待つ
+      let retries = 0;
+      const maxRetries = 50; // 最大5秒待つ
+
+      while (retries < maxRetries) {
+        if (window.Alpine && window.Alpine.store('auth')) {
+          await window.Alpine.store('auth').checkAuth();
+          const isAuth = window.Alpine.store('auth').isAuthenticated;
+          const user = window.Alpine.store('auth').user;
+
+          if (isAuth && user) {
+            this.isAuthenticated = true;
+            this.currentUserId = user.id;
+            return;
+          }
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 100));
+        retries++;
+      }
+
+      console.warn('Alpine.js authentication initialization timeout');
     },
 
     checkDescriptionLength() {
@@ -263,14 +292,15 @@ function roomDetail() {
         await Alpine.store('auth').checkAuth();
         this.isAuthenticated = Alpine.store('auth').isAuthenticated;
         this.currentUserId = Alpine.store('auth').user?.id;
-        
+
         // Alpine.jsが反応するように強制的に更新を通知
         this.$nextTick(() => {
           this.isAuthenticated = Alpine.store('auth').isAuthenticated;
         });
       } else {
         // Alpine.jsまたはauthストアが利用できない場合は少し待ってリトライ
-        setTimeout(() => this.checkAuth(), 100);
+        await new Promise(resolve => setTimeout(resolve, 100));
+        return await this.checkAuth();
       }
     },
 
@@ -309,16 +339,28 @@ function roomDetail() {
       // 既存のメッセージを取得
       if (this.isAuthenticated) {
         try {
-          const response = await fetch(`/rooms/${this.roomId}/messages?limit=20`);
+          // 認証ヘッダーを取得
+          const token = Alpine.store('auth').session?.access_token;
+          const headers = {};
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+          }
+
+          const response = await fetch(`/rooms/${this.roomId}/messages?limit=20`, {
+            headers: headers
+          });
           if (response.ok) {
             const messages = await response.json();
             messages.forEach(msg => {
+              // SupabaseユーザーIDで比較（APIレスポンスにuser.supabase_user_idが含まれている場合）
+              const isOwn = msg.user.supabase_user_id === this.currentUserId;
               this.messages.push({
                 id: msg.id,
                 type: 'user',
                 content: msg.message,
                 userName: msg.user.display_name,
-                isOwn: msg.user_id === this.currentUserId,
+                userAvatar: msg.user.avatar_url || '/static/images/default-avatar.png',
+                isOwn: isOwn,
                 timestamp: new Date(msg.created_at)
               });
             });
@@ -360,17 +402,63 @@ function roomDetail() {
       }
     },
 
-    connectSSE() {
+    async connectSSE() {
       if (!this.isAuthenticated) return;
 
-      const url = `/rooms/${this.roomId}/messages/stream`;
-      this.eventSource = new EventSource(url);
+      // 既存の接続があれば閉じる
+      if (this.eventSource) {
+        this.eventSource.close();
+        this.eventSource = null;
+      }
+
+      try {
+        // 一時的なSSEトークンを取得
+        const authToken = Alpine.store('auth').session?.access_token;
+        if (!authToken) {
+          console.error('SSE接続: 認証トークンが取得できません');
+          return;
+        }
+
+        const response = await fetch(`/rooms/${this.roomId}/sse-token`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`SSEトークン取得失敗: ${response.status}`);
+        }
+
+        const tokenData = await response.json();
+        const sseToken = tokenData.token;
+
+        const url = `/rooms/${this.roomId}/messages/stream?token=${encodeURIComponent(sseToken)}`;
+
+        this.eventSource = new EventSource(url);
+      } catch (error) {
+        console.error('SSEトークン取得エラー:', error);
+        return;
+      }
+      this.sseReconnectCount = (this.sseReconnectCount || 0);
+
+      this.eventSource.addEventListener('open', (event) => {
+        this.sseReconnectCount = 0; // 接続成功時にリセット
+      });
+
+      // 接続確認メッセージ
+      this.eventSource.addEventListener('connected', (event) => {
+        this.sseReconnectCount = 0; // 接続成功確認時にリセット
+      });
 
       this.eventSource.addEventListener('message', (event) => {
         try {
           const data = JSON.parse(event.data);
           if (data.type === 'message') {
             this.handleNewMessage(data.data);
+          } else if (data.type === 'system_message') {
+            this.handleSystemMessage(data.data);
           }
         } catch (err) {
           console.error('SSEメッセージの解析エラー:', err);
@@ -378,17 +466,28 @@ function roomDetail() {
       });
 
       this.eventSource.addEventListener('error', (event) => {
-        console.error('SSE接続エラー:', event);
-        // 再接続処理
-        if (this.eventSource.readyState === EventSource.CLOSED) {
-          setTimeout(() => this.connectSSE(), 5000);
+        console.error('SSE接続エラー:', event, '状態:', this.eventSource.readyState);
+
+        // 再接続の制限（最大5回まで）
+        if (this.sseReconnectCount < 5) {
+          this.sseReconnectCount++;
+          const delay = Math.min(1000 * Math.pow(2, this.sseReconnectCount - 1), 30000); // 指数バックオフ（最大30秒）
+
+          setTimeout(async () => {
+            if (this.isAuthenticated && Alpine.store('auth').session?.access_token) {
+              await this.connectSSE();
+            }
+          }, delay);
+        } else {
+          console.error('SSE最大再接続回数に達しました。手動でページをリロードしてください。');
         }
       });
     },
 
     handleNewMessage(message) {
       // 自分のメッセージの場合はスキップ（すでに送信時に追加されている）
-      if (message.user_id === this.currentUserId) return;
+      // SupabaseユーザーIDで比較
+      if (message.user.supabase_user_id === this.currentUserId) return;
 
       // メッセージを追加
       this.messages.push({
@@ -396,8 +495,22 @@ function roomDetail() {
         type: 'user',
         content: message.message,
         userName: message.user.display_name,
+        userAvatar: message.user.avatar_url || '/static/images/default-avatar.png',
         isOwn: false,
         timestamp: new Date(message.created_at)
+      });
+
+      this.$nextTick(() => this.scrollToBottom());
+    },
+
+    handleSystemMessage(message) {
+      // システムメッセージを追加
+      this.messages.push({
+        id: message.id,
+        type: 'system',
+        subtype: 'join', // 入室メッセージとして扱う
+        content: message.message,
+        timestamp: new Date()
       });
 
       this.$nextTick(() => this.scrollToBottom());
@@ -415,6 +528,7 @@ function roomDetail() {
         type: 'user',
         content: messageText,
         userName: Alpine.store('auth').user?.displayName || 'ゲスト',
+        userAvatar: Alpine.store('auth').user?.avatarUrl || '/static/images/default-avatar.png',
         isOwn: true,
         timestamp: new Date()
       };

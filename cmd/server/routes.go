@@ -17,7 +17,7 @@ func (app *Application) SetupRoutes() *mux.Router {
 
 	// 静的ファイルを最初に設定（追加のミドルウェアを適用しない）
 	app.setupStaticRoutes(r)
-	
+
 	app.setupPageRoutes(r)
 	app.setupRoomRoutes(r)
 	app.setupAuthRoutes(r)
@@ -70,21 +70,25 @@ func (app *Application) setupRoomRoutes(r *mux.Router) {
 		protected.HandleFunc("/{id}/join", rh.JoinRoom).Methods("POST")
 		protected.HandleFunc("/{id}/leave", rh.LeaveRoom).Methods("POST")
 		protected.HandleFunc("/{id}/toggle-closed", rh.ToggleRoomClosed).Methods("PUT")
-		
+
 		// メッセージ関連
 		protected.HandleFunc("/{id}/messages", rmh.SendMessage).Methods("POST")
 		protected.HandleFunc("/{id}/messages", rmh.GetMessages).Methods("GET")
-		protected.HandleFunc("/{id}/messages/stream", rmh.StreamMessages).Methods("GET")
+		protected.HandleFunc("/{id}/sse-token", app.sseTokenHandler.GenerateSSEToken).Methods("POST")
+
+		// SSEストリーム（一時トークン認証）
+		rr.HandleFunc("/{id}/messages/stream", rmh.StreamMessages).Methods("GET")
 	} else {
 		// 認証ミドルウェアがない場合（開発環境など）
 		rr.HandleFunc("", rh.CreateRoom).Methods("POST")
 		rr.HandleFunc("/{id}/join", rh.JoinRoom).Methods("POST")
 		rr.HandleFunc("/{id}/leave", rh.LeaveRoom).Methods("POST")
 		rr.HandleFunc("/{id}/toggle-closed", rh.ToggleRoomClosed).Methods("PUT")
-		
+
 		// メッセージ関連
 		rr.HandleFunc("/{id}/messages", rmh.SendMessage).Methods("POST")
 		rr.HandleFunc("/{id}/messages", rmh.GetMessages).Methods("GET")
+		rr.HandleFunc("/{id}/sse-token", app.sseTokenHandler.GenerateSSEToken).Methods("POST")
 		rr.HandleFunc("/{id}/messages/stream", rmh.StreamMessages).Methods("GET")
 	}
 }
@@ -104,7 +108,7 @@ func (app *Application) setupAuthRoutes(r *mux.Router) {
 	// 認証アクションルート（厳しいレート制限）
 	authActionRoutes := ar.PathPrefix("").Subrouter()
 	authActionRoutes.Use(middleware.AuthRateLimitMiddleware(app.authLimiter))
-	
+
 	authActionRoutes.HandleFunc("/login", ah.Login).Methods("POST")
 	authActionRoutes.HandleFunc("/register", ah.Register).Methods("POST")
 	authActionRoutes.HandleFunc("/logout", ah.Logout).Methods("POST")
@@ -127,7 +131,7 @@ func (app *Application) setupAPIRoutes(r *mux.Router) {
 		authAPIRoutes := apiRoutes.PathPrefix("/auth").Subrouter()
 		authAPIRoutes.Use(middleware.AuthRateLimitMiddleware(app.authLimiter))
 		authAPIRoutes.Use(app.authMiddleware.Middleware)
-		
+
 		authAPIRoutes.HandleFunc("/sync", app.authHandler.SyncUser).Methods("POST")
 		authAPIRoutes.HandleFunc("/psn-id", app.authHandler.UpdatePSNId).Methods("PUT")
 

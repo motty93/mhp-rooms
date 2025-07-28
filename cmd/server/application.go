@@ -13,21 +13,22 @@ import (
 )
 
 type Application struct {
-	config            *config.Config
-	db                *postgres.DB
-	repo              *repository.Repository
-	authHandler       *handlers.AuthHandler
-	roomHandler       *handlers.RoomHandler
-	roomDetailHandler *handlers.RoomDetailHandler
+	config             *config.Config
+	db                 *postgres.DB
+	repo               *repository.Repository
+	authHandler        *handlers.AuthHandler
+	roomHandler        *handlers.RoomHandler
+	roomDetailHandler  *handlers.RoomDetailHandler
 	roomMessageHandler *handlers.RoomMessageHandler
-	pageHandler       *handlers.PageHandler
-	configHandler     *handlers.ConfigHandler
-	reactionHandler   *handlers.ReactionHandler
-	authMiddleware    *middleware.JWTAuth
-	securityConfig    *middleware.SecurityConfig
-	generalLimiter    *middleware.RateLimiter
-	authLimiter       *middleware.RateLimiter
-	sseHub            *sse.Hub
+	sseTokenHandler    *handlers.SSETokenHandler
+	pageHandler        *handlers.PageHandler
+	configHandler      *handlers.ConfigHandler
+	reactionHandler    *handlers.ReactionHandler
+	authMiddleware     *middleware.JWTAuth
+	securityConfig     *middleware.SecurityConfig
+	generalLimiter     *middleware.RateLimiter
+	authLimiter        *middleware.RateLimiter
+	sseHub             *sse.Hub
 }
 
 func NewApplication(cfg *config.Config) (*Application, error) {
@@ -74,9 +75,10 @@ func (app *Application) initHandlers() {
 	go app.sseHub.Run()
 
 	app.authHandler = handlers.NewAuthHandler(app.repo)
-	app.roomHandler = handlers.NewRoomHandler(app.repo)
+	app.roomHandler = handlers.NewRoomHandler(app.repo, app.sseHub)
 	app.roomDetailHandler = handlers.NewRoomDetailHandler(app.repo)
 	app.roomMessageHandler = handlers.NewRoomMessageHandler(app.repo, app.sseHub)
+	app.sseTokenHandler = handlers.NewSSETokenHandler(app.repo)
 	app.pageHandler = handlers.NewPageHandler(app.repo)
 	app.configHandler = handlers.NewConfigHandler()
 	app.reactionHandler = handlers.NewReactionHandler(app.repo)

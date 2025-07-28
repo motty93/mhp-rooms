@@ -6,7 +6,7 @@ async function initializeSupabase() {
     const data = await response.json()
 
     if (data.error || !data.config || !data.config.url || !data.config.anonKey) {
-      console.info('認証機能を無効化しました。本番環境ではSupabase設定を確認してください。')
+      // 認証機能を無効化
 
       window.supabaseAuth = createDummyAuth()
 

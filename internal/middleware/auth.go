@@ -3,12 +3,14 @@ package middleware
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
 	"time"
 
+	"mhp-rooms/internal/config"
 	"mhp-rooms/internal/models"
 	"mhp-rooms/internal/repository"
 
@@ -54,11 +56,11 @@ func NewUserCache() *UserCache {
 func (c *UserCache) Get(userID uuid.UUID) (*models.User, bool) {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
-	
+
 	if expTime, exists := c.expiry[userID]; !exists || time.Now().After(expTime) {
 		return nil, false
 	}
-	
+
 	user, exists := c.users[userID]
 	return user, exists
 }
@@ -66,7 +68,7 @@ func (c *UserCache) Get(userID uuid.UUID) (*models.User, bool) {
 func (c *UserCache) Set(userID uuid.UUID, user *models.User, ttl time.Duration) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	
+
 	c.users[userID] = user
 	c.expiry[userID] = time.Now().Add(ttl)
 }
@@ -74,7 +76,7 @@ func (c *UserCache) Set(userID uuid.UUID, user *models.User, ttl time.Duration) 
 func (c *UserCache) Cleanup() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	
+
 	now := time.Now()
 	for userID, expTime := range c.expiry {
 		if now.After(expTime) {
@@ -97,7 +99,7 @@ func NewJWTAuth(repo *repository.Repository) (*JWTAuth, error) {
 	}
 
 	userCache := NewUserCache()
-	
+
 	// 定期的にキャッシュをクリーンアップ
 	go func() {
 		ticker := time.NewTicker(5 * time.Minute)
@@ -119,19 +121,42 @@ func NewJWTAuth(repo *repository.Repository) (*JWTAuth, error) {
 
 func (j *JWTAuth) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if config.AppConfig.Debug.AuthLogs {
+			log.Printf("AUTH DEBUG: %s %s - 認証チェック開始", r.Method, r.URL.Path)
+		}
+
+		var tokenString string
+
+		// まずAuthorizationヘッダーを確認
 		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
-			http.Error(w, "認証が必要です", http.StatusUnauthorized)
-			return
+		if authHeader != "" {
+			tokenParts := strings.Split(authHeader, " ")
+			if len(tokenParts) == 2 && tokenParts[0] == "Bearer" {
+				tokenString = tokenParts[1]
+			} else {
+				if config.AppConfig.Debug.AuthLogs {
+					log.Printf("AUTH DEBUG: %s %s - 無効な認証ヘッダー形式: %s", r.Method, r.URL.Path, authHeader)
+				}
+				http.Error(w, "無効な認証ヘッダー形式です", http.StatusUnauthorized)
+				return
+			}
+		} else {
+			// Authorizationヘッダーがない場合、クエリパラメータのtokenを確認（SSE用）
+			tokenString = r.URL.Query().Get("token")
+			if tokenString == "" {
+				if config.AppConfig.Debug.AuthLogs {
+					log.Printf("AUTH DEBUG: %s %s - Authorizationヘッダーもtokenクエリパラメータもありません", r.Method, r.URL.Path)
+				}
+				http.Error(w, "認証が必要です", http.StatusUnauthorized)
+				return
+			}
+			if config.AppConfig.Debug.AuthLogs {
+				log.Printf("AUTH DEBUG: %s %s - クエリパラメータからトークンを取得", r.Method, r.URL.Path)
+			}
 		}
-
-		tokenParts := strings.Split(authHeader, " ")
-		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
-			http.Error(w, "無効な認証ヘッダー形式です", http.StatusUnauthorized)
-			return
+		if config.AppConfig.Debug.AuthLogs {
+			log.Printf("AUTH DEBUG: %s %s - トークン長: %d文字", r.Method, r.URL.Path, len(tokenString))
 		}
-
-		tokenString := tokenParts[1]
 
 		token, err := jwt.ParseWithClaims(tokenString, &SupabaseJWTClaims{}, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -141,14 +166,24 @@ func (j *JWTAuth) Middleware(next http.Handler) http.Handler {
 		})
 
 		if err != nil || !token.Valid {
+			if config.AppConfig.Debug.AuthLogs {
+				log.Printf("AUTH DEBUG: %s %s - トークン解析エラー: %v, Valid: %t", r.Method, r.URL.Path, err, token != nil && token.Valid)
+			}
 			http.Error(w, "無効なトークンです", http.StatusUnauthorized)
 			return
 		}
 
 		claims, ok := token.Claims.(*SupabaseJWTClaims)
 		if !ok {
+			if config.AppConfig.Debug.AuthLogs {
+				log.Printf("AUTH DEBUG: %s %s - クレーム変換エラー", r.Method, r.URL.Path)
+			}
 			http.Error(w, "トークンのクレームが無効です", http.StatusUnauthorized)
 			return
+		}
+
+		if config.AppConfig.Debug.AuthLogs {
+			log.Printf("AUTH DEBUG: %s %s - 認証成功 ユーザーID: %s", r.Method, r.URL.Path, claims.Subject)
 		}
 
 		user := &AuthUser{
@@ -187,42 +222,49 @@ func (j *JWTAuth) OptionalMiddleware(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-		
+
+		// Authorizationヘッダーまたはクエリパラメータからトークンを取得
+		var tokenString string
 		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
+		if authHeader != "" {
+			tokenParts := strings.Split(authHeader, " ")
+			if len(tokenParts) == 2 && tokenParts[0] == "Bearer" {
+				tokenString = tokenParts[1]
+			}
+		} else {
+			// Authorizationヘッダーがない場合、クエリパラメータを確認
+			tokenString = r.URL.Query().Get("token")
+		}
+
+		if tokenString == "" {
 			next.ServeHTTP(w, r)
 			return
 		}
 
-		tokenParts := strings.Split(authHeader, " ")
-		if len(tokenParts) == 2 && tokenParts[0] == "Bearer" {
-			tokenString := tokenParts[1]
+		token, err := jwt.ParseWithClaims(tokenString, &SupabaseJWTClaims{}, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("予期しない署名方式: %v", token.Header["alg"])
+			}
+			return j.jwtSecret, nil
+		})
 
-			token, err := jwt.ParseWithClaims(tokenString, &SupabaseJWTClaims{}, func(token *jwt.Token) (interface{}, error) {
-				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-					return nil, fmt.Errorf("予期しない署名方式: %v", token.Header["alg"])
+		if err == nil && token.Valid {
+			if claims, ok := token.Claims.(*SupabaseJWTClaims); ok {
+				user := &AuthUser{
+					ID:       claims.Subject,
+					Email:    claims.Email,
+					Metadata: claims.UserMetadata,
 				}
-				return j.jwtSecret, nil
-			})
 
-			if err == nil && token.Valid {
-				if claims, ok := token.Claims.(*SupabaseJWTClaims); ok {
-					user := &AuthUser{
-						ID:       claims.Subject,
-						Email:    claims.Email,
-						Metadata: claims.UserMetadata,
+				ctx := context.WithValue(r.Context(), UserContextKey, user)
+				ctx = context.WithValue(ctx, "request", r) // デバッグ用
+				if j.repo != nil {
+					if dbUser := j.loadDBUser(ctx, user); dbUser != nil {
+						ctx = context.WithValue(ctx, DBUserContextKey, dbUser)
 					}
-
-					ctx := context.WithValue(r.Context(), UserContextKey, user)
-					ctx = context.WithValue(ctx, "request", r) // デバッグ用
-					if j.repo != nil {
-						if dbUser := j.loadDBUser(ctx, user); dbUser != nil {
-							ctx = context.WithValue(ctx, DBUserContextKey, dbUser)
-						}
-					}
-
-					r = r.WithContext(ctx)
 				}
+
+				r = r.WithContext(ctx)
 			}
 		}
 
@@ -259,8 +301,10 @@ func (j *JWTAuth) loadDBUser(ctx context.Context, authUser *AuthUser) *models.Us
 	// デバッグ用ログ：どのリクエストでSQLが実行されているかを追跡
 	if req := ctx.Value("request"); req != nil {
 		if httpReq, ok := req.(*http.Request); ok {
-			fmt.Printf("DEBUG: SQL実行 - Path: %s, Method: %s, UserAgent: %s\n", 
-				httpReq.URL.Path, httpReq.Method, httpReq.Header.Get("User-Agent"))
+			if config.AppConfig.Debug.SQLLogs {
+				fmt.Printf("DEBUG: SQL実行 - Path: %s, Method: %s, UserAgent: %s\n",
+					httpReq.URL.Path, httpReq.Method, httpReq.Header.Get("User-Agent"))
+			}
 		}
 	}
 

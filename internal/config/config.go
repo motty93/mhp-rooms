@@ -10,6 +10,12 @@ type Config struct {
 	Server      ServerConfig
 	Environment string
 	Migration   MigrationConfig
+	Debug       DebugConfig
+}
+
+type DebugConfig struct {
+	AuthLogs bool
+	SQLLogs  bool
 }
 
 type DatabaseConfig struct {
@@ -51,6 +57,10 @@ func Init() {
 		Environment: getEnv("ENV", "development"),
 		Migration: MigrationConfig{
 			AutoRun: getEnvBool("RUN_MIGRATION", false),
+		},
+		Debug: DebugConfig{
+			AuthLogs: getEnvBool("DEBUG_AUTH_LOGS", false),
+			SQLLogs:  getEnvBool("DEBUG_SQL_LOGS", false),
 		},
 	}
 }

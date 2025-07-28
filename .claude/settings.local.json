@@ -58,7 +58,11 @@
       "mcp__playwright__browser_install",
       "mcp__playwright__browser_evaluate",
       "mcp__playwright__browser_type",
-      "Bash(psql:*)"
+      "Bash(psql:*)",
+      "mcp__playwright__browser_network_requests",
+      "Bash(ENV=development ./bin/mhp-rooms)",
+      "Bash(journalctl:*)",
+      "Bash(fuser:*)"
     ],
     "deny": []
   }

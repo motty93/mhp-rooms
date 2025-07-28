@@ -8,11 +8,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/gorilla/mux"
+	"mhp-rooms/internal/middleware"
 	"mhp-rooms/internal/models"
 	"mhp-rooms/internal/repository"
 	"mhp-rooms/internal/sse"
+
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 )
 
 type RoomMessageHandler struct {
@@ -34,15 +36,15 @@ func (h *RoomMessageHandler) SendMessage(w http.ResponseWriter, r *http.Request)
 	// URLパラメータから部屋IDを取得
 	vars := mux.Vars(r)
 	roomIDStr := vars["id"]
-	
+
 	roomID, err := uuid.Parse(roomIDStr)
 	if err != nil {
 		http.Error(w, "無効な部屋IDです", http.StatusBadRequest)
 		return
 	}
 
-	// 認証チェック
-	user, ok := r.Context().Value("user").(*models.User)
+	// 認証チェック（DBユーザー情報を取得）
+	user, ok := middleware.GetDBUserFromContext(r.Context())
 	if !ok || user == nil {
 		http.Error(w, "認証が必要です", http.StatusUnauthorized)
 		return
@@ -109,23 +111,37 @@ func (h *RoomMessageHandler) StreamMessages(w http.ResponseWriter, r *http.Reque
 	// URLパラメータから部屋IDを取得
 	vars := mux.Vars(r)
 	roomIDStr := vars["id"]
-	
+
 	roomID, err := uuid.Parse(roomIDStr)
 	if err != nil {
 		http.Error(w, "無効な部屋IDです", http.StatusBadRequest)
 		return
 	}
 
-	// 認証チェック
-	user, ok := r.Context().Value("user").(*models.User)
-	if !ok || user == nil {
-		http.Error(w, "認証が必要です", http.StatusUnauthorized)
+	// SSE一時トークンによる認証
+	sseToken := r.URL.Query().Get("token")
+	if sseToken == "" {
+		http.Error(w, "SSEトークンが必要です", http.StatusUnauthorized)
 		return
 	}
 
-	// 部屋のメンバーチェック
-	if !h.repo.Room.IsUserJoinedRoom(roomID, user.ID) {
-		http.Error(w, "部屋のメンバーではありません", http.StatusForbidden)
+	// 一時トークンを検証・消費
+	tokenData, valid := globalSSETokenManager.ConsumeToken(sseToken)
+	if !valid {
+		http.Error(w, "無効または期限切れのSSEトークンです", http.StatusUnauthorized)
+		return
+	}
+
+	// トークンの部屋IDと一致することを確認
+	if tokenData.RoomID != roomID {
+		http.Error(w, "トークンの部屋IDが一致しません", http.StatusForbidden)
+		return
+	}
+
+	// DBからユーザー情報を取得
+	user, err := h.repo.User.FindUserByID(tokenData.UserID)
+	if err != nil || user == nil {
+		http.Error(w, "ユーザーが見つかりません", http.StatusUnauthorized)
 		return
 	}
 
@@ -134,6 +150,10 @@ func (h *RoomMessageHandler) StreamMessages(w http.ResponseWriter, r *http.Reque
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("X-Accel-Buffering", "no") // Nginxのバッファリングを無効化
+
+	// chunked encoding関連の最適化
+	w.Header().Set("Transfer-Encoding", "chunked")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
 
 	// クライアントの作成
 	client := &sse.Client{
@@ -149,8 +169,8 @@ func (h *RoomMessageHandler) StreamMessages(w http.ResponseWriter, r *http.Reque
 		h.hub.Unregister(client)
 	}()
 
-	// 接続確認用のping
-	ticker := time.NewTicker(30 * time.Second)
+	// 接続確認用のping（短い間隔で接続を維持）
+	ticker := time.NewTicker(15 * time.Second)
 	defer ticker.Stop()
 
 	// フラッシャーの取得
@@ -162,6 +182,10 @@ func (h *RoomMessageHandler) StreamMessages(w http.ResponseWriter, r *http.Reque
 
 	// クライアントの切断を検出
 	notify := r.Context().Done()
+
+	// 初期接続確認メッセージを送信
+	fmt.Fprintf(w, "event: connected\ndata: {\"status\":\"connected\"}\n\n")
+	flusher.Flush()
 
 	for {
 		select {
@@ -191,15 +215,15 @@ func (h *RoomMessageHandler) GetMessages(w http.ResponseWriter, r *http.Request)
 	// URLパラメータから部屋IDを取得
 	vars := mux.Vars(r)
 	roomIDStr := vars["id"]
-	
+
 	roomID, err := uuid.Parse(roomIDStr)
 	if err != nil {
 		http.Error(w, "無効な部屋IDです", http.StatusBadRequest)
 		return
 	}
 
-	// 認証チェック
-	user, ok := r.Context().Value("user").(*models.User)
+	// 認証チェック（DBユーザー情報を取得）
+	user, ok := middleware.GetDBUserFromContext(r.Context())
 	if !ok || user == nil {
 		http.Error(w, "認証が必要です", http.StatusUnauthorized)
 		return
