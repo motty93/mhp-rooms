@@ -1,7 +1,12 @@
 {{ define "room_detail_page" }}
-  <div class="flex h-full md:flex-row flex-col mobile-room-detail" x-data="roomDetail()">
+  <div
+    class="flex h-full md:flex-row flex-col mobile-room-detail"
+    x-data="roomDetail()"
+  >
     <!-- モバイル版ヘッダー（デスクトップでは非表示） -->
-    <div class="md:hidden bg-white border-b border-gray-200 px-4 py-3 flex-shrink-0">
+    <div
+      class="md:hidden bg-white border-b border-gray-200 px-4 py-3 flex-shrink-0"
+    >
       <div class="flex items-center space-x-3">
         <div
           class="w-10 h-10 {{ gameVersionColor .PageData.Room.GameVersion.Code }} rounded flex items-center justify-center flex-shrink-0"
@@ -12,7 +17,7 @@
             {{ .PageData.Room.GameVersion.Code }}
           </div>
         </div>
-        <button 
+        <button
           class="flex-1 text-left hover:bg-gray-50 py-1 px-2 rounded transition-colors"
           @click="$store.mobileMenu.toggle()"
         >
@@ -30,8 +35,18 @@
             x-show="!$store.mobileMenu.open"
             class="text-gray-600 hover:text-gray-800 p-2 relative z-[10000]"
           >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              ></path>
             </svg>
           </button>
         </div>
@@ -69,14 +84,31 @@
         style="display: none"
       >
         <!-- メニューヘッダー -->
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+        <div
+          class="flex items-center justify-between p-6 border-b border-gray-200"
+        >
           <div class="flex items-center space-x-3">
             <img src="/static/images/icon.png" alt="MonHub" class="w-8 h-8" />
-            <h2 class="text-xl font-bold text-gray-800">{{ .PageData.Room.Name }}</h2>
+            <h2 class="text-xl font-bold text-gray-800">
+              {{ .PageData.Room.Name }}
+            </h2>
           </div>
-          <button @click="$store.mobileMenu.close()" class="text-gray-500 hover:text-gray-700">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          <button
+            @click="$store.mobileMenu.close()"
+            class="text-gray-500 hover:text-gray-700"
+          >
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              ></path>
             </svg>
           </button>
         </div>
@@ -91,25 +123,45 @@
               :disabled="isLeaving"
               class="w-full flex items-center justify-center space-x-2 bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                />
               </svg>
               <span x-text="isLeaving ? '退出中...' : '部屋を退出'"></span>
             </button>
-            
+
             <!-- 部屋一覧に戻るボタン -->
             <a
               href="/rooms"
               @click="$store.mobileMenu.close()"
               class="w-full flex items-center justify-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-4 rounded border border-gray-300 font-medium transition-colors"
             >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                />
               </svg>
               <span>部屋一覧に戻る</span>
             </a>
           </div>
-          
+
           <!-- 未認証時のメッセージ -->
           <div class="text-center py-4" x-show="!$store.auth.isAuthenticated">
             <p class="text-gray-500 text-sm">ログインしてください</p>
@@ -118,7 +170,9 @@
       </div>
     </div>
     <!-- 左側パネル（デスクトップのみ表示） -->
-    <div class="hidden md:flex w-96 h-full border-r border-gray-200 flex-col bg-white">
+    <div
+      class="hidden md:flex w-96 h-full border-r border-gray-200 flex-col bg-white"
+    >
       <!-- ヘッダー部分 -->
       <div
         class="bg-white border-b border-gray-200 px-4 py-3 min-h-0 flex-shrink-0"
@@ -223,7 +277,7 @@
           </svg>
           <span x-text="isLeaving ? '退出中...' : '部屋を退出'"></span>
         </button>
-        
+
         <!-- 部屋一覧に戻るボタン -->
         <a
           href="/rooms"
@@ -687,20 +741,20 @@ function roomDetail() {
 
     async leaveRoom() {
       if (this.isLeaving) return;
-      
+
       // 確認ダイアログを表示
       if (!confirm('本当に部屋を退出しますか？')) {
         return;
       }
-      
+
       this.isLeaving = true;
-      
+
       try {
         const authToken = Alpine.store('auth').session?.access_token;
         if (!authToken) {
           throw new Error('認証が必要です');
         }
-        
+
         const response = await fetch(`/rooms/${this.roomId}/leave`, {
           method: 'POST',
           headers: {
@@ -708,16 +762,16 @@ function roomDetail() {
             'Content-Type': 'application/json'
           }
         });
-        
+
         if (!response.ok) {
           throw new Error('退出処理に失敗しました');
         }
-        
+
         // SSE接続を閉じる
         if (this.eventSource) {
           this.eventSource.close();
         }
-        
+
         // 部屋一覧へリダイレクト
         window.location.href = '/rooms';
       } catch (error) {
