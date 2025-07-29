@@ -182,7 +182,27 @@ fly secrets set ENV="production"
 
 **重要**: 本番環境移行時は必ずこれらの機能を無効化してください。
 
-## その他
+## 外部AIサービスとの連携
+
+### Ollama（ローカルLLM）
+開発時の設計相談や実装アドバイスを受けるため、Ollamaサーバーを利用できます。
+
+#### 接続情報
+- **サーバーアドレス**: `192.168.112.1:11434`
+- **推奨モデル**: `qwen3:4b-q4_K_M`
+
+#### 利用例
+```bash
+curl -X POST http://192.168.112.1:11434/api/generate -d '{
+  "model": "qwen3:4b-q4_K_M",
+  "prompt": "実装に関する質問",
+  "stream": false
+}' -H "Content-Type: application/json" | jq -r '.response'
+```
+
+特にUI/UX設計、ユーザビリティの観点から有用なアドバイスを得られます。
+
+### Gemini CLI
 必要であれば、GeminiCLIに相談して、プロジェクトの詳細や特定の実装方法についてアドバイスを受けてください。
 
 # important-instruction-reminders
