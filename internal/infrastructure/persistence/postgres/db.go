@@ -159,52 +159,73 @@ func (db *DB) insertInitialData() error {
 
 	var platformCount int64
 	tx.Model(&models.Platform{}).Count(&platformCount)
-	var playstationPlatform models.Platform
+	var sonyPlatform, nintendoPlatform models.Platform
 
 	if platformCount == 0 {
-		playstationPlatform = models.Platform{
-			Name:         "PlayStation",
+		// Sonyプラットフォーム
+		sonyPlatform = models.Platform{
+			Name:         "Sony",
 			DisplayOrder: 1,
 		}
-		if err := tx.Create(&playstationPlatform).Error; err != nil {
+		if err := tx.Create(&sonyPlatform).Error; err != nil {
+			tx.Rollback()
+			return fmt.Errorf("プラットフォームの挿入に失敗しました: %w", err)
+		}
+
+		// Nintendoプラットフォーム
+		nintendoPlatform = models.Platform{
+			Name:         "Nintendo",
+			DisplayOrder: 2,
+		}
+		if err := tx.Create(&nintendoPlatform).Error; err != nil {
 			tx.Rollback()
 			return fmt.Errorf("プラットフォームの挿入に失敗しました: %w", err)
 		}
 	} else {
-		tx.First(&playstationPlatform, "name = ?", "PlayStation")
+		tx.First(&sonyPlatform, "name = ?", "Sony")
+		tx.First(&nintendoPlatform, "name = ?", "Nintendo")
 	}
 
 	var gameVersionCount int64
 	tx.Model(&models.GameVersion{}).Count(&gameVersionCount)
 	if gameVersionCount == 0 {
 		gameVersions := []models.GameVersion{
+			// Sony系ゲーム
 			{
 				Code:         "MHP",
 				Name:         "モンスターハンターポータブル",
 				DisplayOrder: 1,
 				IsActive:     true,
-				PlatformID:   playstationPlatform.ID,
+				PlatformID:   sonyPlatform.ID,
 			},
 			{
 				Code:         "MHP2",
 				Name:         "モンスターハンターポータブル 2nd",
 				DisplayOrder: 2,
 				IsActive:     true,
-				PlatformID:   playstationPlatform.ID,
+				PlatformID:   sonyPlatform.ID,
 			},
 			{
 				Code:         "MHP2G",
 				Name:         "モンスターハンターポータブル 2ndG",
 				DisplayOrder: 3,
 				IsActive:     true,
-				PlatformID:   playstationPlatform.ID,
+				PlatformID:   sonyPlatform.ID,
 			},
 			{
 				Code:         "MHP3",
 				Name:         "モンスターハンターポータブル 3rd",
 				DisplayOrder: 4,
 				IsActive:     true,
-				PlatformID:   playstationPlatform.ID,
+				PlatformID:   sonyPlatform.ID,
+			},
+			// Nintendo系ゲーム（現在はMHXXのみ対応）
+			{
+				Code:         "MHXX",
+				Name:         "モンスターハンターダブルクロス",
+				DisplayOrder: 5,
+				IsActive:     true,
+				PlatformID:   nintendoPlatform.ID,
 			},
 		}
 

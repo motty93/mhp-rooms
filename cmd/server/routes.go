@@ -137,6 +137,7 @@ func (app *Application) setupAPIRoutes(r *mux.Router) {
 
 		// 認証必須のAPIエンドポイント
 		apiRoutes.HandleFunc("/user/current", app.authMiddleware.Middleware(http.HandlerFunc(app.authHandler.CurrentUser)).ServeHTTP).Methods("GET")
+		apiRoutes.HandleFunc("/leave-current-room", app.authMiddleware.Middleware(http.HandlerFunc(app.roomHandler.LeaveCurrentRoom)).ServeHTTP).Methods("POST")
 
 		// リアクション関連API（認証必須）
 		apiRoutes.HandleFunc("/messages/{messageId}/reactions", app.authMiddleware.Middleware(http.HandlerFunc(app.reactionHandler.AddReaction)).ServeHTTP).Methods("POST")
@@ -149,6 +150,7 @@ func (app *Application) setupAPIRoutes(r *mux.Router) {
 	} else {
 		// 認証ミドルウェアがない場合（開発環境）
 		apiRoutes.HandleFunc("/user/current", app.authHandler.CurrentUser).Methods("GET")
+		apiRoutes.HandleFunc("/leave-current-room", app.roomHandler.LeaveCurrentRoom).Methods("POST")
 		apiRoutes.HandleFunc("/auth/sync", app.authHandler.SyncUser).Methods("POST")
 		apiRoutes.HandleFunc("/auth/psn-id", app.authHandler.UpdatePSNId).Methods("PUT")
 		apiRoutes.HandleFunc("/rooms", app.roomHandler.GetAllRoomsAPI).Methods("GET")

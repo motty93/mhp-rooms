@@ -44,30 +44,21 @@
 
     <section class="bg-gray-50 py-6">
       <div class="container mx-auto px-4">
-        <div class="flex flex-wrap gap-4 items-center">
-          <span class="text-sm font-medium text-gray-700"
-            >ゲームで絞り込み:</span
+        <div class="flex flex-col items-start sm:flex-row sm:items-center mb-6">
+          <span class="mb-2 sm:mb-0 sm:mr-4 text-gray-700 dark:text-gray-300"
+            >ゲームで絞り込み：</span
           >
-          <button
-            @click="filterRooms('')"
-            :class="activeFilter === '' ? 'bg-white text-gray-800 border' : 'bg-gray-100 text-gray-600'"
-            :aria-pressed="activeFilter === ''"
-            aria-label="すべてのゲームバージョンの部屋を表示"
-            class="px-4 py-2 rounded-full hover:bg-gray-100 transition-colors"
+          <select
+            id="game-version-select"
+            name="game_version"
+            class="w-full sm:w-48 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm text-gray-900 dark:text-gray-100"
+            @change="filterRooms($event.target.value)"
           >
-            すべて
-          </button>
-          {{ range .PageData.GameVersions }}
-            <button
-              @click="filterRooms('{{ .Code }}')"
-              :class="activeFilter === '{{ .Code }}' ? 'bg-white text-gray-800 border' : 'bg-gray-100 text-gray-600'"
-              :aria-pressed="activeFilter === '{{ .Code }}'"
-              aria-label="{{ .Code }}の部屋を表示"
-              class="px-4 py-2 rounded-full hover:bg-gray-200 transition-colors"
-            >
-              {{ .Code }}
-            </button>
-          {{ end }}
+            <option value="">すべてのゲーム</option>
+            {{ range .PageData.GameVersions }}
+              <option value="{{ .Code }}">{{ .Name }}</option>
+            {{ end }}
+          </select>
         </div>
         <div
           class="mt-4 text-sm text-gray-600"
@@ -82,7 +73,7 @@
     </section>
 
     <section class="py-8">
-      <div class="container mx-auto px-4">
+      <div class="container mx-auto px-4" id="room-list-container">
         <div
           class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
           x-show="filteredRooms.length > 0"
@@ -90,7 +81,8 @@
         >
           <template x-for="room in filteredRooms" :key="room.id">
             <div
-              class="room-card bg-white rounded-lg shadow-md border border-gray-200 flex flex-col h-full hover:shadow-lg transition-shadow"
+              class="room-card bg-white rounded-lg shadow-md border flex flex-col h-full hover:shadow-lg transition-all"
+              :class="room.isJoined ? 'border-blue-300 bg-blue-50' : 'border-gray-200'"
             >
               <div class="p-6 flex-grow">
                 <div class="flex items-center justify-between mb-4">
@@ -119,10 +111,21 @@
                     >
                   </template>
                   <template x-if="!room.isClosed">
-                    <span
-                      class="bg-green-100 text-green-800 text-sm px-2 py-1 rounded-full"
-                      x-text="room.currentPlayers + '/' + room.maxPlayers"
-                    ></span>
+                    <div class="flex items-center space-x-2">
+                      <!-- 参加中バッジ -->
+                      <template x-if="room.isJoined">
+                        <span
+                          class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium"
+                        >
+                          参加中
+                        </span>
+                      </template>
+                      <!-- 人数表示 -->
+                      <span
+                        class="bg-green-100 text-green-800 text-sm px-2 py-1 rounded-full"
+                        x-text="room.currentPlayers + '/' + room.maxPlayers"
+                      ></span>
+                    </div>
                   </template>
                 </div>
 
@@ -466,6 +469,81 @@
       </div>
     </div>
 
+    <!-- 確認ダイアログ -->
+    <div
+      x-show="showConfirmDialog"
+      x-cloak
+      @click.self="closeConfirmDialog()"
+      x-transition:enter="transition ease-out duration-300"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="transition ease-in duration-200"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    >
+      <div
+        x-show="showConfirmDialog"
+        x-cloak
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="transform scale-95 opacity-0"
+        x-transition:enter-end="transform scale-100 opacity-100"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="transform scale-100 opacity-100"
+        x-transition:leave-end="transform scale-95 opacity-0"
+        class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4"
+      >
+        <!-- ヘッダー -->
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h3 class="text-lg font-semibold text-gray-800">
+            他の部屋に参加中です
+          </h3>
+        </div>
+
+        <!-- コンテンツ -->
+        <div class="p-6">
+          <div class="text-gray-600 mb-4">
+            既に別の部屋に参加しています。<br />
+            新しい部屋に参加すると、現在の部屋から退出します。続行しますか？
+          </div>
+
+          <div class="mb-4">
+            <svg
+              class="mx-auto h-12 w-12 text-yellow-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"
+              />
+            </svg>
+          </div>
+        </div>
+
+        <!-- アクションボタン -->
+        <div
+          class="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-end space-x-3"
+        >
+          <button
+            @click="closeConfirmDialog()"
+            class="modal-button px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+          >
+            キャンセル
+          </button>
+          <button
+            @click="confirmJoinRoom()"
+            :disabled="isJoining"
+            x-text="isJoining ? '退出して参加中...' : '退出して参加'"
+            class="modal-button px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+          ></button>
+        </div>
+      </div>
+    </div>
+
     <!-- フローティング部屋作成ボタン（モバイル専用） -->
     {{ template "room-create-button" (dict "Size" "floating") }}
   </div>
@@ -485,6 +563,8 @@
         filteredRooms: [],
         activeFilter: '',
         lastFocusedElement: null,
+        showConfirmDialog: false,
+        confirmRoomId: null,
         async checkPSNIdRequired() {
           try {
             const authStore = Alpine.store('auth');
@@ -642,6 +722,16 @@
             if (!response.ok) {
               if (response.status === 401) {
                 throw new Error('認証が必要です。ログインしてください。')
+              } else if (response.status === 409) {
+                // 他の部屋に参加している場合の確認ダイアログ
+                const errorText = await response.text()
+                if (errorText.includes('既に別の部屋に参加しています')) {
+                  this.showConfirmDialog = true
+                  this.confirmRoomId = this.currentRoom.id
+                  this.isJoining = false
+                  return
+                }
+                throw new Error(errorText || '参加に失敗しました')
               } else if (response.status === 400) {
                 const errorData = await response.text()
                 throw new Error(errorData || '参加に失敗しました')
@@ -677,7 +767,7 @@
         },
         // ゲームアイコンクラスを安全に取得
         getGameIconClass(code) {
-          const validCodes = ['mhp', 'mhp2', 'mhp2g', 'mhp3'];
+          const validCodes = ['mhp', 'mhp2', 'mhp2g', 'mhp3', 'mhxx'];
           const lowerCode = code.toLowerCase();
           if (validCodes.includes(lowerCode)) {
             return lowerCode + '-icon';
@@ -695,6 +785,80 @@
             this.errorMessage = ''
           }, 3000)
         },
+        // 確認ダイアログを閉じる
+        closeConfirmDialog() {
+          this.showConfirmDialog = false
+          this.confirmRoomId = null
+          this.isJoining = false
+          // 参加モーダルも一緒に閉じる
+          this.closeModal()
+        },
+
+        // 強制的に退出して参加
+        async confirmJoinRoom() {
+          if (!this.confirmRoomId) return
+
+          this.isJoining = true
+
+          try {
+            // まず現在の部屋から退出
+            const authToken = Alpine.store('auth').session?.access_token
+
+            // 現在参加している部屋を探して退出
+            const leaveResponse = await fetch('/api/leave-current-room', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+              }
+            })
+
+            if (!leaveResponse.ok) {
+              throw new Error('現在の部屋からの退出に失敗しました')
+            }
+
+            // 新しい部屋に参加
+            const requestData = {}
+            if (this.currentRoom.hasPassword) {
+              requestData.password = this.password
+            }
+
+            const joinResponse = await fetch(`/rooms/${this.confirmRoomId}/join`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(requestData)
+            })
+
+            if (!joinResponse.ok) {
+              if (joinResponse.status === 400) {
+                const errorData = await joinResponse.text()
+                throw new Error(errorData || '参加に失敗しました')
+              }
+              throw new Error('参加に失敗しました')
+            }
+
+            const result = await joinResponse.json()
+
+            // モーダルを閉じて部屋詳細に遷移
+            this.closeConfirmDialog()
+            this.closeModal()
+
+            if (result.redirect) {
+              window.location.href = result.redirect
+            } else {
+              window.location.reload()
+            }
+
+          } catch (error) {
+            console.error('退出＆参加エラー:', error)
+            this.showErrorMessage(error.message || '処理に失敗しました。もう一度お試しください。')
+            this.isJoining = false
+          }
+        },
+
         // クリーンアップ処理
         destroy() {
           document.removeEventListener('keydown', this.handleEsc.bind(this))

@@ -62,7 +62,8 @@
       "mcp__playwright__browser_network_requests",
       "Bash(ENV=development ./bin/mhp-rooms)",
       "Bash(journalctl:*)",
-      "Bash(fuser:*)"
+      "Bash(fuser:*)",
+      "Bash(docker volume rm:*)"
     ],
     "deny": []
   }

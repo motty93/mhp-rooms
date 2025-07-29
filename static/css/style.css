@@ -149,6 +149,22 @@ body {
   font-weight: bold;
   text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }
+.mhxx-icon {
+  background-color: rgba(0, 0, 0, 0.8); /* MHXX色 - 黒色系 */
+  background-image: none;
+  position: relative;
+}
+.mhxx-icon::before {
+  content: 'MHXX';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 9px;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
 
 /* 大文字版のゲームアイコンも対応 */
 .MHP-icon, .Mhp-icon {
@@ -219,12 +235,29 @@ body {
   text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }
 
+.MHXX-icon, .Mhxx-icon {
+  background-color: rgba(0, 0, 0, 0.8); /* MHXX色 - 黒色系 */
+  background-image: none;
+  position: relative;
+}
+.MHXX-icon::before, .Mhxx-icon::before {
+  content: 'MHXX';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 9px;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
 /* デフォルトのゲームアイコン（未定義の場合） */
-.game-icon:not([class*="-icon"]):not(.mhp-icon):not(.mhp2-icon):not(.mhp2g-icon):not(.mhp3-icon) {
+.game-icon:not([class*="-icon"]):not(.mhp-icon):not(.mhp2-icon):not(.mhp2g-icon):not(.mhp3-icon):not(.mhxx-icon) {
   background-color: rgba(128, 128, 128, 0.8);
   position: relative;
 }
-.game-icon:not([class*="-icon"]):not(.mhp-icon):not(.mhp2-icon):not(.mhp2g-icon):not(.mhp3-icon)::before {
+.game-icon:not([class*="-icon"]):not(.mhp-icon):not(.mhp2-icon):not(.mhp2g-icon):not(.mhp3-icon):not(.mhxx-icon)::before {
   content: attr(data-game);
   position: absolute;
   top: 50%;
@@ -241,6 +274,18 @@ body {
 @media (max-width: 767px) {
   .auth-buttons-desktop {
     display: none !important;
+  }
+  
+  /* 部屋詳細ページのSlackライクレイアウト */
+  .mobile-chat-area {
+    height: calc(100vh - 200px); /* ヘッダー（約100px）とフォーム（約100px）を除く */
+    min-height: 300px; /* 最小高さを保証 */
+  }
+  
+  /* モバイル版のメインコンテナ高さ調整 */
+  .mobile-room-detail {
+    height: 100vh;
+    overflow: hidden;
   }
 }
 

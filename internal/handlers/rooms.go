@@ -224,6 +224,11 @@ func (h *RoomHandler) JoinRoom(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(response)
 			return
 		}
+		// 他の部屋に既に参加している場合
+		if strings.HasPrefix(err.Error(), "OTHER_ROOM_ACTIVE:") {
+			http.Error(w, "既に別の部屋に参加しています", http.StatusConflict)
+			return
+		}
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -283,6 +288,33 @@ func (h *RoomHandler) LeaveRoom(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"message": "ルームから退室しました"}`))
+}
+
+func (h *RoomHandler) LeaveCurrentRoom(w http.ResponseWriter, r *http.Request) {
+	// 認証情報からユーザーIDを取得
+	dbUser, exists := middleware.GetDBUserFromContext(r.Context())
+	if !exists || dbUser == nil {
+		http.Error(w, "認証されていないか、ユーザー情報が見つかりません", http.StatusUnauthorized)
+		return
+	}
+
+	userID := dbUser.ID
+
+	// 現在参加しているアクティブな部屋を検索
+	activeRoom, err := h.repo.Room.FindActiveRoomByUserID(userID)
+	if err != nil {
+		http.Error(w, "アクティブな部屋が見つかりません", http.StatusNotFound)
+		return
+	}
+
+	// 部屋から退出
+	if err := h.repo.Room.LeaveRoom(activeRoom.ID, userID); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"message": "現在の部屋から退室しました"}`))
 }
 
 type ToggleRoomClosedRequest struct {

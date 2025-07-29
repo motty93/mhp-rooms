@@ -26,9 +26,10 @@ func NewRoomDetailHandler(repo *repository.Repository) *RoomDetailHandler {
 }
 
 type RoomDetailPageData struct {
-	Room    *models.Room         `json:"room"`
-	Members []*models.RoomMember `json:"members"`
-	Logs    []models.RoomLog     `json:"logs"`
+	Room         *models.Room         `json:"room"`
+	Members      []*models.RoomMember `json:"members"`
+	Logs         []models.RoomLog     `json:"logs"`
+	MemberCount  int                  `json:"member_count"`
 }
 
 func (h *RoomDetailHandler) RoomDetail(w http.ResponseWriter, r *http.Request) {
@@ -80,6 +81,7 @@ func (h *RoomDetailHandler) RoomDetail(w http.ResponseWriter, r *http.Request) {
 
 	// メンバー配列を作成（4人分の枠を確保）
 	memberSlots := make([]*models.RoomMember, 4)
+	memberCount := 0
 
 	// メンバー情報を設定
 	for i := range members {
@@ -95,6 +97,7 @@ func (h *RoomDetailHandler) RoomDetail(w http.ResponseWriter, r *http.Request) {
 			}
 			members[i].DisplayName = displayName
 			memberSlots[members[i].PlayerNumber-1] = &members[i]
+			memberCount++
 		}
 	}
 
@@ -111,9 +114,10 @@ func (h *RoomDetailHandler) RoomDetail(w http.ResponseWriter, r *http.Request) {
 		HasHero: false,
 		User:    r.Context().Value("user"),
 		PageData: RoomDetailPageData{
-			Room:    room,
-			Members: memberSlots,
-			Logs:    logs,
+			Room:        room,
+			Members:     memberSlots,
+			Logs:        logs,
+			MemberCount: memberCount,
 		},
 	}
 

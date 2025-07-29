@@ -155,6 +155,14 @@ func (r *roomRepository) JoinRoom(roomID, userID uuid.UUID, password string) err
 			}
 		}
 
+		// 他の部屋に参加しているかチェック
+		var activeInOtherRoom models.RoomMember
+		if err := tx.Where("user_id = ? AND status = ? AND room_id != ?", userID, "active", roomID).
+			First(&activeInOtherRoom).Error; err == nil {
+			// 既に他の部屋に参加している場合
+			return fmt.Errorf("OTHER_ROOM_ACTIVE:既に別の部屋に参加しています")
+		}
+
 		var room models.Room
 		if err := tx.Where("id = ?", roomID).First(&room).Error; err != nil {
 			return err
@@ -170,19 +178,16 @@ func (r *roomRepository) JoinRoom(roomID, userID uuid.UUID, password string) err
 
 		// アクティブなメンバーかチェック
 		var activeMember models.RoomMember
-		err := tx.Where("room_id = ? AND user_id = ? AND status = ?", roomID, userID, "active").
-			First(&activeMember).Error
-		if err == nil {
+		if err := tx.Where("room_id = ? AND user_id = ? AND status = ?", roomID, userID, "active").
+			First(&activeMember).Error; err == nil {
 			// 既に参加している場合は特別なエラーコードを返す
 			return fmt.Errorf("ALREADY_JOINED:既にルームに参加しています")
 		}
 
 		// 既存の退室済みメンバーがいるかチェック
 		var leftMember models.RoomMember
-		err = tx.Where("room_id = ? AND user_id = ? AND status = ?", roomID, userID, "left").
-			First(&leftMember).Error
-
-		if err == nil {
+		if err := tx.Where("room_id = ? AND user_id = ? AND status = ?", roomID, userID, "left").
+			First(&leftMember).Error; err == nil {
 			// 既存の退室済みレコードを再アクティブ化
 			if err := tx.Model(&leftMember).Updates(map[string]interface{}{
 				"status":    "active",
@@ -274,6 +279,26 @@ func (r *roomRepository) LeaveRoom(roomID, userID uuid.UUID) error {
 		}
 		return tx.Create(&log).Error
 	})
+}
+
+func (r *roomRepository) FindActiveRoomByUserID(userID uuid.UUID) (*models.Room, error) {
+	var member models.RoomMember
+	err := r.db.GetConn().
+		Where("user_id = ? AND status = ?", userID, "active").
+		First(&member).Error
+	if err != nil {
+		return nil, err
+	}
+
+	var room models.Room
+	err = r.db.GetConn().
+		Where("id = ?", member.RoomID).
+		First(&room).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &room, nil
 }
 
 func (r *roomRepository) IsUserJoinedRoom(roomID, userID uuid.UUID) bool {
