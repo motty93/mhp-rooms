@@ -22,7 +22,7 @@
           @click="$store.mobileMenu.toggle()"
         >
           <div class="text-gray-800 font-bold text-base">
-            {{ .PageData.Room.Name }}
+            {{ if .PageData.Room.HasPassword }}🔑 {{ end }}{{ .PageData.Room.Name }}
           </div>
           <div class="text-gray-500 text-sm">
             参加者 {{ .PageData.MemberCount }}/4
@@ -90,7 +90,7 @@
           <div class="flex items-center space-x-3">
             <img src="/static/images/icon.png" alt="MonHub" class="w-8 h-8" />
             <h2 class="text-xl font-bold text-gray-800">
-              {{ .PageData.Room.Name }}
+              {{ if .PageData.Room.HasPassword }}🔑 {{ end }}{{ .PageData.Room.Name }}
             </h2>
           </div>
           <button
@@ -188,7 +188,7 @@
             </div>
           </div>
           <div class="text-gray-800 font-bold text-lg">
-            {{ .PageData.Room.Name }}
+            {{ if .PageData.Room.HasPassword }}🔑 {{ end }}{{ .PageData.Room.Name }}
           </div>
         </div>
         <div class="text-gray-600 text-sm leading-relaxed">

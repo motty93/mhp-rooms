@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -157,10 +158,13 @@ func (r *roomRepository) JoinRoom(roomID, userID uuid.UUID, password string) err
 
 		// 他の部屋に参加しているかチェック
 		var activeInOtherRoom models.RoomMember
-		if err := tx.Where("user_id = ? AND status = ? AND room_id != ?", userID, "active", roomID).
-			First(&activeInOtherRoom).Error; err == nil {
+		query := "user_id = ? AND status = ? AND room_id != ?"
+		if err := tx.Where(query, userID, "active", roomID).First(&activeInOtherRoom).Error; err == nil {
 			// 既に他の部屋に参加している場合
 			return fmt.Errorf("OTHER_ROOM_ACTIVE:既に別の部屋に参加しています")
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+			// record not found 以外のエラーが発生した場合
+			return fmt.Errorf("部屋メンバー検索エラー: %w", err)
 		}
 
 		var room models.Room

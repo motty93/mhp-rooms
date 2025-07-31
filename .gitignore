@@ -96,3 +96,10 @@ mhp-rooms
 
 # Local authentication data
 local-storage.json
+
+# serena
+.serena/memories/
+.serena/cache/
+.serena/index/
+.serena/logs/
+.serena/dashboard/

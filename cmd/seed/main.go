@@ -136,13 +136,43 @@ func main() {
 			RankRequirement: stringPtr("HR3以上"),
 			IsActive:        true,
 		},
+		{
+			ID:              uuid.New(),
+			RoomCode:        "ROOM-005",
+			Name:            "【鍵付き】プライベート部屋",
+			Description:     stringPtr("友達限定です。パスワード: test1234"),
+			GameVersionID:   gameVersions[2].ID, // MHP2G
+			HostUserID:      users[1].ID,
+			MaxPlayers:      4,
+			CurrentPlayers:  2,
+			TargetMonster:   stringPtr("ラージャン"),
+			RankRequirement: stringPtr("HR7以上"),
+			IsActive:        true,
+		},
 	}
 
-	for _, room := range rooms {
+	// パスワード付き部屋の設定
+	passwordRoom := "ROOM-005"
+	password := "test1234"
+
+	for i, room := range rooms {
+		// パスワード付き部屋の処理
+		if room.RoomCode == passwordRoom {
+			if err := room.SetPassword(password); err != nil {
+				log.Printf("パスワード設定エラー (%s): %v", room.RoomCode, err)
+				continue
+			}
+			rooms[i] = room // パスワードハッシュを反映
+		}
+
 		if err := db.GetConn().Create(&room).Error; err != nil {
 			log.Printf("ルーム作成エラー: %v", err)
 		} else {
-			log.Printf("ルーム作成: %s", room.Name)
+			if room.HasPassword() {
+				log.Printf("ルーム作成: %s - パスワード付き", room.Name)
+			} else {
+				log.Printf("ルーム作成: %s", room.Name)
+			}
 		}
 	}
 

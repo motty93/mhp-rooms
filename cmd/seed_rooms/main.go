@@ -52,6 +52,7 @@ func main() {
 		gameVersionMap[gv.Code] = gv
 	}
 
+	// パスワード付き部屋を含むテストデータを作成
 	rooms := []models.Room{
 		// MHP部屋
 		{
@@ -134,6 +135,20 @@ func main() {
 			RankRequirement: stringPtr("HR9以上"),
 			IsActive:        true,
 		},
+		// パスワード付き部屋（MHP2G）
+		{
+			ID:              uuid.New(),
+			RoomCode:        "MHP2G-003",
+			Name:            "【鍵】レア素材狙い専用",
+			Description:     stringPtr("効率重視！パスワードはDMで"),
+			GameVersionID:   gameVersionMap["MHP2G"].ID,
+			HostUserID:      users[0].ID,
+			MaxPlayers:      4,
+			CurrentPlayers:  1,
+			TargetMonster:   stringPtr("ミラボレアス"),
+			RankRequirement: stringPtr("HR9以上"),
+			IsActive:        true,
+		},
 		// MHP3部屋
 		{
 			ID:              uuid.New(),
@@ -159,6 +174,20 @@ func main() {
 			CurrentPlayers:  3,
 			TargetMonster:   stringPtr("ジンオウガ"),
 			RankRequirement: stringPtr("HR5以上"),
+			IsActive:        true,
+		},
+		// パスワード付き部屋の例
+		{
+			ID:              uuid.New(),
+			RoomCode:        "MHP3-003",
+			Name:            "【鍵付き】上級者限定部屋",
+			Description:     stringPtr("上級者のみ！パスワード: hunter123"),
+			GameVersionID:   gameVersionMap["MHP3"].ID,
+			HostUserID:      users[2].ID,
+			MaxPlayers:      4,
+			CurrentPlayers:  2,
+			TargetMonster:   stringPtr("アマツマガツチ"),
+			RankRequirement: stringPtr("HR7以上"),
 			IsActive:        true,
 		},
 		// MHXX部屋
@@ -190,11 +219,30 @@ func main() {
 		},
 	}
 
-	for _, room := range rooms {
+	// パスワードを設定する部屋の情報
+	passwordRooms := map[string]string{
+		"MHP3-003":  "hunter123",
+		"MHP2G-003": "secret456",
+	}
+
+	for i, room := range rooms {
+		// パスワードがある部屋の場合はパスワードを設定
+		if password, exists := passwordRooms[room.RoomCode]; exists {
+			if err := room.SetPassword(password); err != nil {
+				log.Printf("パスワード設定エラー (%s): %v", room.RoomCode, err)
+				continue
+			}
+			rooms[i] = room // パスワードハッシュを反映
+		}
+
 		if err := db.GetConn().Create(&room).Error; err != nil {
 			log.Printf("ルーム作成エラー: %v", err)
 		} else {
-			log.Printf("ルーム作成: %s (%s)", room.Name, room.RoomCode)
+			if room.HasPassword() {
+				log.Printf("ルーム作成: %s (%s) - パスワード付き", room.Name, room.RoomCode)
+			} else {
+				log.Printf("ルーム作成: %s (%s)", room.Name, room.RoomCode)
+			}
 		}
 	}
 

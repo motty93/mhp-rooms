@@ -205,6 +205,7 @@ curl -X POST http://192.168.112.1:11434/api/generate -d '{
 ### Gemini CLI
 必要であれば、GeminiCLIに相談して、プロジェクトの詳細や特定の実装方法についてアドバイスを受けてください。
 
+
 # important-instruction-reminders
 Do what has been asked; nothing more, nothing less.
 NEVER create files unless they're absolutely necessary for achieving your goal.

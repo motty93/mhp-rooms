@@ -75,6 +75,7 @@ func (h *RoomHandler) Rooms(w http.ResponseWriter, r *http.Request) {
 			"created_at":       room.CreatedAt,
 			"updated_at":       room.UpdatedAt,
 			"password_hash":    room.PasswordHash,
+			"has_password":     room.HasPassword(),
 		}
 
 		// 認証済みユーザーの場合、参加状態を追加
@@ -185,7 +186,8 @@ func (h *RoomHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 }
 
 type JoinRoomRequest struct {
-	Password string `json:"password"`
+	Password  string `json:"password"`
+	ForceJoin bool   `json:"forceJoin"` // 強制参加フラグ（他の部屋から退出して参加）
 }
 
 func (h *RoomHandler) JoinRoom(w http.ResponseWriter, r *http.Request) {
@@ -210,6 +212,20 @@ func (h *RoomHandler) JoinRoom(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := dbUser.ID
+
+	// forceJoinフラグが設定されている場合は、先に現在の部屋から退出する
+	if req.ForceJoin {
+		// 現在参加している部屋があれば退出
+		activeRoom, findErr := h.repo.Room.FindActiveRoomByUserID(userID)
+		if findErr == nil && activeRoom != nil && activeRoom.ID != roomID {
+			// 退出処理を実行
+			if leaveErr := h.repo.Room.LeaveRoom(activeRoom.ID, userID); leaveErr != nil {
+				// 退出に失敗した場合は処理を中断
+				http.Error(w, "現在の部屋からの退出に失敗しました", http.StatusInternalServerError)
+				return
+			}
+		}
+	}
 
 	if err := h.repo.Room.JoinRoom(roomID, userID, req.Password); err != nil {
 		// 既に参加している場合は部屋詳細に遷移

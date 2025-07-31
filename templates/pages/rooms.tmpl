@@ -95,7 +95,7 @@
                     <div>
                       <h4
                         class="font-bold text-gray-800"
-                        x-text="room.name"
+                        x-text="(room.hasPassword ? '🔑 ' : '') + room.name"
                       ></h4>
                       <p
                         class="text-sm text-gray-500"
@@ -799,29 +799,17 @@
           if (!this.confirmRoomId) return
 
           this.isJoining = true
+          let hasLeft = false // 退出処理が実行されたかを追跡
 
           try {
-            // まず現在の部屋から退出
             const authToken = Alpine.store('auth').session?.access_token
-
-            // 現在参加している部屋を探して退出
-            const leaveResponse = await fetch('/api/leave-current-room', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${authToken}`,
-                'Content-Type': 'application/json'
-              }
-            })
-
-            if (!leaveResponse.ok) {
-              throw new Error('現在の部屋からの退出に失敗しました')
-            }
-
-            // 新しい部屋に参加
             const requestData = {}
             if (this.currentRoom.hasPassword) {
               requestData.password = this.password
             }
+
+            // 新しいエンドポイントを使用して、退出と参加を一度に処理
+            requestData.forceJoin = true // 強制参加フラグを追加
 
             const joinResponse = await fetch(`/rooms/${this.confirmRoomId}/join`, {
               method: 'POST',
@@ -833,11 +821,14 @@
             })
 
             if (!joinResponse.ok) {
-              if (joinResponse.status === 400) {
-                const errorData = await joinResponse.text()
-                throw new Error(errorData || '参加に失敗しました')
+              const errorText = await joinResponse.text()
+              
+              // パスワードエラーの場合
+              if (joinResponse.status === 400 && errorText.includes('パスワードが間違っています')) {
+                throw new Error('パスワードが間違っています')
               }
-              throw new Error('参加に失敗しました')
+              
+              throw new Error(errorText || '参加に失敗しました')
             }
 
             const result = await joinResponse.json()
@@ -853,8 +844,23 @@
             }
 
           } catch (error) {
-            console.error('退出＆参加エラー:', error)
-            this.showErrorMessage(error.message || '処理に失敗しました。もう一度お試しください。')
+            console.error('処理エラー:', error)
+            
+            // エラーメッセージを適切に表示
+            let errorMessage = error.message || '処理に失敗しました。もう一度お試しください。'
+            
+            // パスワードエラーの場合は、パスワード入力欄をクリアしてフォーカス
+            if (errorMessage.includes('パスワードが間違っています')) {
+              this.password = ''
+              // 確認ダイアログを閉じて、通常の参加モーダルに戻る
+              this.closeConfirmDialog()
+              this.$nextTick(() => {
+                const passwordInput = this.$el.querySelector("input[type='password']")
+                if (passwordInput) passwordInput.focus()
+              })
+            }
+            
+            this.showErrorMessage(errorMessage)
             this.isJoining = false
           }
         },
