@@ -159,13 +159,16 @@ make container-down # Dockerコンテナを停止
 
 データベース設計の詳細は [docs/db-schema.md](docs/db-schema.md) を参照してください。
 
-## ライセンス
-
-MIT
-
 ## AI開発支援
 
 [CLAUDE.md](./CLAUDE.md) にAI開発支援のための指示が含まれています。AIを使用してコードの生成や改善を行う場合は、このファイルを参照してください。
+
+### 手動実行
+```bash
+uv run --directory ~/serena serena-mcp-server --transport sse --port 9121
+
+claude
+```
 
 ## 開発ガイドライン
 
