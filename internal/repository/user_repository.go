@@ -44,7 +44,7 @@ func (r *userRepository) FindUsersByIDs(ids []uuid.UUID) ([]models.User, error) 
 	if len(ids) == 0 {
 		return users, nil
 	}
-	
+
 	err := r.db.GetConn().Where("id IN ?", ids).Find(&users).Error
 	return users, err
 }

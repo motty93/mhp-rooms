@@ -68,17 +68,17 @@ func (r *reactionRepository) AddReaction(reaction *models.MessageReaction) error
 }
 
 func (r *reactionRepository) RemoveReaction(messageID, userID uuid.UUID, reactionType string) error {
-	result := r.db.GetConn().Where("message_id = ? AND user_id = ? AND reaction_type = ?", 
+	result := r.db.GetConn().Where("message_id = ? AND user_id = ? AND reaction_type = ?",
 		messageID, userID, reactionType).Delete(&models.MessageReaction{})
-	
+
 	if result.Error != nil {
 		return result.Error
 	}
-	
+
 	if result.RowsAffected == 0 {
 		return ErrNotFound
 	}
-	
+
 	return nil
 }
 

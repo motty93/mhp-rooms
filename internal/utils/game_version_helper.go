@@ -2,19 +2,18 @@ package utils
 
 // GetGameVersionColor はゲームバージョンに応じた色を返す
 func GetGameVersionColor(code string) string {
+	// 部屋一覧のCSSと同じ色設定に統一
 	switch code {
-	// Sony系（暖色系）
 	case "MHP":
-		return "bg-amber-800" // 茶色系に近い色
+		return "bg-amber-700" // 茶色系（rgba(139, 69, 19, 0.8)に近い）
 	case "MHP2":
-		return "bg-orange-600" // オレンジ系
+		return "bg-blue-600" // 青色系（rgba(70, 130, 180, 0.8)に近い）
 	case "MHP2G":
-		return "bg-red-700" // 赤色系
+		return "bg-green-700" // 緑色系（rgba(34, 139, 34, 0.8)に近い）
 	case "MHP3":
-		return "bg-yellow-600" // 金色系
-	// Nintendo系（寒色系）
+		return "bg-yellow-600" // 金色系（rgba(218, 165, 32, 0.8)に近い）
 	case "MHXX":
-		return "bg-blue-600" // 青色系
+		return "bg-gray-900" // 黒色系（rgba(0, 0, 0, 0.8)に近い）
 	default:
 		return "bg-gray-600"
 	}

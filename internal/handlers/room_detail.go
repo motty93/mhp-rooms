@@ -9,8 +9,8 @@ import (
 	"mhp-rooms/internal/repository"
 	"mhp-rooms/internal/utils"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 )
 
 type RoomDetailHandler struct {
@@ -26,16 +26,15 @@ func NewRoomDetailHandler(repo *repository.Repository) *RoomDetailHandler {
 }
 
 type RoomDetailPageData struct {
-	Room         *models.Room         `json:"room"`
-	Members      []*models.RoomMember `json:"members"`
-	Logs         []models.RoomLog     `json:"logs"`
-	MemberCount  int                  `json:"member_count"`
+	Room        *models.Room         `json:"room"`
+	Members     []*models.RoomMember `json:"members"`
+	Logs        []models.RoomLog     `json:"logs"`
+	MemberCount int                  `json:"member_count"`
 }
 
 func (h *RoomDetailHandler) RoomDetail(w http.ResponseWriter, r *http.Request) {
 	// URLパラメータから部屋IDを取得
-	vars := mux.Vars(r)
-	roomIDStr := vars["id"]
+	roomIDStr := chi.URLParam(r, "id")
 
 	roomID, err := uuid.Parse(roomIDStr)
 	if err != nil {

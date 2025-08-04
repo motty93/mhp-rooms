@@ -11,8 +11,8 @@ import (
 	"mhp-rooms/internal/middleware"
 	"mhp-rooms/internal/repository"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 )
 
 // SSEToken は一時的なSSE接続用トークンを表す
@@ -122,8 +122,7 @@ func NewSSETokenHandler(repo *repository.Repository) *SSETokenHandler {
 // GenerateSSEToken はSSE接続用の一時トークンを生成する
 func (h *SSETokenHandler) GenerateSSEToken(w http.ResponseWriter, r *http.Request) {
 	// URLパラメータから部屋IDを取得
-	vars := mux.Vars(r)
-	roomIDStr := vars["id"]
+	roomIDStr := chi.URLParam(r, "id")
 
 	roomID, err := uuid.Parse(roomIDStr)
 	if err != nil {

@@ -241,17 +241,17 @@ func (h *AuthHandler) SyncUser(w http.ResponseWriter, r *http.Request) {
 
 	// ユーザー情報に変更がある場合のみ更新
 	needsUpdate := false
-	
+
 	if dbUser.Email != user.Email {
 		dbUser.Email = user.Email
 		needsUpdate = true
 	}
-	
+
 	if req.PSNId != "" && (dbUser.PSNOnlineID == nil || *dbUser.PSNOnlineID != req.PSNId) {
 		dbUser.PSNOnlineID = &req.PSNId
 		needsUpdate = true
 	}
-	
+
 	// 更新が必要な場合のみDBを更新
 	if needsUpdate {
 		dbUser.UpdatedAt = now

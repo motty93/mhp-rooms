@@ -13,8 +13,8 @@ import (
 	"mhp-rooms/internal/repository"
 	"mhp-rooms/internal/sse"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 )
 
 type RoomMessageHandler struct {
@@ -34,8 +34,7 @@ func NewRoomMessageHandler(repo *repository.Repository, hub *sse.Hub) *RoomMessa
 // SendMessage はメッセージを送信
 func (h *RoomMessageHandler) SendMessage(w http.ResponseWriter, r *http.Request) {
 	// URLパラメータから部屋IDを取得
-	vars := mux.Vars(r)
-	roomIDStr := vars["id"]
+	roomIDStr := chi.URLParam(r, "id")
 
 	roomID, err := uuid.Parse(roomIDStr)
 	if err != nil {
@@ -109,8 +108,7 @@ func (h *RoomMessageHandler) SendMessage(w http.ResponseWriter, r *http.Request)
 // StreamMessages はSSEでメッセージをストリーミング
 func (h *RoomMessageHandler) StreamMessages(w http.ResponseWriter, r *http.Request) {
 	// URLパラメータから部屋IDを取得
-	vars := mux.Vars(r)
-	roomIDStr := vars["id"]
+	roomIDStr := chi.URLParam(r, "id")
 
 	roomID, err := uuid.Parse(roomIDStr)
 	if err != nil {
@@ -213,8 +211,7 @@ func (h *RoomMessageHandler) StreamMessages(w http.ResponseWriter, r *http.Reque
 // GetMessages はメッセージ履歴を取得
 func (h *RoomMessageHandler) GetMessages(w http.ResponseWriter, r *http.Request) {
 	// URLパラメータから部屋IDを取得
-	vars := mux.Vars(r)
-	roomIDStr := vars["id"]
+	roomIDStr := chi.URLParam(r, "id")
 
 	roomID, err := uuid.Parse(roomIDStr)
 	if err != nil {

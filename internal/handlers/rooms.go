@@ -3,11 +3,12 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 
 	"mhp-rooms/internal/middleware"
 	"mhp-rooms/internal/models"
@@ -45,50 +46,84 @@ func (h *RoomHandler) Rooms(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 常にすべてのアクティブな部屋を取得（フィルタリングはフロントエンドで行う）
-	rooms, err := h.repo.GetActiveRooms(nil, 100, 0)
-	if err != nil {
-		http.Error(w, "ルーム一覧の取得に失敗しました", http.StatusInternalServerError)
-		return
-	}
-
-	// 認証されたユーザーの場合、参加状態を含めるため拡張データを作成
+	// 認証されたユーザーの場合、最適化されたメソッドを使用
 	var enhancedRooms []interface{}
 	dbUser, isAuthenticated := middleware.GetDBUserFromContext(r.Context())
 
-	for _, room := range rooms {
-		roomData := map[string]interface{}{
-			"id":               room.ID,
-			"room_code":        room.RoomCode,
-			"name":             room.Name,
-			"description":      room.Description,
-			"game_version_id":  room.GameVersionID,
-			"game_version":     room.GameVersion,
-			"host_user_id":     room.HostUserID,
-			"host":             room.Host,
-			"max_players":      room.MaxPlayers,
-			"current_players":  room.CurrentPlayers,
-			"target_monster":   room.TargetMonster,
-			"rank_requirement": room.RankRequirement,
-			"is_active":        room.IsActive,
-			"is_closed":        room.IsClosed,
-			"created_at":       room.CreatedAt,
-			"updated_at":       room.UpdatedAt,
-			"password_hash":    room.PasswordHash,
-			"has_password":     room.HasPassword(),
-		}
-
-		// 認証済みユーザーの場合、参加状態を追加
-		if isAuthenticated && dbUser != nil {
-			roomData["is_joined"] = h.isUserJoinedRoom(room.ID, dbUser.ID)
-		} else {
-			roomData["is_joined"] = false
-		}
-
-		enhancedRooms = append(enhancedRooms, roomData)
+	// デバッグログ
+	if isAuthenticated {
+		log.Printf("[DEBUG] Rooms: 認証済みユーザー: ID=%v, Email=%s", dbUser.ID, dbUser.Email)
+	} else {
+		log.Printf("[DEBUG] Rooms: 未認証ユーザー")
 	}
 
-	total := int64(len(rooms))
+	if isAuthenticated && dbUser != nil {
+		// パフォーマンス最適化: 1つのクエリで参加状態を取得
+		roomsWithJoinStatus, err := h.repo.Room.GetActiveRoomsWithJoinStatus(&dbUser.ID, nil, 100, 0)
+		if err != nil {
+			http.Error(w, "ルーム一覧の取得に失敗しました", http.StatusInternalServerError)
+			return
+		}
+
+		for _, roomWithStatus := range roomsWithJoinStatus {
+			roomData := map[string]interface{}{
+				"id":               roomWithStatus.Room.ID,
+				"room_code":        roomWithStatus.Room.RoomCode,
+				"name":             roomWithStatus.Room.Name,
+				"description":      roomWithStatus.Room.Description,
+				"game_version_id":  roomWithStatus.Room.GameVersionID,
+				"game_version":     roomWithStatus.Room.GameVersion,
+				"host_user_id":     roomWithStatus.Room.HostUserID,
+				"host":             roomWithStatus.Room.Host,
+				"max_players":      roomWithStatus.Room.MaxPlayers,
+				"current_players":  roomWithStatus.Room.CurrentPlayers,
+				"target_monster":   roomWithStatus.Room.TargetMonster,
+				"rank_requirement": roomWithStatus.Room.RankRequirement,
+				"is_active":        roomWithStatus.Room.IsActive,
+				"is_closed":        roomWithStatus.Room.IsClosed,
+				"created_at":       roomWithStatus.Room.CreatedAt,
+				"updated_at":       roomWithStatus.Room.UpdatedAt,
+				"password_hash":    roomWithStatus.Room.PasswordHash,
+				"has_password":     roomWithStatus.Room.HasPassword(),
+				"is_joined":        roomWithStatus.IsJoined,
+			}
+			enhancedRooms = append(enhancedRooms, roomData)
+		}
+	} else {
+		// 未認証ユーザーの場合は従来の方法
+		rooms, err := h.repo.GetActiveRooms(nil, 100, 0)
+		if err != nil {
+			http.Error(w, "ルーム一覧の取得に失敗しました", http.StatusInternalServerError)
+			return
+		}
+
+		for _, room := range rooms {
+			roomData := map[string]interface{}{
+				"id":               room.ID,
+				"room_code":        room.RoomCode,
+				"name":             room.Name,
+				"description":      room.Description,
+				"game_version_id":  room.GameVersionID,
+				"game_version":     room.GameVersion,
+				"host_user_id":     room.HostUserID,
+				"host":             room.Host,
+				"max_players":      room.MaxPlayers,
+				"current_players":  room.CurrentPlayers,
+				"target_monster":   room.TargetMonster,
+				"rank_requirement": room.RankRequirement,
+				"is_active":        room.IsActive,
+				"is_closed":        room.IsClosed,
+				"created_at":       room.CreatedAt,
+				"updated_at":       room.UpdatedAt,
+				"password_hash":    room.PasswordHash,
+				"has_password":     room.HasPassword(),
+				"is_joined":        false,
+			}
+			enhancedRooms = append(enhancedRooms, roomData)
+		}
+	}
+
+	total := int64(len(enhancedRooms))
 
 	pageData := RoomsPageData{
 		Rooms:        enhancedRooms,
@@ -191,8 +226,7 @@ type JoinRoomRequest struct {
 }
 
 func (h *RoomHandler) JoinRoom(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	roomID, err := uuid.Parse(vars["id"])
+	roomID, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
 		http.Error(w, "無効なルームIDです", http.StatusBadRequest)
 		return
@@ -281,8 +315,7 @@ func (h *RoomHandler) JoinRoom(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *RoomHandler) LeaveRoom(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	roomID, err := uuid.Parse(vars["id"])
+	roomID, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
 		http.Error(w, "無効なルームIDです", http.StatusBadRequest)
 		return
@@ -338,8 +371,7 @@ type ToggleRoomClosedRequest struct {
 }
 
 func (h *RoomHandler) ToggleRoomClosed(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	roomID, err := uuid.Parse(vars["id"])
+	roomID, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
 		http.Error(w, "無効なルームIDです", http.StatusBadRequest)
 		return
@@ -395,46 +427,72 @@ func (h *RoomHandler) GetAllRoomsAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rooms, err := h.repo.Room.GetActiveRooms(nil, 100, 0)
-	if err != nil {
-		http.Error(w, "ルーム一覧の取得に失敗しました", http.StatusInternalServerError)
-		return
-	}
-
-	// 認証されたユーザーの場合、参加状態を含める
+	// 認証されたユーザーの場合、最適化されたメソッドを使用
 	var enhancedRooms []interface{}
 	dbUser, isAuthenticated := middleware.GetDBUserFromContext(r.Context())
 
-	for _, room := range rooms {
-		roomData := map[string]interface{}{
-			"id":               room.ID,
-			"room_code":        room.RoomCode,
-			"name":             room.Name,
-			"description":      room.Description,
-			"game_version_id":  room.GameVersionID,
-			"host_user_id":     room.HostUserID,
-			"max_players":      room.MaxPlayers,
-			"current_players":  room.CurrentPlayers,
-			"target_monster":   room.TargetMonster,
-			"rank_requirement": room.RankRequirement,
-			"is_active":        room.IsActive,
-			"is_closed":        room.IsClosed,
-			"created_at":       room.CreatedAt,
-			"updated_at":       room.UpdatedAt,
-			"game_version":     room.GameVersion,
-			"host":             room.Host,
-			"has_password":     room.HasPassword(),
+	if isAuthenticated && dbUser != nil {
+		// パフォーマンス最適化: 1つのクエリで参加状態を取得
+		roomsWithJoinStatus, err := h.repo.Room.GetActiveRoomsWithJoinStatus(&dbUser.ID, nil, 100, 0)
+		if err != nil {
+			http.Error(w, "ルーム一覧の取得に失敗しました", http.StatusInternalServerError)
+			return
 		}
 
-		// 認証済みユーザーの場合、参加状態を追加
-		if isAuthenticated && dbUser != nil {
-			// 簡単な参加チェック：RoomMemberを直接確認する代わりに、別の方法を使用
-			roomData["is_joined"] = h.isUserJoinedRoom(room.ID, dbUser.ID)
-		} else {
-			roomData["is_joined"] = false
+		for _, roomWithStatus := range roomsWithJoinStatus {
+			roomData := map[string]interface{}{
+				"id":               roomWithStatus.Room.ID,
+				"room_code":        roomWithStatus.Room.RoomCode,
+				"name":             roomWithStatus.Room.Name,
+				"description":      roomWithStatus.Room.Description,
+				"game_version_id":  roomWithStatus.Room.GameVersionID,
+				"host_user_id":     roomWithStatus.Room.HostUserID,
+				"max_players":      roomWithStatus.Room.MaxPlayers,
+				"current_players":  roomWithStatus.Room.CurrentPlayers,
+				"target_monster":   roomWithStatus.Room.TargetMonster,
+				"rank_requirement": roomWithStatus.Room.RankRequirement,
+				"is_active":        roomWithStatus.Room.IsActive,
+				"is_closed":        roomWithStatus.Room.IsClosed,
+				"created_at":       roomWithStatus.Room.CreatedAt,
+				"updated_at":       roomWithStatus.Room.UpdatedAt,
+				"game_version":     roomWithStatus.Room.GameVersion,
+				"host":             roomWithStatus.Room.Host,
+				"has_password":     roomWithStatus.Room.HasPassword(),
+				"is_joined":        roomWithStatus.IsJoined,
+			}
+			enhancedRooms = append(enhancedRooms, roomData)
+		}
+	} else {
+		// 未認証ユーザーの場合は従来の方法
+		rooms, err := h.repo.Room.GetActiveRooms(nil, 100, 0)
+		if err != nil {
+			http.Error(w, "ルーム一覧の取得に失敗しました", http.StatusInternalServerError)
+			return
 		}
 
-		enhancedRooms = append(enhancedRooms, roomData)
+		for _, room := range rooms {
+			roomData := map[string]interface{}{
+				"id":               room.ID,
+				"room_code":        room.RoomCode,
+				"name":             room.Name,
+				"description":      room.Description,
+				"game_version_id":  room.GameVersionID,
+				"host_user_id":     room.HostUserID,
+				"max_players":      room.MaxPlayers,
+				"current_players":  room.CurrentPlayers,
+				"target_monster":   room.TargetMonster,
+				"rank_requirement": room.RankRequirement,
+				"is_active":        room.IsActive,
+				"is_closed":        room.IsClosed,
+				"created_at":       room.CreatedAt,
+				"updated_at":       room.UpdatedAt,
+				"game_version":     room.GameVersion,
+				"host":             room.Host,
+				"has_password":     room.HasPassword(),
+				"is_joined":        false,
+			}
+			enhancedRooms = append(enhancedRooms, roomData)
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -446,6 +504,57 @@ func (h *RoomHandler) GetAllRoomsAPI(w http.ResponseWriter, r *http.Request) {
 }
 
 // isUserJoinedRoom ユーザーが指定の部屋に参加しているかチェック
+// GetCurrentRoom 現在参加中の部屋を取得するAPIエンドポイント
+func (h *RoomHandler) GetCurrentRoom(w http.ResponseWriter, r *http.Request) {
+	// 認証情報からユーザーIDを取得
+	dbUser, exists := middleware.GetDBUserFromContext(r.Context())
+	if !exists || dbUser == nil {
+		http.Error(w, "認証されていないか、ユーザー情報が見つかりません", http.StatusUnauthorized)
+		return
+	}
+
+	userID := dbUser.ID
+
+	// 現在参加しているアクティブな部屋を検索
+	activeRoom, err := h.repo.Room.FindActiveRoomByUserID(userID)
+	if err != nil {
+		// 参加中の部屋がない場合
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"current_room": null}`))
+		return
+	}
+
+	// 部屋情報をレスポンス用に整形
+	roomData := map[string]interface{}{
+		"id":               activeRoom.ID,
+		"room_code":        activeRoom.RoomCode,
+		"name":             activeRoom.Name,
+		"description":      activeRoom.Description,
+		"game_version_id":  activeRoom.GameVersionID,
+		"game_version":     activeRoom.GameVersion,
+		"host_user_id":     activeRoom.HostUserID,
+		"host":             activeRoom.Host,
+		"max_players":      activeRoom.MaxPlayers,
+		"current_players":  activeRoom.CurrentPlayers,
+		"target_monster":   activeRoom.TargetMonster,
+		"rank_requirement": activeRoom.RankRequirement,
+		"is_active":        activeRoom.IsActive,
+		"is_closed":        activeRoom.IsClosed,
+		"created_at":       activeRoom.CreatedAt,
+		"updated_at":       activeRoom.UpdatedAt,
+		"has_password":     activeRoom.HasPassword(),
+	}
+
+	response := map[string]interface{}{
+		"current_room": roomData,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
 func (h *RoomHandler) isUserJoinedRoom(roomID, userID uuid.UUID) bool {
 	return h.repo.Room.IsUserJoinedRoom(roomID, userID)
 }

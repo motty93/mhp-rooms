@@ -8,11 +8,11 @@ import (
 
 // SecurityConfig セキュリティミドルウェアの設定
 type SecurityConfig struct {
-	SupabaseURL      string
-	Environment      string
-	AllowedDomains   []string
-	EnableHSTS       bool
-	EnableCSP        bool
+	SupabaseURL    string
+	Environment    string
+	AllowedDomains []string
+	EnableHSTS     bool
+	EnableCSP      bool
 }
 
 // NewSecurityConfig 環境変数からセキュリティ設定を作成
@@ -78,18 +78,18 @@ func buildCSP(config *SecurityConfig) string {
 		"unpkg.com",           // CDNライブラリ用
 		"cdn.tailwindcss.com", // Tailwind CSS CDN
 	}
-	
+
 	// Supabase URL がある場合は追加
 	if config.SupabaseURL != "" {
 		scriptSrc = append(scriptSrc, config.SupabaseURL)
 	}
-	
+
 	policies = append(policies, "script-src "+strings.Join(scriptSrc, " "))
 
 	// スタイルソース
 	styleSrc := []string{
 		"'self'",
-		"'unsafe-inline'",     // Tailwind CSS等のインラインスタイル用
+		"'unsafe-inline'", // Tailwind CSS等のインラインスタイル用
 		"cdn.jsdelivr.net",
 		"unpkg.com",
 		"fonts.googleapis.com",
@@ -118,19 +118,19 @@ func buildCSP(config *SecurityConfig) string {
 	connectSrc := []string{
 		"'self'",
 	}
-	
+
 	// Supabase URL がある場合は追加
 	if config.SupabaseURL != "" {
 		connectSrc = append(connectSrc, config.SupabaseURL)
 	}
-	
+
 	// 追加の許可ドメインがある場合は追加
 	for _, domain := range config.AllowedDomains {
 		if domain != "" {
 			connectSrc = append(connectSrc, domain)
 		}
 	}
-	
+
 	policies = append(policies, "connect-src "+strings.Join(connectSrc, " "))
 
 	// フレームソース

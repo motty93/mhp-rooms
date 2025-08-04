@@ -66,3 +66,9 @@ func (r *Room) IsFull() bool {
 func (r *Room) CanJoin() bool {
 	return r.IsActive && !r.IsClosed && !r.IsFull()
 }
+
+// RoomWithJoinStatus 参加状態を含む部屋情報
+type RoomWithJoinStatus struct {
+	Room
+	IsJoined bool `json:"is_joined"`
+}

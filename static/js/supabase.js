@@ -29,6 +29,15 @@ async function initializeSupabase() {
     supabase = window.supabaseClient
 
     supabase.auth.onAuthStateChange((event, session) => {
+      // セッション変更時にクッキーを設定/削除
+      if (session && session.access_token) {
+        // アクセストークンをクッキーに保存（SSR用）
+        document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=3600; SameSite=Lax`
+      } else {
+        // ログアウト時はクッキーを削除
+        document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      }
+
       if (window.Alpine && window.Alpine.store('auth')) {
         window.Alpine.store('auth').updateSession(session)
       }

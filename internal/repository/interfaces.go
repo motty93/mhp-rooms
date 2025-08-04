@@ -35,6 +35,7 @@ type RoomRepository interface {
 	FindRoomByID(id uuid.UUID) (*models.Room, error)
 	FindRoomByRoomCode(roomCode string) (*models.Room, error)
 	GetActiveRooms(gameVersionID *uuid.UUID, limit, offset int) ([]models.Room, error)
+	GetActiveRoomsWithJoinStatus(userID *uuid.UUID, gameVersionID *uuid.UUID, limit, offset int) ([]models.RoomWithJoinStatus, error)
 	UpdateRoom(room *models.Room) error
 	ToggleRoomClosed(id uuid.UUID, isClosed bool) error
 	IncrementRoomPlayerCount(id uuid.UUID) error

@@ -31,7 +31,7 @@ func main() {
 	// プラットフォーム確認
 	var platforms []models.Platform
 	db.GetConn().Order("display_order").Find(&platforms)
-	
+
 	fmt.Println("=== プラットフォーム ===")
 	for _, p := range platforms {
 		fmt.Printf("ID: %s, Name: %s, DisplayOrder: %d\n", p.ID, p.Name, p.DisplayOrder)
@@ -40,10 +40,10 @@ func main() {
 	// ゲームバージョン確認
 	var gameVersions []models.GameVersion
 	db.GetConn().Order("display_order").Find(&gameVersions)
-	
+
 	fmt.Println("\n=== ゲームバージョン ===")
 	for _, gv := range gameVersions {
-		fmt.Printf("ID: %s, Code: %s, Name: %s, DisplayOrder: %d, PlatformID: %s\n", 
+		fmt.Printf("ID: %s, Code: %s, Name: %s, DisplayOrder: %d, PlatformID: %s\n",
 			gv.ID, gv.Code, gv.Name, gv.DisplayOrder, gv.PlatformID)
 	}
 }

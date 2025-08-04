@@ -107,6 +107,98 @@ func (r *roomRepository) GetActiveRooms(gameVersionID *uuid.UUID, limit, offset 
 	return rooms, err
 }
 
+// GetActiveRoomsWithJoinStatus ユーザーの参加状態を含めて部屋一覧を取得（パフォーマンス最適化版）
+func (r *roomRepository) GetActiveRoomsWithJoinStatus(userID *uuid.UUID, gameVersionID *uuid.UUID, limit, offset int) ([]models.RoomWithJoinStatus, error) {
+	if userID == nil {
+		// ユーザーIDがnilの場合は、通常の部屋一覧を取得してisJoinedをfalseに設定
+		normalRooms, err := r.GetActiveRooms(gameVersionID, limit, offset)
+		if err != nil {
+			return nil, err
+		}
+
+		var roomsWithStatus []models.RoomWithJoinStatus
+		for _, room := range normalRooms {
+			roomsWithStatus = append(roomsWithStatus, models.RoomWithJoinStatus{
+				Room:     room,
+				IsJoined: false,
+			})
+		}
+		return roomsWithStatus, nil
+	}
+
+	// まず部屋一覧を取得
+	var rooms []models.Room
+	query := r.db.GetConn().
+		Select("rooms.*, COUNT(DISTINCT rm.id) as current_players").
+		Joins("LEFT JOIN room_members rm ON rooms.id = rm.room_id AND rm.status = 'active'").
+		Preload("GameVersion").
+		Preload("Host").
+		Where("rooms.is_active = ?", true).
+		Group("rooms.id")
+
+	if gameVersionID != nil {
+		query = query.Where("rooms.game_version_id = ?", *gameVersionID)
+	}
+
+	err := query.
+		Order("rooms.created_at DESC").
+		Limit(limit).
+		Offset(offset).
+		Find(&rooms).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	// 部屋IDのリストを作成
+	roomIDs := make([]uuid.UUID, len(rooms))
+	for i, room := range rooms {
+		roomIDs[i] = room.ID
+	}
+
+	// ユーザーが参加している部屋を取得
+	var joinedRoomIDs []uuid.UUID
+	if len(roomIDs) > 0 {
+		err = r.db.GetConn().Table("room_members").
+			Select("room_id").
+			Where("user_id = ? AND status = ? AND room_id IN ?", *userID, "active", roomIDs).
+			Pluck("room_id", &joinedRoomIDs).Error
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// 参加状態のマップを作成
+	joinedMap := make(map[uuid.UUID]bool)
+	for _, id := range joinedRoomIDs {
+		joinedMap[id] = true
+	}
+
+	// RoomWithJoinStatusに変換
+	var roomsWithStatus []models.RoomWithJoinStatus
+	for _, room := range rooms {
+		roomsWithStatus = append(roomsWithStatus, models.RoomWithJoinStatus{
+			Room:     room,
+			IsJoined: joinedMap[room.ID],
+		})
+	}
+
+	// 参加中の部屋を上に移動
+	// 参加中の部屋と未参加の部屋を分ける
+	var joinedRooms, notJoinedRooms []models.RoomWithJoinStatus
+	for _, room := range roomsWithStatus {
+		if room.IsJoined {
+			joinedRooms = append(joinedRooms, room)
+		} else {
+			notJoinedRooms = append(notJoinedRooms, room)
+		}
+	}
+
+	// 結合して返す（参加中の部屋が先）
+	result := append(joinedRooms, notJoinedRooms...)
+	return result, nil
+}
+
 func (r *roomRepository) UpdateRoom(room *models.Room) error {
 	return r.db.GetConn().Save(room).Error
 }

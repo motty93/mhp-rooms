@@ -144,14 +144,25 @@ func (j *JWTAuth) Middleware(next http.Handler) http.Handler {
 			// Authorizationヘッダーがない場合、クエリパラメータのtokenを確認（SSE用）
 			tokenString = r.URL.Query().Get("token")
 			if tokenString == "" {
+				// クエリパラメータにもない場合、クッキーを確認（ブラウザからのAJAX用）
+				if cookie, err := r.Cookie("sb-access-token"); err == nil {
+					tokenString = cookie.Value
+					if config.AppConfig.Debug.AuthLogs {
+						log.Printf("AUTH DEBUG: %s %s - クッキーからトークンを取得", r.Method, r.URL.Path)
+					}
+				}
+			} else {
 				if config.AppConfig.Debug.AuthLogs {
-					log.Printf("AUTH DEBUG: %s %s - Authorizationヘッダーもtokenクエリパラメータもありません", r.Method, r.URL.Path)
+					log.Printf("AUTH DEBUG: %s %s - クエリパラメータからトークンを取得", r.Method, r.URL.Path)
+				}
+			}
+
+			if tokenString == "" {
+				if config.AppConfig.Debug.AuthLogs {
+					log.Printf("AUTH DEBUG: %s %s - 認証トークンが見つかりません", r.Method, r.URL.Path)
 				}
 				http.Error(w, "認証が必要です", http.StatusUnauthorized)
 				return
-			}
-			if config.AppConfig.Debug.AuthLogs {
-				log.Printf("AUTH DEBUG: %s %s - クエリパラメータからトークンを取得", r.Method, r.URL.Path)
 			}
 		}
 		if config.AppConfig.Debug.AuthLogs {
@@ -223,20 +234,35 @@ func (j *JWTAuth) OptionalMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Authorizationヘッダーまたはクエリパラメータからトークンを取得
+		// 複数の場所からトークンを取得を試行
 		var tokenString string
+
+		// 1. Authorizationヘッダーから取得
 		authHeader := r.Header.Get("Authorization")
 		if authHeader != "" {
 			tokenParts := strings.Split(authHeader, " ")
 			if len(tokenParts) == 2 && tokenParts[0] == "Bearer" {
 				tokenString = tokenParts[1]
 			}
-		} else {
-			// Authorizationヘッダーがない場合、クエリパラメータを確認
+		}
+
+		// 2. クエリパラメータから取得（SSE用）
+		if tokenString == "" {
 			tokenString = r.URL.Query().Get("token")
 		}
 
+		// 3. クッキーから取得（SSR用）
 		if tokenString == "" {
+			if cookie, err := r.Cookie("sb-access-token"); err == nil {
+				tokenString = cookie.Value
+			}
+		}
+
+		if tokenString == "" {
+			// デバッグログ: 認証情報が見つからない
+			if config.AppConfig.Debug.AuthLogs {
+				log.Printf("AUTH DEBUG: %s %s - 認証トークンが見つかりません（未認証として継続）", r.Method, r.URL.Path)
+			}
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -261,10 +287,21 @@ func (j *JWTAuth) OptionalMiddleware(next http.Handler) http.Handler {
 				if j.repo != nil {
 					if dbUser := j.loadDBUser(ctx, user); dbUser != nil {
 						ctx = context.WithValue(ctx, DBUserContextKey, dbUser)
+
+						// デバッグログ: 認証成功
+						if config.AppConfig.Debug.AuthLogs {
+							log.Printf("AUTH DEBUG: %s %s - 認証成功 ユーザーID: %s, Email: %s",
+								r.Method, r.URL.Path, dbUser.ID, dbUser.Email)
+						}
 					}
 				}
 
 				r = r.WithContext(ctx)
+			}
+		} else {
+			// デバッグログ: トークン解析エラー
+			if config.AppConfig.Debug.AuthLogs {
+				log.Printf("AUTH DEBUG: %s %s - トークン解析エラー: %v", r.Method, r.URL.Path, err)
 			}
 		}
 

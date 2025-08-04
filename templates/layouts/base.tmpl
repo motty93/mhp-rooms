@@ -232,9 +232,46 @@
             <!-- 認証済み時のメニュー -->
             <div
               x-show="$store.auth.initialized && !$store.auth.loading && $store.auth.isAuthenticated"
+              x-data="{ currentRoom: null }"
+              x-init="
+                // 参加中の部屋情報を取得
+                $watch('$store.auth.isAuthenticated', (isAuth) => {
+                  if (isAuth) {
+                    fetch('/api/user/current-room', { credentials: 'same-origin' })
+                      .then(response => response.json())
+                      .then(data => {
+                        currentRoom = data.current_room;
+                      })
+                      .catch(error => {
+                        console.log('参加中の部屋の取得に失敗:', error);
+                        currentRoom = null;
+                      });
+                  } else {
+                    currentRoom = null;
+                  }
+                });
+              "
               style="display: none;"
             >
               <div class="space-y-2">
+                <!-- 参加中の部屋 -->
+                <template x-if="currentRoom">
+                  <a
+                    :href="'/rooms/' + currentRoom.id"
+                    @click="$store.mobileMenu.close()"
+                    class="block px-4 py-3 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border-l-4 border-blue-500"
+                  >
+                    <div class="flex items-center space-x-2">
+                      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                      </svg>
+                      <div>
+                        <div class="font-medium" x-text="'参加中の部屋'"></div>
+                        <div class="text-sm opacity-75" x-text="currentRoom.name"></div>
+                      </div>
+                    </div>
+                  </a>
+                </template>
                 <a
                   href="/rooms"
                   @click="$store.mobileMenu.close()"

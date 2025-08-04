@@ -114,6 +114,6 @@ func SerializeEvent(event Event) (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("id: %s\nevent: %s\ndata: %s\n\n", 
+	return fmt.Sprintf("id: %s\nevent: %s\ndata: %s\n\n",
 		event.ID, event.Type, string(data)), nil
 }

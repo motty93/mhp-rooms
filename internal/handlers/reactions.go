@@ -5,8 +5,8 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 	"mhp-rooms/internal/models"
 	"mhp-rooms/internal/repository"
 )
@@ -33,8 +33,7 @@ func (h *ReactionHandler) AddReaction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// URLパラメータからメッセージIDを取得
-	vars := mux.Vars(r)
-	messageIDStr := vars["messageId"]
+	messageIDStr := chi.URLParam(r, "messageId")
 	messageID, err := uuid.Parse(messageIDStr)
 	if err != nil {
 		http.Error(w, "Invalid message ID", http.StatusBadRequest)
@@ -82,7 +81,7 @@ func (h *ReactionHandler) AddReaction(w http.ResponseWriter, r *http.Request) {
 	// 成功レスポンス
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"success": true,
+		"success":  true,
 		"reaction": reaction,
 	})
 }
@@ -97,9 +96,8 @@ func (h *ReactionHandler) RemoveReaction(w http.ResponseWriter, r *http.Request)
 	}
 
 	// URLパラメータから情報を取得
-	vars := mux.Vars(r)
-	messageIDStr := vars["messageId"]
-	reactionType := vars["reactionType"]
+	messageIDStr := chi.URLParam(r, "messageId")
+	reactionType := chi.URLParam(r, "reactionType")
 
 	messageID, err := uuid.Parse(messageIDStr)
 	if err != nil {
@@ -128,8 +126,7 @@ func (h *ReactionHandler) RemoveReaction(w http.ResponseWriter, r *http.Request)
 // GetMessageReactions はメッセージのリアクション一覧を取得する
 func (h *ReactionHandler) GetMessageReactions(w http.ResponseWriter, r *http.Request) {
 	// URLパラメータからメッセージIDを取得
-	vars := mux.Vars(r)
-	messageIDStr := vars["messageId"]
+	messageIDStr := chi.URLParam(r, "messageId")
 	messageID, err := uuid.Parse(messageIDStr)
 	if err != nil {
 		http.Error(w, "Invalid message ID", http.StatusBadRequest)

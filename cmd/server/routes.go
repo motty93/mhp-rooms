@@ -2,14 +2,45 @@ package main
 
 import (
 	"net/http"
+	"os"
 
 	"mhp-rooms/internal/middleware"
 
-	"github.com/gorilla/mux"
+	"github.com/go-chi/chi/v5"
+	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 )
 
-func (app *Application) SetupRoutes() *mux.Router {
-	r := mux.NewRouter()
+// isProductionEnv 本番環境かどうかを判定
+func isProductionEnv() bool {
+	env := os.Getenv("ENV")
+	return env == "production"
+}
+
+// hasAuthMiddleware 認証ミドルウェアが有効かどうかを判定
+func (app *Application) hasAuthMiddleware() bool {
+	return app.authMiddleware != nil && isProductionEnv()
+}
+
+// withAuth 認証ミドルウェアを適用するヘルパー関数
+func (app *Application) withAuth(handler http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		app.authMiddleware.Middleware(handler).ServeHTTP(w, r)
+	}
+}
+
+// withOptionalAuth オプショナル認証ミドルウェアを適用するヘルパー関数
+func (app *Application) withOptionalAuth(handler http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		app.authMiddleware.OptionalMiddleware(handler).ServeHTTP(w, r)
+	}
+}
+
+func (app *Application) SetupRoutes() chi.Router {
+	r := chi.NewRouter()
+
+	// Chi標準ミドルウェア
+	r.Use(chiMiddleware.Logger)
+	r.Use(chiMiddleware.Recoverer)
 
 	// グローバルミドルウェアの適用
 	r.Use(middleware.SecurityHeaders(app.securityConfig))
@@ -26,147 +57,157 @@ func (app *Application) SetupRoutes() *mux.Router {
 	return r
 }
 
-func (app *Application) setupPageRoutes(r *mux.Router) {
+func (app *Application) setupPageRoutes(r chi.Router) {
 	ph := app.pageHandler
 
-	// 各ページルートに個別にミドルウェアを適用
-	if app.authMiddleware != nil {
-		r.HandleFunc("/", app.authMiddleware.OptionalMiddleware(http.HandlerFunc(ph.Home)).ServeHTTP).Methods("GET")
-		r.HandleFunc("/terms", app.authMiddleware.OptionalMiddleware(http.HandlerFunc(ph.Terms)).ServeHTTP).Methods("GET")
-		r.HandleFunc("/privacy", app.authMiddleware.OptionalMiddleware(http.HandlerFunc(ph.Privacy)).ServeHTTP).Methods("GET")
-		r.HandleFunc("/contact", app.authMiddleware.OptionalMiddleware(http.HandlerFunc(ph.Contact)).ServeHTTP).Methods("GET", "POST")
-		r.HandleFunc("/faq", app.authMiddleware.OptionalMiddleware(http.HandlerFunc(ph.FAQ)).ServeHTTP).Methods("GET")
-		r.HandleFunc("/guide", app.authMiddleware.OptionalMiddleware(http.HandlerFunc(ph.Guide)).ServeHTTP).Methods("GET")
-		r.HandleFunc("/hello", app.authMiddleware.OptionalMiddleware(http.HandlerFunc(ph.Hello)).ServeHTTP).Methods("GET")
-		r.HandleFunc("/sitemap.xml", app.authMiddleware.OptionalMiddleware(http.HandlerFunc(ph.Sitemap)).ServeHTTP).Methods("GET")
+	// 本番環境では認証情報をオプションで取得、開発環境では認証なしでアクセス可能
+	if app.hasAuthMiddleware() {
+		r.Get("/", app.withOptionalAuth(ph.Home))
+		r.Get("/terms", app.withOptionalAuth(ph.Terms))
+		r.Get("/privacy", app.withOptionalAuth(ph.Privacy))
+		r.HandleFunc("/contact", app.withOptionalAuth(ph.Contact))
+		r.Get("/faq", app.withOptionalAuth(ph.FAQ))
+		r.Get("/guide", app.withOptionalAuth(ph.Guide))
+		r.Get("/hello", app.withOptionalAuth(ph.Hello))
+		r.Get("/sitemap.xml", app.withOptionalAuth(ph.Sitemap))
 	} else {
-		r.HandleFunc("/", ph.Home).Methods("GET")
-		r.HandleFunc("/terms", ph.Terms).Methods("GET")
-		r.HandleFunc("/privacy", ph.Privacy).Methods("GET")
-		r.HandleFunc("/contact", ph.Contact).Methods("GET", "POST")
-		r.HandleFunc("/faq", ph.FAQ).Methods("GET")
-		r.HandleFunc("/guide", ph.Guide).Methods("GET")
-		r.HandleFunc("/hello", ph.Hello).Methods("GET")
-		r.HandleFunc("/sitemap.xml", ph.Sitemap).Methods("GET")
+		r.Get("/", ph.Home)
+		r.Get("/terms", ph.Terms)
+		r.Get("/privacy", ph.Privacy)
+		r.HandleFunc("/contact", ph.Contact)
+		r.Get("/faq", ph.FAQ)
+		r.Get("/guide", ph.Guide)
+		r.Get("/hello", ph.Hello)
+		r.Get("/sitemap.xml", ph.Sitemap)
 	}
 }
 
-func (app *Application) setupRoomRoutes(r *mux.Router) {
-	rr := r.PathPrefix("/rooms").Subrouter()
-	rh := app.roomHandler
-	rdh := app.roomDetailHandler
-	rmh := app.roomMessageHandler
+func (app *Application) setupRoomRoutes(r chi.Router) {
+	r.Route("/rooms", func(rr chi.Router) {
+		rh := app.roomHandler
+		rdh := app.roomDetailHandler
+		rmh := app.roomMessageHandler
 
-	// 認証不要なルート
-	rr.HandleFunc("", rh.Rooms).Methods("GET")
-	rr.HandleFunc("/{id}", rdh.RoomDetail).Methods("GET")
+		// 部屋一覧・詳細（本番環境では認証情報をオプションで取得、開発環境では認証なし）
+		if app.hasAuthMiddleware() {
+			rr.Get("/", app.withOptionalAuth(rh.Rooms))
+			rr.Get("/{id}", app.withOptionalAuth(rdh.RoomDetail))
+		} else {
+			rr.Get("/", rh.Rooms)
+			rr.Get("/{id}", rdh.RoomDetail)
+		}
 
-	// 認証が必要なルート
-	if app.authMiddleware != nil {
-		protected := rr.PathPrefix("").Subrouter()
-		protected.Use(app.authMiddleware.Middleware)
+		// 部屋操作・メッセージ機能（本番環境では認証必須、開発環境では認証なし）
+		if app.hasAuthMiddleware() {
+			rr.Group(func(protected chi.Router) {
+				protected.Use(app.authMiddleware.Middleware)
 
-		protected.HandleFunc("", rh.CreateRoom).Methods("POST")
-		protected.HandleFunc("/{id}/join", rh.JoinRoom).Methods("POST")
-		protected.HandleFunc("/{id}/leave", rh.LeaveRoom).Methods("POST")
-		protected.HandleFunc("/{id}/toggle-closed", rh.ToggleRoomClosed).Methods("PUT")
+				protected.Post("/", rh.CreateRoom)
+				protected.Post("/{id}/join", rh.JoinRoom)
+				protected.Post("/{id}/leave", rh.LeaveRoom)
+				protected.Put("/{id}/toggle-closed", rh.ToggleRoomClosed)
 
-		// メッセージ関連
-		protected.HandleFunc("/{id}/messages", rmh.SendMessage).Methods("POST")
-		protected.HandleFunc("/{id}/messages", rmh.GetMessages).Methods("GET")
-		protected.HandleFunc("/{id}/sse-token", app.sseTokenHandler.GenerateSSEToken).Methods("POST")
+				// メッセージ関連
+				protected.Post("/{id}/messages", rmh.SendMessage)
+				protected.Get("/{id}/messages", rmh.GetMessages)
+				protected.Post("/{id}/sse-token", app.sseTokenHandler.GenerateSSEToken)
+			})
 
-		// SSEストリーム（一時トークン認証）
-		rr.HandleFunc("/{id}/messages/stream", rmh.StreamMessages).Methods("GET")
-	} else {
-		// 認証ミドルウェアがない場合（開発環境など）
-		rr.HandleFunc("", rh.CreateRoom).Methods("POST")
-		rr.HandleFunc("/{id}/join", rh.JoinRoom).Methods("POST")
-		rr.HandleFunc("/{id}/leave", rh.LeaveRoom).Methods("POST")
-		rr.HandleFunc("/{id}/toggle-closed", rh.ToggleRoomClosed).Methods("PUT")
+			// SSEストリーム（一時トークン認証）
+			rr.Get("/{id}/messages/stream", rmh.StreamMessages)
+		} else {
+			rr.Post("/", rh.CreateRoom)
+			rr.Post("/{id}/join", rh.JoinRoom)
+			rr.Post("/{id}/leave", rh.LeaveRoom)
+			rr.Put("/{id}/toggle-closed", rh.ToggleRoomClosed)
 
-		// メッセージ関連
-		rr.HandleFunc("/{id}/messages", rmh.SendMessage).Methods("POST")
-		rr.HandleFunc("/{id}/messages", rmh.GetMessages).Methods("GET")
-		rr.HandleFunc("/{id}/sse-token", app.sseTokenHandler.GenerateSSEToken).Methods("POST")
-		rr.HandleFunc("/{id}/messages/stream", rmh.StreamMessages).Methods("GET")
-	}
+			// メッセージ関連
+			rr.Post("/{id}/messages", rmh.SendMessage)
+			rr.Get("/{id}/messages", rmh.GetMessages)
+			rr.Post("/{id}/sse-token", app.sseTokenHandler.GenerateSSEToken)
+			rr.Get("/{id}/messages/stream", rmh.StreamMessages)
+		}
+	})
 }
 
-func (app *Application) setupAuthRoutes(r *mux.Router) {
-	ar := r.PathPrefix("/auth").Subrouter()
-	ah := app.authHandler
+func (app *Application) setupAuthRoutes(r chi.Router) {
+	r.Route("/auth", func(ar chi.Router) {
+		ah := app.authHandler
 
-	// 認証ページルート（レート制限は緩め）
-	ar.HandleFunc("/login", ah.LoginPage).Methods("GET")
-	ar.HandleFunc("/register", ah.RegisterPage).Methods("GET")
-	ar.HandleFunc("/password-reset", ah.PasswordResetPage).Methods("GET")
-	ar.HandleFunc("/password-reset/confirm", ah.PasswordResetConfirmPage).Methods("GET")
-	ar.HandleFunc("/callback", ah.AuthCallback).Methods("GET")
-	ar.HandleFunc("/complete-profile", ah.CompleteProfilePage).Methods("GET")
+		// 認証ページルート（レート制限は緩め）
+		ar.Get("/login", ah.LoginPage)
+		ar.Get("/register", ah.RegisterPage)
+		ar.Get("/password-reset", ah.PasswordResetPage)
+		ar.Get("/password-reset/confirm", ah.PasswordResetConfirmPage)
+		ar.Get("/callback", ah.AuthCallback)
+		ar.Get("/complete-profile", ah.CompleteProfilePage)
 
-	// 認証アクションルート（厳しいレート制限）
-	authActionRoutes := ar.PathPrefix("").Subrouter()
-	authActionRoutes.Use(middleware.AuthRateLimitMiddleware(app.authLimiter))
+		// 認証アクションルート（厳しいレート制限）
+		ar.Group(func(arr chi.Router) {
+			arr.Use(middleware.AuthRateLimitMiddleware(app.authLimiter))
 
-	authActionRoutes.HandleFunc("/login", ah.Login).Methods("POST")
-	authActionRoutes.HandleFunc("/register", ah.Register).Methods("POST")
-	authActionRoutes.HandleFunc("/logout", ah.Logout).Methods("POST")
-	authActionRoutes.HandleFunc("/password-reset", ah.PasswordResetRequest).Methods("POST")
-	authActionRoutes.HandleFunc("/password-reset/confirm", ah.PasswordResetConfirm).Methods("POST")
-	authActionRoutes.HandleFunc("/google", ah.GoogleAuth).Methods("GET")
-	authActionRoutes.HandleFunc("/google/callback", ah.GoogleCallback).Methods("GET")
-	authActionRoutes.HandleFunc("/complete-profile", ah.CompleteProfile).Methods("POST")
+			arr.Post("/login", ah.Login)
+			arr.Post("/register", ah.Register)
+			arr.Post("/logout", ah.Logout)
+			arr.Post("/password-reset", ah.PasswordResetRequest)
+			arr.Post("/password-reset/confirm", ah.PasswordResetConfirm)
+			arr.Get("/google", ah.GoogleAuth)
+			arr.Get("/google/callback", ah.GoogleCallback)
+			arr.Post("/complete-profile", ah.CompleteProfile)
+		})
+	})
 }
 
-func (app *Application) setupAPIRoutes(r *mux.Router) {
-	apiRoutes := r.PathPrefix("/api").Subrouter()
+func (app *Application) setupAPIRoutes(r chi.Router) {
+	r.Route("/api", func(ar chi.Router) {
+		// 認証不要なAPIエンドポイント
+		ar.Get("/config/supabase", app.configHandler.GetSupabaseConfig)
+		ar.Get("/health", app.healthCheck)
 
-	// 認証不要なAPIエンドポイント
-	apiRoutes.HandleFunc("/config/supabase", app.configHandler.GetSupabaseConfig).Methods("GET")
-	apiRoutes.HandleFunc("/health", app.healthCheck).Methods("GET")
+		if app.hasAuthMiddleware() {
+			// 認証関連API（厳しいレート制限 + 認証必須）
+			ar.Route("/auth", func(apr chi.Router) {
+				apr.Use(middleware.AuthRateLimitMiddleware(app.authLimiter))
+				apr.Use(app.authMiddleware.Middleware)
 
-	if app.authMiddleware != nil {
-		// 認証関連API（厳しいレート制限 + 認証必須）
-		authAPIRoutes := apiRoutes.PathPrefix("/auth").Subrouter()
-		authAPIRoutes.Use(middleware.AuthRateLimitMiddleware(app.authLimiter))
-		authAPIRoutes.Use(app.authMiddleware.Middleware)
+				apr.Post("/sync", app.authHandler.SyncUser)
+				apr.Put("/psn-id", app.authHandler.UpdatePSNId)
+			})
 
-		authAPIRoutes.HandleFunc("/sync", app.authHandler.SyncUser).Methods("POST")
-		authAPIRoutes.HandleFunc("/psn-id", app.authHandler.UpdatePSNId).Methods("PUT")
+			// 認証必須のAPIエンドポイント
+			ar.Get("/user/current", app.withAuth(app.authHandler.CurrentUser))
+			ar.Get("/user/current-room", app.withAuth(app.roomHandler.GetCurrentRoom))
+			ar.Post("/leave-current-room", app.withAuth(app.roomHandler.LeaveCurrentRoom))
 
-		// 認証必須のAPIエンドポイント
-		apiRoutes.HandleFunc("/user/current", app.authMiddleware.Middleware(http.HandlerFunc(app.authHandler.CurrentUser)).ServeHTTP).Methods("GET")
-		apiRoutes.HandleFunc("/leave-current-room", app.authMiddleware.Middleware(http.HandlerFunc(app.roomHandler.LeaveCurrentRoom)).ServeHTTP).Methods("POST")
+			// リアクション関連API（認証必須）
+			ar.Post("/messages/{messageId}/reactions", app.withAuth(app.reactionHandler.AddReaction))
+			ar.Delete("/messages/{messageId}/reactions/{reactionType}", app.withAuth(app.reactionHandler.RemoveReaction))
 
-		// リアクション関連API（認証必須）
-		apiRoutes.HandleFunc("/messages/{messageId}/reactions", app.authMiddleware.Middleware(http.HandlerFunc(app.reactionHandler.AddReaction)).ServeHTTP).Methods("POST")
-		apiRoutes.HandleFunc("/messages/{messageId}/reactions/{reactionType}", app.authMiddleware.Middleware(http.HandlerFunc(app.reactionHandler.RemoveReaction)).ServeHTTP).Methods("DELETE")
+			// 認証オプションのAPIエンドポイント
+			ar.Get("/rooms", app.withOptionalAuth(app.roomHandler.GetAllRoomsAPI))
+			ar.Get("/messages/{messageId}/reactions", app.withOptionalAuth(app.reactionHandler.GetMessageReactions))
+			ar.Get("/reactions/types", app.withOptionalAuth(app.reactionHandler.GetAvailableReactions))
+		} else {
+			// 開発環境では認証なしですべてのAPIにアクセス可能
+			ar.Get("/user/current", app.authHandler.CurrentUser)
+			ar.Get("/user/current-room", app.roomHandler.GetCurrentRoom)
+			ar.Post("/leave-current-room", app.roomHandler.LeaveCurrentRoom)
+			ar.Post("/auth/sync", app.authHandler.SyncUser)
+			ar.Put("/auth/psn-id", app.authHandler.UpdatePSNId)
+			ar.Get("/rooms", app.roomHandler.GetAllRoomsAPI)
 
-		// 認証オプションのAPIエンドポイント
-		apiRoutes.HandleFunc("/rooms", app.authMiddleware.OptionalMiddleware(http.HandlerFunc(app.roomHandler.GetAllRoomsAPI)).ServeHTTP).Methods("GET")
-		apiRoutes.HandleFunc("/messages/{messageId}/reactions", app.authMiddleware.OptionalMiddleware(http.HandlerFunc(app.reactionHandler.GetMessageReactions)).ServeHTTP).Methods("GET")
-		apiRoutes.HandleFunc("/reactions/types", app.authMiddleware.OptionalMiddleware(http.HandlerFunc(app.reactionHandler.GetAvailableReactions)).ServeHTTP).Methods("GET")
-	} else {
-		// 認証ミドルウェアがない場合（開発環境）
-		apiRoutes.HandleFunc("/user/current", app.authHandler.CurrentUser).Methods("GET")
-		apiRoutes.HandleFunc("/leave-current-room", app.roomHandler.LeaveCurrentRoom).Methods("POST")
-		apiRoutes.HandleFunc("/auth/sync", app.authHandler.SyncUser).Methods("POST")
-		apiRoutes.HandleFunc("/auth/psn-id", app.authHandler.UpdatePSNId).Methods("PUT")
-		apiRoutes.HandleFunc("/rooms", app.roomHandler.GetAllRoomsAPI).Methods("GET")
-
-		// リアクション関連API（認証なし環境）
-		apiRoutes.HandleFunc("/messages/{messageId}/reactions", app.reactionHandler.AddReaction).Methods("POST")
-		apiRoutes.HandleFunc("/messages/{messageId}/reactions/{reactionType}", app.reactionHandler.RemoveReaction).Methods("DELETE")
-		apiRoutes.HandleFunc("/messages/{messageId}/reactions", app.reactionHandler.GetMessageReactions).Methods("GET")
-		apiRoutes.HandleFunc("/reactions/types", app.reactionHandler.GetAvailableReactions).Methods("GET")
-	}
+			// リアクション関連API
+			ar.Post("/messages/{messageId}/reactions", app.reactionHandler.AddReaction)
+			ar.Delete("/messages/{messageId}/reactions/{reactionType}", app.reactionHandler.RemoveReaction)
+			ar.Get("/messages/{messageId}/reactions", app.reactionHandler.GetMessageReactions)
+			ar.Get("/reactions/types", app.reactionHandler.GetAvailableReactions)
+		}
+	})
 }
 
-func (app *Application) setupStaticRoutes(r *mux.Router) {
-	r.PathPrefix("/static/").Handler(
-		http.StripPrefix("/static/", http.FileServer(http.Dir("static/"))),
-	)
+func (app *Application) setupStaticRoutes(r chi.Router) {
+	fileServer := http.FileServer(http.Dir("static"))
+	r.Handle("/static/*", http.StripPrefix("/static/", fileServer))
 }
 
 func (app *Application) healthCheck(w http.ResponseWriter, r *http.Request) {
