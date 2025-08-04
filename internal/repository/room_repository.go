@@ -126,77 +126,78 @@ func (r *roomRepository) GetActiveRoomsWithJoinStatus(userID *uuid.UUID, gameVer
 		return roomsWithStatus, nil
 	}
 
-	// まず部屋一覧を取得
-	var rooms []models.Room
-	query := r.db.GetConn().
-		Select("rooms.*, COUNT(DISTINCT rm.id) as current_players").
-		Joins("LEFT JOIN room_members rm ON rooms.id = rm.room_id AND rm.status = 'active'").
-		Preload("GameVersion").
-		Preload("Host").
-		Where("rooms.is_active = ?", true).
-		Group("rooms.id")
+	// 1つのクエリで部屋一覧とユーザーの参加状態を同時に取得（最適化）
+	var roomsWithStatus []models.RoomWithJoinStatus
+	query := `
+		SELECT 
+			rooms.*,
+			gv.name as game_version_name,
+			gv.code as game_version_code,
+			u.display_name as host_display_name,
+			u.psn_online_id as host_psn_online_id,
+			COUNT(DISTINCT rm_all.id) as current_players,
+			CASE WHEN rm_user.id IS NOT NULL THEN true ELSE false END as is_joined
+		FROM rooms
+		LEFT JOIN game_versions gv ON rooms.game_version_id = gv.id
+		LEFT JOIN users u ON rooms.host_user_id = u.id
+		LEFT JOIN room_members rm_all ON rooms.id = rm_all.room_id AND rm_all.status = 'active'
+		LEFT JOIN room_members rm_user ON rooms.id = rm_user.room_id AND rm_user.user_id = ? AND rm_user.status = 'active'
+		WHERE rooms.is_active = true
+	`
+
+	params := []interface{}{*userID}
 
 	if gameVersionID != nil {
-		query = query.Where("rooms.game_version_id = ?", *gameVersionID)
+		query += " AND rooms.game_version_id = ?"
+		params = append(params, *gameVersionID)
 	}
 
-	err := query.
-		Order("rooms.created_at DESC").
-		Limit(limit).
-		Offset(offset).
-		Find(&rooms).Error
+	query += `
+		GROUP BY rooms.id, gv.id, u.id, rm_user.id
+		ORDER BY 
+			CASE WHEN rm_user.id IS NOT NULL THEN 0 ELSE 1 END,
+			rooms.created_at DESC
+		LIMIT ? OFFSET ?
+	`
+	params = append(params, limit, offset)
 
-	if err != nil {
+	type roomQueryResult struct {
+		models.Room
+		GameVersionName string  `json:"game_version_name"`
+		GameVersionCode string  `json:"game_version_code"`
+		HostDisplayName string  `json:"host_display_name"`
+		HostPSNOnlineID *string `json:"host_psn_online_id"`
+		CurrentPlayers  int     `json:"current_players"`
+		IsJoined        bool    `json:"is_joined"`
+	}
+
+	var results []roomQueryResult
+	if err := r.db.GetConn().Raw(query, params...).Scan(&results).Error; err != nil {
 		return nil, err
 	}
 
-	// 部屋IDのリストを作成
-	roomIDs := make([]uuid.UUID, len(rooms))
-	for i, room := range rooms {
-		roomIDs[i] = room.ID
-	}
-
-	// ユーザーが参加している部屋を取得
-	var joinedRoomIDs []uuid.UUID
-	if len(roomIDs) > 0 {
-		err = r.db.GetConn().Table("room_members").
-			Select("room_id").
-			Where("user_id = ? AND status = ? AND room_id IN ?", *userID, "active", roomIDs).
-			Pluck("room_id", &joinedRoomIDs).Error
-		if err != nil {
-			return nil, err
+	// 結果をRoomWithJoinStatusに変換
+	for _, result := range results {
+		// GameVersionとHostの情報を設定
+		result.Room.GameVersion = models.GameVersion{
+			ID:   result.Room.GameVersionID,
+			Name: result.GameVersionName,
+			Code: result.GameVersionCode,
 		}
-	}
+		result.Room.Host = models.User{
+			ID:          result.Room.HostUserID,
+			DisplayName: result.HostDisplayName,
+			PSNOnlineID: result.HostPSNOnlineID,
+		}
+		result.Room.CurrentPlayers = result.CurrentPlayers
 
-	// 参加状態のマップを作成
-	joinedMap := make(map[uuid.UUID]bool)
-	for _, id := range joinedRoomIDs {
-		joinedMap[id] = true
-	}
-
-	// RoomWithJoinStatusに変換
-	var roomsWithStatus []models.RoomWithJoinStatus
-	for _, room := range rooms {
 		roomsWithStatus = append(roomsWithStatus, models.RoomWithJoinStatus{
-			Room:     room,
-			IsJoined: joinedMap[room.ID],
+			Room:     result.Room,
+			IsJoined: result.IsJoined,
 		})
 	}
 
-	// 参加中の部屋を上に移動
-	// 参加中の部屋と未参加の部屋を分ける
-	var joinedRooms, notJoinedRooms []models.RoomWithJoinStatus
-	for _, room := range roomsWithStatus {
-		if room.IsJoined {
-			joinedRooms = append(joinedRooms, room)
-		} else {
-			notJoinedRooms = append(notJoinedRooms, room)
-		}
-	}
-
-	// 結合して返す（参加中の部屋が先）
-	result := append(joinedRooms, notJoinedRooms...)
-	return result, nil
+	return roomsWithStatus, nil
 }
 
 func (r *roomRepository) UpdateRoom(room *models.Room) error {

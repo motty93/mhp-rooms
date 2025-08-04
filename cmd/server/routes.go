@@ -18,7 +18,7 @@ func isProductionEnv() bool {
 
 // hasAuthMiddleware 認証ミドルウェアが有効かどうかを判定
 func (app *Application) hasAuthMiddleware() bool {
-	return app.authMiddleware != nil && isProductionEnv()
+	return app.authMiddleware != nil
 }
 
 // withAuth 認証ミドルウェアを適用するヘルパー関数
@@ -39,8 +39,8 @@ func (app *Application) SetupRoutes() chi.Router {
 	r := chi.NewRouter()
 
 	// Chi標準ミドルウェア
-	r.Use(chiMiddleware.Logger)
 	r.Use(chiMiddleware.Recoverer)
+	r.Use(chiMiddleware.Logger)
 
 	// グローバルミドルウェアの適用
 	r.Use(middleware.SecurityHeaders(app.securityConfig))
