@@ -232,32 +232,13 @@
             <!-- 認証済み時のメニュー -->
             <div
               x-show="$store.auth.initialized && !$store.auth.loading && $store.auth.isAuthenticated"
-              x-data="{ currentRoom: null }"
-              x-init="
-                // 参加中の部屋情報を取得
-                $watch('$store.auth.isAuthenticated', (isAuth) => {
-                  if (isAuth) {
-                    fetch('/api/user/current-room', { credentials: 'same-origin' })
-                      .then(response => response.json())
-                      .then(data => {
-                        currentRoom = data.current_room;
-                      })
-                      .catch(error => {
-                        console.log('参加中の部屋の取得に失敗:', error);
-                        currentRoom = null;
-                      });
-                  } else {
-                    currentRoom = null;
-                  }
-                });
-              "
               style="display: none;"
             >
               <div class="space-y-2">
                 <!-- 参加中の部屋 -->
-                <template x-if="currentRoom">
+                <template x-if="$store.auth.currentRoom">
                   <a
-                    :href="'/rooms/' + currentRoom.id"
+                    :href="'/rooms/' + $store.auth.currentRoom.id"
                     @click="$store.mobileMenu.close()"
                     class="block px-4 py-3 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border-l-4 border-blue-500"
                   >
@@ -267,7 +248,7 @@
                       </svg>
                       <div>
                         <div class="font-medium" x-text="'参加中の部屋'"></div>
-                        <div class="text-sm opacity-75" x-text="currentRoom.name"></div>
+                        <div class="text-sm opacity-75" x-text="$store.auth.currentRoom.name"></div>
                       </div>
                     </div>
                   </a>

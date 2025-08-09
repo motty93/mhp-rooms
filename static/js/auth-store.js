@@ -8,6 +8,9 @@ document.addEventListener('alpine:init', () => {
     initialized: false,
     _initStarted: false,
     _syncInProgress: false,
+    currentRoom: null,
+    _currentRoomLoading: false,
+    _currentRoomFetched: false,
 
     init() {
       // 初期化の重複実行を防ぐ
@@ -53,6 +56,12 @@ document.addEventListener('alpine:init', () => {
 
       if (this.user && session?.access_token && !this._syncInProgress) {
         this.syncUser(session.access_token)
+        // 認証成功時にcurrentRoomを取得
+        this.fetchCurrentRoom()
+      } else {
+        // 認証がない場合はcurrentRoomをクリア
+        this.currentRoom = null
+        this._currentRoomFetched = false
       }
     },
 
@@ -234,6 +243,56 @@ document.addEventListener('alpine:init', () => {
       } finally {
         this.loading = false
       }
+    },
+
+    async fetchCurrentRoom() {
+      // 重複実行を防ぐ
+      if (this._currentRoomLoading || !this.isAuthenticated) {
+        return
+      }
+
+      this._currentRoomLoading = true
+
+      try {
+        const response = await fetch('/api/user/current-room', {
+          credentials: 'same-origin'
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          this.currentRoom = data.current_room
+          this._currentRoomFetched = true
+        } else {
+          console.log('参加中の部屋の取得に失敗しました')
+          this.currentRoom = null
+        }
+      } catch (error) {
+        console.log('参加中の部屋の取得に失敗:', error)
+        this.currentRoom = null
+      } finally {
+        this._currentRoomLoading = false
+      }
+    },
+
+    async leaveCurrentRoom() {
+      if (!this.currentRoom || !this.isAuthenticated) {
+        return
+      }
+
+      try {
+        const response = await fetch('/api/leave-current-room', {
+          method: 'POST',
+          credentials: 'same-origin'
+        })
+
+        if (response.ok) {
+          this.currentRoom = null
+          return true
+        }
+      } catch (error) {
+        console.error('部屋からの退出に失敗しました:', error)
+      }
+      return false
     },
   })
 })

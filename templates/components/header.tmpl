@@ -57,25 +57,7 @@
             <div
               class="relative hidden md:block"
               x-show="$store.auth.initialized && !$store.auth.loading && $store.auth.isAuthenticated"
-              x-data="{ open: false, currentRoom: null }"
-              x-init="
-                // 参加中の部屋情報を取得
-                $watch('$store.auth.isAuthenticated', (isAuth) => {
-                  if (isAuth) {
-                    fetch('/api/user/current-room', { credentials: 'same-origin' })
-                      .then(response => response.json())
-                      .then(data => {
-                        currentRoom = data.current_room;
-                      })
-                      .catch(error => {
-                        console.log('参加中の部屋の取得に失敗:', error);
-                        currentRoom = null;
-                      });
-                  } else {
-                    currentRoom = null;
-                  }
-                });
-              "
+              x-data="{ open: false }"
               x-cloak
             >
               <button
@@ -117,9 +99,9 @@
                 class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200"
               >
                 <!-- 参加中の部屋 -->
-                <template x-if="currentRoom">
+                <template x-if="$store.auth.currentRoom">
                   <a
-                    :href="'/rooms/' + currentRoom.id"
+                    :href="'/rooms/' + $store.auth.currentRoom.id"
                     class="block px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 transition-colors border-l-2 border-blue-500"
                     @click="open = false"
                   >
@@ -127,7 +109,7 @@
                       <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                       </svg>
-                      <span x-text="currentRoom.name"></span>
+                      <span x-text="$store.auth.currentRoom.name"></span>
                     </div>
                   </a>
                 </template>
