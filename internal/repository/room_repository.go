@@ -200,9 +200,6 @@ func (r *roomRepository) GetActiveRoomsWithJoinStatus(userID *uuid.UUID, gameVer
 	return roomsWithStatus, nil
 }
 
-func (r *roomRepository) UpdateRoom(room *models.Room) error {
-	return r.db.GetConn().Save(room).Error
-}
 
 func (r *roomRepository) ToggleRoomClosed(id uuid.UUID, isClosed bool) error {
 	return r.db.GetConn().
@@ -437,4 +434,72 @@ func (r *roomRepository) GetRoomLogs(roomID uuid.UUID) ([]models.RoomLog, error)
 		Find(&logs).Error
 
 	return logs, err
+}
+
+// UpdateRoom 部屋情報を更新
+func (r *roomRepository) UpdateRoom(room *models.Room) error {
+	return r.db.GetConn().Transaction(func(tx *gorm.DB) error {
+		// 部屋情報を更新
+		if err := tx.Save(room).Error; err != nil {
+			return err
+		}
+
+		// 更新ログを記録
+		log := models.RoomLog{
+			RoomID: room.ID,
+			UserID: &room.HostUserID,
+			Action: "update_settings",
+			Details: models.JSONB{
+				"room_name":         room.Name,
+				"max_players":       room.MaxPlayers,
+				"game_version_id":   room.GameVersionID,
+				"has_description":   room.Description != nil,
+				"has_target_monster": room.TargetMonster != nil,
+				"has_rank_requirement": room.RankRequirement != nil,
+				"has_password":      room.PasswordHash != nil,
+			},
+		}
+		return tx.Create(&log).Error
+	})
+}
+
+// DismissRoom 部屋を解散
+func (r *roomRepository) DismissRoom(roomID uuid.UUID) error {
+	return r.db.GetConn().Transaction(func(tx *gorm.DB) error {
+		// 部屋情報を取得
+		var room models.Room
+		if err := tx.First(&room, "id = ?", roomID).Error; err != nil {
+			return err
+		}
+
+		// 全メンバーを退出状態に変更
+		if err := tx.Model(&models.RoomMember{}).
+			Where("room_id = ? AND status = ?", roomID, "active").
+			Updates(map[string]interface{}{
+				"status":   "left",
+				"left_at":  time.Now(),
+			}).Error; err != nil {
+			return err
+		}
+
+		// 部屋を非アクティブに変更
+		if err := tx.Model(&room).Updates(map[string]interface{}{
+			"is_active":       false,
+			"current_players": 0,
+			"updated_at":      time.Now(),
+		}).Error; err != nil {
+			return err
+		}
+
+		// 解散ログを記録
+		log := models.RoomLog{
+			RoomID: roomID,
+			UserID: &room.HostUserID,
+			Action: "dismiss",
+			Details: models.JSONB{
+				"room_name": room.Name,
+			},
+		}
+		return tx.Create(&log).Error
+	})
 }

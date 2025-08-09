@@ -103,6 +103,8 @@ func (app *Application) setupRoomRoutes(r chi.Router) {
 				protected.Use(app.authMiddleware.Middleware)
 
 				protected.Post("/", rh.CreateRoom)
+				protected.Put("/{id}", rh.UpdateRoom)
+				protected.Delete("/{id}", rh.DismissRoom)
 				protected.Post("/{id}/join", rh.JoinRoom)
 				protected.Post("/{id}/leave", rh.LeaveRoom)
 				protected.Put("/{id}/toggle-closed", rh.ToggleRoomClosed)
@@ -117,6 +119,8 @@ func (app *Application) setupRoomRoutes(r chi.Router) {
 			rr.Get("/{id}/messages/stream", rmh.StreamMessages)
 		} else {
 			rr.Post("/", rh.CreateRoom)
+			rr.Put("/{id}", rh.UpdateRoom)
+			rr.Delete("/{id}", rh.DismissRoom)
 			rr.Post("/{id}/join", rh.JoinRoom)
 			rr.Post("/{id}/leave", rh.LeaveRoom)
 			rr.Put("/{id}/toggle-closed", rh.ToggleRoomClosed)
@@ -163,6 +167,7 @@ func (app *Application) setupAPIRoutes(r chi.Router) {
 		// 認証不要なAPIエンドポイント
 		ar.Get("/config/supabase", app.configHandler.GetSupabaseConfig)
 		ar.Get("/health", app.healthCheck)
+		ar.Get("/game-versions/active", app.gameVersionHandler.GetActiveGameVersionsAPI)
 
 		if app.hasAuthMiddleware() {
 			// 認証関連API（厳しいレート制限 + 認証必須）

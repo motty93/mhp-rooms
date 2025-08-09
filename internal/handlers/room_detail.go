@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"path/filepath"
 
+	"mhp-rooms/internal/middleware"
 	"mhp-rooms/internal/models"
 	"mhp-rooms/internal/repository"
 	"mhp-rooms/internal/utils"
@@ -30,6 +31,7 @@ type RoomDetailPageData struct {
 	Members     []*models.RoomMember `json:"members"`
 	Logs        []models.RoomLog     `json:"logs"`
 	MemberCount int                  `json:"member_count"`
+	IsHost      bool                 `json:"is_host"`
 }
 
 func (h *RoomDetailHandler) RoomDetail(w http.ResponseWriter, r *http.Request) {
@@ -107,6 +109,12 @@ func (h *RoomDetailHandler) RoomDetail(w http.ResponseWriter, r *http.Request) {
 		logs = []models.RoomLog{}
 	}
 
+	// 現在のユーザーがホストかどうかを判定
+	isHost := false
+	if dbUser, exists := middleware.GetDBUserFromContext(r.Context()); exists && dbUser != nil {
+		isHost = dbUser.ID == room.HostUserID
+	}
+
 	// テンプレート用のデータを準備
 	data := TemplateData{
 		Title:   room.Name + " - 部屋詳細",
@@ -117,6 +125,7 @@ func (h *RoomDetailHandler) RoomDetail(w http.ResponseWriter, r *http.Request) {
 			Members:     memberSlots,
 			Logs:        logs,
 			MemberCount: memberCount,
+			IsHost:      isHost,
 		},
 	}
 
@@ -137,6 +146,7 @@ func renderRoomDetailTemplate(w http.ResponseWriter, templateName string, data i
 	tmpl, err := template.New("").Funcs(funcMap).ParseFiles(
 		filepath.Join("templates", "layouts", "room_detail.tmpl"),
 		filepath.Join("templates", "pages", templateName),
+		filepath.Join("templates", "components", "room_settings_modal.tmpl"),
 	)
 	if err != nil {
 		http.Error(w, "Template parsing error: "+err.Error(), http.StatusInternalServerError)

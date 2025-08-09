@@ -70,6 +70,7 @@
       <script src="/static/js/supabase.js"></script>
       <script src="/static/js/auth-store.js"></script>
       <script src="/static/js/htmx-auth.js"></script>
+      <script src="/static/js/room-create-modal.js"></script>
 
       <script>
         document.addEventListener('DOMContentLoaded', async () => {
@@ -310,6 +311,9 @@
       </main>
 
       {{ template "footer" . }}
+
+      <!-- 部屋作成モーダル -->
+      {{ template "room-create-modal" . }}
     </body>
   </html>
 {{ end }}

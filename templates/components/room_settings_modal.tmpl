@@ -1,0 +1,233 @@
+<!-- 部屋設定編集モーダル -->
+<div
+  x-show="showSettingsModal"
+  x-cloak
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+  x-transition:enter="transition ease-out duration-300"
+  x-transition:enter-start="opacity-0"
+  x-transition:enter-end="opacity-100"
+  x-transition:leave="transition ease-in duration-200"
+  x-transition:leave-start="opacity-100"
+  x-transition:leave-end="opacity-0"
+  @click.self="closeSettingsModal()"
+>
+  <div
+    class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+    @click.stop=""
+    x-transition:enter="transition ease-out duration-300 delay-75"
+    x-transition:enter-start="opacity-0 transform scale-95"
+    x-transition:enter-end="opacity-100 transform scale-100"
+    x-transition:leave="transition ease-in duration-200"
+    x-transition:leave-start="opacity-100 transform scale-100"
+    x-transition:leave-end="opacity-0 transform scale-95"
+  >
+    <!-- モーダルヘッダー -->
+    <div class="p-6 border-b border-gray-200">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-bold text-gray-800">部屋設定を編集</h2>
+        <button
+          @click="closeSettingsModal()"
+          class="text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- モーダル内容 -->
+    <div class="p-6">
+      <form @submit.prevent="updateRoom()">
+        <div class="space-y-4">
+          <!-- 部屋名 -->
+          <div>
+            <label for="settings-room-name" class="block text-sm font-medium text-gray-700 mb-1">
+              部屋名（必須）
+            </label>
+            <input
+              id="settings-room-name"
+              type="text"
+              x-model="settingsData.name"
+              @input="validateField('name')"
+              maxlength="100"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              :class="{ 'border-red-500': errors.name }"
+              placeholder="部屋名を入力してください"
+            />
+            <p x-show="errors.name" class="text-red-500 text-xs mt-1" x-text="errors.name"></p>
+          </div>
+
+          <!-- ゲームバージョン -->
+          <div>
+            <label for="settings-game-version" class="block text-sm font-medium text-gray-700 mb-1">
+              ゲームバージョン（必須）
+            </label>
+            <select
+              id="settings-game-version"
+              x-model="settingsData.game_version_id"
+              @change="validateField('game_version_id')"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              :class="{ 'border-red-500': errors.game_version_id }"
+            >
+              <option value="">ゲームバージョンを選択してください</option>
+              <template x-for="version in gameVersions" :key="version.id">
+                <option
+                  :value="version.id"
+                  x-text="version.name"
+                ></option>
+              </template>
+            </select>
+            <p
+              x-show="errors.game_version_id"
+              class="text-red-500 text-xs mt-1"
+              x-text="errors.game_version_id"
+            ></p>
+          </div>
+
+          <!-- 説明文 -->
+          <div>
+            <label for="settings-description" class="block text-sm font-medium text-gray-700 mb-1">
+              説明文（任意）
+            </label>
+            <textarea
+              id="settings-description"
+              x-model="settingsData.description"
+              @input="validateField('description')"
+              maxlength="500"
+              rows="3"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              :class="{ 'border-red-500': errors.description }"
+              placeholder="部屋の説明を入力してください（任意）"
+            ></textarea>
+            <p
+              x-show="errors.description"
+              class="text-red-500 text-xs mt-1"
+              x-text="errors.description"
+            ></p>
+          </div>
+
+          <!-- 最大プレイヤー数 -->
+          <div>
+            <label for="settings-max-players" class="block text-sm font-medium text-gray-700 mb-1">
+              最大プレイヤー数
+            </label>
+            <select
+              id="settings-max-players"
+              x-model.number="settingsData.max_players"
+              @change="validateField('max_players')"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              :class="{ 'border-red-500': errors.max_players }"
+            >
+              <option :value="2">2人</option>
+              <option :value="3">3人</option>
+              <option :value="4">4人</option>
+            </select>
+            <p
+              x-show="errors.max_players"
+              class="text-red-500 text-xs mt-1"
+              x-text="errors.max_players"
+            ></p>
+          </div>
+
+          <!-- ターゲットモンスター -->
+          <div>
+            <label for="settings-target-monster" class="block text-sm font-medium text-gray-700 mb-1">
+              ターゲットモンスター（任意）
+            </label>
+            <input
+              id="settings-target-monster"
+              type="text"
+              x-model="settingsData.target_monster"
+              @input="validateField('target_monster')"
+              maxlength="50"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              :class="{ 'border-red-500': errors.target_monster }"
+              placeholder="ターゲットモンスターを入力してください（任意）"
+            />
+            <p
+              x-show="errors.target_monster"
+              class="text-red-500 text-xs mt-1"
+              x-text="errors.target_monster"
+            ></p>
+          </div>
+
+          <!-- ランク要求 -->
+          <div>
+            <label for="settings-rank-requirement" class="block text-sm font-medium text-gray-700 mb-1">
+              ランク要求（任意）
+            </label>
+            <input
+              id="settings-rank-requirement"
+              type="text"
+              x-model="settingsData.rank_requirement"
+              @input="validateField('rank_requirement')"
+              maxlength="20"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              :class="{ 'border-red-500': errors.rank_requirement }"
+              placeholder="必要なランクを入力してください（任意）"
+            />
+            <p
+              x-show="errors.rank_requirement"
+              class="text-red-500 text-xs mt-1"
+              x-text="errors.rank_requirement"
+            ></p>
+          </div>
+
+          <!-- パスワード -->
+          <div>
+            <label for="settings-password" class="block text-sm font-medium text-gray-700 mb-1">
+              パスワード（任意）
+            </label>
+            <input
+              id="settings-password"
+              type="password"
+              x-model="settingsData.password"
+              @input="validateField('password')"
+              maxlength="20"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              :class="{ 'border-red-500': errors.password }"
+              placeholder="パスワードを入力してください（任意）"
+            />
+            <p
+              x-show="errors.password"
+              class="text-red-500 text-xs mt-1"
+              x-text="errors.password"
+            ></p>
+          </div>
+        </div>
+
+        <!-- ボタン -->
+        <div class="flex space-x-3 mt-6">
+          <button
+            type="button"
+            @click="closeSettingsModal()"
+            class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded border border-gray-300 font-medium transition-colors"
+          >
+            キャンセル
+          </button>
+          <button
+            type="submit"
+            :disabled="isSubmitting || !isFormValid"
+            class="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white py-2 px-4 rounded font-medium transition-colors"
+          >
+            <span x-text="isSubmitting ? '更新中...' : '設定を更新'"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

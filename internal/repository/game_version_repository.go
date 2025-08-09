@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -25,7 +26,7 @@ func (r *gameVersionRepository) FindGameVersionByID(id uuid.UUID) (*models.GameV
 	var gameVersion models.GameVersion
 	err := r.db.GetConn().Where("id = ?", id).First(&gameVersion).Error
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("ゲームバージョンが見つかりません")
 		}
 		return nil, err
@@ -38,7 +39,7 @@ func (r *gameVersionRepository) FindGameVersionByCode(code string) (*models.Game
 	var gameVersion models.GameVersion
 	err := r.db.GetConn().Where("code = ?", code).First(&gameVersion).Error
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("ゲームバージョンが見つかりません")
 		}
 		return nil, err
