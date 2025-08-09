@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -30,7 +31,7 @@ func (r *userRepository) FindUserByID(id uuid.UUID) (*models.User, error) {
 	var user models.User
 	err := r.db.GetConn().Where("id = ?", id).First(&user).Error
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("ユーザーが見つかりません")
 		}
 		return nil, err
@@ -54,7 +55,7 @@ func (r *userRepository) FindUserBySupabaseUserID(supabaseUserID uuid.UUID) (*mo
 	var user models.User
 	err := r.db.GetConn().Where("supabase_user_id = ?", supabaseUserID).First(&user).Error
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
 		return nil, err
@@ -67,7 +68,7 @@ func (r *userRepository) FindUserByEmail(email string) (*models.User, error) {
 	var user models.User
 	err := r.db.GetConn().Where("email = ?", email).First(&user).Error
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("ユーザーが見つかりません")
 		}
 		return nil, err

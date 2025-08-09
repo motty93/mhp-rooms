@@ -61,7 +61,7 @@ func (r *roomRepository) FindRoomByID(id uuid.UUID) (*models.Room, error) {
 		Where("id = ?", id).
 		First(&room).Error
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("ルームが見つかりません")
 		}
 		return nil, err
@@ -77,7 +77,7 @@ func (r *roomRepository) FindRoomByRoomCode(roomCode string) (*models.Room, erro
 		Where("room_code = ?", roomCode).
 		First(&room).Error
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("ルームが見つかりません")
 		}
 		return nil, err
@@ -231,7 +231,7 @@ func (r *roomRepository) JoinRoom(roomID, userID uuid.UUID, password string) err
 		// ユーザーの存在確認（開発環境では自動作成）
 		var user models.User
 		if err := tx.Where("id = ?", userID).First(&user).Error; err != nil {
-			if err == gorm.ErrRecordNotFound {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
 				// 開発環境でのみダミーユーザーを作成
 				user = models.User{
 					ID:             userID,

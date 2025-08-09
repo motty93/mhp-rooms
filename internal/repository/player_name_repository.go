@@ -33,7 +33,9 @@ func (r *playerNameRepository) CreatePlayerName(playerName *models.PlayerName) e
 
 // UpdatePlayerName プレイヤー名を更新
 func (r *playerNameRepository) UpdatePlayerName(playerName *models.PlayerName) error {
-	return r.db.GetConn().Save(playerName).Error
+	return r.db.GetConn().Model(playerName).Updates(map[string]interface{}{
+		"name": playerName.Name,
+	}).Error
 }
 
 // FindPlayerNameByUserAndGame ユーザーIDとゲームバージョンIDでプレイヤー名を取得
@@ -82,6 +84,7 @@ func (r *playerNameRepository) UpsertPlayerName(playerName *models.PlayerName) e
 	}
 
 	// 存在する場合は更新
-	existing.Name = playerName.Name
-	return r.db.GetConn().Save(&existing).Error
+	return r.db.GetConn().Model(&existing).Updates(map[string]interface{}{
+		"name": playerName.Name,
+	}).Error
 }
