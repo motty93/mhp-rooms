@@ -187,6 +187,17 @@ func (h *RoomHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 
 	hostUserID := dbUser.ID
 
+	// 既に参加している部屋があれば退出する
+	activeRoom, err := h.repo.Room.FindActiveRoomByUserID(hostUserID)
+	if err == nil && activeRoom != nil {
+		// 退出処理を実行
+		if leaveErr := h.repo.Room.LeaveRoom(activeRoom.ID, hostUserID); leaveErr != nil {
+			// 退出に失敗した場合は処理を中断
+			http.Error(w, "現在の部屋からの退出に失敗しました", http.StatusInternalServerError)
+			return
+		}
+	}
+
 	room := &models.Room{
 		Name:           req.Name,
 		GameVersionID:  gameVersionID,
@@ -216,8 +227,16 @@ func (h *RoomHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 作成成功時には部屋詳細URLを返す
+	response := map[string]interface{}{
+		"message": "ルームを作成しました",
+		"room_id": room.ID.String(),
+		"room":    room,
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(room)
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(response)
 }
 
 type JoinRoomRequest struct {
@@ -557,4 +576,168 @@ func (h *RoomHandler) GetCurrentRoom(w http.ResponseWriter, r *http.Request) {
 
 func (h *RoomHandler) isUserJoinedRoom(roomID, userID uuid.UUID) bool {
 	return h.repo.Room.IsUserJoinedRoom(roomID, userID)
+}
+
+// UpdateRoomRequest 部屋設定更新リクエスト
+type UpdateRoomRequest = CreateRoomRequest
+
+func (h *RoomHandler) UpdateRoom(w http.ResponseWriter, r *http.Request) {
+	roomID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "無効なルームIDです", http.StatusBadRequest)
+		return
+	}
+
+	// 入力値の検証
+	var req UpdateRoomRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "リクエストの解析に失敗しました", http.StatusBadRequest)
+		return
+	}
+
+	// 必須フィールドの検証
+	if strings.TrimSpace(req.Name) == "" {
+		http.Error(w, "ルーム名は必須です", http.StatusBadRequest)
+		return
+	}
+	if len(req.Name) > 100 {
+		http.Error(w, "ルーム名は100文字以内で入力してください", http.StatusBadRequest)
+		return
+	}
+	if req.MaxPlayers < 1 || req.MaxPlayers > 4 {
+		http.Error(w, "最大プレイヤー数は1〜4人の間で設定してください", http.StatusBadRequest)
+		return
+	}
+
+	gameVersionID, err := uuid.Parse(req.GameVersionID)
+	if err != nil {
+		http.Error(w, "無効なゲームバージョンIDです", http.StatusBadRequest)
+		return
+	}
+
+	// 認証情報からユーザーIDを取得
+	dbUser, exists := middleware.GetDBUserFromContext(r.Context())
+	if !exists || dbUser == nil {
+		http.Error(w, "認証されていないか、ユーザー情報が見つかりません", http.StatusUnauthorized)
+		return
+	}
+
+	userID := dbUser.ID
+
+	// 部屋の存在確認とホスト権限チェック
+	room, err := h.repo.FindRoomByID(roomID)
+	if err != nil {
+		http.Error(w, "部屋が見つかりません", http.StatusNotFound)
+		return
+	}
+
+	if room.HostUserID != userID {
+		http.Error(w, "部屋のホストのみが設定を変更できます", http.StatusForbidden)
+		return
+	}
+
+	// 部屋情報の更新
+	room.Name = req.Name
+	room.GameVersionID = gameVersionID
+	room.MaxPlayers = req.MaxPlayers
+
+	if req.Description != "" {
+		room.Description = &req.Description
+	} else {
+		room.Description = nil
+	}
+	if req.TargetMonster != "" {
+		room.TargetMonster = &req.TargetMonster
+	} else {
+		room.TargetMonster = nil
+	}
+	if req.RankRequirement != "" {
+		room.RankRequirement = &req.RankRequirement
+	} else {
+		room.RankRequirement = nil
+	}
+
+	if err := room.SetPassword(req.Password); err != nil {
+		http.Error(w, "パスワードの設定に失敗しました", http.StatusInternalServerError)
+		return
+	}
+
+	if err := h.repo.UpdateRoom(room); err != nil {
+		http.Error(w, "ルームの更新に失敗しました", http.StatusInternalServerError)
+		return
+	}
+
+	// 更新成功のレスポンス
+	response := map[string]interface{}{
+		"message": "ルーム設定を更新しました",
+		"room":    room,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
+func (h *RoomHandler) DismissRoom(w http.ResponseWriter, r *http.Request) {
+	roomID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "無効なルームIDです", http.StatusBadRequest)
+		return
+	}
+
+	// 認証情報からユーザーIDを取得
+	dbUser, exists := middleware.GetDBUserFromContext(r.Context())
+	if !exists || dbUser == nil {
+		http.Error(w, "認証されていないか、ユーザー情報が見つかりません", http.StatusUnauthorized)
+		return
+	}
+
+	userID := dbUser.ID
+
+	// 部屋の存在確認とホスト権限チェック
+	room, err := h.repo.FindRoomByID(roomID)
+	if err != nil {
+		http.Error(w, "部屋が見つかりません", http.StatusNotFound)
+		return
+	}
+
+	if room.HostUserID != userID {
+		http.Error(w, "部屋のホストのみが解散できます", http.StatusForbidden)
+		return
+	}
+
+	// 部屋解散処理
+	if err := h.repo.DismissRoom(roomID); err != nil {
+		http.Error(w, "部屋の解散に失敗しました", http.StatusInternalServerError)
+		return
+	}
+
+	// 解散メッセージをSSEで通知
+	if h.hub != nil {
+		dismissMessage := models.RoomMessage{
+			ID:          uuid.New(),
+			RoomID:      roomID,
+			UserID:      userID,
+			Message:     fmt.Sprintf("ルームがホスト（%s）によって解散されました", dbUser.DisplayName),
+			MessageType: "system",
+		}
+		dismissMessage.User = *dbUser
+
+		event := sse.Event{
+			ID:   dismissMessage.ID.String(),
+			Type: "room_dismissed",
+			Data: dismissMessage,
+		}
+		h.hub.BroadcastToRoom(roomID, event)
+	}
+
+	// 解散成功のレスポンス
+	response := map[string]interface{}{
+		"message":  "ルームを解散しました",
+		"redirect": "/rooms",
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 }

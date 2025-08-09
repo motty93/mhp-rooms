@@ -24,6 +24,7 @@ type Application struct {
 	pageHandler        *handlers.PageHandler
 	configHandler      *handlers.ConfigHandler
 	reactionHandler    *handlers.ReactionHandler
+	gameVersionHandler *handlers.GameVersionHandler
 	authMiddleware     *middleware.JWTAuth
 	securityConfig     *middleware.SecurityConfig
 	generalLimiter     *middleware.RateLimiter
@@ -82,6 +83,7 @@ func (app *Application) initHandlers() {
 	app.pageHandler = handlers.NewPageHandler(app.repo)
 	app.configHandler = handlers.NewConfigHandler()
 	app.reactionHandler = handlers.NewReactionHandler(app.repo)
+	app.gameVersionHandler = handlers.NewGameVersionHandler(app.repo)
 
 	// 認証ミドルウェアの初期化
 	authMiddleware, err := middleware.NewJWTAuth(app.repo)

@@ -117,8 +117,58 @@
         <div class="p-6 space-y-4">
           <!-- アクションボタン -->
           <div class="space-y-3" x-show="$store.auth.isAuthenticated">
-            <!-- 部屋を退出ボタン -->
+            <!-- ホスト限定：部屋を編集ボタン -->
             <button
+              x-show="isHost"
+              @click="openSettingsModal(); $store.mobileMenu.close()"
+              class="w-full flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded font-medium transition-colors"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+              <span>部屋を編集</span>
+            </button>
+
+            <!-- ホストの場合：部屋を解散ボタン -->
+            <button
+              x-show="isHost"
+              @click="dismissRoom(); $store.mobileMenu.close()"
+              :disabled="isDismissing"
+              class="w-full flex items-center justify-center space-x-2 bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
+              </svg>
+              <span x-text="isDismissing ? '解散中...' : '部屋を解散'"></span>
+            </button>
+
+            <!-- 一般メンバーの場合：部屋を退出ボタン -->
+            <button
+              x-show="!isHost"
               @click="leaveRoom(); $store.mobileMenu.close()"
               :disabled="isLeaving"
               class="w-full flex items-center justify-center space-x-2 bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -187,8 +237,24 @@
               {{ .PageData.Room.GameVersion.Code }}
             </div>
           </div>
-          <div class="text-gray-800 font-bold text-lg">
-            {{ if .PageData.Room.HasPassword }}🔑 {{ end }}{{ .PageData.Room.Name }}
+          <div class="flex items-center justify-between">
+            <div class="text-gray-800 font-bold text-lg">
+              {{ if .PageData.Room.HasPassword }}🔑 {{ end }}{{ .PageData.Room.Name }}
+            </div>
+            <!-- PC版のみ：ホストの場合に設定アイコンを表示 -->
+            <button 
+              x-show="isHost && $store.auth.initialized && $store.auth.isAuthenticated"
+              @click="openSettingsModal()"
+              class="hidden md:block text-gray-600 hover:text-gray-800 p-1 rounded hover:bg-gray-100 transition-colors"
+              title="部屋設定を変更"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+            </button>
           </div>
         </div>
         <div class="text-gray-600 text-sm leading-relaxed">
@@ -256,8 +322,32 @@
 
       <!-- ボタンエリア（デスクトップのみ表示） -->
       <div class="hidden md:block p-4 flex-shrink-0 space-y-2">
-        <!-- 部屋を退出ボタン -->
+        <!-- ホストの場合：部屋を解散ボタン -->
         <button
+          x-show="isHost"
+          @click="dismissRoom()"
+          :disabled="isDismissing"
+          class="w-full flex items-center justify-center space-x-2 bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
+          </svg>
+          <span x-text="isDismissing ? '解散中...' : '部屋を解散'"></span>
+        </button>
+
+        <!-- 一般メンバーの場合：部屋を退出ボタン -->
+        <button
+          x-show="!isHost"
           @click="leaveRoom()"
           :disabled="isLeaving"
           class="w-full flex items-center justify-center space-x-2 bg-gray-600 hover:bg-gray-700 text-white py-3 px-4 rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -400,6 +490,8 @@
         </form>
       </div>
     </div>
+    <!-- 部屋設定モーダル -->
+    {{ template "room_settings_modal.tmpl" }}
   </div>
 
 <script>
@@ -429,6 +521,22 @@ function roomDetail() {
     roomId: '{{ .PageData.Room.ID }}',
     eventSource: null,
     isLeaving: false,
+    isDismissing: false,
+    isHost: false,
+    hostUserId: '{{ .PageData.Room.Host.SupabaseUserID }}',
+    showSettingsModal: false,
+    settingsData: {
+      name: '',
+      description: '',
+      game_version_id: '',
+      max_players: 4,
+      target_monster: '',
+      rank_requirement: '',
+      password: ''
+    },
+    gameVersions: [],
+    errors: {},
+    isSubmitting: false,
 
     async init() {
       // グローバルインスタンスとして登録
@@ -439,6 +547,12 @@ function roomDetail() {
 
       // Alpine.jsの初期化を確実に待つ
       await this.waitForAlpineAuth();
+
+      // ホスト判定を更新
+      this.updateHostStatus();
+
+      // ゲームバージョン一覧を取得
+      await this.loadGameVersions();
 
       // 初期メッセージのロード
       await this.loadInitialMessages();
@@ -471,6 +585,7 @@ function roomDetail() {
           if (isAuth && user) {
             this.isAuthenticated = true;
             this.currentUserId = user.id;
+            console.log('Alpine auth initialized:', { isAuth, userId: user.id });
             return;
           }
         }
@@ -498,6 +613,10 @@ function roomDetail() {
         // Alpine.jsが反応するように強制的に更新を通知
         this.$nextTick(() => {
           this.isAuthenticated = Alpine.store('auth').isAuthenticated;
+          // ホスト判定を更新
+          this.updateHostStatus();
+          // 強制的にDOMを更新
+          this.$dispatch('host-status-updated', { isHost: this.isHost });
         });
       } else {
         // Alpine.jsまたはauthストアが利用できない場合は少し待ってリトライ
@@ -778,6 +897,233 @@ function roomDetail() {
         console.error('退出エラー:', error);
         alert('退出処理に失敗しました。もう一度お試しください。');
         this.isLeaving = false;
+      }
+    },
+
+    updateHostStatus() {
+      if (this.isAuthenticated && this.currentUserId) {
+        this.isHost = this.currentUserId === this.hostUserId;
+        console.log('Host status updated:', { 
+          currentUserId: this.currentUserId, 
+          hostUserId: this.hostUserId, 
+          isHost: this.isHost 
+        });
+      } else {
+        this.isHost = false;
+        console.log('Not authenticated or no current user, isHost set to false');
+      }
+      
+      // 強制的にAlpine.jsの反応を促す
+      this.$nextTick(() => {
+        this.$el.dispatchEvent(new CustomEvent('host-status-changed'));
+      });
+    },
+
+    async loadGameVersions() {
+      try {
+        const response = await fetch('/api/game-versions/active');
+        if (response.ok) {
+          const data = await response.json();
+          this.gameVersions = data.game_versions || [];
+          console.log('Loaded game versions:', this.gameVersions);
+        }
+      } catch (error) {
+        console.error('ゲームバージョンの取得に失敗しました:', error);
+      }
+    },
+
+    openSettingsModal() {
+      console.log('openSettingsModal called');
+      
+      // 現在の部屋データで設定フォームを初期化
+      const room = {
+        name: '{{ .PageData.Room.Name }}',
+        description: '{{ .PageData.Room.Description }}',
+        game_version_id: '{{ .PageData.Room.GameVersionID }}',
+        max_players: {{ .PageData.Room.MaxPlayers }},
+        target_monster: '{{ .PageData.Room.TargetMonster }}',
+        rank_requirement: '{{ .PageData.Room.RankRequirement }}'
+      };
+      
+      console.log('Room data:', room);
+      
+      this.settingsData = {
+        name: room.name || '',
+        description: room.description || '',
+        game_version_id: room.game_version_id || '',
+        max_players: room.max_players || 4,
+        target_monster: room.target_monster || '',
+        rank_requirement: room.rank_requirement || '',
+        password: '' // パスワードは常に空で初期化
+      };
+      
+      this.errors = {};
+      this.showSettingsModal = true;
+      
+      console.log('showSettingsModal set to:', this.showSettingsModal);
+      console.log('settingsData:', this.settingsData);
+    },
+
+    closeSettingsModal() {
+      this.showSettingsModal = false;
+      this.errors = {};
+      this.isSubmitting = false;
+    },
+
+    get isFormValid() {
+      return this.settingsData.name.trim() !== '' &&
+             this.settingsData.game_version_id !== '' &&
+             this.settingsData.max_players >= 2 &&
+             this.settingsData.max_players <= 4 &&
+             Object.keys(this.errors).length === 0;
+    },
+
+    validateField(field) {
+      // エラーをクリア
+      delete this.errors[field];
+
+      switch (field) {
+        case 'name':
+          if (!this.settingsData.name.trim()) {
+            this.errors.name = '部屋名は必須です。';
+          } else if (this.settingsData.name.length > 100) {
+            this.errors.name = '部屋名は100文字以内で入力してください。';
+          }
+          break;
+
+        case 'description':
+          if (this.settingsData.description.length > 500) {
+            this.errors.description = '説明文は500文字以内で入力してください。';
+          }
+          break;
+
+        case 'game_version_id':
+          if (!this.settingsData.game_version_id) {
+            this.errors.game_version_id = 'ゲームバージョンを選択してください。';
+          }
+          break;
+
+        case 'max_players':
+          if (this.settingsData.max_players < 2 || this.settingsData.max_players > 4) {
+            this.errors.max_players = '最大プレイヤー数は2〜4人の間で設定してください。';
+          }
+          break;
+
+        case 'target_monster':
+          if (this.settingsData.target_monster.length > 50) {
+            this.errors.target_monster = 'ターゲットモンスターは50文字以内で入力してください。';
+          }
+          break;
+
+        case 'rank_requirement':
+          if (this.settingsData.rank_requirement.length > 20) {
+            this.errors.rank_requirement = 'ランク要求は20文字以内で入力してください。';
+          }
+          break;
+
+        case 'password':
+          if (this.settingsData.password.length > 20) {
+            this.errors.password = 'パスワードは20文字以内で入力してください。';
+          }
+          break;
+      }
+
+      // リアクティブな更新を促す
+      this.$nextTick();
+    },
+
+    async updateRoom() {
+      if (this.isSubmitting || !this.isFormValid) return;
+
+      // 全フィールドのバリデーション
+      Object.keys(this.settingsData).forEach(field => {
+        this.validateField(field);
+      });
+
+      if (Object.keys(this.errors).length > 0) {
+        return;
+      }
+
+      this.isSubmitting = true;
+
+      try {
+        const authToken = Alpine.store('auth').session?.access_token;
+        if (!authToken) {
+          throw new Error('認証が必要です');
+        }
+
+        const response = await fetch(`/rooms/${this.roomId}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(this.settingsData)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.text();
+          throw new Error(errorData || '部屋設定の更新に失敗しました');
+        }
+
+        const result = await response.json();
+        
+        // 成功メッセージを表示
+        alert('部屋設定を更新しました');
+        
+        // モーダルを閉じる
+        this.closeSettingsModal();
+        
+        // ページをリロードして最新の情報を表示
+        window.location.reload();
+      } catch (error) {
+        console.error('部屋設定更新エラー:', error);
+        alert('部屋設定の更新に失敗しました: ' + error.message);
+        this.isSubmitting = false;
+      }
+    },
+
+    async dismissRoom() {
+      if (this.isDismissing) return;
+
+      // 確認ダイアログを表示
+      if (!confirm('本当に部屋を解散しますか？\n解散すると、すべてのメンバーが退出し、部屋は削除されます。')) {
+        return;
+      }
+
+      this.isDismissing = true;
+
+      try {
+        const authToken = Alpine.store('auth').session?.access_token;
+        if (!authToken) {
+          throw new Error('認証が必要です');
+        }
+
+        const response = await fetch(`/rooms/${this.roomId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('解散処理に失敗しました');
+        }
+
+        const result = await response.json();
+
+        // SSE接続を閉じる
+        if (this.eventSource) {
+          this.eventSource.close();
+        }
+
+        // リダイレクト先が指定されている場合はそちらへ、そうでなければ部屋一覧へ
+        window.location.href = result.redirect || '/rooms';
+      } catch (error) {
+        console.error('解散エラー:', error);
+        alert('解散処理に失敗しました。もう一度お試しください。');
+        this.isDismissing = false;
       }
     }
   };

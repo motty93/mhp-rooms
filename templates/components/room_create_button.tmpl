@@ -2,14 +2,14 @@
   {{ if .Size }}
     {{ if eq .Size "large" }}
       <!-- 大きいボタン（デスクトップ用） -->
-      <a
-        href="/rooms/create"
+      <button
+        @click="$store.roomModal.open()"
         x-show="$store.auth.initialized && $store.auth.isAuthenticated"
         x-cloak
         class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-3 px-6 rounded-lg transition-colors whitespace-nowrap"
       >
         新しい部屋を作る
-      </a>
+      </button>
       <button
         x-show="$store.auth.initialized && !$store.auth.isAuthenticated"
         x-cloak
@@ -25,8 +25,8 @@
     {{ else if eq .Size "floating" }}
       <!-- フローティングボタン（モバイル用右下固定） -->
       <div class="fixed bottom-6 right-6 z-40 md:hidden">
-        <a
-          href="/rooms/create"
+        <button
+          @click="$store.roomModal.open()"
           x-show="$store.auth.initialized && $store.auth.isAuthenticated"
           x-cloak
           class="flex items-center justify-center w-14 h-14 bg-gray-800 hover:bg-gray-900 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
@@ -46,7 +46,7 @@
               d="M12 4v16m8-8H4"
             />
           </svg>
-        </a>
+        </button>
         <button
           x-show="$store.auth.initialized && !$store.auth.isAuthenticated"
           x-cloak
@@ -72,14 +72,14 @@
       </div>
     {{ else if eq .Size "inline" }}
       <!-- インラインボタン（空の状態用） -->
-      <a
-        href="/rooms/create"
+      <button
+        @click="$store.roomModal.open()"
         x-show="$store.auth.initialized && $store.auth.isAuthenticated"
         x-cloak
         class="inline-flex items-center bg-gray-800 hover:bg-gray-900 text-white font-medium py-2 px-4 rounded-lg transition-colors"
       >
         部屋を作る
-      </a>
+      </button>
       <button
         x-show="$store.auth.initialized && !$store.auth.isAuthenticated"
         x-cloak
@@ -92,14 +92,14 @@
     {{ end }}
   {{ else }}
     <!-- デフォルト（大きいボタン） -->
-    <a
-      href="/rooms/create"
+    <button
+      @click="$store.roomModal.open()"
       x-show="$store.auth.initialized && $store.auth.isAuthenticated"
       x-cloak
       class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-3 px-6 rounded-lg transition-colors whitespace-nowrap"
     >
       新しい部屋を作る
-    </a>
+    </button>
     <button
       x-show="$store.auth.initialized && !$store.auth.isAuthenticated"
       x-cloak

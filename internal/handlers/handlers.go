@@ -64,6 +64,7 @@ func renderTemplate(w http.ResponseWriter, templateName string, data TemplateDat
 		filepath.Join("templates", "components", "header.tmpl"),
 		filepath.Join("templates", "components", "footer.tmpl"),
 		filepath.Join("templates", "components", "room_create_button.tmpl"),
+		filepath.Join("templates", "components", "room_create_modal.tmpl"),
 		filepath.Join("templates", "pages", templateName),
 	)
 	if err != nil {

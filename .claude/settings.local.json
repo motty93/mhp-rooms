@@ -90,7 +90,13 @@
       "mcp__serena__think_about_collected_information",
       "Bash(go vet:*)",
       "mcp__context7__resolve-library-id",
-      "mcp__context7__get-library-docs"
+      "mcp__context7__get-library-docs",
+      "mcp__github__search_issues",
+      "mcp__playwright__browser_select_option",
+      "Bash(timeout 10s make run)",
+      "Bash(timeout 15s make run)",
+      "Bash(sqlite3:*)",
+      "mcp__playwright__browser_handle_dialog"
     ],
     "deny": []
   }
