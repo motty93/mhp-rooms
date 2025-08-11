@@ -119,12 +119,12 @@
                 >
                   部屋一覧
                 </a>
-                <a
-                  href="/rooms/create"
-                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                <button
+                  @click="$store.roomCreate.open(); open = false;"
+                  class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                 >
                   部屋作成
-                </a>
+                </button>
                 <hr class="my-1 border-gray-200" />
                 <a
                   href="/profile"
