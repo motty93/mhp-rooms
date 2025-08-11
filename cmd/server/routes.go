@@ -182,6 +182,7 @@ func (app *Application) setupAPIRoutes(r chi.Router) {
 			// 認証必須のAPIエンドポイント
 			ar.Get("/user/current", app.withAuth(app.authHandler.CurrentUser))
 			ar.Get("/user/current-room", app.withAuth(app.roomHandler.GetCurrentRoom))
+			ar.Get("/user/current/room-status", app.withAuth(app.roomHandler.GetUserRoomStatus))
 			ar.Post("/leave-current-room", app.withAuth(app.roomHandler.LeaveCurrentRoom))
 
 			// リアクション関連API（認証必須）
@@ -196,6 +197,7 @@ func (app *Application) setupAPIRoutes(r chi.Router) {
 			// 開発環境では認証なしですべてのAPIにアクセス可能
 			ar.Get("/user/current", app.authHandler.CurrentUser)
 			ar.Get("/user/current-room", app.roomHandler.GetCurrentRoom)
+			ar.Get("/user/current/room-status", app.roomHandler.GetUserRoomStatus)
 			ar.Post("/leave-current-room", app.roomHandler.LeaveCurrentRoom)
 			ar.Post("/auth/sync", app.authHandler.SyncUser)
 			ar.Put("/auth/psn-id", app.authHandler.UpdatePSNId)

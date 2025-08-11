@@ -96,7 +96,11 @@
       "Bash(timeout 10s make run)",
       "Bash(timeout 15s make run)",
       "Bash(sqlite3:*)",
-      "mcp__playwright__browser_handle_dialog"
+      "mcp__playwright__browser_handle_dialog",
+      "mcp__serena__get_current_config",
+      "Bash(awk:*)",
+      "Bash(python3:*)",
+      "mcp__serena__delete_lines"
     ],
     "deny": []
   }

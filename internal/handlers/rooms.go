@@ -187,9 +187,33 @@ func (h *RoomHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 
 	hostUserID := dbUser.ID
 
-	// 既に参加している部屋があれば退出する
-	activeRoom, err := h.repo.Room.FindActiveRoomByUserID(hostUserID)
-	if err == nil && activeRoom != nil {
+	// ユーザーの部屋状態をチェック
+	status, activeRoom, err := h.repo.Room.GetUserRoomStatus(hostUserID)
+	if err != nil {
+		log.Printf("部屋状態取得エラー: %v", err)
+		http.Error(w, "部屋状態の確認に失敗しました", http.StatusInternalServerError)
+		return
+	}
+
+	// ホスト中の場合は新しい部屋を作成できない
+	if status == "HOST" {
+		response := map[string]interface{}{
+			"error":   "HOST_ROOM_ACTIVE",
+			"message": "既にホストとして部屋を持っています",
+			"room": map[string]interface{}{
+				"id":        activeRoom.ID,
+				"name":      activeRoom.Name,
+				"room_code": activeRoom.RoomCode,
+			},
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusConflict)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 参加中の場合は退出する（確認はフロントエンドで行う）
+	if status == "GUEST" && activeRoom != nil {
 		// 退出処理を実行
 		if leaveErr := h.repo.Room.LeaveRoom(activeRoom.ID, hostUserID); leaveErr != nil {
 			// 退出に失敗した場合は処理を中断
@@ -240,8 +264,9 @@ func (h *RoomHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 }
 
 type JoinRoomRequest struct {
-	Password  string `json:"password"`
-	ForceJoin bool   `json:"forceJoin"` // 強制参加フラグ（他の部屋から退出して参加）
+	Password    string `json:"password"`
+	ForceJoin   bool   `json:"forceJoin"`   // 強制参加フラグ（他の部屋から退出して参加）
+	ConfirmJoin bool   `json:"confirmJoin"` // ブロック警告を確認済みで参加
 }
 
 func (h *RoomHandler) JoinRoom(w http.ResponseWriter, r *http.Request) {
@@ -265,6 +290,99 @@ func (h *RoomHandler) JoinRoom(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := dbUser.ID
+
+	// ユーザーの部屋状態をチェック
+	status, currentRoom, err := h.repo.Room.GetUserRoomStatus(userID)
+	if err != nil {
+		log.Printf("部屋状態取得エラー: %v", err)
+		http.Error(w, "部屋状態の確認に失敗しました", http.StatusInternalServerError)
+		return
+	}
+
+	// ホスト中の場合は他の部屋に参加できない
+	if status == "HOST" {
+		response := map[string]interface{}{
+			"error":   "HOST_CANNOT_JOIN",
+			"message": "ホスト中は他の部屋に参加できません",
+			"room": map[string]interface{}{
+				"id":        currentRoom.ID,
+				"name":      currentRoom.Name,
+				"room_code": currentRoom.RoomCode,
+			},
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusConflict)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// ブロック関係のチェック
+	room, err := h.repo.Room.FindRoomByID(roomID)
+	if err != nil {
+		http.Error(w, "ルームが見つかりません", http.StatusNotFound)
+		return
+	}
+
+	// 1. ホストがユーザーをブロックしているかチェック
+	isBlockedByHost, _, blockErr := h.repo.UserBlock.CheckBlockRelationship(userID, room.HostUserID)
+	if blockErr != nil {
+		log.Printf("ブロック関係の確認エラー: %v", blockErr)
+		http.Error(w, "ブロック関係の確認に失敗しました", http.StatusInternalServerError)
+		return
+	}
+
+	if isBlockedByHost {
+		response := map[string]interface{}{
+			"error":     "BLOCKED_BY_HOST",
+			"message":   "このルームには参加できません",
+			"blockType": "host_block",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 2. 既存メンバーとのブロック関係をチェック
+	blockedMembers, blockErr := h.repo.UserBlock.CheckRoomMemberBlocks(userID, roomID)
+	if blockErr != nil {
+		log.Printf("ルームメンバーとのブロック関係確認エラー: %v", blockErr)
+		http.Error(w, "ブロック関係の確認に失敗しました", http.StatusInternalServerError)
+		return
+	}
+
+	if len(blockedMembers) > 0 {
+		response := map[string]interface{}{
+			"error":     "BLOCKED_BY_MEMBER",
+			"message":   "ブロック関係により参加できません",
+			"blockType": "member_block",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// 3. ユーザーがホストをブロックしているかチェック（警告のみ）
+	_, isBlockingHost, blockErr := h.repo.UserBlock.CheckBlockRelationship(userID, room.HostUserID)
+	if blockErr != nil {
+		log.Printf("ブロック関係の確認エラー: %v", blockErr)
+		http.Error(w, "ブロック関係の確認に失敗しました", http.StatusInternalServerError)
+		return
+	}
+
+	if isBlockingHost && !req.ConfirmJoin {
+		response := map[string]interface{}{
+			"warning":              "USER_BLOCKING_HOST",
+			"message":              "ブロック関係があるユーザーが部屋にいます。参加しますか？",
+			"blockType":            "user_block",
+			"requiresConfirmation": true,
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
 
 	// forceJoinフラグが設定されている場合は、先に現在の部屋から退出する
 	if req.ForceJoin {
@@ -735,6 +853,44 @@ func (h *RoomHandler) DismissRoom(w http.ResponseWriter, r *http.Request) {
 	response := map[string]interface{}{
 		"message":  "ルームを解散しました",
 		"redirect": "/rooms",
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
+// GetUserRoomStatus 現在のユーザーの部屋状態を取得
+func (h *RoomHandler) GetUserRoomStatus(w http.ResponseWriter, r *http.Request) {
+	// 認証情報からユーザーIDを取得
+	dbUser, exists := middleware.GetDBUserFromContext(r.Context())
+	if !exists || dbUser == nil {
+		http.Error(w, "認証されていないか、ユーザー情報が見つかりません", http.StatusUnauthorized)
+		return
+	}
+
+	userID := dbUser.ID
+
+	// ユーザーの部屋状態を取得
+	status, room, err := h.repo.Room.GetUserRoomStatus(userID)
+	if err != nil {
+		log.Printf("部屋状態取得エラー: %v", err)
+		http.Error(w, "部屋状態の取得に失敗しました", http.StatusInternalServerError)
+		return
+	}
+
+	// レスポンスを構築
+	response := map[string]interface{}{
+		"status": status,
+		"room":   nil,
+	}
+
+	if room != nil {
+		response["room"] = map[string]interface{}{
+			"id":        room.ID,
+			"name":      room.Name,
+			"room_code": room.RoomCode,
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
