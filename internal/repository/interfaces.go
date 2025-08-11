@@ -47,6 +47,7 @@ type RoomRepository interface {
 	IsUserJoinedRoom(roomID, userID uuid.UUID) bool
 	GetRoomMembers(roomID uuid.UUID) ([]models.RoomMember, error)
 	GetRoomLogs(roomID uuid.UUID) ([]models.RoomLog, error)
+	GetUserRoomStatus(userID uuid.UUID) (string, *models.Room, error) // (status, room, error)
 }
 
 // PlayerNameRepository はプレイヤー名関連の操作を定義するインターフェース
@@ -64,4 +65,15 @@ type RoomMessageRepository interface {
 	CreateMessage(message *models.RoomMessage) error
 	GetMessages(roomID uuid.UUID, limit int, beforeID *uuid.UUID) ([]models.RoomMessage, error)
 	DeleteMessage(id uuid.UUID) error
+}
+
+// UserBlockRepository はユーザーブロック関連の操作を定義するインターフェース
+type UserBlockRepository interface {
+	CreateBlock(block *models.UserBlock) error
+	DeleteBlock(blockerUserID, blockedUserID uuid.UUID) error
+	IsBlocked(blockerUserID, blockedUserID uuid.UUID) (bool, error)
+	CheckBlockRelationship(userID, targetUserID uuid.UUID) (bool, bool, error) // (isBlockedByTarget, isBlockingTarget, error)
+	CheckRoomMemberBlocks(userID, roomID uuid.UUID) ([]models.User, error) // ブロック関係のあるメンバーリストを返す
+	GetBlockedUsers(blockerUserID uuid.UUID) ([]models.User, error)
+	GetBlockingUsers(blockedUserID uuid.UUID) ([]models.User, error)
 }

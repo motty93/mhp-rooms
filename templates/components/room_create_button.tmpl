@@ -3,7 +3,7 @@
     {{ if eq .Size "large" }}
       <!-- 大きいボタン（デスクトップ用） -->
       <button
-        @click="$store.roomModal.open()"
+        @click="openCreateModal()"
         x-show="$store.auth.initialized && $store.auth.isAuthenticated"
         x-cloak
         class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-3 px-6 rounded-lg transition-colors whitespace-nowrap"
@@ -26,7 +26,7 @@
       <!-- フローティングボタン（モバイル用右下固定） -->
       <div class="fixed bottom-6 right-6 z-40 md:hidden">
         <button
-          @click="$store.roomModal.open()"
+          @click="openCreateModal()"
           x-show="$store.auth.initialized && $store.auth.isAuthenticated"
           x-cloak
           class="flex items-center justify-center w-14 h-14 bg-gray-800 hover:bg-gray-900 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
@@ -73,7 +73,7 @@
     {{ else if eq .Size "inline" }}
       <!-- インラインボタン（空の状態用） -->
       <button
-        @click="$store.roomModal.open()"
+        @click="openCreateModal()"
         x-show="$store.auth.initialized && $store.auth.isAuthenticated"
         x-cloak
         class="inline-flex items-center bg-gray-800 hover:bg-gray-900 text-white font-medium py-2 px-4 rounded-lg transition-colors"
@@ -93,7 +93,7 @@
   {{ else }}
     <!-- デフォルト（大きいボタン） -->
     <button
-      @click="$store.roomModal.open()"
+      @click="openCreateModal()"
       x-show="$store.auth.initialized && $store.auth.isAuthenticated"
       x-cloak
       class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-3 px-6 rounded-lg transition-colors whitespace-nowrap"

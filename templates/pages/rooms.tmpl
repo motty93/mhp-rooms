@@ -24,7 +24,24 @@
             <p class="text-gray-600">アクティブな部屋を探そう</p>
           </div>
 
-          {{ template "room-create-button" (dict "Size" "large") }}
+          <!-- 大きいボタン（デスクトップ用） -->
+          <button
+            @click="$store.roomCreate.open()"
+            x-show="$store.auth.initialized && $store.auth.isAuthenticated"
+            x-cloak
+            class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-3 px-6 rounded-lg transition-colors whitespace-nowrap"
+          >
+            新しい部屋を作る
+          </button>
+          <button
+            x-show="$store.auth.initialized && !$store.auth.isAuthenticated"
+            x-cloak
+            @click="$store.auth.handleUnauthenticatedAction()"
+            title="ログインが必要です"
+            class="bg-gray-400 text-gray-500 font-medium py-3 px-6 rounded-lg cursor-not-allowed whitespace-nowrap"
+          >
+            新しい部屋を作る
+          </button>
         </div>
 
         <!-- モバイル用レイアウト -->
@@ -36,7 +53,8 @@
 
           <div class="flex justify-center">
             <!-- 部屋作成ボタン（認証状態で切り替え） -->
-            {{ template "room-create-button" (dict "Size" "small") }}
+            <!-- モバイル用ボタンは非表示 -->
+            <div class="hidden"></div>
           </div>
         </div>
       </div>
@@ -250,7 +268,24 @@
           </p>
 
           <!-- 部屋作成ボタン（認証状態で切り替え） -->
-          {{ template "room-create-button" (dict "Size" "inline") }}
+          <!-- インラインボタン（空の状態用） -->
+          <button
+            @click="$store.roomCreate.open()"
+            x-show="$store.auth.initialized && $store.auth.isAuthenticated"
+            x-cloak
+            class="inline-flex items-center bg-gray-800 hover:bg-gray-900 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+          >
+            部屋を作る
+          </button>
+          <button
+            x-show="$store.auth.initialized && !$store.auth.isAuthenticated"
+            x-cloak
+            @click="$store.auth.handleUnauthenticatedAction()"
+            title="ログインが必要です"
+            class="inline-flex items-center bg-gray-400 text-gray-500 font-medium py-2 px-4 rounded-lg cursor-not-allowed"
+          >
+            部屋を作る
+          </button>
         </div>
       </div>
     </section>
@@ -543,9 +578,223 @@
       </div>
     </div>
 
+    <!-- ブロック警告ダイアログ -->
+    <div
+      x-show="showBlockWarningDialog"
+      x-cloak
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      x-transition:enter="transition ease-out duration-300"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="transition ease-in duration-200"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0"
+    >
+      <div
+        x-show="showBlockWarningDialog"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 transform scale-90"
+        x-transition:enter-end="opacity-100 transform scale-100"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 transform scale-100"
+        x-transition:leave-end="opacity-0 transform scale-90"
+        class="bg-white rounded-lg shadow-xl max-w-md w-full mx-auto"
+        @click.stop=""
+      >
+        <!-- ヘッダー -->
+        <div class="p-6 border-b border-gray-200">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-gray-900">
+              参加確認
+            </h3>
+            <button
+              @click="closeBlockWarningDialog()"
+              class="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- コンテンツ -->
+        <div class="p-6">
+          <div class="text-gray-600 mb-4" x-text="blockWarningMessage"></div>
+
+          <div class="mb-4">
+            <svg
+              class="mx-auto h-12 w-12 text-orange-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"
+              />
+            </svg>
+          </div>
+        </div>
+
+        <!-- アクションボタン -->
+        <div
+          class="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-end space-x-3"
+        >
+          <button
+            @click="closeBlockWarningDialog()"
+            class="modal-button px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+          >
+            キャンセル
+          </button>
+          <button
+            @click="confirmJoinWithBlock()"
+            :disabled="isJoining"
+            x-text="isJoining ? '参加中...' : 'それでも参加'"
+            class="modal-button px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg transition-colors disabled:bg-orange-400 disabled:cursor-not-allowed"
+          ></button>
+        </div>
+      </div>
+    </div>
+
     <!-- フローティング部屋作成ボタン（モバイル専用） -->
-    {{ template "room-create-button" (dict "Size" "floating") }}
+    <!-- フローティングボタン（モバイル用右下固定） -->
+    <div class="fixed bottom-6 right-6 z-40 md:hidden">
+      <button
+        @click="$store.roomCreate.open()"
+        x-show="$store.auth.initialized && $store.auth.isAuthenticated"
+        x-cloak
+        class="flex items-center justify-center w-14 h-14 bg-gray-800 hover:bg-gray-900 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+        title="部屋を作る"
+        aria-label="新しい部屋を作成"
+      >
+        <svg
+          class="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 4v16m8-8H4"
+          />
+        </svg>
+      </button>
+      <button
+        x-show="$store.auth.initialized && !$store.auth.isAuthenticated"
+        x-cloak
+        @click="$store.auth.handleUnauthenticatedAction()"
+        title="ログインが必要です"
+        aria-label="部屋を作るにはログインが必要です"
+        class="flex items-center justify-center w-14 h-14 bg-gray-400 text-gray-500 rounded-full shadow-lg cursor-not-allowed"
+      >
+        <svg
+          class="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 4v16m8-8H4"
+          />
+        </svg>
+      </button>
+    </div>
+
+    <!-- ホスト中制限モーダル -->
+    <div
+      x-show="showHostRestrictionModal"
+      x-cloak
+      @click.self="() => { showHostRestrictionModal = false; hostRoomInfo = null; }"
+      x-transition:enter="transition ease-out duration-300"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="transition ease-in duration-200"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+    >
+      <div
+        x-show="showHostRestrictionModal"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="transform scale-95 opacity-0"
+        x-transition:enter-end="transform scale-100 opacity-100"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="transform scale-100 opacity-100"
+        x-transition:leave-end="transform scale-95 opacity-0"
+        class="bg-white rounded-lg shadow-xl max-w-md w-full"
+        @click.stop
+      >
+        <!-- ヘッダー -->
+        <div class="p-6 border-b border-gray-200">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-gray-900">
+              他の部屋に参加できません
+            </h3>
+            <button
+              @click="() => { showHostRestrictionModal = false; hostRoomInfo = null; }"
+              class="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- コンテンツ -->
+        <div class="p-6">
+          <div class="text-gray-600 mb-4">
+            <p>ホスト中は他の部屋に参加できません。</p>
+          </div>
+
+          <div class="mb-4">
+            <svg
+              class="mx-auto h-12 w-12 text-orange-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+          </div>
+        </div>
+
+        <!-- アクションボタン -->
+        <div
+          class="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-end space-x-3"
+        >
+          <button
+            @click="() => { showHostRestrictionModal = false; hostRoomInfo = null; }"
+            class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+          >
+            閉じる
+          </button>
+          <a
+            :href="'/rooms/' + hostRoomInfo?.id"
+            class="px-6 py-2 bg-gray-800 hover:bg-gray-900 text-white font-medium rounded-lg transition-colors"
+          >
+            ホスト中の部屋へ移動
+          </a>
+        </div>
+      </div>
+    </div>
+    <!-- 部屋作成モーダルはグローバルモーダルに移動済み -->
+    <!-- ホスト中警告モーダルとゲスト確認モーダルもグローバルモーダルに移動済み -->
   </div>
+
 
 <script>
   document.addEventListener('alpine:init', () => {
@@ -564,6 +813,10 @@
         lastFocusedElement: null,
         showConfirmDialog: false,
         confirmRoomId: null,
+        showBlockWarningDialog: false,
+        blockWarningMessage: '',
+        showHostRestrictionModal: false,
+        hostRoomInfo: null,
         async checkPSNIdRequired() {
           try {
             const authStore = Alpine.store('auth');
@@ -744,7 +997,32 @@
           return this.isJoining || (this.currentRoom.hasPassword && !this.password.trim())
         },
         // 部屋参加モーダルを開く
-        openModal(room) {
+        async openModal(room) {
+          // ホスト状態をチェック
+          const authStore = Alpine.store('auth');
+          if (authStore.isAuthenticated && authStore.session?.access_token) {
+            try {
+              const response = await fetch('/api/user/current/room-status', {
+                headers: {
+                  'Authorization': `Bearer ${authStore.session.access_token}`
+                }
+              });
+              
+              if (response.ok) {
+                const data = await response.json();
+                if (data.status === 'HOST') {
+                  // ホスト中の場合は制限モーダルを表示
+                  this.hostRoomInfo = data.room;
+                  this.showHostRestrictionModal = true;
+                  return;
+                }
+              }
+            } catch (error) {
+              console.error('部屋状態チェックエラー:', error);
+              // エラーの場合は通常通り続行
+            }
+          }
+          
           // 現在のフォーカス位置を保存
           this.lastFocusedElement = document.activeElement;
           this.currentRoom = {
@@ -832,6 +1110,15 @@
               if (response.status === 401) {
                 throw new Error('認証が必要です。ログインしてください。')
               } else if (response.status === 409) {
+                const errorData = await response.json()
+                // ホスト中の制限
+                if (errorData.error === 'HOST_CANNOT_JOIN') {
+                  this.closeModal()
+                  this.hostRoomInfo = errorData.room
+                  this.showHostRestrictionModal = true
+                  this.isJoining = false
+                  return
+                }
                 // 他の部屋に参加している場合の確認ダイアログ
                 const errorText = await response.text()
                 if (errorText.includes('既に別の部屋に参加しています')) {
@@ -841,6 +1128,18 @@
                   return
                 }
                 throw new Error(errorText || '参加に失敗しました')
+              } else if (response.status === 403) {
+                // ブロック関係による参加拒否
+                const errorData = await response.json()
+                if (errorData.error === 'BLOCKED_BY_HOST') {
+                  this.showErrorMessage('このルームには参加できません')
+                } else if (errorData.error === 'BLOCKED_BY_MEMBER') {
+                  this.showErrorMessage('ブロック関係により参加できません')
+                } else {
+                  this.showErrorMessage(errorData.message || '参加に失敗しました')
+                }
+                this.isJoining = false
+                return
               } else if (response.status === 400) {
                 const errorData = await response.text()
                 throw new Error(errorData || '参加に失敗しました')
@@ -849,6 +1148,14 @@
             }
 
             const result = await response.json()
+
+            // ブロック警告の場合
+            if (result.warning === 'USER_BLOCKING_HOST' && result.requiresConfirmation) {
+              this.showBlockWarningDialog = true
+              this.blockWarningMessage = result.message
+              this.isJoining = false
+              return
+            }
 
             // 成功時は部屋詳細画面に遷移（モーダルは閉じない）
             if (result.redirect) {
@@ -974,6 +1281,64 @@
           }
         },
 
+        // ブロック警告ダイアログを閉じる
+        closeBlockWarningDialog() {
+          this.showBlockWarningDialog = false
+          this.blockWarningMessage = ''
+          this.isJoining = false
+        },
+
+        // ブロック警告を了承して参加
+        async confirmJoinWithBlock() {
+          this.isJoining = true
+          const requestData = {}
+          if (this.currentRoom.hasPassword) {
+            requestData.password = this.password
+          }
+          requestData.confirmJoin = true // ブロック警告確認済みフラグ
+
+          try {
+            const headers = {
+              'Content-Type': 'application/json'
+            }
+
+            if (Alpine.store('auth').session?.access_token) {
+              headers['Authorization'] = `Bearer ${Alpine.store('auth').session.access_token}`
+            }
+
+            const response = await fetch(`/rooms/${this.currentRoom.id}/join`, {
+              method: 'POST',
+              headers: headers,
+              body: JSON.stringify(requestData),
+            })
+
+            if (!response.ok) {
+              if (response.status === 403) {
+                const errorData = await response.json()
+                this.showErrorMessage(errorData.message || '参加に失敗しました')
+                this.closeBlockWarningDialog()
+                return
+              }
+              throw new Error('参加に失敗しました')
+            }
+
+            const result = await response.json()
+
+            // ダイアログを閉じて部屋詳細に遷移
+            this.closeBlockWarningDialog()
+            this.closeModal()
+
+            if (result.redirect) {
+              window.location.href = result.redirect
+            } else {
+              window.location.reload()
+            }
+          } catch (error) {
+            this.showErrorMessage(error.message || '参加に失敗しました。もう一度お試しください。')
+            this.isJoining = false
+          }
+        },
+        
         // クリーンアップ処理
         destroy() {
           document.removeEventListener('keydown', this.handleEsc.bind(this))
@@ -984,4 +1349,5 @@
   })
 
 </script>
+
 {{ end }}

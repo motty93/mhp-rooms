@@ -1,15 +1,14 @@
 {{ define "room-create-modal" }}
 <!-- 部屋作成モーダル -->
 <div
-  x-data="roomCreateModal()"
-  x-show="showModal"
+  x-show="showCreateModal"
   x-cloak
   @keydown.escape="handleEscape"
   class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
 >
   <!-- モーダルコンテンツ -->
   <div
-    x-show="showModal"
+    x-show="showCreateModal"
     x-transition:enter="transition ease-out duration-300"
     x-transition:enter-start="opacity-0 scale-95"
     x-transition:enter-end="opacity-100 scale-100"
@@ -23,7 +22,7 @@
     <div class="flex items-center justify-between p-6 border-b border-gray-200">
       <h2 class="text-xl font-semibold text-gray-900">新しい部屋を作る</h2>
       <button
-        @click="closeModal"
+        @click="closeCreateModal"
         class="text-gray-400 hover:text-gray-500 focus:outline-none"
       >
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -33,7 +32,7 @@
     </div>
 
     <!-- フォーム -->
-    <form @submit.prevent="submitForm" class="p-6 space-y-4">
+    <form @submit.prevent="createRoom" class="p-6 space-y-4">
       <!-- 部屋名 -->
       <div>
         <label for="room-name" class="block text-sm font-medium text-gray-700 mb-1">
@@ -42,17 +41,16 @@
         <input
           id="room-name"
           type="text"
-          x-model="formData.name"
-          @input="validateField('name')"
+          x-model="createFormData.name"
           maxlength="50"
           required
           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          :class="{ 'border-red-500': errors.name }"
+          :class="{ 'border-red-500': createFormErrors.name }"
           placeholder="部屋の名前を入力してください"
         />
         <div class="flex justify-between mt-1">
-          <div x-show="errors.name" class="text-red-500 text-sm" x-text="errors.name"></div>
-          <div class="text-gray-500 text-sm" x-text="`${formData.name.length}/50`"></div>
+          <div x-show="createFormErrors.name" class="text-red-500 text-sm" x-text="createFormErrors.name"></div>
+          <div class="text-gray-500 text-sm" x-text="`${createFormData.name.length}/50`"></div>
         </div>
       </div>
 
@@ -63,18 +61,17 @@
         </label>
         <select
           id="game-version"
-          x-model="formData.gameVersionId"
-          @change="validateField('gameVersionId')"
-          required
+          x-model="createFormData.gameVersionId"
+                    required
           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          :class="{ 'border-red-500': errors.gameVersionId }"
+          :class="{ 'border-red-500': createFormErrors.gameVersionId }"
         >
           <option value="">ゲームを選択してください</option>
           <template x-for="version in gameVersions" :key="version.id">
             <option :value="version.id" x-text="version.name"></option>
           </template>
         </select>
-        <div x-show="errors.gameVersionId" class="text-red-500 text-sm mt-1" x-text="errors.gameVersionId"></div>
+        <div x-show="createFormErrors.gameVersionId" class="text-red-500 text-sm mt-1" x-text="createFormErrors.gameVersionId"></div>
       </div>
 
       <!-- 募集人数 -->
@@ -84,18 +81,17 @@
         </label>
         <select
           id="max-players"
-          x-model.number="formData.maxPlayers"
-          @change="validateField('maxPlayers')"
-          required
+          x-model.number="createFormData.maxPlayers"
+                    required
           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          :class="{ 'border-red-500': errors.maxPlayers }"
+          :class="{ 'border-red-500': createFormErrors.maxPlayers }"
         >
           <option value="">募集人数を選択してください</option>
           <option value="2">2人</option>
           <option value="3">3人</option>
           <option value="4">4人</option>
         </select>
-        <div x-show="errors.maxPlayers" class="text-red-500 text-sm mt-1" x-text="errors.maxPlayers"></div>
+        <div x-show="createFormErrors.maxPlayers" class="text-red-500 text-sm mt-1" x-text="createFormErrors.maxPlayers"></div>
       </div>
 
       <!-- パスワード -->
@@ -106,16 +102,15 @@
         <input
           id="password"
           type="password"
-          x-model="formData.password"
-          @input="validateField('password')"
-          maxlength="20"
+          x-model="createFormData.password"
+                    maxlength="20"
           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          :class="{ 'border-red-500': errors.password }"
+          :class="{ 'border-red-500': createFormErrors.password }"
           placeholder="パスワードを入力してください（任意）"
         />
         <div class="flex justify-between mt-1">
-          <div x-show="errors.password" class="text-red-500 text-sm" x-text="errors.password"></div>
-          <div class="text-gray-500 text-sm" x-text="`${formData.password.length}/20`"></div>
+          <div x-show="createFormErrors.password" class="text-red-500 text-sm" x-text="createFormErrors.password"></div>
+          <div class="text-gray-500 text-sm" x-text="`${createFormData.password.length}/20`"></div>
         </div>
       </div>
 
@@ -127,16 +122,15 @@
         <input
           id="target-monster"
           type="text"
-          x-model="formData.targetMonster"
-          @input="validateField('targetMonster')"
-          maxlength="50"
+          x-model="createFormData.targetMonster"
+                    maxlength="50"
           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          :class="{ 'border-red-500': errors.targetMonster }"
+          :class="{ 'border-red-500': createFormErrors.targetMonster }"
           placeholder="討伐予定のモンスターを入力してください（任意）"
         />
         <div class="flex justify-between mt-1">
-          <div x-show="errors.targetMonster" class="text-red-500 text-sm" x-text="errors.targetMonster"></div>
-          <div class="text-gray-500 text-sm" x-text="`${formData.targetMonster.length}/50`"></div>
+          <div x-show="createFormErrors.targetMonster" class="text-red-500 text-sm" x-text="createFormErrors.targetMonster"></div>
+          <div class="text-gray-500 text-sm" x-text="`${createFormData.targetMonster.length}/50`"></div>
         </div>
       </div>
 
@@ -148,16 +142,15 @@
         <input
           id="rank-requirement"
           type="text"
-          x-model="formData.rankRequirement"
-          @input="validateField('rankRequirement')"
-          maxlength="30"
+          x-model="createFormData.rankRequirement"
+                    maxlength="30"
           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          :class="{ 'border-red-500': errors.rankRequirement }"
+          :class="{ 'border-red-500': createFormErrors.rankRequirement }"
           placeholder="参加条件（例：HR6以上、制限なし）を入力してください（任意）"
         />
         <div class="flex justify-between mt-1">
-          <div x-show="errors.rankRequirement" class="text-red-500 text-sm" x-text="errors.rankRequirement"></div>
-          <div class="text-gray-500 text-sm" x-text="`${formData.rankRequirement.length}/30`"></div>
+          <div x-show="createFormErrors.rankRequirement" class="text-red-500 text-sm" x-text="createFormErrors.rankRequirement"></div>
+          <div class="text-gray-500 text-sm" x-text="`${createFormData.rankRequirement.length}/30`"></div>
         </div>
       </div>
 
@@ -168,17 +161,16 @@
         </label>
         <textarea
           id="description"
-          x-model="formData.description"
-          @input="validateField('description')"
-          rows="3"
+          x-model="createFormData.description"
+                    rows="3"
           maxlength="200"
           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          :class="{ 'border-red-500': errors.description }"
+          :class="{ 'border-red-500': createFormErrors.description }"
           placeholder="部屋の説明を入力してください（任意）"
         ></textarea>
         <div class="flex justify-between mt-1">
-          <div x-show="errors.description" class="text-red-500 text-sm" x-text="errors.description"></div>
-          <div class="text-gray-500 text-sm" x-text="`${formData.description.length}/200`"></div>
+          <div x-show="createFormErrors.description" class="text-red-500 text-sm" x-text="createFormErrors.description"></div>
+          <div class="text-gray-500 text-sm" x-text="`${createFormData.description.length}/200`"></div>
         </div>
       </div>
 
@@ -186,17 +178,17 @@
       <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
         <button
           type="button"
-          @click="closeModal"
+          @click="closeCreateModal"
           class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
         >
           キャンセル
         </button>
         <button
           type="submit"
-          :disabled="!isFormValid || isSubmitting"
+          :disabled="!isValidCreateForm || isSubmitting"
           :class="{
-            'bg-gray-400 cursor-not-allowed': !isFormValid || isSubmitting,
-            'bg-blue-600 hover:bg-blue-700': isFormValid && !isSubmitting
+            'bg-gray-400 cursor-not-allowed': !isValidCreateForm || isSubmitting,
+            'bg-gray-800 hover:bg-gray-900': isValidCreateForm && !isSubmitting
           }"
           class="px-4 py-2 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
         >
@@ -215,8 +207,178 @@
 
   <!-- バックドロップクリック用の透明エリア -->
   <div
-    @click="handleBackdropClick"
+    @click="closeCreateModal"
     class="absolute inset-0 -z-10"
   ></div>
+</div>
+
+<!-- ホスト中警告モーダル -->
+<div
+  x-show="showHostWarningModal"
+  x-cloak
+  @click.self="closeHostWarningModal()"
+  x-transition:enter="transition ease-out duration-300"
+  x-transition:enter-start="opacity-0"
+  x-transition:enter-end="opacity-100"
+  x-transition:leave="transition ease-in duration-200"
+  x-transition:leave-start="opacity-100"
+  x-transition:leave-end="opacity-0"
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+>
+  <div
+    x-show="showHostWarningModal"
+    x-transition:enter="transition ease-out duration-300"
+    x-transition:enter-start="transform scale-95 opacity-0"
+    x-transition:enter-end="transform scale-100 opacity-100"
+    x-transition:leave="transition ease-in duration-200"
+    x-transition:leave-start="transform scale-100 opacity-100"
+    x-transition:leave-end="transform scale-95 opacity-0"
+    class="bg-white rounded-lg shadow-xl max-w-md w-full"
+    @click.stop
+  >
+    <!-- ヘッダー -->
+    <div class="p-6 border-b border-gray-200">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-gray-900">
+          新しい部屋を作成できません
+        </h3>
+        <button
+          @click="closeHostWarningModal()"
+          class="text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- コンテンツ -->
+    <div class="p-6">
+      <div class="text-gray-600 mb-4">
+        <p>あなたは現在「<span class="font-semibold" x-text="currentRoomInfo?.name"></span>」のホストです。</p>
+        <p class="mt-2">新しい部屋を作成する前に、この部屋を終了してください。</p>
+      </div>
+
+      <div class="mb-4">
+        <svg
+          class="mx-auto h-12 w-12 text-orange-400"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+          />
+        </svg>
+      </div>
+    </div>
+
+    <!-- アクションボタン -->
+    <div
+      class="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-end space-x-3"
+    >
+      <button
+        @click="closeHostWarningModal()"
+        class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+      >
+        閉じる
+      </button>
+      <a
+        :href="'/rooms/' + currentRoomInfo?.id"
+        class="px-6 py-2 bg-gray-800 hover:bg-gray-900 text-white font-medium rounded-lg transition-colors"
+      >
+        ホスト中の部屋へ移動
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ゲスト確認モーダル -->
+<div
+  x-show="showGuestConfirmModal"
+  x-cloak
+  @click.self="closeGuestConfirmModal()"
+  x-transition:enter="transition ease-out duration-300"
+  x-transition:enter-start="opacity-0"
+  x-transition:enter-end="opacity-100"
+  x-transition:leave="transition ease-in duration-200"
+  x-transition:leave-start="opacity-100"
+  x-transition:leave-end="opacity-0"
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+>
+  <div
+    x-show="showGuestConfirmModal"
+    x-transition:enter="transition ease-out duration-300"
+    x-transition:enter-start="transform scale-95 opacity-0"
+    x-transition:enter-end="transform scale-100 opacity-100"
+    x-transition:leave="transition ease-in duration-200"
+    x-transition:leave-start="transform scale-100 opacity-100"
+    x-transition:leave-end="transform scale-95 opacity-0"
+    class="bg-white rounded-lg shadow-xl max-w-md w-full"
+    @click.stop
+  >
+    <!-- ヘッダー -->
+    <div class="p-6 border-b border-gray-200">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-gray-900">
+          他の部屋に参加中です
+        </h3>
+        <button
+          @click="closeGuestConfirmModal()"
+          class="text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- コンテンツ -->
+    <div class="p-6">
+      <div class="text-gray-600 mb-4">
+        <p>あなたは現在「<span class="font-semibold" x-text="currentRoomInfo?.name"></span>」に参加中です。</p>
+        <p class="mt-2">新しい部屋を作成すると、この部屋から退出します。</p>
+      </div>
+
+      <div class="mb-4">
+        <svg
+          class="mx-auto h-12 w-12 text-yellow-400"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+          />
+        </svg>
+      </div>
+    </div>
+
+    <!-- アクションボタン -->
+    <div
+      class="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-end space-x-3"
+    >
+      <button
+        @click="closeGuestConfirmModal()"
+        class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+      >
+        キャンセル
+      </button>
+      <button
+        @click="confirmAndOpenCreateModal()"
+        class="px-6 py-2 bg-gray-800 hover:bg-gray-900 text-white font-medium rounded-lg transition-colors"
+      >
+        退出して作成
+      </button>
+    </div>
+  </div>
 </div>
 {{ end }}

@@ -503,3 +503,46 @@ func (r *roomRepository) DismissRoom(roomID uuid.UUID) error {
 		return tx.Create(&log).Error
 	})
 }
+
+// GetUserRoomStatus ユーザーの部屋状態を取得
+func (r *roomRepository) GetUserRoomStatus(userID uuid.UUID) (string, *models.Room, error) {
+	// 1. ホストとして部屋を持っているかチェック
+	var hostRoom models.Room
+	err := r.db.GetConn().
+		Preload("GameVersion").
+		Where("host_user_id = ? AND is_active = ? AND is_closed = ?", userID, true, false).
+		First(&hostRoom).Error
+	
+	if err == nil {
+		// ホストとして部屋を持っている
+		return "HOST", &hostRoom, nil
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		// 予期しないエラー
+		return "", nil, err
+	}
+
+	// 2. 参加者として部屋に参加しているかチェック
+	var member models.RoomMember
+	err = r.db.GetConn().
+		Where("user_id = ? AND status = ? AND is_host = ?", userID, "active", false).
+		First(&member).Error
+	
+	if err == nil {
+		// 参加者として部屋に参加している
+		var guestRoom models.Room
+		err = r.db.GetConn().
+			Preload("GameVersion").
+			Where("id = ?", member.RoomID).
+			First(&guestRoom).Error
+		if err != nil {
+			return "", nil, err
+		}
+		return "GUEST", &guestRoom, nil
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		// 予期しないエラー
+		return "", nil, err
+	}
+
+	// 3. どの部屋にも所属していない
+	return "NONE", nil, nil
+}
