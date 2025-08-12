@@ -59,6 +59,7 @@ func (app *Application) SetupRoutes() chi.Router {
 
 func (app *Application) setupPageRoutes(r chi.Router) {
 	ph := app.pageHandler
+	profileHandler := app.profileHandler
 
 	// 本番環境では認証情報をオプションで取得、開発環境では認証なしでアクセス可能
 	if app.hasAuthMiddleware() {
@@ -70,6 +71,7 @@ func (app *Application) setupPageRoutes(r chi.Router) {
 		r.Get("/guide", app.withOptionalAuth(ph.Guide))
 		r.Get("/hello", app.withOptionalAuth(ph.Hello))
 		r.Get("/sitemap.xml", app.withOptionalAuth(ph.Sitemap))
+		r.Get("/profile", app.withOptionalAuth(profileHandler.Profile))
 	} else {
 		r.Get("/", ph.Home)
 		r.Get("/terms", ph.Terms)
@@ -79,6 +81,7 @@ func (app *Application) setupPageRoutes(r chi.Router) {
 		r.Get("/guide", ph.Guide)
 		r.Get("/hello", ph.Hello)
 		r.Get("/sitemap.xml", ph.Sitemap)
+		r.Get("/profile", profileHandler.Profile)
 	}
 }
 
@@ -168,6 +171,12 @@ func (app *Application) setupAPIRoutes(r chi.Router) {
 		ar.Get("/config/supabase", app.configHandler.GetSupabaseConfig)
 		ar.Get("/health", app.healthCheck)
 		ar.Get("/game-versions/active", app.gameVersionHandler.GetActiveGameVersionsAPI)
+		
+		// プロフィール関連のAPIエンドポイント（モック）
+		ar.Get("/profile/edit-form", app.profileHandler.EditForm)
+		ar.Get("/profile/activity", app.profileHandler.Activity)
+		ar.Get("/profile/rooms", app.profileHandler.Rooms)
+		ar.Get("/profile/friends", app.profileHandler.Friends)
 
 		if app.hasAuthMiddleware() {
 			// 認証関連API（厳しいレート制限 + 認証必須）
