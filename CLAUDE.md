@@ -76,10 +76,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 主要機能
 
+### 実装済み機能
 - ユーザー認証・管理
 - ルーム作成・参加・管理
 - ゲームバージョン別ルーム表示
 - 日本語対応UI
+- プロフィール画面（基本情報表示）
+- フォロー・フォロワー機能（DBスキーマのみ）
+
+### 未実装機能（開発予定）
+- **プロフィール機能**：
+  - プロフィール編集機能
+  - お気に入りゲーム・プレイ時間帯の設定・表示
+  - 実際のフォロー・アンフォロー機能
+  - プロフィールタブの動的データ表示（現在はモックHTML）
+- **ユーザー管理機能**：
+  - ユーザー検索機能
+  - ユーザーブロック機能
+- **通知機能**：
+  - フォロー通知
+  - 部屋参加通知
+- **メッセージ機能**：
+  - ダイレクトメッセージ機能
 
 ## 開発時の考慮事項
 
@@ -133,6 +151,54 @@ fly secrets set ENV="production"
 - モバイルメニュー内要素: レスポンシブクラスなし（常に表示可能）
 
 **注意**: この仕様を変更する際は必ずユーザーに確認を取ること
+
+## プロフィール機能の現在の実装状況
+
+### 実装済み
+- プロフィール画面のUI/UX（基本表示）
+- ユーザー情報の表示（アバター、ユーザー名、自己紹介等）
+- タブ切り替え機能（htmx使用）
+- フォロー・フォロワー関係のDBスキーマ（user_follows テーブル）
+- お気に入りゲーム・プレイ時間帯のDBスキーマ（JSONB形式）
+- 開発環境での認証バイパス機能
+- JSONBフィールドの適切な読み書き処理
+- プラットフォームID関連フィールド（PSN、Nintendo、Twitter等）
+
+### モック実装（現在の状態）
+プロフィールのタブコンテンツは現在、固定HTMLを返すモック実装になっています：
+
+```go
+// 現在：モック実装（固定HTML）
+func (ph *ProfileHandler) Followers(w http.ResponseWriter, r *http.Request) {
+    html := `<div>固定のHTMLコンテンツ</div>`
+    w.Write([]byte(html))
+}
+```
+
+### 最終実装予定
+本格実装では以下のような動的レンダリングを行います：
+
+```go
+// 予定：動的実装（DB + テンプレート）
+func (ph *ProfileHandler) Followers(w http.ResponseWriter, r *http.Request) {
+    // 1. DBからデータ取得
+    userID := getUserIDFromContext(r.Context())
+    followers, err := ph.repo.UserFollow.GetFollowers(userID)
+    
+    // 2. テンプレートでレンダリング
+    data := struct {
+        Followers []models.UserFollow
+    }{Followers: followers}
+    
+    renderPartialTemplate(w, "profile_followers.tmpl", data)
+}
+```
+
+### 必要な追加実装
+- 部分テンプレートファイル（`templates/components/profile_*.tmpl`）
+- リポジトリメソッドの完全実装
+- フォロー・アンフォロー機能のAPI実装
+- プロフィール編集機能
 
 ## コーディング規約
 
