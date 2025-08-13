@@ -48,6 +48,7 @@ type RoomRepository interface {
 	GetRoomMembers(roomID uuid.UUID) ([]models.RoomMember, error)
 	GetRoomLogs(roomID uuid.UUID) ([]models.RoomLog, error)
 	GetUserRoomStatus(userID uuid.UUID) (string, *models.Room, error) // (status, room, error)
+	GetRoomsByHostUser(userID uuid.UUID, limit, offset int) ([]models.Room, error)
 }
 
 // PlayerNameRepository はプレイヤー名関連の操作を定義するインターフェース
@@ -76,4 +77,17 @@ type UserBlockRepository interface {
 	CheckRoomMemberBlocks(userID, roomID uuid.UUID) ([]models.User, error) // ブロック関係のあるメンバーリストを返す
 	GetBlockedUsers(blockerUserID uuid.UUID) ([]models.User, error)
 	GetBlockingUsers(blockedUserID uuid.UUID) ([]models.User, error)
+}
+
+// UserFollowRepository はユーザーフォロー関連の操作を定義するインターフェース
+type UserFollowRepository interface {
+	CreateFollow(follow *models.UserFollow) error
+	DeleteFollow(followerUserID, followingUserID uuid.UUID) error
+	GetFollow(followerUserID, followingUserID uuid.UUID) (*models.UserFollow, error)
+	UpdateFollowStatus(followerUserID, followingUserID uuid.UUID, status string) error
+	GetFollowers(userID uuid.UUID) ([]models.UserFollow, error)
+	GetFollowing(userID uuid.UUID) ([]models.UserFollow, error)
+	GetMutualFriends(userID uuid.UUID) ([]models.User, error)
+	GetFriendCount(userID uuid.UUID) (int64, error)
+	IsMutualFollow(userID1, userID2 uuid.UUID) (bool, error)
 }

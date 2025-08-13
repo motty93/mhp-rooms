@@ -1,0 +1,32 @@
+{{define "profile_rooms"}}
+<div>
+    <h3 class="text-xl font-bold mb-4 text-gray-800">作成した部屋</h3>
+    {{if .Rooms}}
+        <div class="space-y-4">
+            {{range .Rooms}}
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 {{if .IsClickable}}cursor-pointer hover:bg-gray-100 transition-colors{{else}}cursor-default{{end}}"
+                 {{if .IsClickable}}onclick="window.location.href='/rooms/{{.ID}}'"{{end}}>
+                <div class="flex justify-between items-start mb-2">
+                    <h4 class="font-semibold text-gray-800">{{.Name}}</h4>
+                    <span class="text-xs text-gray-500">{{.CreatedAt}}</span>
+                </div>
+                {{if .Description}}
+                <p class="text-sm text-gray-600 mb-2">{{.Description}}</p>
+                {{end}}
+                <div class="flex items-center space-x-4 text-xs text-gray-500">
+                    <span>{{.GameVersion}}</span>
+                    <span>{{.PlayerCount}}</span>
+                    <span class="{{.StatusColor}}">{{.Status}}</span>
+                </div>
+            </div>
+            {{end}}
+        </div>
+    {{else}}
+        <div class="text-center py-8">
+            <i class="fa-solid fa-door-open text-gray-300 text-4xl mb-3"></i>
+            <p class="text-gray-500">まだ部屋を作成していません</p>
+            <p class="text-sm text-gray-400 mt-1">部屋を作成して他のハンターと狩りに出かけましょう！</p>
+        </div>
+    {{end}}
+</div>
+{{end}}

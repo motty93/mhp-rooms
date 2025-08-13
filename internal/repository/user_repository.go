@@ -29,7 +29,9 @@ func (r *userRepository) CreateUser(user *models.User) error {
 // FindUserByID はIDでユーザーを検索
 func (r *userRepository) FindUserByID(id uuid.UUID) (*models.User, error) {
 	var user models.User
-	err := r.db.GetConn().Where("id = ?", id).First(&user).Error
+	err := r.db.GetConn().
+		Select("id", "supabase_user_id", "email", "username", "display_name", "avatar_url", "bio", "psn_online_id", "nintendo_network_id", "nintendo_switch_id", "pretendo_network_id", "twitter_id", "is_active", "role", "created_at", "updated_at").
+		Where("id = ?", id).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("ユーザーが見つかりません")
@@ -53,7 +55,9 @@ func (r *userRepository) FindUsersByIDs(ids []uuid.UUID) ([]models.User, error) 
 // FindUserBySupabaseUserID はSupabaseユーザーIDでユーザーを検索
 func (r *userRepository) FindUserBySupabaseUserID(supabaseUserID uuid.UUID) (*models.User, error) {
 	var user models.User
-	err := r.db.GetConn().Where("supabase_user_id = ?", supabaseUserID).First(&user).Error
+	err := r.db.GetConn().
+		Select("id", "supabase_user_id", "email", "username", "display_name", "avatar_url", "bio", "psn_online_id", "nintendo_network_id", "nintendo_switch_id", "pretendo_network_id", "twitter_id", "is_active", "role", "created_at", "updated_at").
+		Where("supabase_user_id = ?", supabaseUserID).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -66,7 +70,9 @@ func (r *userRepository) FindUserBySupabaseUserID(supabaseUserID uuid.UUID) (*mo
 // FindUserByEmail はメールアドレスでユーザーを検索
 func (r *userRepository) FindUserByEmail(email string) (*models.User, error) {
 	var user models.User
-	err := r.db.GetConn().Where("email = ?", email).First(&user).Error
+	err := r.db.GetConn().
+		Select("id", "supabase_user_id", "email", "username", "display_name", "avatar_url", "bio", "psn_online_id", "nintendo_network_id", "nintendo_switch_id", "pretendo_network_id", "twitter_id", "is_active", "role", "created_at", "updated_at").
+		Where("email = ?", email).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("ユーザーが見つかりません")

@@ -42,7 +42,9 @@ func (r *playerNameRepository) UpdatePlayerName(playerName *models.PlayerName) e
 func (r *playerNameRepository) FindPlayerNameByUserAndGame(userID, gameVersionID uuid.UUID) (*models.PlayerName, error) {
 	var playerName models.PlayerName
 	err := r.db.GetConn().
-		Preload("User").
+		Preload("User", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "supabase_user_id", "email", "username", "display_name", "avatar_url", "bio", "psn_online_id", "nintendo_network_id", "nintendo_switch_id", "pretendo_network_id", "twitter_id", "is_active", "role", "created_at", "updated_at")
+		}).
 		Preload("GameVersion").
 		Where("user_id = ? AND game_version_id = ?", userID, gameVersionID).
 		First(&playerName).Error

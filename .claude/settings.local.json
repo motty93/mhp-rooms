@@ -100,7 +100,14 @@
       "mcp__serena__get_current_config",
       "Bash(awk:*)",
       "Bash(python3:*)",
-      "mcp__serena__delete_lines"
+      "mcp__serena__delete_lines",
+      "mcp__serena__replace_lines",
+      "Bash(PGPASSWORD=password psql:*)",
+      "mcp__playwright__browser_navigate_back",
+      "Bash(ENV=development go run cmd/server/main.go)",
+      "Bash(PORT=8081 make run)",
+      "Bash(ENV=development DEBUG_AUTH_LOGS=true make run)",
+      "Bash(source .env)"
     ],
     "deny": []
   }

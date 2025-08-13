@@ -46,7 +46,9 @@ func (r *roomRepository) CreateRoom(room *models.Room) error {
 			UserID: &room.HostUserID,
 			Action: "create",
 			Details: models.JSONB{
-				"room_name": room.Name,
+				Data: map[string]interface{}{
+					"room_name": room.Name,
+				},
 			},
 		}
 		return tx.Create(&log).Error
@@ -57,7 +59,9 @@ func (r *roomRepository) FindRoomByID(id uuid.UUID) (*models.Room, error) {
 	var room models.Room
 	err := r.db.GetConn().
 		Preload("GameVersion").
-		Preload("Host").
+		Preload("Host", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "supabase_user_id", "email", "username", "display_name", "avatar_url", "bio", "psn_online_id", "nintendo_network_id", "nintendo_switch_id", "pretendo_network_id", "twitter_id", "is_active", "role", "created_at", "updated_at")
+		}).
 		Where("id = ?", id).
 		First(&room).Error
 	if err != nil {
@@ -73,7 +77,9 @@ func (r *roomRepository) FindRoomByRoomCode(roomCode string) (*models.Room, erro
 	var room models.Room
 	err := r.db.GetConn().
 		Preload("GameVersion").
-		Preload("Host").
+		Preload("Host", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "supabase_user_id", "email", "username", "display_name", "avatar_url", "bio", "psn_online_id", "nintendo_network_id", "nintendo_switch_id", "pretendo_network_id", "twitter_id", "is_active", "role", "created_at", "updated_at")
+		}).
 		Where("room_code = ?", roomCode).
 		First(&room).Error
 	if err != nil {
@@ -91,7 +97,9 @@ func (r *roomRepository) GetActiveRooms(gameVersionID *uuid.UUID, limit, offset 
 		Select("rooms.*, COUNT(room_members.id) as current_players").
 		Joins("LEFT JOIN room_members ON rooms.id = room_members.room_id AND room_members.status = 'active'").
 		Preload("GameVersion").
-		Preload("Host").
+		Preload("Host", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "supabase_user_id", "email", "username", "display_name", "avatar_url", "bio", "psn_online_id", "nintendo_network_id", "nintendo_switch_id", "pretendo_network_id", "twitter_id", "is_active", "role", "created_at", "updated_at")
+		}).
 		Where("rooms.is_active = ?", true).
 		Group("rooms.id")
 
@@ -104,6 +112,7 @@ func (r *roomRepository) GetActiveRooms(gameVersionID *uuid.UUID, limit, offset 
 		Limit(limit).
 		Offset(offset).
 		Find(&rooms).Error
+
 	return rooms, err
 }
 
@@ -200,7 +209,6 @@ func (r *roomRepository) GetActiveRoomsWithJoinStatus(userID *uuid.UUID, gameVer
 	return roomsWithStatus, nil
 }
 
-
 func (r *roomRepository) ToggleRoomClosed(id uuid.UUID, isClosed bool) error {
 	return r.db.GetConn().
 		Model(&models.Room{}).
@@ -227,7 +235,7 @@ func (r *roomRepository) JoinRoom(roomID, userID uuid.UUID, password string) err
 	return r.db.GetConn().Transaction(func(tx *gorm.DB) error {
 		// ユーザーの存在確認（開発環境では自動作成）
 		var user models.User
-		if err := tx.Where("id = ?", userID).First(&user).Error; err != nil {
+		if err := tx.Select("id", "supabase_user_id", "email", "username", "display_name", "avatar_url", "bio", "psn_online_id", "nintendo_network_id", "nintendo_switch_id", "pretendo_network_id", "twitter_id", "is_active", "role", "created_at", "updated_at").Where("id = ?", userID).First(&user).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				// 開発環境でのみダミーユーザーを作成
 				user = models.User{
@@ -323,7 +331,9 @@ func (r *roomRepository) JoinRoom(roomID, userID uuid.UUID, password string) err
 			UserID: &userID,
 			Action: "join",
 			Details: models.JSONB{
-				"user_name": user.DisplayName,
+				Data: map[string]interface{}{
+					"user_name": user.DisplayName,
+				},
 			},
 		}
 		return tx.Create(&log).Error
@@ -350,7 +360,7 @@ func (r *roomRepository) LeaveRoom(roomID, userID uuid.UUID) error {
 
 		// ユーザー情報を取得
 		var user models.User
-		if err := tx.Where("id = ?", userID).First(&user).Error; err != nil {
+		if err := tx.Select("id", "supabase_user_id", "email", "username", "display_name", "avatar_url", "bio", "psn_online_id", "nintendo_network_id", "nintendo_switch_id", "pretendo_network_id", "twitter_id", "is_active", "role", "created_at", "updated_at").Where("id = ?", userID).First(&user).Error; err != nil {
 			return err
 		}
 
@@ -368,7 +378,9 @@ func (r *roomRepository) LeaveRoom(roomID, userID uuid.UUID) error {
 			UserID: &userID,
 			Action: "leave",
 			Details: models.JSONB{
-				"user_name": user.DisplayName,
+				Data: map[string]interface{}{
+					"user_name": user.DisplayName,
+				},
 			},
 		}
 		return tx.Create(&log).Error
@@ -405,7 +417,9 @@ func (r *roomRepository) IsUserJoinedRoom(roomID, userID uuid.UUID) bool {
 func (r *roomRepository) GetRoomMembers(roomID uuid.UUID) ([]models.RoomMember, error) {
 	var members []models.RoomMember
 	err := r.db.GetConn().
-		Preload("User").
+		Preload("User", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "supabase_user_id", "email", "username", "display_name", "avatar_url", "bio", "psn_online_id", "nintendo_network_id", "nintendo_switch_id", "pretendo_network_id", "twitter_id", "is_active", "role", "created_at", "updated_at")
+		}).
 		Where("room_id = ? AND status = ?", roomID, "active").
 		Order("is_host DESC, joined_at ASC").
 		Find(&members).Error
@@ -428,7 +442,9 @@ func (r *roomRepository) GetRoomMembers(roomID uuid.UUID) ([]models.RoomMember, 
 func (r *roomRepository) GetRoomLogs(roomID uuid.UUID) ([]models.RoomLog, error) {
 	var logs []models.RoomLog
 	err := r.db.GetConn().
-		Preload("User").
+		Preload("User", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "supabase_user_id", "email", "username", "display_name", "avatar_url", "bio", "psn_online_id", "nintendo_network_id", "nintendo_switch_id", "pretendo_network_id", "twitter_id", "is_active", "role", "created_at", "updated_at")
+		}).
 		Where("room_id = ?", roomID).
 		Order("created_at ASC").
 		Find(&logs).Error
@@ -450,13 +466,15 @@ func (r *roomRepository) UpdateRoom(room *models.Room) error {
 			UserID: &room.HostUserID,
 			Action: "update_settings",
 			Details: models.JSONB{
-				"room_name":         room.Name,
-				"max_players":       room.MaxPlayers,
-				"game_version_id":   room.GameVersionID,
-				"has_description":   room.Description != nil,
-				"has_target_monster": room.TargetMonster != nil,
-				"has_rank_requirement": room.RankRequirement != nil,
-				"has_password":      room.PasswordHash != nil,
+				Data: map[string]interface{}{
+					"room_name":            room.Name,
+					"max_players":          room.MaxPlayers,
+					"game_version_id":      room.GameVersionID,
+					"has_description":      room.Description != nil,
+					"has_target_monster":   room.TargetMonster != nil,
+					"has_rank_requirement": room.RankRequirement != nil,
+					"has_password":         room.PasswordHash != nil,
+				},
 			},
 		}
 		return tx.Create(&log).Error
@@ -476,8 +494,8 @@ func (r *roomRepository) DismissRoom(roomID uuid.UUID) error {
 		if err := tx.Model(&models.RoomMember{}).
 			Where("room_id = ? AND status = ?", roomID, "active").
 			Updates(map[string]interface{}{
-				"status":   "left",
-				"left_at":  time.Now(),
+				"status":  "left",
+				"left_at": time.Now(),
 			}).Error; err != nil {
 			return err
 		}
@@ -497,7 +515,9 @@ func (r *roomRepository) DismissRoom(roomID uuid.UUID) error {
 			UserID: &room.HostUserID,
 			Action: "dismiss",
 			Details: models.JSONB{
-				"room_name": room.Name,
+				Data: map[string]interface{}{
+					"room_name": room.Name,
+				},
 			},
 		}
 		return tx.Create(&log).Error
@@ -512,7 +532,7 @@ func (r *roomRepository) GetUserRoomStatus(userID uuid.UUID) (string, *models.Ro
 		Preload("GameVersion").
 		Where("host_user_id = ? AND is_active = ? AND is_closed = ?", userID, true, false).
 		First(&hostRoom).Error
-	
+
 	if err == nil {
 		// ホストとして部屋を持っている
 		return "HOST", &hostRoom, nil
@@ -526,7 +546,7 @@ func (r *roomRepository) GetUserRoomStatus(userID uuid.UUID) (string, *models.Ro
 	err = r.db.GetConn().
 		Where("user_id = ? AND status = ? AND is_host = ?", userID, "active", false).
 		First(&member).Error
-	
+
 	if err == nil {
 		// 参加者として部屋に参加している
 		var guestRoom models.Room
@@ -545,4 +565,60 @@ func (r *roomRepository) GetUserRoomStatus(userID uuid.UUID) (string, *models.Ro
 
 	// 3. どの部屋にも所属していない
 	return "NONE", nil, nil
+}
+
+// GetRoomsByHostUser ホストユーザーが作成した部屋一覧を取得
+func (r *roomRepository) GetRoomsByHostUser(userID uuid.UUID, limit, offset int) ([]models.Room, error) {
+	// 最適化されたクエリ: JOINを使用してN+1問題を解決
+	var results []struct {
+		models.Room
+		GameVersionName string  `json:"game_version_name"`
+		GameVersionCode string  `json:"game_version_code"`
+		HostDisplayName string  `json:"host_display_name"`
+		HostPSNOnlineID *string `json:"host_psn_online_id"`
+		CurrentPlayers  int     `json:"current_players"`
+	}
+
+	query := `
+		SELECT
+			rooms.*,
+			gv.name as game_version_name,
+			gv.code as game_version_code,
+			u.display_name as host_display_name,
+			u.psn_online_id as host_psn_online_id,
+			COUNT(DISTINCT rm.id) as current_players
+		FROM rooms
+		LEFT JOIN game_versions gv ON rooms.game_version_id = gv.id
+		LEFT JOIN users u ON rooms.host_user_id = u.id
+		LEFT JOIN room_members rm ON rooms.id = rm.room_id AND rm.status = 'active'
+		WHERE rooms.host_user_id = ?
+		GROUP BY rooms.id, gv.id, u.id
+		ORDER BY rooms.created_at DESC
+		LIMIT ? OFFSET ?
+	`
+
+	if err := r.db.GetConn().Raw(query, userID, limit, offset).Scan(&results).Error; err != nil {
+		return nil, err
+	}
+
+	// 結果をmodels.Roomに変換
+	var rooms []models.Room
+	for _, result := range results {
+		// GameVersionとHostの情報を設定
+		result.Room.GameVersion = models.GameVersion{
+			ID:   result.Room.GameVersionID,
+			Name: result.GameVersionName,
+			Code: result.GameVersionCode,
+		}
+		result.Room.Host = models.User{
+			ID:          result.Room.HostUserID,
+			DisplayName: result.HostDisplayName,
+			PSNOnlineID: result.HostPSNOnlineID,
+		}
+		result.Room.CurrentPlayers = result.CurrentPlayers
+
+		rooms = append(rooms, result.Room)
+	}
+
+	return rooms, nil
 }

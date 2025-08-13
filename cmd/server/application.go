@@ -25,6 +25,7 @@ type Application struct {
 	configHandler      *handlers.ConfigHandler
 	reactionHandler    *handlers.ReactionHandler
 	gameVersionHandler *handlers.GameVersionHandler
+	profileHandler     *handlers.ProfileHandler
 	authMiddleware     *middleware.JWTAuth
 	securityConfig     *middleware.SecurityConfig
 	generalLimiter     *middleware.RateLimiter
@@ -41,7 +42,9 @@ func NewApplication(cfg *config.Config) (*Application, error) {
 		return nil, fmt.Errorf("データベース初期化エラー: %w", err)
 	}
 
-	app.initHandlers()
+	if err := app.initHandlers(); err != nil {
+		return nil, fmt.Errorf("ハンドラー初期化エラー: %w", err)
+	}
 
 	return app, nil
 }
@@ -68,7 +71,7 @@ func (app *Application) initDatabase() error {
 	return nil
 }
 
-func (app *Application) initHandlers() {
+func (app *Application) initHandlers() error {
 	app.repo = repository.NewRepository(app.db)
 
 	// SSE Hubを初期化
@@ -84,11 +87,17 @@ func (app *Application) initHandlers() {
 	app.configHandler = handlers.NewConfigHandler()
 	app.reactionHandler = handlers.NewReactionHandler(app.repo)
 	app.gameVersionHandler = handlers.NewGameVersionHandler(app.repo)
+	app.profileHandler = handlers.NewProfileHandler(app.repo)
 
 	// 認証ミドルウェアの初期化
 	authMiddleware, err := middleware.NewJWTAuth(app.repo)
 	if err != nil {
 		log.Printf("JWT認証ミドルウェアの初期化に失敗しました: %v", err)
+		// 本番環境では認証ミドルウェアの初期化失敗は致命的エラーとして扱う
+		if app.config.IsProduction() {
+			return fmt.Errorf("本番環境では認証ミドルウェアが必須です: %w", err)
+		}
+		log.Printf("開発環境では認証ミドルウェアなしで継続しますが、認証が必要な機能は利用できません")
 	}
 	app.authMiddleware = authMiddleware
 
@@ -101,6 +110,8 @@ func (app *Application) initHandlers() {
 	app.authLimiter = middleware.NewRateLimiter(rateLimitConfig.Auth)
 
 	app.authHandler.SetAuthMiddleware(authMiddleware)
+	
+	return nil
 }
 
 func (app *Application) Close() {

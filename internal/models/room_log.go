@@ -10,21 +10,23 @@ import (
 )
 
 // JSONB はPostgreSQLのJSONBフィールド用のカスタム型
-type JSONB map[string]interface{}
+type JSONB struct {
+	Data interface{}
+}
 
 // Value はdriver.Valuerインターフェースを実装
 func (j JSONB) Value() (driver.Value, error) {
-	if j == nil {
+	if j.Data == nil {
 		return nil, nil
 	}
 
-	return json.Marshal(j)
+	return json.Marshal(j.Data)
 }
 
 // Scan はsql.Scannerインターフェースを実装
 func (j *JSONB) Scan(value interface{}) error {
 	if value == nil {
-		*j = nil
+		j.Data = nil
 		return nil
 	}
 
@@ -38,7 +40,14 @@ func (j *JSONB) Scan(value interface{}) error {
 		return fmt.Errorf("cannot scan %T into JSONB", value)
 	}
 
-	return json.Unmarshal(bytes, j)
+	// まず汎用的なinterface{}にunmarshal
+	var result interface{}
+	if err := json.Unmarshal(bytes, &result); err != nil {
+		return err
+	}
+	
+	j.Data = result
+	return nil
 }
 
 // RoomLog はルームアクションの監査ログ

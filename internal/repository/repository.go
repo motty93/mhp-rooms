@@ -16,6 +16,7 @@ type Repository struct {
 	Reaction      ReactionRepository
 	RoomMessage   RoomMessageRepository
 	UserBlock     UserBlockRepository
+	UserFollow    UserFollowRepository
 }
 
 func NewRepository(db *postgres.DB) *Repository {
@@ -29,6 +30,7 @@ func NewRepository(db *postgres.DB) *Repository {
 		Reaction:      NewReactionRepository(db),
 		RoomMessage:   NewRoomMessageRepository(db),
 		UserBlock:     NewUserBlockRepository(db),
+		UserFollow:    NewUserFollowRepository(db),
 	}
 }
 

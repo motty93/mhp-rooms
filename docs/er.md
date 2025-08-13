@@ -14,6 +14,8 @@ erDiagram
     users ||--o{ user_blocks : "blocked"
     users ||--o{ player_names : "has"
     users ||--o{ password_resets : "requests"
+    users ||--o{ user_follows : "follower"
+    users ||--o{ user_follows : "following"
     
     game_versions ||--o{ rooms : "for"
     game_versions ||--o{ player_names : "for"
@@ -31,7 +33,12 @@ erDiagram
         string avatar_url "NULL可"
         string bio "NULL可"
         string psn_online_id "NULL可"
+        string nintendo_network_id "NULL可"
+        string nintendo_switch_id "NULL可"
+        string pretendo_network_id "NULL可"
         string twitter_id "NULL可"
+        jsonb favorite_games "お気に入りゲーム"
+        jsonb play_times "プレイ時間帯"
         boolean is_active
         string role
         timestamp created_at
@@ -123,6 +130,15 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
+
+    user_follows {
+        uuid id PK
+        uuid follower_user_id FK
+        uuid following_user_id FK
+        string status "pending/accepted"
+        timestamp created_at
+        timestamp updated_at
+    }
 ```
 
 ## インデックス
@@ -176,3 +192,9 @@ erDiagram
 - `idx_password_resets_user_id` (user_id)
 - `idx_password_resets_token` (token)
 - `idx_password_resets_expires_at` (expires_at)
+
+### user_follows
+- `idx_user_follows_follower_user_id` (follower_user_id)
+- `idx_user_follows_following_user_id` (following_user_id)
+- `idx_user_follows_follower_following` (follower_user_id, following_user_id)
+- `idx_user_follows_status` (status)
