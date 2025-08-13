@@ -2,6 +2,7 @@ package repository
 
 import (
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 	"mhp-rooms/internal/infrastructure/persistence/postgres"
 	"mhp-rooms/internal/models"
 )
@@ -21,7 +22,9 @@ func (r *roomMessageRepository) CreateMessage(message *models.RoomMessage) error
 func (r *roomMessageRepository) GetMessages(roomID uuid.UUID, limit int, beforeID *uuid.UUID) ([]models.RoomMessage, error) {
 	var messages []models.RoomMessage
 	query := r.db.GetConn().
-		Preload("User").
+		Preload("User", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "supabase_user_id", "email", "username", "display_name", "avatar_url", "bio", "psn_online_id", "nintendo_network_id", "nintendo_switch_id", "pretendo_network_id", "twitter_id", "is_active", "role", "created_at", "updated_at")
+		}).
 		Where("room_id = ? AND is_deleted = ?", roomID, false).
 		Order("created_at DESC").
 		Limit(limit)

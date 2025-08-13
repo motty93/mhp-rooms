@@ -77,3 +77,16 @@ type UserBlockRepository interface {
 	GetBlockedUsers(blockerUserID uuid.UUID) ([]models.User, error)
 	GetBlockingUsers(blockedUserID uuid.UUID) ([]models.User, error)
 }
+
+// UserFollowRepository はユーザーフォロー関連の操作を定義するインターフェース
+type UserFollowRepository interface {
+	CreateFollow(follow *models.UserFollow) error
+	DeleteFollow(followerUserID, followingUserID uuid.UUID) error
+	GetFollow(followerUserID, followingUserID uuid.UUID) (*models.UserFollow, error)
+	UpdateFollowStatus(followerUserID, followingUserID uuid.UUID, status string) error
+	GetFollowers(userID uuid.UUID) ([]models.UserFollow, error)
+	GetFollowing(userID uuid.UUID) ([]models.UserFollow, error)
+	GetMutualFriends(userID uuid.UUID) ([]models.User, error)
+	GetFriendCount(userID uuid.UUID) (int64, error)
+	IsMutualFollow(userID1, userID2 uuid.UUID) (bool, error)
+}

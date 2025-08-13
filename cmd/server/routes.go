@@ -71,7 +71,8 @@ func (app *Application) setupPageRoutes(r chi.Router) {
 		r.Get("/guide", app.withOptionalAuth(ph.Guide))
 		r.Get("/hello", app.withOptionalAuth(ph.Hello))
 		r.Get("/sitemap.xml", app.withOptionalAuth(ph.Sitemap))
-		r.Get("/profile", app.withOptionalAuth(profileHandler.Profile))
+		r.Get("/profile", app.withAuth(profileHandler.Profile))
+		r.Get("/users/{uuid}", app.withOptionalAuth(profileHandler.UserProfile))
 	} else {
 		r.Get("/", ph.Home)
 		r.Get("/terms", ph.Terms)
@@ -82,6 +83,7 @@ func (app *Application) setupPageRoutes(r chi.Router) {
 		r.Get("/hello", ph.Hello)
 		r.Get("/sitemap.xml", ph.Sitemap)
 		r.Get("/profile", profileHandler.Profile)
+		r.Get("/users/{uuid}", profileHandler.UserProfile)
 	}
 }
 
@@ -176,7 +178,9 @@ func (app *Application) setupAPIRoutes(r chi.Router) {
 		ar.Get("/profile/edit-form", app.profileHandler.EditForm)
 		ar.Get("/profile/activity", app.profileHandler.Activity)
 		ar.Get("/profile/rooms", app.profileHandler.Rooms)
-		ar.Get("/profile/friends", app.profileHandler.Friends)
+		ar.Get("/profile/followers", app.profileHandler.Followers)
+		ar.Get("/profile/following", app.profileHandler.Following)
+		ar.Get("/users/{uuid}", app.profileHandler.GetUserProfile)
 
 		if app.hasAuthMiddleware() {
 			// 認証関連API（厳しいレート制限 + 認証必須）

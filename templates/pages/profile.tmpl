@@ -1,4 +1,5 @@
 {{ define "page" }}
+{{ $profileData := .PageData }}
 <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-6xl">
   <!-- メインコンテンツ (PCではグリッドレイアウト) -->
   <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -8,40 +9,94 @@
         <div class="flex flex-col items-center">
           <!-- アバター -->
           <div class="relative">
+            {{ if $profileData.User.AvatarURL }}
             <img 
               class="w-32 h-32 rounded-full mb-4 border-4 border-white object-cover shadow-sm" 
-              src="https://placehold.co/150x150/7c3aed/ffffff?text=R" 
-              alt="アバター"
+              src="{{ $profileData.User.AvatarURL }}" 
+              alt="{{ $profileData.User.DisplayName }}のアバター"
             />
+            {{ else }}
+            <img 
+              class="w-32 h-32 rounded-full mb-4 border-4 border-white object-cover shadow-sm" 
+              src="/static/images/default-avatar.png" 
+              alt="デフォルトアバター"
+            />
+            {{ end }}
             <span class="absolute bottom-4 right-2 bg-green-500 w-5 h-5 rounded-full border-2 border-white" title="オンライン"></span>
           </div>
 
           <!-- ユーザー名とランク -->
-          <h2 class="text-2xl font-bold text-gray-800">rdwbocungelt5</h2>
+          <h2 class="text-2xl font-bold text-gray-800">{{ $profileData.User.DisplayName }}</h2>
           <p class="text-sm text-gray-500 mb-4">ハンターランク: HR999</p>
 
           <!-- 自己紹介 -->
+          {{ if $profileData.User.Bio }}
           <p class="text-center text-gray-600 mb-6 text-sm">
-            モンハン大好きです！一緒に楽しく狩りに行けるフレンドを募集しています。VCも可能です。よろしくお願いします！
+            {{ $profileData.User.Bio }}
           </p>
+          {{ else }}
+          <p class="text-center text-gray-400 mb-6 text-sm italic">
+            自己紹介が設定されていません
+          </p>
+          {{ end }}
 
           <!-- ステータス情報 -->
           <div class="w-full space-y-3 text-sm mb-6">
+            {{ if and $profileData.FavoriteGames (gt (len $profileData.FavoriteGames) 0) }}
             <div class="flex items-center text-gray-500">
               <i class="fa-solid fa-gamepad w-5 mr-2 text-gray-400"></i> 
-              主なゲーム: MHRise, MHWorld
+              主なゲーム: {{ range $i, $game := $profileData.FavoriteGames }}{{ if $i }}, {{ end }}{{ $game }}{{ end }}
             </div>
+            {{ end }}
+            {{ if and $profileData.PlayTimes (or $profileData.PlayTimes.Weekday $profileData.PlayTimes.Weekend) }}
             <div class="flex items-center text-gray-500">
               <i class="fa-solid fa-clock w-5 mr-2 text-gray-400"></i> 
-              プレイ時間帯: 平日夜, 休日
+              プレイ時間帯: {{ if $profileData.PlayTimes.Weekday }}平日{{ $profileData.PlayTimes.Weekday }}{{ end }}{{ if and $profileData.PlayTimes.Weekday $profileData.PlayTimes.Weekend }}, {{ end }}{{ if $profileData.PlayTimes.Weekend }}休日{{ $profileData.PlayTimes.Weekend }}{{ end }}
             </div>
+            {{ end }}
             <div class="flex items-center text-gray-500">
               <i class="fa-solid fa-users w-5 mr-2 text-gray-400"></i> 
-              フレンド: 25人
+              フォロワー: {{ $profileData.FollowerCount }}人
+            </div>
+
+            {{ if or $profileData.User.PSNOnlineID $profileData.User.NintendoNetworkID $profileData.User.NintendoSwitchID }}
+            <div class="space-y-2 pt-2 border-t border-gray-200">
+              {{ if $profileData.User.PSNOnlineID }}
+              <div class="flex items-center text-gray-500">
+                <i class="fa-brands fa-playstation w-5 mr-2 text-gray-400"></i> 
+                PSN: {{ $profileData.User.PSNOnlineID }}
+              </div>
+              {{ end }}
+              {{ if $profileData.User.NintendoNetworkID }}
+              <div class="flex items-center text-gray-500">
+                <i class="fa-solid fa-gamepad w-5 mr-2 text-gray-400"></i> 
+                Nintendo Network: {{ $profileData.User.NintendoNetworkID }}
+              </div>
+              {{ end }}
+              {{ if $profileData.User.NintendoSwitchID }}
+              <div class="flex items-center text-gray-500">
+                <i class="fa-solid fa-gamepad w-5 mr-2 text-gray-400"></i> 
+                Switch: {{ $profileData.User.NintendoSwitchID }}
+              </div>
+              {{ end }}
+            </div>
+            {{ end }}
+            
+            {{ if $profileData.User.TwitterID }}
+            <div class="flex items-center text-gray-500">
+              <i class="fa-brands fa-x-twitter w-5 mr-2 text-gray-400"></i> 
+              @{{ $profileData.User.TwitterID }}
+            </div>
+            {{ end }}
+            
+            <div class="flex items-center text-gray-500">
+              <i class="fa-solid fa-calendar w-5 mr-2 text-gray-400"></i> 
+              登録日: {{ $profileData.User.CreatedAt.Format "2006年1月2日" }}
             </div>
           </div>
 
-          <!-- プロフィール編集ボタン -->
+          <!-- プロフィール編集ボタン（自分のプロフィールのみ表示） -->
+          {{ if $profileData.IsOwnProfile }}
           <button 
             hx-get="/api/profile/edit-form" 
             hx-target="#profile-card"
@@ -51,6 +106,19 @@
             <i class="fa-solid fa-pencil"></i>
             <span>プロフィールを編集</span>
           </button>
+          {{ else }}
+          <!-- 他のユーザーのプロフィールの場合のアクション -->
+          <div class="w-full space-y-2">
+            <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2">
+              <i class="fa-solid fa-user-plus"></i>
+              <span>フォローする</span>
+            </button>
+            <button class="w-full bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 font-bold py-2.5 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2">
+              <i class="fa-solid fa-envelope"></i>
+              <span>メッセージを送る</span>
+            </button>
+          </div>
+          {{ end }}
         </div>
       </div>
     </aside>
@@ -59,20 +127,8 @@
     <section class="lg:col-span-2">
       <div class="bg-white rounded-xl shadow-md border border-gray-200">
         <!-- タブナビゲーション -->
-        <div x-data="{ tab: 'activity' }" class="border-b border-gray-200">
+        <div x-data="{ tab: 'rooms' }" class="border-b border-gray-200">
           <nav class="flex space-x-2 px-4">
-            <!-- アクティビティタブ -->
-            <button 
-              @click="tab = 'activity'"
-              :class="{'border-blue-500 text-blue-600': tab === 'activity', 'border-transparent text-gray-500 hover:text-gray-700': tab !== 'activity'}"
-              class="py-4 px-4 block font-medium border-b-2 focus:outline-none transition-colors duration-200"
-              hx-get="/api/profile/activity"
-              hx-trigger="click"
-              hx-target="#tab-content"
-              hx-indicator="#tab-loader"
-            >
-              アクティビティ
-            </button>
             <!-- 作成した部屋タブ -->
             <button 
               @click="tab = 'rooms'" 
@@ -85,17 +141,41 @@
             >
               作成した部屋
             </button>
-             <!-- フレンドタブ -->
+            <!-- アクティビティタブ -->
             <button 
-              @click="tab = 'friends'" 
-              :class="{'border-blue-500 text-blue-600': tab === 'friends', 'border-transparent text-gray-500 hover:text-gray-700': tab !== 'friends'}"
+              @click="tab = 'activity'"
+              :class="{'border-blue-500 text-blue-600': tab === 'activity', 'border-transparent text-gray-500 hover:text-gray-700': tab !== 'activity'}"
               class="py-4 px-4 block font-medium border-b-2 focus:outline-none transition-colors duration-200"
-              hx-get="/api/profile/friends"
+              hx-get="/api/profile/activity"
               hx-trigger="click"
               hx-target="#tab-content"
               hx-indicator="#tab-loader"
             >
-              フレンド
+              アクティビティ
+            </button>
+             <!-- フォロワータブ -->
+            <button 
+              @click="tab = 'followers'" 
+              :class="{'border-blue-500 text-blue-600': tab === 'followers', 'border-transparent text-gray-500 hover:text-gray-700': tab !== 'followers'}"
+              class="py-4 px-4 block font-medium border-b-2 focus:outline-none transition-colors duration-200"
+              hx-get="/api/profile/followers"
+              hx-trigger="click"
+              hx-target="#tab-content"
+              hx-indicator="#tab-loader"
+            >
+              フォロワー
+            </button>
+             <!-- フォロー中タブ -->
+            <button 
+              @click="tab = 'following'" 
+              :class="{'border-blue-500 text-blue-600': tab === 'following', 'border-transparent text-gray-500 hover:text-gray-700': tab !== 'following'}"
+              class="py-4 px-4 block font-medium border-b-2 focus:outline-none transition-colors duration-200"
+              hx-get="/api/profile/following"
+              hx-trigger="click"
+              hx-target="#tab-content"
+              hx-indicator="#tab-loader"
+            >
+              フォロー中
             </button>
           </nav>
         </div>
@@ -109,41 +189,35 @@
 
           <!-- htmxによってコンテンツが挿入される場所 -->
           <div id="tab-content">
-            <!-- 初期表示コンテンツ（アクティビティ） -->
+            <!-- 初期表示コンテンツ（作成した部屋） -->
             <div>
-               <h3 class="text-xl font-bold mb-4 text-gray-800">最近の活動履歴</h3>
-               <div class="space-y-4">
-                  <!-- 履歴アイテムのカード -->
-                  <div class="bg-gray-50 p-4 rounded-lg flex justify-between items-center hover:bg-gray-100 transition-colors border border-gray-200">
-                      <div class="flex items-center space-x-4">
-                          <i class="fa-solid fa-door-open text-green-500"></i>
-                          <div>
-                              <p class="font-semibold text-gray-800">【部屋作成】古龍種連戦</p>
-                              <p class="text-sm text-gray-500">ターゲット: クシャルダオラ</p>
-                          </div>
-                      </div>
-                      <span class="text-xs text-gray-400">3時間前</span>
+              <h3 class="text-xl font-bold mb-4 text-gray-800">作成した部屋</h3>
+              <div class="space-y-4">
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <div class="flex justify-between items-start mb-2">
+                    <h4 class="font-semibold text-gray-800">テスト部屋（更新済み）</h4>
+                    <span class="text-xs text-gray-500">3時間前</span>
                   </div>
-                  <div class="bg-gray-50 p-4 rounded-lg flex justify-between items-center hover:bg-gray-100 transition-colors border border-gray-200">
-                      <div class="flex items-center space-x-4">
-                          <i class="fa-solid fa-right-to-bracket text-blue-500"></i>
-                          <div>
-                              <p class="font-semibold text-gray-800">【部屋参加】二つ名持ちモンスター</p>
-                              <p class="text-sm text-gray-500">ホスト: 素材コレクター</p>
-                          </div>
-                      </div>
-                      <span class="text-xs text-gray-400">昨日</span>
+                  <p class="text-sm text-gray-600 mb-2">部屋設定の更新機能が正常に動作することを確認しました。</p>
+                  <div class="flex items-center space-x-4 text-xs text-gray-500">
+                    <span>MHP3</span>
+                    <span>1/4人</span>
+                    <span class="text-green-600">アクティブ</span>
                   </div>
-                  <div class="bg-gray-50 p-4 rounded-lg flex justify-between items-center hover:bg-gray-100 transition-colors border border-gray-200">
-                       <div class="flex items-center space-x-4">
-                          <i class="fa-solid fa-user-plus text-yellow-500"></i>
-                          <div>
-                              <p class="font-semibold text-gray-800">ハンター太郎さんとフレンドになりました</p>
-                          </div>
-                      </div>
-                      <span class="text-xs text-gray-400">2日前</span>
-                   </div>
-               </div>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <div class="flex justify-between items-start mb-2">
+                    <h4 class="font-semibold text-gray-800">古龍種連戦</h4>
+                    <span class="text-xs text-gray-500">1日前</span>
+                  </div>
+                  <p class="text-sm text-gray-600 mb-2">古龍種を順番に討伐していきます</p>
+                  <div class="flex items-center space-x-4 text-xs text-gray-500">
+                    <span>MHP2G</span>
+                    <span>0/4人</span>
+                    <span class="text-red-600">終了</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -151,87 +225,23 @@
     </section>
   </main>
 </div>
-
-<!-- htmxのダミーAPIエンドポイント -->
-<script>
-  // このスクリプトはデモ用です。htmxがどのように動作するかを示します。
-  document.body.addEventListener('htmx:configRequest', function(evt) {
-      const path = evt.detail.path;
-      
-      // 編集フォームのダミーレスポンス
-      if (path === '/api/profile/edit-form') {
-          evt.preventDefault();
-          const target = document.querySelector(evt.detail.target);
-          target.innerHTML = `
-              <div class="p-6">
-                  <h3 class="text-xl font-bold text-gray-800 mb-4">プロフィール編集</h3>
-                  <div class="space-y-4">
-                      <div>
-                          <label class="text-sm font-bold text-gray-600 block mb-1">ユーザー名</label>
-                          <input type="text" value="rdwbocungelt5" class="w-full bg-gray-100 text-gray-800 rounded-lg p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                      </div>
-                      <div>
-                          <label class="text-sm font-bold text-gray-600 block mb-1">自己紹介</label>
-                          <textarea class="w-full bg-gray-100 text-gray-800 rounded-lg p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500" rows="4">モンハン大好きです！一緒に楽しく狩りに行けるフレンドを募集しています。VCも可能です。よろしくお願いします！</textarea>
-                      </div>
-                      <div class="flex space-x-2">
-                          <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">保存</button>
-                          <button hx-get="/api/profile/view" hx-target="#profile-card" hx-swap="outerHTML" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition-colors">キャンセル</button>
-                      </div>
-                  </div>
-              </div>
-          `;
-      }
-       // アクティビティタブのダミーレスポンス
-      if (path === '/api/profile/activity') {
-           evt.preventDefault();
-           setTimeout(() => {
-              const target = document.querySelector(evt.detail.target);
-              target.innerHTML = `
-                  <div>
-                      <h3 class="text-xl font-bold mb-4 text-gray-800">最近の活動履歴</h3>
-                      <p class="text-gray-600">アクティビティのコンテンツがここに表示されます。</p>
-                  </div>
-              `;
-           }, 500); // 500msの遅延をシミュレート
-      }
-      // 作成した部屋タブのダミーレスポンス
-      if (path === '/api/profile/rooms') {
-           evt.preventDefault();
-           setTimeout(() => {
-              const target = document.querySelector(evt.detail.target);
-              target.innerHTML = `
-                  <div>
-                      <h3 class="text-xl font-bold mb-4 text-gray-800">作成した部屋</h3>
-                      <p class="text-gray-600">ユーザーが作成した部屋の一覧がここに表示されます。</p>
-                  </div>
-              `;
-           }, 500);
-      }
-      // フレンドタブのダミーレスポンス
-      if (path === '/api/profile/friends') {
-           evt.preventDefault();
-           setTimeout(() => {
-              const target = document.querySelector(evt.detail.target);
-              target.innerHTML = `
-                  <div>
-                      <h3 class="text-xl font-bold mb-4 text-gray-800">フレンドリスト</h3>
-                      <p class="text-gray-600">フレンドの一覧がここに表示されます。</p>
-                  </div>
-              `;
-           }, 500);
-      }
-  });
-</script>
 {{ end }}
 
 {{ define "head" }}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
   /* htmxでコンテンツが読み込まれる際のフェードインアニメーション */
   .htmx-swapping {
       opacity: 0;
       transition: opacity 300ms ease-in-out;
+  }
+  
+  /* htmxインジケーター */
+  .htmx-indicator {
+      display: none;
+  }
+  
+  .htmx-request .htmx-indicator {
+      display: flex;
   }
 </style>
 {{ end }}
