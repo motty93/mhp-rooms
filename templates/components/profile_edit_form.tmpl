@@ -1,0 +1,17 @@
+<div class="p-6">
+    <h3 class="text-xl font-bold text-gray-800 mb-4">プロフィール編集</h3>
+    <div class="space-y-4">
+        <div>
+            <label class="text-sm font-bold text-gray-600 block mb-1">ユーザー名</label>
+            <input type="text" value="{{.Username}}" class="w-full bg-gray-100 text-gray-800 rounded-lg p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+            <label class="text-sm font-bold text-gray-600 block mb-1">自己紹介</label>
+            <textarea class="w-full bg-gray-100 text-gray-800 rounded-lg p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500" rows="4">{{.Bio}}</textarea>
+        </div>
+        <div class="flex space-x-2">
+            <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">保存</button>
+            <button hx-get="/api/profile/view" hx-target="#profile-card" hx-swap="outerHTML" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition-colors">キャンセル</button>
+        </div>
+    </div>
+</div>
