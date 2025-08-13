@@ -87,15 +87,31 @@
         <div
           class="flex items-center justify-between p-6 border-b border-gray-200"
         >
-          <div class="flex items-center space-x-3">
-            <img src="/static/images/icon.png" alt="MonHub" class="w-8 h-8" />
-            <h2 class="text-xl font-bold text-gray-800">
-              {{ if .PageData.Room.HasPassword }}🔑 {{ end }}{{ .PageData.Room.Name }}
-            </h2>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center space-x-3 mb-2">
+              <img src="/static/images/icon.png" alt="MonHub" class="w-8 h-8 flex-shrink-0" />
+              <h2 class="text-xl font-bold text-gray-800 truncate">
+                {{ if .PageData.Room.HasPassword }}🔑 {{ end }}{{ .PageData.Room.Name }}
+              </h2>
+            </div>
+            <!-- 部屋詳細情報（モバイル版） -->
+            <div class="text-sm text-gray-500 space-y-1">
+              {{ if .PageData.Room.GetDescription }}
+                <div class="text-xs">{{ .PageData.Room.GetDescription }}</div>
+              {{ end }}
+              <div class="flex flex-wrap gap-3 text-xs">
+                {{ if .PageData.Room.GetTargetMonster }}
+                  <span>🎯 {{ .PageData.Room.GetTargetMonster }}</span>
+                {{ end }}
+                {{ if .PageData.Room.GetRankRequirement }}
+                  <span>🏆 {{ .PageData.Room.GetRankRequirement }}</span>
+                {{ end }}
+              </div>
+            </div>
           </div>
           <button
             @click="$store.mobileMenu.close()"
-            class="text-gray-500 hover:text-gray-700"
+            class="text-gray-500 hover:text-gray-700 flex-shrink-0 ml-3"
           >
             <svg
               class="w-6 h-6"
@@ -260,7 +276,7 @@
         <div class="text-gray-600 text-sm leading-relaxed">
           <div x-show="!descriptionExpanded" class="overflow-hidden">
             <div class="max-h-10 overflow-hidden">
-              {{ .PageData.Room.Description }}
+              {{ .PageData.Room.GetDescription }}
             </div>
             <button
               @click="descriptionExpanded = true"
@@ -271,7 +287,7 @@
             </button>
           </div>
           <div x-show="descriptionExpanded" x-cloak>
-            {{ .PageData.Room.Description }}
+            {{ .PageData.Room.GetDescription }}
             <button
               @click="descriptionExpanded = false"
               class="text-gray-800 hover:text-gray-600 text-xs mt-1 underline block"
@@ -279,6 +295,24 @@
               閉じる
             </button>
           </div>
+        </div>
+
+        <!-- 部屋の詳細情報 -->
+        <div class="mt-3 text-sm text-gray-500 space-y-1">
+          {{ $target := .PageData.Room.GetTargetMonster }}
+          {{ if and $target (ne $target "<nil>") }}
+            <div class="flex items-center">
+              <span class="text-gray-400 mr-2">🎯</span>
+              <span>ターゲット: {{ $target }}</span>
+            </div>
+          {{ end }}
+          {{ $rank := .PageData.Room.GetRankRequirement }}
+          {{ if and $rank (ne $rank "<nil>") }}
+            <div class="flex items-center">
+              <span class="text-gray-400 mr-2">🏆</span>
+              <span>ランク: {{ $rank }}</span>
+            </div>
+          {{ end }}
         </div>
       </div>
 
@@ -599,7 +633,7 @@ function roomDetail() {
 
     checkDescriptionLength() {
       // 説明文が長い場合は展開ボタンを表示
-      const description = '{{ .PageData.Room.Description }}';
+      const description = '{{ .PageData.Room.GetDescription }}';
       this.needsExpansion = description.length > 100;
     },
 
@@ -938,11 +972,11 @@ function roomDetail() {
       // 現在の部屋データで設定フォームを初期化
       const room = {
         name: '{{ .PageData.Room.Name }}',
-        description: '{{ .PageData.Room.Description }}',
+        description: '{{ .PageData.Room.GetDescription }}',
         game_version_id: '{{ .PageData.Room.GameVersionID }}',
         max_players: {{ .PageData.Room.MaxPlayers }},
-        target_monster: '{{ .PageData.Room.TargetMonster }}',
-        rank_requirement: '{{ .PageData.Room.RankRequirement }}'
+        target_monster: '{{ .PageData.Room.GetTargetMonster }}',
+        rank_requirement: '{{ .PageData.Room.GetRankRequirement }}'
       };
       
       console.log('Room data:', room);
@@ -952,8 +986,8 @@ function roomDetail() {
         description: room.description || '',
         game_version_id: room.game_version_id || '',
         max_players: room.max_players || 4,
-        target_monster: room.target_monster || '',
-        rank_requirement: room.rank_requirement || '',
+        target_monster: (room.target_monster && room.target_monster !== '<nil>') ? room.target_monster : '',
+        rank_requirement: (room.rank_requirement && room.rank_requirement !== '<nil>') ? room.rank_requirement : '',
         password: '' // パスワードは常に空で初期化
       };
       
