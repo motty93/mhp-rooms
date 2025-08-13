@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 技術スタック
 
 - **言語**: Go 1.22.2
-- **Webフレームワーク**: Gorilla Mux
+- **Webフレームワーク**: Chi
 - **データベース**: 
   - **開発環境**: PostgreSQL (Docker Compose)
   - **本番環境**: Neon (Serverless PostgreSQL)

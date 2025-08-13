@@ -7,7 +7,7 @@ MonHubは、モンスターハンターシリーズのマルチプレイヤー�
 
 ### バックエンド
 - **言語**: Go 1.22.2
-- **Webフレームワーク**: Gorilla Mux
+- **Webフレームワーク**: Chi
 - **ORM**: GORM v2
 - **認証**: Supabase Auth (gotrue-go)
 - **データベース**:

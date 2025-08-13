@@ -5,7 +5,7 @@
 
 ## 技術構成
 - **フロントエンド**: htmx + SSE（Alpine.js併用）
-- **バックエンド**: Go（Gorilla Mux）
+- **バックエンド**: Go（Chi）
 - **リアルタイム通信**: Server-Sent Events（SSE）
 - **データ永続化**: PostgreSQL（既存のRoomMessageテーブル）
 

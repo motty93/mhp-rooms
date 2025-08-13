@@ -18,7 +18,7 @@
 
 ### バックエンド
 - **言語**: Go 1.22.2
-- **Webフレームワーク**: Gorilla Mux
+- **Webフレームワーク**: Chi
 - **ORM**: GORM v2
 - **データベース**: PostgreSQL
 

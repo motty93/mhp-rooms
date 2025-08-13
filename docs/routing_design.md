@@ -47,12 +47,12 @@ MonHubのURL構造とルーティングの設計ドキュメントです。SEO�
 /health                     # ヘルスチェック
 ```
 
-### ルーティング実装（Gorilla Mux）
+### ルーティング実装（Chi）
 
 現在の`cmd/server/main.go`での実装：
 
 ```go
-r := mux.NewRouter()
+r := chi.NewRouter()
 
 // 基本ページ
 r.HandleFunc("/", h.HomeHandler).Methods("GET")
