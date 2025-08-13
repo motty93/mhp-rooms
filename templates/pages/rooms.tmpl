@@ -154,16 +154,16 @@
                 </template>
 
                 <template
-                  x-if="room.questType || room.targetMonster || room.rankRequirement"
+                  x-if="room.questType || (room.targetMonster && room.targetMonster !== '') || (room.rankRequirement && room.rankRequirement !== '')"
                 >
                   <div class="text-xs text-gray-500 space-y-1">
                     <template x-if="room.questType">
                       <div x-text="'タイプ: ' + room.questType"></div>
                     </template>
-                    <template x-if="room.targetMonster">
+                    <template x-if="room.targetMonster && room.targetMonster !== ''">
                       <div x-text="'ターゲット: ' + room.targetMonster"></div>
                     </template>
-                    <template x-if="room.rankRequirement">
+                    <template x-if="room.rankRequirement && room.rankRequirement !== ''">
                       <div x-text="'ランク: ' + room.rankRequirement"></div>
                     </template>
                   </div>
@@ -353,6 +353,24 @@
                 x-text="`${currentRoom.currentPlayers}/${currentRoom.maxPlayers}`"
               ></span>
             </div>
+            <template x-if="currentRoom.targetMonster && currentRoom.targetMonster !== ''">
+              <div class="flex items-center justify-between">
+                <span class="text-gray-500">ターゲット</span>
+                <span
+                  class="font-medium text-gray-800"
+                  x-text="currentRoom.targetMonster"
+                ></span>
+              </div>
+            </template>
+            <template x-if="currentRoom.rankRequirement && currentRoom.rankRequirement !== ''">
+              <div class="flex items-center justify-between">
+                <span class="text-gray-500">ランク</span>
+                <span
+                  class="font-medium text-gray-800"
+                  x-text="currentRoom.rankRequirement"
+                ></span>
+              </div>
+            </template>
             <div class="flex items-center justify-between">
               <span class="text-gray-500">パスワード</span>
               <span
@@ -852,8 +870,8 @@
             maxPlayers: room.max_players || 4,
             isClosed: room.is_closed || false,
             hasPassword: room.password_hash ? true : false,
-            targetMonster: room.target_monster || '',
-            rankRequirement: room.rank_requirement || '',
+            targetMonster: room.target_monster === '<nil>' || !room.target_monster ? '' : room.target_monster,
+            rankRequirement: room.rank_requirement === '<nil>' || !room.rank_requirement ? '' : room.rank_requirement,
             isJoined: room.is_joined || false
           }));
           // デバッグ: 初心者歓迎部屋の参加状態を確認
@@ -955,8 +973,8 @@
               maxPlayers: room.max_players || 4,
               isClosed: room.is_closed || false,
               hasPassword: room.has_password || false,
-              targetMonster: room.target_monster || '',
-              rankRequirement: room.rank_requirement || '',
+              targetMonster: room.target_monster === '<nil>' || !room.target_monster ? '' : room.target_monster,
+            rankRequirement: room.rank_requirement === '<nil>' || !room.rank_requirement ? '' : room.rank_requirement,
               isJoined: room.is_joined || false
             }));
             
@@ -1034,7 +1052,9 @@
             hostName: room.host.username || room.host.displayName,
             currentPlayers: room.currentPlayers,
             maxPlayers: room.maxPlayers,
-            hasPassword: room.hasPassword
+            hasPassword: room.hasPassword,
+            targetMonster: room.targetMonster,
+            rankRequirement: room.rankRequirement
           };
           this.password = ''
           this.isJoining = false

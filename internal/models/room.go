@@ -67,6 +67,30 @@ func (r *Room) CanJoin() bool {
 	return r.IsActive && !r.IsClosed && !r.IsFull()
 }
 
+// GetDescription は説明文を安全に取得
+func (r *Room) GetDescription() string {
+	if r.Description != nil {
+		return *r.Description
+	}
+	return ""
+}
+
+// GetTargetMonster はターゲットモンスターを安全に取得
+func (r *Room) GetTargetMonster() string {
+	if r.TargetMonster != nil {
+		return *r.TargetMonster
+	}
+	return ""
+}
+
+// GetRankRequirement はランク要求を安全に取得
+func (r *Room) GetRankRequirement() string {
+	if r.RankRequirement != nil {
+		return *r.RankRequirement
+	}
+	return ""
+}
+
 // RoomWithJoinStatus 参加状態を含む部屋情報
 type RoomWithJoinStatus struct {
 	Room
