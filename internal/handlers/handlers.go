@@ -122,3 +122,54 @@ func isValidEmail(email string) bool {
 
 	return true
 }
+
+// renderPartialTemplate は部分テンプレート（コンポーネント）をレンダリングする関数
+func renderPartialTemplate(w http.ResponseWriter, templateName string, data interface{}) error {
+	funcMap := template.FuncMap{
+		"lower": func(s string) string {
+			return strings.ToLower(s)
+		},
+		"json": func(v interface{}) template.JS {
+			b, err := json.Marshal(v)
+			if err != nil {
+				return template.JS("[]")
+			}
+			return template.JS(b)
+		},
+		"dict": func(values ...interface{}) (map[string]interface{}, error) {
+			if len(values)%2 != 0 {
+				return nil, fmt.Errorf("dict called with odd number of arguments")
+			}
+			dict := make(map[string]interface{}, len(values)/2)
+			for i := 0; i < len(values); i += 2 {
+				key, ok := values[i].(string)
+				if !ok {
+					return nil, fmt.Errorf("dict keys must be strings")
+				}
+				dict[key] = values[i+1]
+			}
+			return dict, nil
+		},
+		"gameVersionColor": utils.GetGameVersionColor,
+		"gameVersionIcon": func(code string) template.HTML {
+			return template.HTML(utils.GetGameVersionIcon(code))
+		},
+		"gameVersionAbbr": utils.GetGameVersionAbbreviation,
+	}
+
+	tmpl, err := template.New("").Funcs(funcMap).ParseFiles(
+		filepath.Join("templates", "components", templateName),
+	)
+	if err != nil {
+		return fmt.Errorf("template parsing error: %w", err)
+	}
+
+	w.Header().Set("Content-Type", "text/html")
+	// ".tmpl"を除去してテンプレート名を取得
+	templateBaseName := templateName[:len(templateName)-5]
+	err = tmpl.ExecuteTemplate(w, templateBaseName, data)
+	if err != nil {
+		return fmt.Errorf("template execution error: %w", err)
+	}
+	return nil
+}

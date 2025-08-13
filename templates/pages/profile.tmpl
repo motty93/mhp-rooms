@@ -1,3 +1,22 @@
+{{ define "head" }}
+<style>
+  /* htmxでコンテンツが読み込まれる際のフェードインアニメーション */
+  .htmx-swapping {
+      opacity: 0;
+      transition: opacity 300ms ease-in-out;
+  }
+
+  /* htmxインジケーター */
+  .htmx-indicator {
+      display: none;
+  }
+
+  .htmx-request .htmx-indicator {
+      display: flex;
+  }
+</style>
+{{ end }}
+
 {{ define "page" }}
 {{ $profileData := .PageData }}
 <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-6xl">
@@ -10,15 +29,15 @@
           <!-- アバター -->
           <div class="relative">
             {{ if $profileData.User.AvatarURL }}
-            <img 
-              class="w-32 h-32 rounded-full mb-4 border-4 border-white object-cover shadow-sm" 
-              src="{{ $profileData.User.AvatarURL }}" 
+            <img
+              class="w-32 h-32 rounded-full mb-4 border-4 border-white object-cover shadow-sm"
+              src="{{ $profileData.User.AvatarURL }}"
               alt="{{ $profileData.User.DisplayName }}のアバター"
             />
             {{ else }}
-            <img 
-              class="w-32 h-32 rounded-full mb-4 border-4 border-white object-cover shadow-sm" 
-              src="/static/images/default-avatar.png" 
+            <img
+              class="w-32 h-32 rounded-full mb-4 border-4 border-white object-cover shadow-sm"
+              src="/static/images/default-avatar.png"
               alt="デフォルトアバター"
             />
             {{ end }}
@@ -44,18 +63,18 @@
           <div class="w-full space-y-3 text-sm mb-6">
             {{ if and $profileData.FavoriteGames (gt (len $profileData.FavoriteGames) 0) }}
             <div class="flex items-center text-gray-500">
-              <i class="fa-solid fa-gamepad w-5 mr-2 text-gray-400"></i> 
+              <i class="fa-solid fa-gamepad w-5 mr-2 text-gray-400"></i>
               主なゲーム: {{ range $i, $game := $profileData.FavoriteGames }}{{ if $i }}, {{ end }}{{ $game }}{{ end }}
             </div>
             {{ end }}
             {{ if and $profileData.PlayTimes (or $profileData.PlayTimes.Weekday $profileData.PlayTimes.Weekend) }}
             <div class="flex items-center text-gray-500">
-              <i class="fa-solid fa-clock w-5 mr-2 text-gray-400"></i> 
+              <i class="fa-solid fa-clock w-5 mr-2 text-gray-400"></i>
               プレイ時間帯: {{ if $profileData.PlayTimes.Weekday }}平日{{ $profileData.PlayTimes.Weekday }}{{ end }}{{ if and $profileData.PlayTimes.Weekday $profileData.PlayTimes.Weekend }}, {{ end }}{{ if $profileData.PlayTimes.Weekend }}休日{{ $profileData.PlayTimes.Weekend }}{{ end }}
             </div>
             {{ end }}
             <div class="flex items-center text-gray-500">
-              <i class="fa-solid fa-users w-5 mr-2 text-gray-400"></i> 
+              <i class="fa-solid fa-users w-5 mr-2 text-gray-400"></i>
               フォロワー: {{ $profileData.FollowerCount }}人
             </div>
 
@@ -63,42 +82,42 @@
             <div class="space-y-2 pt-2 border-t border-gray-200">
               {{ if $profileData.User.PSNOnlineID }}
               <div class="flex items-center text-gray-500">
-                <i class="fa-brands fa-playstation w-5 mr-2 text-gray-400"></i> 
+                <i class="fa-brands fa-playstation w-5 mr-2 text-gray-400"></i>
                 PSN: {{ $profileData.User.PSNOnlineID }}
               </div>
               {{ end }}
               {{ if $profileData.User.NintendoNetworkID }}
               <div class="flex items-center text-gray-500">
-                <i class="fa-solid fa-gamepad w-5 mr-2 text-gray-400"></i> 
+                <i class="fa-solid fa-gamepad w-5 mr-2 text-gray-400"></i>
                 Nintendo Network: {{ $profileData.User.NintendoNetworkID }}
               </div>
               {{ end }}
               {{ if $profileData.User.NintendoSwitchID }}
               <div class="flex items-center text-gray-500">
-                <i class="fa-solid fa-gamepad w-5 mr-2 text-gray-400"></i> 
+                <i class="fa-solid fa-gamepad w-5 mr-2 text-gray-400"></i>
                 Switch: {{ $profileData.User.NintendoSwitchID }}
               </div>
               {{ end }}
             </div>
             {{ end }}
-            
+
             {{ if $profileData.User.TwitterID }}
             <div class="flex items-center text-gray-500">
-              <i class="fa-brands fa-x-twitter w-5 mr-2 text-gray-400"></i> 
+              <i class="fa-brands fa-x-twitter w-5 mr-2 text-gray-400"></i>
               @{{ $profileData.User.TwitterID }}
             </div>
             {{ end }}
-            
+
             <div class="flex items-center text-gray-500">
-              <i class="fa-solid fa-calendar w-5 mr-2 text-gray-400"></i> 
+              <i class="fa-solid fa-calendar w-5 mr-2 text-gray-400"></i>
               登録日: {{ $profileData.User.CreatedAt.Format "2006年1月2日" }}
             </div>
           </div>
 
           <!-- プロフィール編集ボタン（自分のプロフィールのみ表示） -->
           {{ if $profileData.IsOwnProfile }}
-          <button 
-            hx-get="/api/profile/edit-form" 
+          <button
+            hx-get="/api/profile/edit-form"
             hx-target="#profile-card"
             hx-swap="innerHTML"
             class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
@@ -127,51 +146,76 @@
     <section class="lg:col-span-2">
       <div class="bg-white rounded-xl shadow-md border border-gray-200">
         <!-- タブナビゲーション -->
-        <div x-data="{ tab: 'rooms' }" class="border-b border-gray-200">
+        <div x-data="{
+          tab: 'rooms',
+          loadTab(newTab, event) {
+            if (this.tab !== newTab) {
+              this.tab = newTab;
+              // htmxのリクエストを手動でトリガー
+              htmx.trigger(event.target, 'tabChange');
+            }
+          }
+        }" class="border-b border-gray-200">
           <nav class="flex space-x-2 px-4">
             <!-- 作成した部屋タブ -->
-            <button 
-              @click="tab = 'rooms'" 
+            <button
+              @click="loadTab('rooms', $event)"
               :class="{'border-blue-500 text-blue-600': tab === 'rooms', 'border-transparent text-gray-500 hover:text-gray-700': tab !== 'rooms'}"
               class="py-4 px-4 block font-medium border-b-2 focus:outline-none transition-colors duration-200"
-              hx-get="/api/profile/rooms"
-              hx-trigger="click"
+              {{ if $profileData.IsOwnProfile }}
+                hx-get="/api/profile/rooms"
+              {{ else }}
+                hx-get="/api/users/{{ $profileData.User.ID }}/rooms"
+              {{ end }}
+              hx-trigger="tabChange"
               hx-target="#tab-content"
               hx-indicator="#tab-loader"
             >
               作成した部屋
             </button>
             <!-- アクティビティタブ -->
-            <button 
-              @click="tab = 'activity'"
+            <button
+              @click="loadTab('activity', $event)"
               :class="{'border-blue-500 text-blue-600': tab === 'activity', 'border-transparent text-gray-500 hover:text-gray-700': tab !== 'activity'}"
               class="py-4 px-4 block font-medium border-b-2 focus:outline-none transition-colors duration-200"
+              {{ if $profileData.IsOwnProfile }}
               hx-get="/api/profile/activity"
-              hx-trigger="click"
+              {{ else }}
+              hx-get="/api/users/{{ $profileData.User.ID }}/activity"
+              {{ end }}
+              hx-trigger="tabChange"
               hx-target="#tab-content"
               hx-indicator="#tab-loader"
             >
               アクティビティ
             </button>
              <!-- フォロワータブ -->
-            <button 
-              @click="tab = 'followers'" 
+            <button
+              @click="loadTab('followers', $event)"
               :class="{'border-blue-500 text-blue-600': tab === 'followers', 'border-transparent text-gray-500 hover:text-gray-700': tab !== 'followers'}"
               class="py-4 px-4 block font-medium border-b-2 focus:outline-none transition-colors duration-200"
+              {{ if $profileData.IsOwnProfile }}
               hx-get="/api/profile/followers"
-              hx-trigger="click"
+              {{ else }}
+              hx-get="/api/users/{{ $profileData.User.ID }}/followers"
+              {{ end }}
+              hx-trigger="tabChange"
               hx-target="#tab-content"
               hx-indicator="#tab-loader"
             >
               フォロワー
             </button>
              <!-- フォロー中タブ -->
-            <button 
-              @click="tab = 'following'" 
+            <button
+              @click="loadTab('following', $event)"
               :class="{'border-blue-500 text-blue-600': tab === 'following', 'border-transparent text-gray-500 hover:text-gray-700': tab !== 'following'}"
               class="py-4 px-4 block font-medium border-b-2 focus:outline-none transition-colors duration-200"
+              {{ if $profileData.IsOwnProfile }}
               hx-get="/api/profile/following"
-              hx-trigger="click"
+              {{ else }}
+              hx-get="/api/users/{{ $profileData.User.ID }}/following"
+              {{ end }}
+              hx-trigger="tabChange"
               hx-target="#tab-content"
               hx-indicator="#tab-loader"
             >
@@ -192,32 +236,33 @@
             <!-- 初期表示コンテンツ（作成した部屋） -->
             <div>
               <h3 class="text-xl font-bold mb-4 text-gray-800">作成した部屋</h3>
-              <div class="space-y-4">
-                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                  <div class="flex justify-between items-start mb-2">
-                    <h4 class="font-semibold text-gray-800">テスト部屋（更新済み）</h4>
-                    <span class="text-xs text-gray-500">3時間前</span>
+              {{if $profileData.Rooms}}
+                <div class="space-y-4">
+                  {{range $profileData.Rooms}}
+                  <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 {{if .IsClickable}}cursor-pointer hover:bg-gray-100 transition-colors{{else}}cursor-default{{end}}" 
+                       {{if .IsClickable}}onclick="window.location.href='/rooms/{{.ID}}'"{{end}}>
+                    <div class="flex justify-between items-start mb-2">
+                      <h4 class="font-semibold text-gray-800">{{.Name}}</h4>
+                      <span class="text-xs text-gray-500">{{.CreatedAt}}</span>
+                    </div>
+                    {{if .Description}}
+                    <p class="text-sm text-gray-600 mb-2">{{.Description}}</p>
+                    {{end}}
+                    <div class="flex items-center space-x-4 text-xs text-gray-500">
+                      <span>{{.GameVersion}}</span>
+                      <span>{{.PlayerCount}}</span>
+                      <span class="{{.StatusColor}}">{{.Status}}</span>
+                    </div>
                   </div>
-                  <p class="text-sm text-gray-600 mb-2">部屋設定の更新機能が正常に動作することを確認しました。</p>
-                  <div class="flex items-center space-x-4 text-xs text-gray-500">
-                    <span>MHP3</span>
-                    <span>1/4人</span>
-                    <span class="text-green-600">アクティブ</span>
-                  </div>
+                  {{end}}
                 </div>
-                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                  <div class="flex justify-between items-start mb-2">
-                    <h4 class="font-semibold text-gray-800">古龍種連戦</h4>
-                    <span class="text-xs text-gray-500">1日前</span>
-                  </div>
-                  <p class="text-sm text-gray-600 mb-2">古龍種を順番に討伐していきます</p>
-                  <div class="flex items-center space-x-4 text-xs text-gray-500">
-                    <span>MHP2G</span>
-                    <span>0/4人</span>
-                    <span class="text-red-600">終了</span>
-                  </div>
+              {{else}}
+                <div class="text-center py-8">
+                  <i class="fa-solid fa-door-open text-gray-300 text-4xl mb-3"></i>
+                  <p class="text-gray-500">まだ部屋を作成していません</p>
+                  <p class="text-sm text-gray-400 mt-1">部屋を作成して他のハンターと狩りに出かけましょう！</p>
                 </div>
-              </div>
+              {{end}}
             </div>
           </div>
         </div>
@@ -227,21 +272,3 @@
 </div>
 {{ end }}
 
-{{ define "head" }}
-<style>
-  /* htmxでコンテンツが読み込まれる際のフェードインアニメーション */
-  .htmx-swapping {
-      opacity: 0;
-      transition: opacity 300ms ease-in-out;
-  }
-  
-  /* htmxインジケーター */
-  .htmx-indicator {
-      display: none;
-  }
-  
-  .htmx-request .htmx-indicator {
-      display: flex;
-  }
-</style>
-{{ end }}

@@ -566,3 +566,59 @@ func (r *roomRepository) GetUserRoomStatus(userID uuid.UUID) (string, *models.Ro
 	// 3. どの部屋にも所属していない
 	return "NONE", nil, nil
 }
+
+// GetRoomsByHostUser ホストユーザーが作成した部屋一覧を取得
+func (r *roomRepository) GetRoomsByHostUser(userID uuid.UUID, limit, offset int) ([]models.Room, error) {
+	// 最適化されたクエリ: JOINを使用してN+1問題を解決
+	var results []struct {
+		models.Room
+		GameVersionName string  `json:"game_version_name"`
+		GameVersionCode string  `json:"game_version_code"`
+		HostDisplayName string  `json:"host_display_name"`
+		HostPSNOnlineID *string `json:"host_psn_online_id"`
+		CurrentPlayers  int     `json:"current_players"`
+	}
+
+	query := `
+		SELECT
+			rooms.*,
+			gv.name as game_version_name,
+			gv.code as game_version_code,
+			u.display_name as host_display_name,
+			u.psn_online_id as host_psn_online_id,
+			COUNT(DISTINCT rm.id) as current_players
+		FROM rooms
+		LEFT JOIN game_versions gv ON rooms.game_version_id = gv.id
+		LEFT JOIN users u ON rooms.host_user_id = u.id
+		LEFT JOIN room_members rm ON rooms.id = rm.room_id AND rm.status = 'active'
+		WHERE rooms.host_user_id = ?
+		GROUP BY rooms.id, gv.id, u.id
+		ORDER BY rooms.created_at DESC
+		LIMIT ? OFFSET ?
+	`
+
+	if err := r.db.GetConn().Raw(query, userID, limit, offset).Scan(&results).Error; err != nil {
+		return nil, err
+	}
+
+	// 結果をmodels.Roomに変換
+	var rooms []models.Room
+	for _, result := range results {
+		// GameVersionとHostの情報を設定
+		result.Room.GameVersion = models.GameVersion{
+			ID:   result.Room.GameVersionID,
+			Name: result.GameVersionName,
+			Code: result.GameVersionCode,
+		}
+		result.Room.Host = models.User{
+			ID:          result.Room.HostUserID,
+			DisplayName: result.HostDisplayName,
+			PSNOnlineID: result.HostPSNOnlineID,
+		}
+		result.Room.CurrentPlayers = result.CurrentPlayers
+
+		rooms = append(rooms, result.Room)
+	}
+
+	return rooms, nil
+}

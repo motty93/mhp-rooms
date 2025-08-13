@@ -48,6 +48,7 @@ type RoomRepository interface {
 	GetRoomMembers(roomID uuid.UUID) ([]models.RoomMember, error)
 	GetRoomLogs(roomID uuid.UUID) ([]models.RoomLog, error)
 	GetUserRoomStatus(userID uuid.UUID) (string, *models.Room, error) // (status, room, error)
+	GetRoomsByHostUser(userID uuid.UUID, limit, offset int) ([]models.Room, error)
 }
 
 // PlayerNameRepository はプレイヤー名関連の操作を定義するインターフェース

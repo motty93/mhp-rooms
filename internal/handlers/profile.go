@@ -3,16 +3,16 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"mhp-rooms/internal/middleware"
 	"mhp-rooms/internal/models"
 	"mhp-rooms/internal/repository"
-	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 )
 
 type ProfileHandler struct {
@@ -59,43 +59,32 @@ type RoomSummary struct {
 	GameVersion string    `json:"gameVersion"`
 	PlayerCount string    `json:"playerCount"`
 	Status      string    `json:"status"`
+	StatusColor string    `json:"statusColor"`
 	CreatedAt   string    `json:"createdAt"`
+	IsClickable bool      `json:"isClickable"`
 }
 
 // Follower フォロワー情報
 type Follower struct {
-	ID            uuid.UUID `json:"id"`
-	Username      string    `json:"username"`
-	AvatarURL     string    `json:"avatarUrl"`
-	IsOnline      bool      `json:"isOnline"`
-	FollowingSince string   `json:"followingSince"`
+	ID             uuid.UUID `json:"id"`
+	Username       string    `json:"username"`
+	AvatarURL      string    `json:"avatarUrl"`
+	IsOnline       bool      `json:"isOnline"`
+	FollowingSince string    `json:"followingSince"`
 }
 
 // Profile 自分のプロフィールページを表示
 func (ph *ProfileHandler) Profile(w http.ResponseWriter, r *http.Request) {
-	// 認証情報から自分のユーザー情報を取得
 	user := getUserFromContext(r.Context())
 	if user == nil {
-		// 開発環境: 認証がない場合はテストユーザーを使用
-		if os.Getenv("ENV") != "production" {
-			devUser, err := ph.repo.User.FindUserByEmail("hunter1@example.com")
-			if err == nil && devUser != nil {
-				user = devUser
-			} else {
-				http.Redirect(w, r, "/auth/login", http.StatusFound)
-				return
-			}
-		} else {
-			// 認証されていない場合はログインページへリダイレクト
-			http.Redirect(w, r, "/auth/login", http.StatusFound)
-			return
-		}
+		// 認証が必要 - 開発環境も本番環境も同じ処理
+		http.Redirect(w, r, "/auth/login", http.StatusFound)
+		return
 	}
 
-	// お気に入りゲームとプレイ時間帯を取得
 	favoriteGames, _ := user.GetFavoriteGames()
 	playTimes, _ := user.GetPlayTimes()
-	
+
 	// フォロワー数を取得（開発環境では25人固定）
 	var followerCount int64 = 25
 	if ph.repo != nil && ph.repo.UserFollow != nil {
@@ -105,11 +94,20 @@ func (ph *ProfileHandler) Profile(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// 実際に作成した部屋を取得
+	rooms, err := ph.repo.Room.GetRoomsByHostUser(user.ID, 10, 0) // 最大10件取得
+	var roomSummaries []RoomSummary
+	if err == nil {
+		for _, room := range rooms {
+			roomSummaries = append(roomSummaries, roomToSummary(room))
+		}
+	}
+
 	profileData := ProfileData{
 		User:          user,
 		IsOwnProfile:  true,
 		Activities:    ph.getMockActivities(),
-		Rooms:         ph.getMockRooms(),
+		Rooms:         roomSummaries,
 		Followers:     ph.getMockFollowers(),
 		FollowerCount: followerCount,
 		FavoriteGames: favoriteGames,
@@ -150,7 +148,7 @@ func (ph *ProfileHandler) UserProfile(w http.ResponseWriter, r *http.Request) {
 	// お気に入りゲームとプレイ時間帯を取得
 	favoriteGames, _ := user.GetFavoriteGames()
 	playTimes, _ := user.GetPlayTimes()
-	
+
 	// フォロワー数を取得
 	var followerCount int64 = 25
 	if ph.repo != nil && ph.repo.UserFollow != nil {
@@ -160,11 +158,20 @@ func (ph *ProfileHandler) UserProfile(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// 実際に作成した部屋を取得
+	rooms, err := ph.repo.Room.GetRoomsByHostUser(user.ID, 10, 0) // 最大10件取得
+	var roomSummaries []RoomSummary
+	if err == nil {
+		for _, room := range rooms {
+			roomSummaries = append(roomSummaries, roomToSummary(room))
+		}
+	}
+
 	profileData := ProfileData{
 		User:          user,
 		IsOwnProfile:  isOwnProfile,
 		Activities:    ph.getMockActivities(),
-		Rooms:         ph.getMockRooms(),
+		Rooms:         roomSummaries,
 		Followers:     ph.getMockFollowers(),
 		FollowerCount: followerCount,
 		FavoriteGames: favoriteGames,
@@ -201,12 +208,37 @@ func (ph *ProfileHandler) GetUserProfile(w http.ResponseWriter, r *http.Request)
 		isOwnProfile = true
 	}
 
+	// お気に入りゲームとプレイ時間帯を取得
+	favoriteGames, _ := user.GetFavoriteGames()
+	playTimes, _ := user.GetPlayTimes()
+
+	// フォロワー数を取得
+	var followerCount int64 = 0
+	if ph.repo != nil && ph.repo.UserFollow != nil {
+		followers, err := ph.repo.UserFollow.GetFollowers(user.ID)
+		if err == nil {
+			followerCount = int64(len(followers))
+		}
+	}
+
+	// 実際に作成した部屋を取得
+	rooms, err := ph.repo.Room.GetRoomsByHostUser(user.ID, 10, 0) // 最大10件取得
+	var roomSummaries []RoomSummary
+	if err == nil {
+		for _, room := range rooms {
+			roomSummaries = append(roomSummaries, roomToSummary(room))
+		}
+	}
+
 	profileData := ProfileData{
-		User:         user,
-		IsOwnProfile: isOwnProfile,
-		Activities:   ph.getMockActivities(),
-		Rooms:        ph.getMockRooms(),
-		Followers:    ph.getMockFollowers(),
+		User:          user,
+		IsOwnProfile:  isOwnProfile,
+		Activities:    ph.getMockActivities(),
+		Rooms:         roomSummaries,
+		Followers:     ph.getMockFollowers(),
+		FollowerCount: followerCount,
+		FavoriteGames: favoriteGames,
+		PlayTimes:     playTimes,
 	}
 
 	respondWithJSON(w, http.StatusOK, profileData)
@@ -216,13 +248,9 @@ func (ph *ProfileHandler) GetUserProfile(w http.ResponseWriter, r *http.Request)
 func (ph *ProfileHandler) EditForm(w http.ResponseWriter, r *http.Request) {
 	user := getUserFromContext(r.Context())
 	if user == nil {
-		user = &models.User{
-			Username:    strPtr("rdwbocungelt5"),
-			DisplayName: "rdwbocungelt5",
-			AvatarURL:   strPtr("/static/images/default-avatar.png"),
-			Bio:         strPtr("モンハン大好きです！一緒に楽しく狩りに行けるフレンドを募集しています。VCも可能です。よろしくお願いします！"),
-			CreatedAt:   time.Now().AddDate(-1, -2, -15), // 1年2ヶ月15日前に登録したことにする
-		}
+		// 認証が必要 - 開発環境も本番環境も同じ処理
+		http.Error(w, "認証が必要です", http.StatusUnauthorized)
+		return
 	}
 
 	username := ""
@@ -234,173 +262,112 @@ func (ph *ProfileHandler) EditForm(w http.ResponseWriter, r *http.Request) {
 		bio = *user.Bio
 	}
 
-	html := `
-	<div class="p-6">
-		<h3 class="text-xl font-bold text-gray-800 mb-4">プロフィール編集</h3>
-		<div class="space-y-4">
-			<div>
-				<label class="text-sm font-bold text-gray-600 block mb-1">ユーザー名</label>
-				<input type="text" value="` + username + `" class="w-full bg-gray-100 text-gray-800 rounded-lg p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
-			</div>
-			<div>
-				<label class="text-sm font-bold text-gray-600 block mb-1">自己紹介</label>
-				<textarea class="w-full bg-gray-100 text-gray-800 rounded-lg p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500" rows="4">` + bio + `</textarea>
-			</div>
-			<div class="flex space-x-2">
-				<button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">保存</button>
-				<button hx-get="/api/profile/view" hx-target="#profile-card" hx-swap="outerHTML" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition-colors">キャンセル</button>
-			</div>
-		</div>
-	</div>`
+	data := struct {
+		Username string
+		Bio      string
+	}{
+		Username: username,
+		Bio:      bio,
+	}
 
-	w.Header().Set("Content-Type", "text/html")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(html))
+	if err := renderPartialTemplate(w, "profile_edit_form.tmpl", data); err != nil {
+		ph.logger.Printf("テンプレートレンダリングエラー: %v", err)
+		http.Error(w, "テンプレートの描画に失敗しました", http.StatusInternalServerError)
+		return
+	}
 }
 
 // Activity アクティビティタブコンテンツを返す（htmx用）
 func (ph *ProfileHandler) Activity(w http.ResponseWriter, r *http.Request) {
 	activities := ph.getMockActivities()
-	
-	html := `<div><h3 class="text-xl font-bold mb-4 text-gray-800">最近の活動履歴</h3><div class="space-y-4">`
-	
-	for _, activity := range activities {
-		html += `
-		<div class="bg-gray-50 p-4 rounded-lg flex justify-between items-center hover:bg-gray-100 transition-colors border border-gray-200">
-			<div class="flex items-center space-x-4">
-				<i class="fa-solid ` + activity.Icon + ` ` + activity.IconColor + `"></i>
-				<div>
-					<p class="font-semibold text-gray-800">` + activity.Title + `</p>
-					<p class="text-sm text-gray-500">` + activity.Description + `</p>
-				</div>
-			</div>
-			<span class="text-xs text-gray-400">` + activity.TimeAgo + `</span>
-		</div>`
-	}
-	
-	html += `</div></div>`
 
-	w.Header().Set("Content-Type", "text/html")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(html))
+	data := struct {
+		Activities []Activity
+	}{
+		Activities: activities,
+	}
+
+	if err := renderPartialTemplate(w, "profile_activity.tmpl", data); err != nil {
+		ph.logger.Printf("テンプレートレンダリングエラー: %v", err)
+		http.Error(w, "テンプレートの描画に失敗しました", http.StatusInternalServerError)
+		return
+	}
 }
 
 // Rooms 作成した部屋タブコンテンツを返す（htmx用）
 func (ph *ProfileHandler) Rooms(w http.ResponseWriter, r *http.Request) {
-	html := `
-	<div>
-		<h3 class="text-xl font-bold mb-4 text-gray-800">作成した部屋</h3>
-		<div class="space-y-4">
-			<div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-				<div class="flex justify-between items-start mb-2">
-					<h4 class="font-semibold text-gray-800">テスト部屋（更新済み）</h4>
-					<span class="text-xs text-gray-500">3時間前</span>
-				</div>
-				<p class="text-sm text-gray-600 mb-2">部屋設定の更新機能が正常に動作することを確認しました。</p>
-				<div class="flex items-center space-x-4 text-xs text-gray-500">
-					<span>MHP3</span>
-					<span>1/4人</span>
-					<span class="text-green-600">アクティブ</span>
-				</div>
-			</div>
-			<div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-				<div class="flex justify-between items-start mb-2">
-					<h4 class="font-semibold text-gray-800">古龍種連戦</h4>
-					<span class="text-xs text-gray-500">1日前</span>
-				</div>
-				<p class="text-sm text-gray-600 mb-2">古龍種を順番に討伐していきます</p>
-				<div class="flex items-center space-x-4 text-xs text-gray-500">
-					<span>MHP2G</span>
-					<span>0/4人</span>
-					<span class="text-red-600">終了</span>
-				</div>
-			</div>
-		</div>
-	</div>`
+	var targetUserID uuid.UUID
+	var err error
 
-	w.Header().Set("Content-Type", "text/html")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(html))
+	userIDStr := chi.URLParam(r, "uuid")
+	if userIDStr != "" {
+		// 他のユーザーのプロフィール
+		targetUserID, err = uuid.Parse(userIDStr)
+		if err != nil {
+			http.Error(w, "無効なユーザーIDです", http.StatusBadRequest)
+			return
+		}
+	} else {
+		// 自分のプロフィール
+		user := getUserFromContext(r.Context())
+		if user == nil {
+			http.Error(w, "認証が必要です", http.StatusUnauthorized)
+			return
+		}
+
+		targetUserID = user.ID
+	}
+
+	// デバッグログ: どのユーザーIDで検索しているかを確認
+	ph.logger.Printf("作成した部屋を検索中 - ユーザーID: %s", targetUserID.String())
+
+	// ユーザーが作成した部屋を取得
+	rooms, err := ph.repo.Room.GetRoomsByHostUser(targetUserID, 50, 0) // 最大50件取得
+	if err != nil {
+		ph.logger.Printf("部屋取得エラー: %v", err)
+		http.Error(w, "部屋データの取得に失敗しました", http.StatusInternalServerError)
+		return
+	}
+
+	ph.logger.Printf("取得した部屋数: %d", len(rooms))
+
+	// models.RoomをRoomSummaryに変換
+	var roomSummaries []RoomSummary
+	for _, room := range rooms {
+		roomSummaries = append(roomSummaries, roomToSummary(room))
+	}
+
+	// テンプレートデータを準備
+	data := struct {
+		Rooms []RoomSummary
+	}{
+		Rooms: roomSummaries,
+	}
+
+	// 部分テンプレートを使用してレンダリング
+	if err := renderPartialTemplate(w, "profile_rooms.tmpl", data); err != nil {
+		ph.logger.Printf("テンプレートレンダリングエラー: %v", err)
+		http.Error(w, "テンプレートの描画に失敗しました", http.StatusInternalServerError)
+		return
+	}
 }
 
 // Following フォロー中タブコンテンツを返す（htmx用）
 func (ph *ProfileHandler) Following(w http.ResponseWriter, r *http.Request) {
-	html := `
-	<div>
-		<h3 class="text-xl font-bold mb-4 text-gray-800">フォロー中のユーザー</h3>
-		<div class="space-y-4">
-			<div class="bg-gray-50 p-4 rounded-lg flex items-center justify-between border border-gray-200">
-				<div class="flex items-center space-x-4">
-					<img class="w-10 h-10 rounded-full object-cover" src="/static/images/default-avatar.png" alt="古龍ハンター">
-					<div>
-						<p class="font-semibold text-gray-800">古龍ハンター</p>
-						<p class="text-xs text-gray-500">オンライン</p>
-					</div>
-				</div>
-				<div class="flex items-center space-x-2">
-					<span class="w-3 h-3 bg-green-500 rounded-full"></span>
-					<span class="text-xs text-gray-500">3日前からフォロー中</span>
-				</div>
-			</div>
-			<div class="bg-gray-50 p-4 rounded-lg flex items-center justify-between border border-gray-200">
-				<div class="flex items-center space-x-4">
-					<img class="w-10 h-10 rounded-full object-cover" src="/static/images/default-avatar.png" alt="モンス討伐王">
-					<div>
-						<p class="font-semibold text-gray-800">モンス討伐王</p>
-						<p class="text-xs text-gray-500">オフライン</p>
-					</div>
-				</div>
-				<div class="flex items-center space-x-2">
-					<span class="w-3 h-3 bg-gray-400 rounded-full"></span>
-					<span class="text-xs text-gray-500">1週間前からフォロー中</span>
-				</div>
-			</div>
-		</div>
-	</div>`
-
-	w.Header().Set("Content-Type", "text/html")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(html))
+	if err := renderPartialTemplate(w, "profile_following.tmpl", nil); err != nil {
+		ph.logger.Printf("テンプレートレンダリングエラー: %v", err)
+		http.Error(w, "テンプレートの描画に失敗しました", http.StatusInternalServerError)
+		return
+	}
 }
 
 // Followers フォロワータブコンテンツを返す（htmx用）
 func (ph *ProfileHandler) Followers(w http.ResponseWriter, r *http.Request) {
-	html := `
-	<div>
-		<h3 class="text-xl font-bold mb-4 text-gray-800">フォロワーリスト</h3>
-		<div class="space-y-4">
-			<div class="bg-gray-50 p-4 rounded-lg flex items-center justify-between border border-gray-200">
-				<div class="flex items-center space-x-4">
-					<img class="w-10 h-10 rounded-full object-cover" src="/static/images/default-avatar.png" alt="ハンター太郎">
-					<div>
-						<p class="font-semibold text-gray-800">ハンター太郎</p>
-						<p class="text-xs text-gray-500">オンライン</p>
-					</div>
-				</div>
-				<div class="flex items-center space-x-2">
-					<span class="w-3 h-3 bg-green-500 rounded-full"></span>
-					<span class="text-xs text-gray-500">2日前からフォロー中</span>
-				</div>
-			</div>
-			<div class="bg-gray-50 p-4 rounded-lg flex items-center justify-between border border-gray-200">
-				<div class="flex items-center space-x-4">
-					<img class="w-10 h-10 rounded-full object-cover" src="/static/images/default-avatar.png" alt="素材コレクター">
-					<div>
-						<p class="font-semibold text-gray-800">素材コレクター</p>
-						<p class="text-xs text-gray-500">オフライン</p>
-					</div>
-				</div>
-				<div class="flex items-center space-x-2">
-					<span class="w-3 h-3 bg-gray-400 rounded-full"></span>
-					<span class="text-xs text-gray-500">5日前からフォロー中</span>
-				</div>
-			</div>
-		</div>
-	</div>`
-
-	w.Header().Set("Content-Type", "text/html")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(html))
+	if err := renderPartialTemplate(w, "profile_followers.tmpl", nil); err != nil {
+		ph.logger.Printf("テンプレートレンダリングエラー: %v", err)
+		http.Error(w, "テンプレートの描画に失敗しました", http.StatusInternalServerError)
+		return
+	}
 }
 
 // Helper functions
@@ -459,25 +426,90 @@ func (ph *ProfileHandler) getMockRooms() []RoomSummary {
 func (ph *ProfileHandler) getMockFollowers() []Follower {
 	return []Follower{
 		{
-			ID:            uuid.New(),
-			Username:      "ハンター太郎",
-			AvatarURL:     "/static/images/default-avatar.png",
-			IsOnline:      true,
+			ID:             uuid.New(),
+			Username:       "ハンター太郎",
+			AvatarURL:      "/static/images/default-avatar.png",
+			IsOnline:       true,
 			FollowingSince: "2日前",
 		},
 		{
-			ID:            uuid.New(),
-			Username:      "素材コレクター",
-			AvatarURL:     "/static/images/default-avatar.png",
-			IsOnline:      false,
+			ID:             uuid.New(),
+			Username:       "素材コレクター",
+			AvatarURL:      "/static/images/default-avatar.png",
+			IsOnline:       false,
 			FollowingSince: "5日前",
 		},
 	}
 }
 
-// Helper function
+// Helper functions
 func strPtr(s string) *string {
 	return &s
+}
+
+// formatRelativeTime 相対時間を日本語で表示
+func formatRelativeTime(t time.Time) string {
+	now := time.Now()
+	diff := now.Sub(t)
+
+	if diff < time.Minute {
+		return "たった今"
+	} else if diff < time.Hour {
+		minutes := int(diff.Minutes())
+		return fmt.Sprintf("%d分前", minutes)
+	} else if diff < 24*time.Hour {
+		hours := int(diff.Hours())
+		return fmt.Sprintf("%d時間前", hours)
+	} else if diff < 7*24*time.Hour {
+		days := int(diff.Hours() / 24)
+		return fmt.Sprintf("%d日前", days)
+	} else if diff < 30*24*time.Hour {
+		weeks := int(diff.Hours() / (24 * 7))
+		return fmt.Sprintf("%d週間前", weeks)
+	} else {
+		months := int(diff.Hours() / (24 * 30))
+		return fmt.Sprintf("%d ヶ月前", months)
+	}
+}
+
+// roomToSummary models.RoomをRoomSummaryに変換
+func roomToSummary(room models.Room) RoomSummary {
+	var description string
+	if room.Description != nil {
+		description = *room.Description
+	}
+
+	// ステータス判定
+	var status, statusColor string
+	var isClickable bool
+
+	if !room.IsActive {
+		status = "削除済み"
+		statusColor = "text-gray-500"
+		isClickable = false
+	} else if room.IsClosed {
+		status = "終了"
+		statusColor = "text-red-600"
+		isClickable = false
+	} else {
+		status = "アクティブ"
+		statusColor = "text-green-600"
+		isClickable = true
+	}
+
+	playerCount := fmt.Sprintf("%d/%d人", room.CurrentPlayers, room.MaxPlayers)
+
+	return RoomSummary{
+		ID:          room.ID,
+		Name:        room.Name,
+		Description: description,
+		GameVersion: room.GameVersion.Code,
+		PlayerCount: playerCount,
+		Status:      status,
+		StatusColor: statusColor,
+		CreatedAt:   formatRelativeTime(room.CreatedAt),
+		IsClickable: isClickable,
+	}
 }
 
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {

@@ -23,16 +23,26 @@ func (app *Application) hasAuthMiddleware() bool {
 
 // withAuth 認証ミドルウェアを適用するヘルパー関数
 func (app *Application) withAuth(handler http.HandlerFunc) http.HandlerFunc {
+	if app.authMiddleware != nil {
+		return func(w http.ResponseWriter, r *http.Request) {
+			app.authMiddleware.Middleware(handler).ServeHTTP(w, r)
+		}
+	}
+	// 認証ミドルウェアが利用できない場合は認証エラーを返す
 	return func(w http.ResponseWriter, r *http.Request) {
-		app.authMiddleware.Middleware(handler).ServeHTTP(w, r)
+		http.Error(w, "認証システムが初期化されていません。SUPABASE_JWT_SECRETが設定されていることを確認してください。", http.StatusInternalServerError)
 	}
 }
 
 // withOptionalAuth オプショナル認証ミドルウェアを適用するヘルパー関数
 func (app *Application) withOptionalAuth(handler http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		app.authMiddleware.OptionalMiddleware(handler).ServeHTTP(w, r)
+	if app.authMiddleware != nil {
+		return func(w http.ResponseWriter, r *http.Request) {
+			app.authMiddleware.OptionalMiddleware(handler).ServeHTTP(w, r)
+		}
 	}
+	// 認証ミドルウェアが利用できない場合は認証なしで継続（オプショナルなため）
+	return handler
 }
 
 func (app *Application) SetupRoutes() chi.Router {
@@ -61,30 +71,17 @@ func (app *Application) setupPageRoutes(r chi.Router) {
 	ph := app.pageHandler
 	profileHandler := app.profileHandler
 
-	// 本番環境では認証情報をオプションで取得、開発環境では認証なしでアクセス可能
-	if app.hasAuthMiddleware() {
-		r.Get("/", app.withOptionalAuth(ph.Home))
-		r.Get("/terms", app.withOptionalAuth(ph.Terms))
-		r.Get("/privacy", app.withOptionalAuth(ph.Privacy))
-		r.HandleFunc("/contact", app.withOptionalAuth(ph.Contact))
-		r.Get("/faq", app.withOptionalAuth(ph.FAQ))
-		r.Get("/guide", app.withOptionalAuth(ph.Guide))
-		r.Get("/hello", app.withOptionalAuth(ph.Hello))
-		r.Get("/sitemap.xml", app.withOptionalAuth(ph.Sitemap))
-		r.Get("/profile", app.withAuth(profileHandler.Profile))
-		r.Get("/users/{uuid}", app.withOptionalAuth(profileHandler.UserProfile))
-	} else {
-		r.Get("/", ph.Home)
-		r.Get("/terms", ph.Terms)
-		r.Get("/privacy", ph.Privacy)
-		r.HandleFunc("/contact", ph.Contact)
-		r.Get("/faq", ph.FAQ)
-		r.Get("/guide", ph.Guide)
-		r.Get("/hello", ph.Hello)
-		r.Get("/sitemap.xml", ph.Sitemap)
-		r.Get("/profile", profileHandler.Profile)
-		r.Get("/users/{uuid}", profileHandler.UserProfile)
-	}
+	// 統一された認証フロー - 開発環境も本番環境も同じ処理
+	r.Get("/", app.withOptionalAuth(ph.Home))
+	r.Get("/terms", app.withOptionalAuth(ph.Terms))
+	r.Get("/privacy", app.withOptionalAuth(ph.Privacy))
+	r.HandleFunc("/contact", app.withOptionalAuth(ph.Contact))
+	r.Get("/faq", app.withOptionalAuth(ph.FAQ))
+	r.Get("/guide", app.withOptionalAuth(ph.Guide))
+	r.Get("/hello", app.withOptionalAuth(ph.Hello))
+	r.Get("/sitemap.xml", app.withOptionalAuth(ph.Sitemap))
+	r.Get("/profile", app.withAuth(profileHandler.Profile))
+	r.Get("/users/{uuid}", app.withOptionalAuth(profileHandler.UserProfile))
 }
 
 func (app *Application) setupRoomRoutes(r chi.Router) {
@@ -173,55 +170,47 @@ func (app *Application) setupAPIRoutes(r chi.Router) {
 		ar.Get("/config/supabase", app.configHandler.GetSupabaseConfig)
 		ar.Get("/health", app.healthCheck)
 		ar.Get("/game-versions/active", app.gameVersionHandler.GetActiveGameVersionsAPI)
-		
-		// プロフィール関連のAPIエンドポイント（モック）
-		ar.Get("/profile/edit-form", app.profileHandler.EditForm)
-		ar.Get("/profile/activity", app.profileHandler.Activity)
-		ar.Get("/profile/rooms", app.profileHandler.Rooms)
-		ar.Get("/profile/followers", app.profileHandler.Followers)
-		ar.Get("/profile/following", app.profileHandler.Following)
-		ar.Get("/users/{uuid}", app.profileHandler.GetUserProfile)
 
-		if app.hasAuthMiddleware() {
-			// 認証関連API（厳しいレート制限 + 認証必須）
-			ar.Route("/auth", func(apr chi.Router) {
+		// 他のユーザーのプロフィール関連API（認証オプション）
+		ar.Get("/users/{uuid}", app.withOptionalAuth(app.profileHandler.GetUserProfile))
+		ar.Get("/users/{uuid}/rooms", app.withOptionalAuth(app.profileHandler.Rooms))
+		ar.Get("/users/{uuid}/activity", app.withOptionalAuth(app.profileHandler.Activity))
+		ar.Get("/users/{uuid}/followers", app.withOptionalAuth(app.profileHandler.Followers))
+		ar.Get("/users/{uuid}/following", app.withOptionalAuth(app.profileHandler.Following))
+
+		// 統一された認証フロー - 開発環境も本番環境も同じ処理
+
+		// 認証関連API（厳しいレート制限 + 認証必須）
+		ar.Route("/auth", func(apr chi.Router) {
+			if app.authMiddleware != nil {
 				apr.Use(middleware.AuthRateLimitMiddleware(app.authLimiter))
 				apr.Use(app.authMiddleware.Middleware)
+			}
+			apr.Post("/sync", app.authHandler.SyncUser)
+			apr.Put("/psn-id", app.authHandler.UpdatePSNId)
+		})
 
-				apr.Post("/sync", app.authHandler.SyncUser)
-				apr.Put("/psn-id", app.authHandler.UpdatePSNId)
-			})
+		// 認証必須のAPIエンドポイント
+		ar.Get("/user/current", app.withAuth(app.authHandler.CurrentUser))
+		ar.Get("/user/current-room", app.withAuth(app.roomHandler.GetCurrentRoom))
+		ar.Get("/user/current/room-status", app.withAuth(app.roomHandler.GetUserRoomStatus))
+		ar.Post("/leave-current-room", app.withAuth(app.roomHandler.LeaveCurrentRoom))
 
-			// 認証必須のAPIエンドポイント
-			ar.Get("/user/current", app.withAuth(app.authHandler.CurrentUser))
-			ar.Get("/user/current-room", app.withAuth(app.roomHandler.GetCurrentRoom))
-			ar.Get("/user/current/room-status", app.withAuth(app.roomHandler.GetUserRoomStatus))
-			ar.Post("/leave-current-room", app.withAuth(app.roomHandler.LeaveCurrentRoom))
+		// プロフィール関連API（認証必須）
+		ar.Get("/profile/edit-form", app.withAuth(app.profileHandler.EditForm))
+		ar.Get("/profile/activity", app.withAuth(app.profileHandler.Activity))
+		ar.Get("/profile/rooms", app.withAuth(app.profileHandler.Rooms))
+		ar.Get("/profile/followers", app.withAuth(app.profileHandler.Followers))
+		ar.Get("/profile/following", app.withAuth(app.profileHandler.Following))
 
-			// リアクション関連API（認証必須）
-			ar.Post("/messages/{messageId}/reactions", app.withAuth(app.reactionHandler.AddReaction))
-			ar.Delete("/messages/{messageId}/reactions/{reactionType}", app.withAuth(app.reactionHandler.RemoveReaction))
+		// リアクション関連API（認証必須）
+		ar.Post("/messages/{messageId}/reactions", app.withAuth(app.reactionHandler.AddReaction))
+		ar.Delete("/messages/{messageId}/reactions/{reactionType}", app.withAuth(app.reactionHandler.RemoveReaction))
 
-			// 認証オプションのAPIエンドポイント
-			ar.Get("/rooms", app.withOptionalAuth(app.roomHandler.GetAllRoomsAPI))
-			ar.Get("/messages/{messageId}/reactions", app.withOptionalAuth(app.reactionHandler.GetMessageReactions))
-			ar.Get("/reactions/types", app.withOptionalAuth(app.reactionHandler.GetAvailableReactions))
-		} else {
-			// 開発環境では認証なしですべてのAPIにアクセス可能
-			ar.Get("/user/current", app.authHandler.CurrentUser)
-			ar.Get("/user/current-room", app.roomHandler.GetCurrentRoom)
-			ar.Get("/user/current/room-status", app.roomHandler.GetUserRoomStatus)
-			ar.Post("/leave-current-room", app.roomHandler.LeaveCurrentRoom)
-			ar.Post("/auth/sync", app.authHandler.SyncUser)
-			ar.Put("/auth/psn-id", app.authHandler.UpdatePSNId)
-			ar.Get("/rooms", app.roomHandler.GetAllRoomsAPI)
-
-			// リアクション関連API
-			ar.Post("/messages/{messageId}/reactions", app.reactionHandler.AddReaction)
-			ar.Delete("/messages/{messageId}/reactions/{reactionType}", app.reactionHandler.RemoveReaction)
-			ar.Get("/messages/{messageId}/reactions", app.reactionHandler.GetMessageReactions)
-			ar.Get("/reactions/types", app.reactionHandler.GetAvailableReactions)
-		}
+		// 認証オプションのAPIエンドポイント
+		ar.Get("/rooms", app.withOptionalAuth(app.roomHandler.GetAllRoomsAPI))
+		ar.Get("/messages/{messageId}/reactions", app.withOptionalAuth(app.reactionHandler.GetMessageReactions))
+		ar.Get("/reactions/types", app.withOptionalAuth(app.reactionHandler.GetAvailableReactions))
 	})
 }
 
