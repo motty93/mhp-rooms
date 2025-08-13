@@ -279,9 +279,111 @@ PUT /rooms/{id}/toggle-closed
 }
 ```
 
-### 4. ユーザー情報
+### 4. プロフィール機能
 
-#### 4.1 現在のユーザー情報取得
+#### 4.1 プロフィール画面表示
+```
+GET /profile
+```
+自分のプロフィール画面のHTMLを返します。
+
+**認証**: 必須
+
+#### 4.2 他ユーザープロフィール表示
+```
+GET /users/{uuid}
+```
+指定したユーザーのプロフィール画面のHTMLを返します。
+
+**認証**: オプション
+
+**パスパラメータ**:
+- `uuid`: ユーザーID（UUID）
+
+#### 4.3 プロフィール編集フォーム
+```
+GET /api/profile/edit-form
+```
+プロフィール編集フォームのHTMLを返します（モック実装）。
+
+**認証**: 必須
+
+#### 4.4 アクティビティタブ
+```
+GET /api/profile/activity
+```
+ユーザーのアクティビティ履歴を返します（モック実装）。
+
+**認証**: 必須
+
+#### 4.5 作成した部屋タブ
+```
+GET /api/profile/rooms
+```
+ユーザーが作成した部屋の一覧を返します（部分的に動的実装）。
+
+**認証**: 必須
+
+#### 4.6 フォロワータブ
+```
+GET /api/profile/followers
+```
+ユーザーのフォロワー一覧を返します（モック実装）。
+
+**認証**: 必須
+
+#### 4.7 フォロー中タブ
+```
+GET /api/profile/following
+```
+ユーザーがフォローしているユーザー一覧を返します（モック実装）。
+
+**認証**: 必須
+
+#### 4.8 ユーザー情報取得（API）
+```
+GET /api/users/{uuid}
+```
+指定したユーザーの基本情報をJSON形式で返します。
+
+**認証**: オプション
+
+**パスパラメータ**:
+- `uuid`: ユーザーID（UUID）
+
+**レスポンス**:
+```json
+{
+  "id": "uuid",
+  "display_name": "ハンター太郎",
+  "avatar_url": "https://example.com/avatar.png",
+  "bio": "MHP3をメインでプレイしています",
+  "psn_online_id": "hunter_taro_psn",
+  "nintendo_network_id": "hunter_taro_nn",
+  "nintendo_switch_id": "SW-1234-5678-9012",
+  "pretendo_network_id": "hunter_taro_pn",
+  "twitter_id": "hunter_taro",
+  "favorite_games": ["MHP2G", "MHP3"],
+  "play_times": {
+    "weekday": "19:00-23:00",
+    "weekend": "13:00-24:00"
+  },
+  "created_at": "2025-06-06T12:00:00Z"
+}
+```
+
+#### 4.9 フォロー・アンフォロー機能（予定）
+```
+POST /api/users/{uuid}/follow
+DELETE /api/users/{uuid}/follow
+```
+ユーザーのフォロー・アンフォロー機能（未実装）。
+
+**認証**: 必須
+
+### 5. ユーザー情報
+
+#### 5.1 現在のユーザー情報取得
 ```
 GET /api/user/current
 ```
@@ -308,9 +410,9 @@ GET /api/user/current
 }
 ```
 
-### 5. 設定情報
+### 6. 設定情報
 
-#### 5.1 Supabase設定取得
+#### 6.1 Supabase設定取得
 ```
 GET /api/config/supabase
 ```
@@ -326,9 +428,9 @@ GET /api/config/supabase
 }
 ```
 
-### 6. ヘルスチェック
+### 7. ヘルスチェック
 
-#### 6.1 サービス稼働確認
+#### 7.1 サービス稼働確認
 ```
 GET /api/health
 ```
@@ -382,11 +484,35 @@ interface User {
   avatar_url?: string;
   bio?: string;
   psn_online_id?: string;
+  nintendo_network_id?: string;
+  nintendo_switch_id?: string;
+  pretendo_network_id?: string;
   twitter_id?: string;
+  favorite_games: string[];      // JSONBフィールド
+  play_times: {                  // JSONBフィールド
+    weekday?: string;
+    weekend?: string;
+  };
   is_active: boolean;
   role: string;                  // "user" | "admin"
   created_at: string;            // ISO 8601
   updated_at: string;            // ISO 8601
+}
+```
+
+### UserFollow（フォロー関係）
+```typescript
+interface UserFollow {
+  id: string;                    // UUID
+  follower_user_id: string;      // UUID
+  following_user_id: string;     // UUID
+  status: string;                // "pending" | "accepted"
+  created_at: string;            // ISO 8601
+  updated_at: string;            // ISO 8601
+  
+  // リレーション
+  follower?: User;
+  following?: User;
 }
 ```
 
@@ -454,10 +580,36 @@ interface Platform {
 - ルーム最大人数: 4人
 - ルーム非アクティブ期限: 最終更新から24時間
 
+## 実装状況
+
+### 実装済み機能
+- ✅ 基本的なルーム管理機能（作成・参加・退出）
+- ✅ ユーザー認証・同期機能
+- ✅ プロフィール画面の基本表示
+- ✅ プラットフォームID関連フィールド
+- ✅ お気に入りゲーム・プレイ時間帯のデータ構造
+
+### モック実装済み
+- 🔄 プロフィールタブ機能（アクティビティ、フォロワー等）
+- 🔄 プロフィール編集フォーム
+
+### 開発環境対応
+- ✅ 認証バイパス機能
+- ✅ テストユーザー自動取得
+
 ## 今後の実装予定
 
+### Phase 1: プロフィール機能完成
+- フォロー・アンフォロー機能
+- プロフィール編集機能の完全実装
+- タブコンテンツの動的化
+
+### Phase 2: リアルタイム機能
 - WebSocket対応（リアルタイムルーム更新）
 - ルーム内チャット機能
+
+### Phase 3: 拡張機能
 - ユーザーブロック機能
 - ルーム検索・フィルタリング機能の拡充
 - プレイヤー評価システム
+- 通知機能
