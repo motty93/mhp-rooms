@@ -13,12 +13,15 @@ import (
 	"mhp-rooms/internal/middleware"
 	"mhp-rooms/internal/models"
 	"mhp-rooms/internal/repository"
+	"mhp-rooms/internal/services"
 	"mhp-rooms/internal/sse"
+	"mhp-rooms/internal/utils"
 )
 
 type RoomHandler struct {
 	BaseHandler
-	hub *sse.Hub
+	hub             *sse.Hub
+	activityService *services.ActivityService
 }
 
 func NewRoomHandler(repo *repository.Repository, hub *sse.Hub) *RoomHandler {
@@ -26,7 +29,8 @@ func NewRoomHandler(repo *repository.Repository, hub *sse.Hub) *RoomHandler {
 		BaseHandler: BaseHandler{
 			repo: repo,
 		},
-		hub: hub,
+		hub:             hub,
+		activityService: services.NewActivityService(repo),
 	}
 }
 
@@ -152,7 +156,11 @@ func (h *RoomHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	// 入力値の検証
 	var req CreateRoomRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "リクエストの解析に失敗しました", http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "リクエストの解析に失敗しました",
+		})
 		return
 	}
 
@@ -220,7 +228,17 @@ func (h *RoomHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// 一意な部屋コードを生成
+	roomCode, err := utils.GenerateUniqueRoomCode(func(code string) (bool, error) {
+		return h.repo.RoomCodeExists(code)
+	})
+	if err != nil {
+		http.Error(w, "部屋コードの生成に失敗しました", http.StatusInternalServerError)
+		return
+	}
+
 	room := &models.Room{
+		RoomCode:       roomCode,
 		Name:           req.Name,
 		GameVersionID:  gameVersionID,
 		HostUserID:     hostUserID,
@@ -247,6 +265,12 @@ func (h *RoomHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	if err := h.repo.CreateRoom(room); err != nil {
 		http.Error(w, "ルームの作成に失敗しました", http.StatusInternalServerError)
 		return
+	}
+
+	// アクティビティを記録（失敗してもメイン処理は続行）
+	if err := h.activityService.RecordRoomCreate(hostUserID, room); err != nil {
+		log.Printf("部屋作成アクティビティの記録に失敗: %v", err)
+		// アクティビティ記録失敗はメイン処理に影響させない
 	}
 
 	// 作成成功時には部屋詳細URLを返す
@@ -437,6 +461,17 @@ func (h *RoomHandler) JoinRoom(w http.ResponseWriter, r *http.Request) {
 		h.hub.BroadcastToRoom(roomID, event)
 	}
 
+	// アクティビティを記録（失敗してもメイン処理は続行）
+	hostUser, hostErr := h.repo.User.FindUserByID(room.HostUserID)
+	if hostErr != nil {
+		log.Printf("ホストユーザー情報の取得に失敗: %v", hostErr)
+	} else {
+		if err := h.activityService.RecordRoomJoin(userID, room, hostUser); err != nil {
+			log.Printf("部屋参加アクティビティの記録に失敗: %v", err)
+			// アクティビティ記録失敗はメイン処理に影響させない
+		}
+	}
+
 	// 参加成功時には部屋詳細URLを返す
 	response := map[string]interface{}{
 		"message":  "ルームに参加しました",
@@ -465,9 +500,23 @@ func (h *RoomHandler) LeaveRoom(w http.ResponseWriter, r *http.Request) {
 
 	userID := dbUser.ID
 
+	// アクティビティ記録のため、退出前に部屋情報を取得
+	room, roomErr := h.repo.Room.FindRoomByID(roomID)
+	if roomErr != nil {
+		log.Printf("部屋情報の取得に失敗: %v", roomErr)
+	}
+
 	if err := h.repo.LeaveRoom(roomID, userID); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
+	}
+
+	// アクティビティを記録（失敗してもメイン処理は続行）
+	if room != nil {
+		if err := h.activityService.RecordRoomLeave(userID, room); err != nil {
+			log.Printf("部屋退出アクティビティの記録に失敗: %v", err)
+			// アクティビティ記録失敗はメイン処理に影響させない
+		}
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -556,11 +605,8 @@ func (h *RoomHandler) ToggleRoomClosed(w http.ResponseWriter, r *http.Request) {
 
 // GetAllRoomsAPIHandler APIエンドポイント：常に全データを返す
 func (h *RoomHandler) GetAllRoomsAPI(w http.ResponseWriter, r *http.Request) {
-	gameVersions, err := h.repo.GetActiveGameVersions()
-	if err != nil {
-		http.Error(w, "ゲームバージョンの取得に失敗しました", http.StatusInternalServerError)
-		return
-	}
+	// Note: GameVersionsはHTMLレンダリング時に既に取得済み
+	// APIエンドポイントでは部屋データのみを返す
 
 	// 認証されたユーザーの場合、最適化されたメソッドを使用
 	var enhancedRooms []interface{}
@@ -632,9 +678,8 @@ func (h *RoomHandler) GetAllRoomsAPI(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"rooms":         enhancedRooms,
-		"game_versions": gameVersions,
-		"total":         len(enhancedRooms),
+		"rooms": enhancedRooms,
+		"total": len(enhancedRooms),
 	})
 }
 
@@ -653,7 +698,13 @@ func (h *RoomHandler) GetCurrentRoom(w http.ResponseWriter, r *http.Request) {
 	// 現在参加しているアクティブな部屋を検索
 	activeRoom, err := h.repo.Room.FindActiveRoomByUserID(userID)
 	if err != nil {
-		// 参加中の部屋がない場合
+		// データベースエラーの場合
+		http.Error(w, "参加中の部屋の取得に失敗しました", http.StatusInternalServerError)
+		return
+	}
+	
+	// 参加中の部屋がない場合
+	if activeRoom == nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"current_room": null}`))
@@ -845,6 +896,12 @@ func (h *RoomHandler) DismissRoom(w http.ResponseWriter, r *http.Request) {
 			Data: dismissMessage,
 		}
 		h.hub.BroadcastToRoom(roomID, event)
+	}
+
+	// アクティビティを記録（失敗してもメイン処理は続行）
+	if err := h.activityService.RecordRoomClose(userID, room); err != nil {
+		log.Printf("部屋終了アクティビティの記録に失敗: %v", err)
+		// アクティビティ記録失敗はメイン処理に影響させない
 	}
 
 	// 解散成功のレスポンス

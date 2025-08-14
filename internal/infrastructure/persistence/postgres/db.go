@@ -67,6 +67,8 @@ func (db *DB) Migrate() error {
 		&models.RoomMember{},
 		&models.RoomMessage{},
 		&models.UserBlock{},
+		&models.UserFollow{},
+		&models.UserActivity{},
 		&models.RoomLog{},
 		&models.PasswordReset{},
 	)

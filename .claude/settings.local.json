@@ -107,7 +107,9 @@
       "Bash(ENV=development go run cmd/server/main.go)",
       "Bash(PORT=8081 make run)",
       "Bash(ENV=development DEBUG_AUTH_LOGS=true make run)",
-      "Bash(source .env)"
+      "Bash(source .env)",
+      "Bash(gh issue view:*)",
+      "mcp__playwright__browser_tab_new"
     ],
     "deny": []
   }

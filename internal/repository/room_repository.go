@@ -91,6 +91,17 @@ func (r *roomRepository) FindRoomByRoomCode(roomCode string) (*models.Room, erro
 	return &room, nil
 }
 
+func (r *roomRepository) RoomCodeExists(roomCode string) (bool, error) {
+	var count int64
+	err := r.db.GetConn().Model(&models.Room{}).
+		Where("room_code = ?", roomCode).
+		Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
 func (r *roomRepository) GetActiveRooms(gameVersionID *uuid.UUID, limit, offset int) ([]models.Room, error) {
 	var rooms []models.Room
 	query := r.db.GetConn().
@@ -389,15 +400,25 @@ func (r *roomRepository) LeaveRoom(roomID, userID uuid.UUID) error {
 
 func (r *roomRepository) FindActiveRoomByUserID(userID uuid.UUID) (*models.Room, error) {
 	var member models.RoomMember
-	err := r.db.GetConn().
+	
+	// Limit(1)を使用してrecord not foundエラーのログを回避
+	result := r.db.GetConn().
 		Where("user_id = ? AND status = ?", userID, "active").
-		First(&member).Error
-	if err != nil {
-		return nil, err
+		Limit(1).
+		Find(&member)
+	
+	// レコードが見つからない場合（RowsAffectedが0の場合）
+	if result.RowsAffected == 0 {
+		return nil, nil
+	}
+	
+	// その他のエラーチェック
+	if result.Error != nil {
+		return nil, result.Error
 	}
 
 	var room models.Room
-	err = r.db.GetConn().
+	err := r.db.GetConn().
 		Where("id = ?", member.RoomID).
 		First(&room).Error
 	if err != nil {
@@ -527,40 +548,44 @@ func (r *roomRepository) DismissRoom(roomID uuid.UUID) error {
 // GetUserRoomStatus ユーザーの部屋状態を取得
 func (r *roomRepository) GetUserRoomStatus(userID uuid.UUID) (string, *models.Room, error) {
 	// 1. ホストとして部屋を持っているかチェック
-	var hostRoom models.Room
-	err := r.db.GetConn().
+	var hostRooms []models.Room
+	result := r.db.GetConn().
 		Preload("GameVersion").
 		Where("host_user_id = ? AND is_active = ? AND is_closed = ?", userID, true, false).
-		First(&hostRoom).Error
+		Limit(1).
+		Find(&hostRooms)
 
-	if err == nil {
+	if result.Error != nil {
+		return "", nil, result.Error
+	}
+
+	if len(hostRooms) > 0 {
 		// ホストとして部屋を持っている
-		return "HOST", &hostRoom, nil
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		// 予期しないエラー
-		return "", nil, err
+		return "HOST", &hostRooms[0], nil
 	}
 
 	// 2. 参加者として部屋に参加しているかチェック
-	var member models.RoomMember
-	err = r.db.GetConn().
+	var members []models.RoomMember
+	result = r.db.GetConn().
 		Where("user_id = ? AND status = ? AND is_host = ?", userID, "active", false).
-		First(&member).Error
+		Limit(1).
+		Find(&members)
 
-	if err == nil {
+	if result.Error != nil {
+		return "", nil, result.Error
+	}
+
+	if len(members) > 0 {
 		// 参加者として部屋に参加している
 		var guestRoom models.Room
-		err = r.db.GetConn().
+		err := r.db.GetConn().
 			Preload("GameVersion").
-			Where("id = ?", member.RoomID).
+			Where("id = ?", members[0].RoomID).
 			First(&guestRoom).Error
 		if err != nil {
 			return "", nil, err
 		}
 		return "GUEST", &guestRoom, nil
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		// 予期しないエラー
-		return "", nil, err
 	}
 
 	// 3. どの部屋にも所属していない

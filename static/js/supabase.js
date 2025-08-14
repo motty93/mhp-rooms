@@ -28,7 +28,23 @@ async function initializeSupabase() {
 
     supabase = window.supabaseClient
 
+    // 初期セッションを取得
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+    
+    // 初期セッションを設定
+    if (window.Alpine && window.Alpine.store('auth')) {
+      window.Alpine.store('auth').updateSession(session)
+    }
+
+    // 認証状態の変更を監視（初期化時は呼ばれない）
     supabase.auth.onAuthStateChange((event, session) => {
+      // 初期化イベント（INITIAL_SESSION）は無視する
+      if (event === 'INITIAL_SESSION') {
+        return
+      }
+
       // セッション変更時にクッキーを設定/削除
       if (session && session.access_token) {
         // アクセストークンをクッキーに保存（SSR用）
@@ -48,13 +64,6 @@ async function initializeSupabase() {
         }),
       )
     })
-
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-    if (window.Alpine && window.Alpine.store('auth')) {
-      window.Alpine.store('auth').updateSession(session)
-    }
 
     window.supabaseAuth = auth
     return supabase

@@ -17,6 +17,7 @@ type Repository struct {
 	RoomMessage   RoomMessageRepository
 	UserBlock     UserBlockRepository
 	UserFollow    UserFollowRepository
+	UserActivity  UserActivityRepository
 }
 
 func NewRepository(db *postgres.DB) *Repository {
@@ -31,6 +32,7 @@ func NewRepository(db *postgres.DB) *Repository {
 		RoomMessage:   NewRoomMessageRepository(db),
 		UserBlock:     NewUserBlockRepository(db),
 		UserFollow:    NewUserFollowRepository(db),
+		UserActivity:  NewUserActivityRepository(db),
 	}
 }
 
@@ -86,6 +88,10 @@ func (r *Repository) FindRoomByID(id uuid.UUID) (*models.Room, error) {
 
 func (r *Repository) FindRoomByRoomCode(roomCode string) (*models.Room, error) {
 	return r.Room.FindRoomByRoomCode(roomCode)
+}
+
+func (r *Repository) RoomCodeExists(roomCode string) (bool, error) {
+	return r.Room.RoomCodeExists(roomCode)
 }
 
 func (r *Repository) GetActiveRooms(gameVersionID *uuid.UUID, limit, offset int) ([]models.Room, error) {
