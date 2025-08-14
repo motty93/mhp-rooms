@@ -605,11 +605,8 @@ func (h *RoomHandler) ToggleRoomClosed(w http.ResponseWriter, r *http.Request) {
 
 // GetAllRoomsAPIHandler APIエンドポイント：常に全データを返す
 func (h *RoomHandler) GetAllRoomsAPI(w http.ResponseWriter, r *http.Request) {
-	gameVersions, err := h.repo.GetActiveGameVersions()
-	if err != nil {
-		http.Error(w, "ゲームバージョンの取得に失敗しました", http.StatusInternalServerError)
-		return
-	}
+	// Note: GameVersionsはHTMLレンダリング時に既に取得済み
+	// APIエンドポイントでは部屋データのみを返す
 
 	// 認証されたユーザーの場合、最適化されたメソッドを使用
 	var enhancedRooms []interface{}
@@ -681,9 +678,8 @@ func (h *RoomHandler) GetAllRoomsAPI(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"rooms":         enhancedRooms,
-		"game_versions": gameVersions,
-		"total":         len(enhancedRooms),
+		"rooms": enhancedRooms,
+		"total": len(enhancedRooms),
 	})
 }
 

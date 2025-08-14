@@ -30,11 +30,21 @@ document.addEventListener('alpine:init', () => {
     
     // 初期化
     async init() {
-      await this.loadGameVersions()
+      // ページ読み込み時には何もしない（モーダル開く時にゲームバージョンを取得）
     },
     
     // ゲームバージョンを取得
     async loadGameVersions() {
+      console.log('loadGameVersions called, current length:', this.gameVersions.length);
+      console.trace('Stack trace for loadGameVersions call:');
+      
+      // 既に取得済みの場合はスキップ
+      if (this.gameVersions.length > 0) {
+        console.log('Skipping loadGameVersions - already loaded');
+        return
+      }
+      
+      console.log('Fetching game versions from API...');
       try {
         const response = await fetch('/api/game-versions/active', {
           credentials: 'same-origin'
@@ -43,6 +53,7 @@ document.addEventListener('alpine:init', () => {
         if (response.ok) {
           const data = await response.json()
           this.gameVersions = data.game_versions || []
+          console.log('Loaded game versions:', this.gameVersions.length);
         } else {
           console.error('ゲーム情報の取得に失敗しました')
         }
@@ -53,6 +64,10 @@ document.addEventListener('alpine:init', () => {
     
     // モーダルを開く
     async open() {
+      console.log('roomCreate.open() called - SHOULD ONLY BE CALLED WHEN BUTTON CLICKED');
+      console.trace('Stack trace for open() call:');
+      console.log('roomCreate.open() called');
+      
       // 認証チェック
       const authStore = Alpine.store('auth')
       if (!authStore.initialized || !authStore.isAuthenticated) {
@@ -60,6 +75,9 @@ document.addEventListener('alpine:init', () => {
         window.location.href = '/auth/login'
         return
       }
+      
+      // ゲームバージョンを取得（まだ取得していない場合のみ）
+      await this.loadGameVersions()
       
       try {
         // 部屋状態をチェック

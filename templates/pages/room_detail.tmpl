@@ -573,6 +573,8 @@ function roomDetail() {
     isSubmitting: false,
 
     async init() {
+
+      
       // グローバルインスタンスとして登録
       window.roomDetailInstance = this;
 
@@ -677,7 +679,7 @@ function roomDetail() {
             id: '{{ .ID }}',
             type: 'system',
             subtype: 'join',
-            content: '{{ index .Details "user_name" }}さんが入室しました',
+            content: '{{ index .Details.Data "user_name" }}さんが入室しました',
             timestamp: new Date('{{ .CreatedAt.Format "2006-01-02T15:04:05Z07:00" }}')
           });
         {{ else if eq .Action "leave" }}
@@ -685,7 +687,7 @@ function roomDetail() {
             id: '{{ .ID }}',
             type: 'system',
             subtype: 'leave',
-            content: '{{ index .Details "user_name" }}さんが退室しました',
+            content: '{{ index .Details.Data "user_name" }}さんが退室しました',
             timestamp: new Date('{{ .CreatedAt.Format "2006-01-02T15:04:05Z07:00" }}')
           });
         {{ end }}
@@ -1162,5 +1164,8 @@ function roomDetail() {
     }
   };
 }
+
+// グローバルスコープに公開
+window.roomDetail = roomDetail;
 </script>
 {{ end }}
