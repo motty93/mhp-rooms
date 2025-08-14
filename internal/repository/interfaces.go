@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"time"
+
 	"mhp-rooms/internal/models"
 
 	"github.com/google/uuid"
@@ -34,6 +36,7 @@ type RoomRepository interface {
 	CreateRoom(room *models.Room) error
 	FindRoomByID(id uuid.UUID) (*models.Room, error)
 	FindRoomByRoomCode(roomCode string) (*models.Room, error)
+	RoomCodeExists(roomCode string) (bool, error)
 	GetActiveRooms(gameVersionID *uuid.UUID, limit, offset int) ([]models.Room, error)
 	GetActiveRoomsWithJoinStatus(userID *uuid.UUID, gameVersionID *uuid.UUID, limit, offset int) ([]models.RoomWithJoinStatus, error)
 	UpdateRoom(room *models.Room) error
@@ -90,4 +93,14 @@ type UserFollowRepository interface {
 	GetMutualFriends(userID uuid.UUID) ([]models.User, error)
 	GetFriendCount(userID uuid.UUID) (int64, error)
 	IsMutualFollow(userID1, userID2 uuid.UUID) (bool, error)
+}
+
+// UserActivityRepository はユーザーアクティビティ関連の操作を定義するインターフェース
+type UserActivityRepository interface {
+	CreateActivity(activity *models.UserActivity) error
+	GetUserActivities(userID uuid.UUID, limit, offset int) ([]models.UserActivity, error)
+	GetUserActivitiesByType(userID uuid.UUID, activityType string, limit, offset int) ([]models.UserActivity, error)
+	CountUserActivities(userID uuid.UUID) (int64, error)
+	DeleteActivity(id uuid.UUID) error
+	DeleteOldActivities(olderThan time.Time) error
 }

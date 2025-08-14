@@ -8,6 +8,7 @@ document.addEventListener('alpine:init', () => {
     initialized: false,
     _initStarted: false,
     _syncInProgress: false,
+    _lastSyncTime: 0,
     currentRoom: null,
     _currentRoomLoading: false,
     _currentRoomFetched: false,
@@ -56,8 +57,10 @@ document.addEventListener('alpine:init', () => {
 
       if (this.user && session?.access_token && !this._syncInProgress) {
         this.syncUser(session.access_token)
-        // 認証成功時にcurrentRoomを取得
-        this.fetchCurrentRoom()
+        // 認証成功時にcurrentRoomを取得（初回のみ）
+        if (!this._currentRoomFetched && !this._currentRoomLoading) {
+          this.fetchCurrentRoom()
+        }
       } else {
         // 認証がない場合はcurrentRoomをクリア
         this.currentRoom = null
@@ -66,11 +69,13 @@ document.addEventListener('alpine:init', () => {
     },
 
     async syncUser(accessToken) {
-      // 同期処理の重複実行を防ぐ
-      if (this._syncInProgress) {
+      // 同期処理の重複実行を防ぐ（5秒以内の重複実行を防ぐ）
+      const now = Date.now()
+      if (this._syncInProgress || (now - this._lastSyncTime) < 5000) {
         return
       }
       this._syncInProgress = true
+      this._lastSyncTime = now
 
       try {
         const response = await fetch('/api/auth/sync', {

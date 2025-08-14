@@ -279,12 +279,54 @@ func (ph *ProfileHandler) EditForm(w http.ResponseWriter, r *http.Request) {
 
 // Activity アクティビティタブコンテンツを返す（htmx用）
 func (ph *ProfileHandler) Activity(w http.ResponseWriter, r *http.Request) {
-	activities := ph.getMockActivities()
+	// URLパラメータからユーザーIDを取得（他ユーザーのプロフィール表示用）
+	var targetUserID uuid.UUID
+	var err error
+
+	userIDParam := chi.URLParam(r, "userID")
+	if userIDParam != "" {
+		targetUserID, err = uuid.Parse(userIDParam)
+		if err != nil {
+			ph.logger.Printf("無効なユーザーID: %s, エラー: %v", userIDParam, err)
+			http.Error(w, "無効なユーザーIDです", http.StatusBadRequest)
+			return
+		}
+	} else {
+		// URLパラメータがない場合は自分のプロフィール
+		dbUser, exists := middleware.GetDBUserFromContext(r.Context())
+		if !exists || dbUser == nil {
+			ph.logger.Printf("認証情報が取得できません")
+			http.Error(w, "認証されていません", http.StatusUnauthorized)
+			return
+		}
+		targetUserID = dbUser.ID
+	}
+
+	// データベースからアクティビティを取得
+	userActivities, err := ph.repo.UserActivity.GetUserActivities(targetUserID, 20, 0)
+	if err != nil {
+		ph.logger.Printf("アクティビティ取得エラー: %v", err)
+		// エラー時はフォールバック（空の配列を返す）
+		userActivities = []models.UserActivity{}
+	}
+
+	// models.UserActivityをActivity構造体に変換
+	displayActivities := make([]Activity, len(userActivities))
+	for i, activity := range userActivities {
+		displayActivities[i] = Activity{
+			Type:        activity.ActivityType,
+			Title:       activity.Title,
+			Description: getStringValue(activity.Description),
+			TimeAgo:     formatRelativeTime(activity.CreatedAt),
+			Icon:        activity.Icon,
+			IconColor:   activity.IconColor,
+		}
+	}
 
 	data := struct {
 		Activities []Activity
 	}{
-		Activities: activities,
+		Activities: displayActivities,
 	}
 
 	if err := renderPartialTemplate(w, "profile_activity.tmpl", data); err != nil {
@@ -445,6 +487,14 @@ func (ph *ProfileHandler) getMockFollowers() []Follower {
 // Helper functions
 func strPtr(s string) *string {
 	return &s
+}
+
+// getStringValue ポインタ文字列から値を安全に取得
+func getStringValue(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
 
 // formatRelativeTime 相対時間を日本語で表示

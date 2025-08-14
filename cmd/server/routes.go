@@ -203,6 +203,11 @@ func (app *Application) setupAPIRoutes(r chi.Router) {
 		ar.Get("/profile/followers", app.withAuth(app.profileHandler.Followers))
 		ar.Get("/profile/following", app.withAuth(app.profileHandler.Following))
 
+		// フォロー関連API（認証必須）
+		ar.Post("/users/{userID}/follow", app.withAuth(app.followHandler.FollowUser))
+		ar.Delete("/users/{userID}/unfollow", app.withAuth(app.followHandler.UnfollowUser))
+		ar.Get("/users/{userID}/follow-status", app.withAuth(app.followHandler.GetFollowStatus))
+
 		// リアクション関連API（認証必須）
 		ar.Post("/messages/{messageId}/reactions", app.withAuth(app.reactionHandler.AddReaction))
 		ar.Delete("/messages/{messageId}/reactions/{reactionType}", app.withAuth(app.reactionHandler.RemoveReaction))

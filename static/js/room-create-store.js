@@ -161,7 +161,7 @@ document.addEventListener('alpine:init', () => {
         
         const requestData = {
           name: this.formData.name.trim(),
-          game_version_id: parseInt(this.formData.gameVersionId),
+          game_version_id: this.formData.gameVersionId,
           max_players: parseInt(this.formData.maxPlayers),
           password: this.formData.password.trim() || null,
           target_monster: this.formData.targetMonster.trim() || null,
