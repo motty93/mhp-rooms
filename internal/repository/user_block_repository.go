@@ -3,8 +3,8 @@ package repository
 import (
 	"errors"
 	"fmt"
-	"mhp-rooms/internal/models"
 	"mhp-rooms/internal/infrastructure/persistence/postgres"
+	"mhp-rooms/internal/models"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -26,9 +26,9 @@ func (r *userBlockRepository) CreateBlock(block *models.UserBlock) error {
 
 	// 既に存在するかチェック
 	var existing models.UserBlock
-	err := r.db.GetConn().Where("blocker_user_id = ? AND blocked_user_id = ?", 
+	err := r.db.GetConn().Where("blocker_user_id = ? AND blocked_user_id = ?",
 		block.BlockerUserID, block.BlockedUserID).First(&existing).Error
-	
+
 	if err == nil {
 		return errors.New("既にブロック済みです")
 	}
@@ -41,17 +41,17 @@ func (r *userBlockRepository) CreateBlock(block *models.UserBlock) error {
 
 // DeleteBlock は指定されたブロック関係を削除します
 func (r *userBlockRepository) DeleteBlock(blockerUserID, blockedUserID uuid.UUID) error {
-	result := r.db.GetConn().Where("blocker_user_id = ? AND blocked_user_id = ?", 
+	result := r.db.GetConn().Where("blocker_user_id = ? AND blocked_user_id = ?",
 		blockerUserID, blockedUserID).Delete(&models.UserBlock{})
-	
+
 	if result.Error != nil {
 		return fmt.Errorf("ブロック関係の削除に失敗しました: %w", result.Error)
 	}
-	
+
 	if result.RowsAffected == 0 {
 		return errors.New("削除対象のブロック関係が見つかりません")
 	}
-	
+
 	return nil
 }
 
@@ -61,11 +61,11 @@ func (r *userBlockRepository) IsBlocked(blockerUserID, blockedUserID uuid.UUID) 
 	err := r.db.GetConn().Model(&models.UserBlock{}).
 		Where("blocker_user_id = ? AND blocked_user_id = ?", blockerUserID, blockedUserID).
 		Count(&count).Error
-	
+
 	if err != nil {
 		return false, fmt.Errorf("ブロック状態の確認に失敗しました: %w", err)
 	}
-	
+
 	return count > 0, nil
 }
 

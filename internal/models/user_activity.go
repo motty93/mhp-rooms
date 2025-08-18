@@ -61,11 +61,11 @@ const (
 
 // RoomActivityMetadata 部屋関連アクティビティのメタデータ
 type RoomActivityMetadata struct {
-	GameVersion    string `json:"game_version,omitempty"`
-	MaxPlayers     int    `json:"max_players,omitempty"`
-	TargetMonster  string `json:"target_monster,omitempty"`
-	HostUserID     string `json:"host_user_id,omitempty"`
-	RoomPassword   bool   `json:"room_password,omitempty"` // パスワード有無（実際のパスワードは保存しない）
+	GameVersion   string `json:"game_version,omitempty"`
+	MaxPlayers    int    `json:"max_players,omitempty"`
+	TargetMonster string `json:"target_monster,omitempty"`
+	HostUserID    string `json:"host_user_id,omitempty"`
+	RoomPassword  bool   `json:"room_password,omitempty"` // パスワード有無（実際のパスワードは保存しない）
 }
 
 // FollowActivityMetadata フォロー関連アクティビティのメタデータ

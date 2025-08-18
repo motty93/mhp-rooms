@@ -45,7 +45,7 @@ func (j *JSONB) Scan(value interface{}) error {
 	if err := json.Unmarshal(bytes, &result); err != nil {
 		return err
 	}
-	
+
 	j.Data = result
 	return nil
 }

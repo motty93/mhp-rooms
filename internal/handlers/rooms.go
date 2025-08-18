@@ -702,7 +702,7 @@ func (h *RoomHandler) GetCurrentRoom(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "参加中の部屋の取得に失敗しました", http.StatusInternalServerError)
 		return
 	}
-	
+
 	// 参加中の部屋がない場合
 	if activeRoom == nil {
 		w.Header().Set("Content-Type", "application/json")

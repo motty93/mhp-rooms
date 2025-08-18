@@ -31,7 +31,7 @@ func (r *userFollowRepository) DeleteFollow(followerUserID, followingUserID uuid
 	result := r.db.GetConn().
 		Where("follower_user_id = ? AND following_user_id = ?", followerUserID, followingUserID).
 		Delete(&models.UserFollow{})
-	
+
 	if result.Error != nil {
 		return result.Error
 	}
@@ -47,7 +47,7 @@ func (r *userFollowRepository) GetFollow(followerUserID, followingUserID uuid.UU
 	err := r.db.GetConn().
 		Where("follower_user_id = ? AND following_user_id = ?", followerUserID, followingUserID).
 		First(&follow).Error
-	
+
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -62,15 +62,15 @@ func (r *userFollowRepository) UpdateFollowStatus(followerUserID, followingUserI
 	updates := map[string]interface{}{
 		"status": status,
 	}
-	
+
 	if status == models.FollowStatusAccepted {
 		updates["accepted_at"] = time.Now()
 	}
-	
+
 	result := r.db.GetConn().Model(&models.UserFollow{}).
 		Where("follower_user_id = ? AND following_user_id = ?", followerUserID, followingUserID).
 		Updates(updates)
-	
+
 	if result.Error != nil {
 		return result.Error
 	}
@@ -105,19 +105,19 @@ func (r *userFollowRepository) GetFollowing(userID uuid.UUID) ([]models.UserFoll
 // GetMutualFriends 相互フォロー（フレンド）一覧を取得
 func (r *userFollowRepository) GetMutualFriends(userID uuid.UUID) ([]models.User, error) {
 	var friends []models.User
-	
+
 	// サブクエリで相互フォローのユーザーIDを取得
 	subQuery := r.db.GetConn().
 		Table("user_follows uf1").
 		Select("uf1.following_user_id").
 		Joins("INNER JOIN user_follows uf2 ON uf1.follower_user_id = uf2.following_user_id AND uf1.following_user_id = uf2.follower_user_id").
-		Where("uf1.follower_user_id = ? AND uf1.status = ? AND uf2.status = ?", 
+		Where("uf1.follower_user_id = ? AND uf1.status = ? AND uf2.status = ?",
 			userID, models.FollowStatusAccepted, models.FollowStatusAccepted)
-	
+
 	err := r.db.GetConn().
 		Where("id IN (?)", subQuery).
 		Find(&friends).Error
-	
+
 	return friends, err
 }
 
@@ -127,10 +127,10 @@ func (r *userFollowRepository) GetFriendCount(userID uuid.UUID) (int64, error) {
 	err := r.db.GetConn().
 		Table("user_follows uf1").
 		Joins("INNER JOIN user_follows uf2 ON uf1.follower_user_id = uf2.following_user_id AND uf1.following_user_id = uf2.follower_user_id").
-		Where("uf1.follower_user_id = ? AND uf1.status = ? AND uf2.status = ?", 
+		Where("uf1.follower_user_id = ? AND uf1.status = ? AND uf2.status = ?",
 			userID, models.FollowStatusAccepted, models.FollowStatusAccepted).
 		Count(&count).Error
-	
+
 	return count, err
 }
 
@@ -142,10 +142,10 @@ func (r *userFollowRepository) IsMutualFollow(userID1, userID2 uuid.UUID) (bool,
 		Where("((follower_user_id = ? AND following_user_id = ?) OR (follower_user_id = ? AND following_user_id = ?)) AND status = ?",
 			userID1, userID2, userID2, userID1, models.FollowStatusAccepted).
 		Count(&count).Error
-	
+
 	if err != nil {
 		return false, err
 	}
-	
+
 	return count == 2, nil
 }

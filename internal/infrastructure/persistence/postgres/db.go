@@ -19,10 +19,9 @@ type DB struct {
 func NewDB(cfg *config.Config) (*DB, error) {
 	dsn := cfg.GetDSN()
 
-	// ログレベルを設定で制御
-	logLevel := logger.Warn // デフォルトは警告のみ
+	logLevel := logger.Warn
 	if cfg.Debug.SQLLogs {
-		logLevel = logger.Info // デバッグ時は詳細ログ
+		logLevel = logger.Info
 	}
 
 	conn, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
@@ -66,6 +65,8 @@ func (db *DB) Migrate() error {
 		&models.Room{},
 		&models.RoomMember{},
 		&models.RoomMessage{},
+		&models.ReactionType{},
+		&models.MessageReaction{},
 		&models.UserBlock{},
 		&models.UserFollow{},
 		&models.UserActivity{},
@@ -94,6 +95,10 @@ func (db *DB) addConstraintsAndIndexes() error {
 	// チェック制約
 	checks := []string{
 		"ALTER TABLE rooms ADD CONSTRAINT IF NOT EXISTS chk_rooms_max_players CHECK (max_players = 4)",
+		"ALTER TABLE rooms ADD CONSTRAINT IF NOT EXISTS chk_rooms_current_players CHECK (current_players >= 0 AND current_players <= max_players)",
+		"ALTER TABLE user_follows ADD CONSTRAINT IF NOT EXISTS chk_user_follows_status CHECK (status IN ('pending', 'accepted', 'rejected'))",
+		"ALTER TABLE room_members ADD CONSTRAINT IF NOT EXISTS chk_room_members_status CHECK (status IN ('active', 'left', 'kicked'))",
+		"ALTER TABLE room_members ADD CONSTRAINT IF NOT EXISTS chk_room_members_player_number CHECK (player_number BETWEEN 1 AND 4)",
 	}
 
 	// ユニーク制約
@@ -101,6 +106,8 @@ func (db *DB) addConstraintsAndIndexes() error {
 		"CREATE UNIQUE INDEX IF NOT EXISTS idx_room_members_active ON room_members(room_id, user_id) WHERE status = 'active'",
 		"CREATE UNIQUE INDEX IF NOT EXISTS idx_user_blocks_unique ON user_blocks(blocker_user_id, blocked_user_id)",
 		"CREATE UNIQUE INDEX IF NOT EXISTS uk_player_names_user_game ON player_names(user_id, game_version_id)",
+		"CREATE UNIQUE INDEX IF NOT EXISTS idx_user_follows_unique ON user_follows(follower_user_id, following_user_id)",
+		"CREATE UNIQUE INDEX IF NOT EXISTS idx_message_reactions_unique ON message_reactions(message_id, user_id, reaction_type)",
 	}
 
 	// パフォーマンス用インデックス
@@ -133,6 +140,24 @@ func (db *DB) addConstraintsAndIndexes() error {
 		// パスワードリセット関連
 		"CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token)",
 		"CREATE INDEX IF NOT EXISTS idx_password_resets_expires_at ON password_resets(expires_at)",
+
+		// ユーザーフォロー関連
+		"CREATE INDEX IF NOT EXISTS idx_user_follows_follower_user_id ON user_follows(follower_user_id)",
+		"CREATE INDEX IF NOT EXISTS idx_user_follows_following_user_id ON user_follows(following_user_id)",
+		"CREATE INDEX IF NOT EXISTS idx_user_follows_status ON user_follows(status)",
+
+		// ユーザーアクティビティ関連（追加）
+		"CREATE INDEX IF NOT EXISTS idx_user_activities_user_id_created_at ON user_activities(user_id, created_at DESC)",
+
+		// ルーム関連（追加）
+		"CREATE INDEX IF NOT EXISTS idx_rooms_is_closed ON rooms(is_closed)",
+
+		// ルームメッセージ関連（追加）
+		"CREATE INDEX IF NOT EXISTS idx_room_messages_user_id ON room_messages(user_id)",
+
+		// メッセージリアクション関連
+		"CREATE INDEX IF NOT EXISTS idx_message_reactions_message_id ON message_reactions(message_id)",
+		"CREATE INDEX IF NOT EXISTS idx_message_reactions_message_user ON message_reactions(message_id, user_id)",
 	}
 
 	// すべてのSQL文を実行

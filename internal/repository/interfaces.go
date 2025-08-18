@@ -77,7 +77,7 @@ type UserBlockRepository interface {
 	DeleteBlock(blockerUserID, blockedUserID uuid.UUID) error
 	IsBlocked(blockerUserID, blockedUserID uuid.UUID) (bool, error)
 	CheckBlockRelationship(userID, targetUserID uuid.UUID) (bool, bool, error) // (isBlockedByTarget, isBlockingTarget, error)
-	CheckRoomMemberBlocks(userID, roomID uuid.UUID) ([]models.User, error) // ブロック関係のあるメンバーリストを返す
+	CheckRoomMemberBlocks(userID, roomID uuid.UUID) ([]models.User, error)     // ブロック関係のあるメンバーリストを返す
 	GetBlockedUsers(blockerUserID uuid.UUID) ([]models.User, error)
 	GetBlockingUsers(blockedUserID uuid.UUID) ([]models.User, error)
 }

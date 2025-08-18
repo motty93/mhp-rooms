@@ -112,7 +112,7 @@ func (app *Application) initHandlers() error {
 	app.authLimiter = middleware.NewRateLimiter(rateLimitConfig.Auth)
 
 	app.authHandler.SetAuthMiddleware(authMiddleware)
-	
+
 	return nil
 }
 

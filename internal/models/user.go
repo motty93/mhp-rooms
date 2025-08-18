@@ -7,7 +7,6 @@ import (
 	"mhp-rooms/internal/utils"
 )
 
-
 // PlayTimes プレイ時間帯の構造体
 type PlayTimes struct {
 	Weekday string `json:"weekday,omitempty"`
@@ -51,7 +50,7 @@ func (u *User) GetFavoriteGames() ([]string, error) {
 	if u.FavoriteGames.Data == nil {
 		return []string{}, nil
 	}
-	
+
 	// 直接配列として保存されている場合
 	if gamesSlice, ok := u.FavoriteGames.Data.([]interface{}); ok {
 		games := make([]string, 0, len(gamesSlice))
@@ -62,7 +61,7 @@ func (u *User) GetFavoriteGames() ([]string, error) {
 		}
 		return games, nil
 	}
-	
+
 	// オブジェクト形式で保存されている場合（"games"キー）
 	if gamesMap, ok := u.FavoriteGames.Data.(map[string]interface{}); ok {
 		if gamesInterface, exists := gamesMap["games"]; exists {
@@ -77,7 +76,7 @@ func (u *User) GetFavoriteGames() ([]string, error) {
 			}
 		}
 	}
-	
+
 	return []string{}, nil
 }
 
@@ -93,9 +92,9 @@ func (u *User) GetPlayTimes() (*PlayTimes, error) {
 	if u.PlayTimes.Data == nil {
 		return &PlayTimes{}, nil
 	}
-	
+
 	times := &PlayTimes{}
-	
+
 	// オブジェクト形式で保存されている場合
 	if playTimesMap, ok := u.PlayTimes.Data.(map[string]interface{}); ok {
 		if weekday, exists := playTimesMap["weekday"]; exists {
@@ -109,7 +108,7 @@ func (u *User) GetPlayTimes() (*PlayTimes, error) {
 			}
 		}
 	}
-	
+
 	return times, nil
 }
 

@@ -69,9 +69,9 @@ func (fh *FollowHandler) FollowUser(w http.ResponseWriter, r *http.Request) {
 	if err == nil && existingFollow != nil {
 		// 既にフォローしている場合
 		response := map[string]interface{}{
-			"message":    "既にフォローしています",
+			"message":      "既にフォローしています",
 			"is_following": true,
-			"status":     existingFollow.Status,
+			"status":       existingFollow.Status,
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -145,7 +145,7 @@ func (fh *FollowHandler) UnfollowUser(w http.ResponseWriter, r *http.Request) {
 
 	// フォロー対象のユーザー情報を取得（アクティビティ記録用）
 	followingUser, userErr := fh.repo.User.FindUserByID(followingUserID)
-	
+
 	// 成功レスポンス
 	response := map[string]interface{}{
 		"message":      "フォローを解除しました",

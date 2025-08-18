@@ -400,18 +400,18 @@ func (r *roomRepository) LeaveRoom(roomID, userID uuid.UUID) error {
 
 func (r *roomRepository) FindActiveRoomByUserID(userID uuid.UUID) (*models.Room, error) {
 	var member models.RoomMember
-	
+
 	// Limit(1)を使用してrecord not foundエラーのログを回避
 	result := r.db.GetConn().
 		Where("user_id = ? AND status = ?", userID, "active").
 		Limit(1).
 		Find(&member)
-	
+
 	// レコードが見つからない場合（RowsAffectedが0の場合）
 	if result.RowsAffected == 0 {
 		return nil, nil
 	}
-	
+
 	// その他のエラーチェック
 	if result.Error != nil {
 		return nil, result.Error
