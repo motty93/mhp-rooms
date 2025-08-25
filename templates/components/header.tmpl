@@ -132,12 +132,6 @@
                 >
                   プロフィール
                 </a>
-                <a
-                  href="/settings"
-                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                >
-                  設定
-                </a>
                 <hr class="my-1 border-gray-200" />
                 <button
                   @click="if(confirm('ログアウトしますか？')) { $store.auth.signOut(); open = false; }"
