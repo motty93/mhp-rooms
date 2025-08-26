@@ -22,7 +22,7 @@ MonHubは、モンスターハンターシリーズのマルチプレイヤー�
 
 ### インフラストラクチャ
 - **コンテナ**: Docker + Docker Compose
-- **デプロイ**: Fly.io
+- **デプロイ**: Google Cloud Run
 - **環境変数管理**: godotenv
 
 ## ディレクトリ構造
@@ -148,10 +148,13 @@ make seed
 make run
 ```
 
-### 本番環境（Fly.io）
+### 本番環境（Google Cloud Run）
 ```bash
-fly deploy
-fly secrets set DATABASE_URL="..."
+# Cloud Runへのデプロイ（詳細は公式ドキュメント参照）
+gcloud run deploy
+
+# Secret Managerでシークレットを設定
+gcloud secrets versions add DATABASE_URL --data-file <(echo -n "...")
 ```
 
 ## 今後の改善点

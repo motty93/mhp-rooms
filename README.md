@@ -30,7 +30,7 @@
 
 ### インフラ・ツール
 - **コンテナ**: Docker & Docker Compose
-- **デプロイ**: Fly.io
+- **デプロイ**: Google Cloud Run
 - **ビルドツール**: Make
 
 ## プロジェクト構造
@@ -64,7 +64,6 @@
 ├── bin/                   # ビルド済みバイナリ
 ├── Makefile              # ビルドタスク
 ├── compose.yml           # Docker Compose設定
-├── fly.toml              # Fly.io設定
 ├── CLAUDE.md             # AI開発支援ガイド
 └── README.md
 ```
