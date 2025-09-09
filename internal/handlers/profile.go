@@ -249,7 +249,14 @@ func (ph *ProfileHandler) EditForm(w http.ResponseWriter, r *http.Request) {
 	user := getUserFromContext(r.Context())
 	if user == nil {
 		// 認証が必要 - 開発環境も本番環境も同じ処理
-		http.Error(w, "認証が必要です", http.StatusUnauthorized)
+		// htmxリクエストの場合はHX-Redirectヘッダーを使用
+		if r.Header.Get("HX-Request") == "true" {
+			w.Header().Set("HX-Redirect", "/auth/login")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		// 通常のリクエストの場合はリダイレクト
+		http.Redirect(w, r, "/auth/login", http.StatusFound)
 		return
 	}
 
@@ -353,7 +360,14 @@ func (ph *ProfileHandler) Rooms(w http.ResponseWriter, r *http.Request) {
 		// 自分のプロフィール
 		user := getUserFromContext(r.Context())
 		if user == nil {
-			http.Error(w, "認証が必要です", http.StatusUnauthorized)
+			// htmxリクエストの場合はHX-Redirectヘッダーを使用
+			if r.Header.Get("HX-Request") == "true" {
+				w.Header().Set("HX-Redirect", "/auth/login")
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			// 通常のリクエストの場合はリダイレクト
+			http.Redirect(w, r, "/auth/login", http.StatusFound)
 			return
 		}
 

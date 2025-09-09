@@ -68,6 +68,19 @@ document.addEventListener('alpine:init', () => {
       }
     },
 
+    clearSession() {
+      // セッション情報をクリア
+      this.session = null
+      this.user = null
+      this.error = null
+      this.currentRoom = null
+      this._currentRoomFetched = false
+      this._currentRoomLoading = false
+      
+      // クッキーを削除
+      document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    },
+
     async syncUser(accessToken) {
       // 同期処理の重複実行を防ぐ（5秒以内の重複実行を防ぐ）
       const now = Date.now()
