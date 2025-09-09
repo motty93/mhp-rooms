@@ -1,3 +1,23 @@
+// 認証セッションをクリアする関数
+async function clearAuthSession() {
+  // クッキーを削除
+  document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+  
+  // Supabaseセッションをクリア
+  if (window.supabaseClient && window.supabaseClient.auth) {
+    try {
+      await window.supabaseClient.auth.signOut()
+    } catch (error) {
+      console.warn('Supabaseサインアウトエラー:', error)
+    }
+  }
+  
+  // Alpineストアをリセット
+  if (window.Alpine && window.Alpine.store('auth')) {
+    window.Alpine.store('auth').clearSession()
+  }
+}
+
 // 同期的にトークンを取得する関数
 function getTokenSync() {
   try {
@@ -56,17 +76,27 @@ function setupHtmxAuth() {
     }
   })
 
+  // HX-Redirectヘッダーの処理を追加
+  document.body.addEventListener('htmx:beforeSwap', (evt) => {
+    const xhr = evt.detail.xhr
+    if (xhr) {
+      const redirectUrl = xhr.getResponseHeader('HX-Redirect')
+      if (redirectUrl) {
+        // 認証関連のリダイレクトの場合はセッションをクリア
+        if (redirectUrl.includes('/auth/login')) {
+          clearAuthSession()
+        }
+        evt.detail.shouldSwap = false
+        window.location.href = redirectUrl
+      }
+    }
+  })
+
   document.body.addEventListener('htmx:responseError', async (evt) => {
     if (evt.detail.xhr.status === 401) {
-      if (window.Alpine && window.Alpine.store('auth')) {
-        await window.Alpine.store('auth').checkAuth()
-
-        if (!window.Alpine.store('auth').isAuthenticated) {
-          if (confirm('セッションの有効期限が切れました。ログインページに移動しますか？')) {
-            window.location.href = '/auth/login'
-          }
-        }
-      }
+      // 認証エラー時はセッションをクリアしてリダイレクト
+      await clearAuthSession()
+      window.location.href = '/auth/login'
     }
   })
 

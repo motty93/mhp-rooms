@@ -137,7 +137,14 @@ func (j *JWTAuth) Middleware(next http.Handler) http.Handler {
 				if config.AppConfig.Debug.AuthLogs {
 					log.Printf("AUTH DEBUG: %s %s - 無効な認証ヘッダー形式: %s", r.Method, r.URL.Path, authHeader)
 				}
-				http.Error(w, "無効な認証ヘッダー形式です", http.StatusUnauthorized)
+				// htmxリクエストの場合はHX-Redirectヘッダーを使用
+				if r.Header.Get("HX-Request") == "true" {
+					w.Header().Set("HX-Redirect", "/auth/login")
+					w.WriteHeader(http.StatusUnauthorized)
+					return
+				}
+				// 通常のリクエストの場合はリダイレクト
+				http.Redirect(w, r, "/auth/login", http.StatusFound)
 				return
 			}
 		} else {
@@ -161,7 +168,14 @@ func (j *JWTAuth) Middleware(next http.Handler) http.Handler {
 				if config.AppConfig.Debug.AuthLogs {
 					log.Printf("AUTH DEBUG: %s %s - 認証トークンが見つかりません", r.Method, r.URL.Path)
 				}
-				http.Error(w, "認証が必要です", http.StatusUnauthorized)
+				// htmxリクエストの場合はHX-Redirectヘッダーを使用
+				if r.Header.Get("HX-Request") == "true" {
+					w.Header().Set("HX-Redirect", "/auth/login")
+					w.WriteHeader(http.StatusUnauthorized)
+					return
+				}
+				// 通常のリクエストの場合はリダイレクト
+				http.Redirect(w, r, "/auth/login", http.StatusFound)
 				return
 			}
 		}
@@ -180,7 +194,14 @@ func (j *JWTAuth) Middleware(next http.Handler) http.Handler {
 			if config.AppConfig.Debug.AuthLogs {
 				log.Printf("AUTH DEBUG: %s %s - トークン解析エラー: %v, Valid: %t", r.Method, r.URL.Path, err, token != nil && token.Valid)
 			}
-			http.Error(w, "無効なトークンです", http.StatusUnauthorized)
+			// htmxリクエストの場合はHX-Redirectヘッダーを使用
+			if r.Header.Get("HX-Request") == "true" {
+				w.Header().Set("HX-Redirect", "/auth/login")
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			// 通常のリクエストの場合はリダイレクト
+			http.Redirect(w, r, "/auth/login", http.StatusFound)
 			return
 		}
 
@@ -189,7 +210,14 @@ func (j *JWTAuth) Middleware(next http.Handler) http.Handler {
 			if config.AppConfig.Debug.AuthLogs {
 				log.Printf("AUTH DEBUG: %s %s - クレーム変換エラー", r.Method, r.URL.Path)
 			}
-			http.Error(w, "トークンのクレームが無効です", http.StatusUnauthorized)
+			// htmxリクエストの場合はHX-Redirectヘッダーを使用
+			if r.Header.Get("HX-Request") == "true" {
+				w.Header().Set("HX-Redirect", "/auth/login")
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			// 通常のリクエストの場合はリダイレクト
+			http.Redirect(w, r, "/auth/login", http.StatusFound)
 			return
 		}
 
