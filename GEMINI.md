@@ -48,7 +48,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 │   └── images/           # 画像ファイル
 ├── scripts/               # DBスクリプト
 ├── docs/                  # ドキュメント
-│   └── logs/             # 実装ログ
+│   └── implement_logs/             # 実装ログ
 └── bin/                   # ビルド済みバイナリ
 ```
 
@@ -134,7 +134,7 @@ fly secrets set ENV="production"
 
 ## 実装完了後のログ作成
 
-実装完了後、 `docs/logs` ディレクトリに実装ログを**必ず**残してください。
+実装完了後、 `docs/implement_logs` ディレクトリに実装ログを**必ず**残してください。
 
 - `yyyy-mm-dd/n_機能名.md` の形式でファイルを作成してください
   - nは連番であり、01から始めてください

@@ -122,6 +122,11 @@ make container-up  # Dockerコンテナを起動
 make container-down # Dockerコンテナを停止
 ```
 
+## DBコンテナの接続
+```bash
+docker exec -it mhp-rooms-db-1 psql -U mhp_user -d mhp_rooms_dev
+```
+
 ## 環境変数
 
 アプリケーションは以下の環境変数を使用します：

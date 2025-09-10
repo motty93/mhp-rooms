@@ -48,7 +48,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 │   └── images/           # 画像ファイル
 ├── scripts/               # DBスクリプト
 ├── docs/                  # ドキュメント
-│   └── logs/             # 実装ログ
+│   └── implement_logs/             # 実装ログ
 └── bin/                   # ビルド済みバイナリ
 ```
 
@@ -213,7 +213,7 @@ func (ph *ProfileHandler) Followers(w http.ResponseWriter, r *http.Request) {
 
 ## 実装完了後のログ作成 【重要・必須】
 
-実装完了後、 `docs/logs` ディレクトリに実装ログを**必ず**残してください。
+実装完了後、 `docs/implement_logs` ディレクトリに実装ログを**必ず**残してください。
 
 ### ⚠️ 重要事項
 **実装ログの作成は必須です。実装完了後、コミットする前に必ずログを作成してください。**
