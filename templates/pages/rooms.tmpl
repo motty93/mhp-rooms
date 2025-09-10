@@ -1140,14 +1140,20 @@
                   return
                 }
                 // 他の部屋に参加している場合の確認ダイアログ
-                const errorText = await response.text()
-                if (errorText.includes('既に別の部屋に参加しています')) {
+                if (errorData.error === 'OTHER_ROOM_ACTIVE') {
+                  this.closeModal()
                   this.showConfirmDialog = true
                   this.confirmRoomId = this.currentRoom.id
                   this.isJoining = false
                   return
                 }
-                throw new Error(errorText || '参加に失敗しました')
+                // 既に同じ部屋に参加している場合
+                if (errorData.redirect) {
+                  window.location.href = errorData.redirect
+                  this.isJoining = false
+                  return
+                }
+                throw new Error(errorData.message || '参加に失敗しました')
               } else if (response.status === 403) {
                 // ブロック関係による参加拒否
                 const errorData = await response.json()

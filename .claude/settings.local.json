@@ -109,7 +109,8 @@
       "Bash(ENV=development DEBUG_AUTH_LOGS=true make run)",
       "Bash(source .env)",
       "Bash(gh issue view:*)",
-      "mcp__playwright__browser_tab_new"
+      "mcp__playwright__browser_tab_new",
+      "mcp__serena__list_memories"
     ],
     "deny": []
   }
