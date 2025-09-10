@@ -120,8 +120,8 @@
                 <a
                   :href="isRoomsPage ? '#' : '/rooms'"
                   @click="isRoomsPage && $event.preventDefault()"
-                  class="block px-4 py-2 text-sm transition-colors"
-                  :class="isRoomsPage ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'"
+                  class="block px-4 py-2 text-sm transition-colors rounded-md"
+                  :class="isRoomsPage ? 'text-gray-900 font-semibold cursor-default' : 'text-gray-700 hover:bg-gray-100'"
                 >
                   部屋一覧
                 </a>
@@ -135,8 +135,8 @@
                 <a
                   :href="isProfilePage ? '#' : '/profile'"
                   @click="isProfilePage && $event.preventDefault()"
-                  class="block px-4 py-2 text-sm transition-colors"
-                  :class="isProfilePage ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'"
+                  class="block px-4 py-2 text-sm transition-colors rounded-md"
+                  :class="isProfilePage ? 'text-gray-900 font-semibold cursor-default' : 'text-gray-700 hover:bg-gray-100'"
                 >
                   プロフィール
                 </a>
