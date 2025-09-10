@@ -435,7 +435,13 @@ func (h *RoomHandler) JoinRoom(w http.ResponseWriter, r *http.Request) {
 		}
 		// 他の部屋に既に参加している場合
 		if strings.HasPrefix(err.Error(), "OTHER_ROOM_ACTIVE:") {
-			http.Error(w, "既に別の部屋に参加しています", http.StatusConflict)
+			response := map[string]interface{}{
+				"error":   "OTHER_ROOM_ACTIVE",
+				"message": "既に別の部屋に参加しています",
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusConflict)
+			json.NewEncoder(w).Encode(response)
 			return
 		}
 		http.Error(w, err.Error(), http.StatusBadRequest)
