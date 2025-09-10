@@ -5,9 +5,17 @@ tmp/
 
 # Ignore development files
 .git/
+.serena/
+.claude/
 .gitignore
-README.md
+*.md
 docs/
+.prettierrc
+.air.toml
+compose.yml
+Makefile
+biome.json
+.env*
 
 # Ignore IDE files
 .vscode/
@@ -19,4 +27,14 @@ docs/
 .DS_Store
 Thumbs.db
 
-compose.yml
+# ignore cmd
+cmd/check_db/
+cmd/seed/
+cmd/seed_rooms/
+cmd/test_password/
+
+# ignore scripts
+scripts/*.sql
+
+# ingnore infrastructore
+terraform/
