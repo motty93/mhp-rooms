@@ -25,7 +25,7 @@
       Email:          "dev-user-{userID[:8]}@example.com",
       DisplayName:    "開発ユーザー_{userID[:8]}",
       IsActive:       true,
-      Role:           "user",
+      Role:           "dummy",
   }
   ```
 
@@ -50,11 +50,11 @@ docker compose exec db psql -U mhp_user -d mhp_rooms_dev
 ### テストユーザー一覧
 シードデータで作成されるテストユーザー（`cmd/seed/main.go`参照）:
 
-| 表示名 | メールアドレス | 説明 |
-|--------|---------------|------|
-| ハンター太郎 | hunter1@example.com | MHP2Gメイン |
-| 猫好きハンター | hunter2@example.com | 初心者歓迎 |
-| 素材コレクター | hunter3@example.com | 効率重視 |
+| ユーザー名 | 表示名 | メールアドレス | 説明 |
+|-----------|--------|---------------|------|
+| hunter_taro | ハンター太郎 | hunter1@example.com | MHP2Gメイン |
+| neko_hunter | 猫好きハンター🐱 | hunter2@example.com | 初心者歓迎 |
+| material_collector | 素材コレクター | hunter3@example.com | 効率重視 |
 
 ## テストデータ
 

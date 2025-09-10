@@ -202,10 +202,11 @@ func (h *AuthHandler) SyncUser(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		displayName := user.Email
+		username := user.Email
 		if idx := strings.Index(user.Email, "@"); idx > 0 {
-			displayName = user.Email[:idx]
+			username = user.Email[:idx]
 		}
+		displayName := ""
 
 		var psnOnlineID *string
 		if req.PSNId != "" {
@@ -215,6 +216,7 @@ func (h *AuthHandler) SyncUser(w http.ResponseWriter, r *http.Request) {
 		newUser := &models.User{
 			SupabaseUserID: supabaseUserID,
 			Email:          user.Email,
+			Username:       &username,
 			DisplayName:    displayName,
 			PSNOnlineID:    psnOnlineID,
 			IsActive:       true,
@@ -322,15 +324,17 @@ func (h *AuthHandler) UpdatePSNId(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		displayName := user.Email
+		username := user.Email
 		if idx := strings.Index(user.Email, "@"); idx > 0 {
-			displayName = user.Email[:idx]
+			username = user.Email[:idx]
 		}
+		displayName := ""
 
 		now := time.Now()
 		newUser := &models.User{
 			SupabaseUserID: supabaseUserID,
 			Email:          user.Email,
+			Username:       &username,
 			DisplayName:    displayName,
 			PSNOnlineID:    &req.PSNId,
 			IsActive:       true,
@@ -363,5 +367,19 @@ func (h *AuthHandler) UpdatePSNId(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"message": "PSN IDが正常に更新されました",
 		"psn_id":  dbUser.PSNOnlineID,
+	})
+}
+
+// GetCurrentUser は現在ログイン中のユーザー情報を取得する
+func (h *AuthHandler) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
+	dbUser, hasDBUser := middleware.GetDBUserFromContext(r.Context())
+	if !hasDBUser || dbUser == nil {
+		http.Error(w, "ユーザー情報が見つかりません", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"user": dbUser,
 	})
 }

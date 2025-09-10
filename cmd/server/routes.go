@@ -10,7 +10,6 @@ import (
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 )
 
-// isProductionEnv 本番環境かどうかを判定
 func isProductionEnv() bool {
 	env := os.Getenv("ENV")
 	return env == "production"
@@ -48,11 +47,8 @@ func (app *Application) withOptionalAuth(handler http.HandlerFunc) http.HandlerF
 func (app *Application) SetupRoutes() chi.Router {
 	r := chi.NewRouter()
 
-	// Chi標準ミドルウェア
 	r.Use(chiMiddleware.Recoverer)
 	r.Use(chiMiddleware.Logger)
-
-	// グローバルミドルウェアの適用
 	r.Use(middleware.SecurityHeaders(app.securityConfig))
 	r.Use(middleware.RateLimitMiddleware(app.generalLimiter))
 
@@ -71,11 +67,10 @@ func (app *Application) setupPageRoutes(r chi.Router) {
 	ph := app.pageHandler
 	profileHandler := app.profileHandler
 
-	// 統一された認証フロー - 開発環境も本番環境も同じ処理
 	r.Get("/", app.withOptionalAuth(ph.Home))
 	r.Get("/terms", app.withOptionalAuth(ph.Terms))
 	r.Get("/privacy", app.withOptionalAuth(ph.Privacy))
-	r.HandleFunc("/contact", app.withOptionalAuth(ph.Contact))
+	r.Get("/contact", app.withOptionalAuth(ph.Contact))
 	r.Get("/faq", app.withOptionalAuth(ph.FAQ))
 	r.Get("/guide", app.withOptionalAuth(ph.Guide))
 	r.Get("/hello", app.withOptionalAuth(ph.Hello))
@@ -178,8 +173,6 @@ func (app *Application) setupAPIRoutes(r chi.Router) {
 		ar.Get("/users/{uuid}/followers", app.withOptionalAuth(app.profileHandler.Followers))
 		ar.Get("/users/{uuid}/following", app.withOptionalAuth(app.profileHandler.Following))
 
-		// 統一された認証フロー - 開発環境も本番環境も同じ処理
-
 		// 認証関連API（厳しいレート制限 + 認証必須）
 		ar.Route("/auth", func(apr chi.Router) {
 			if app.authMiddleware != nil {
@@ -192,6 +185,7 @@ func (app *Application) setupAPIRoutes(r chi.Router) {
 
 		// 認証必須のAPIエンドポイント
 		ar.Get("/user/current", app.withAuth(app.authHandler.CurrentUser))
+		ar.Get("/user/me", app.withAuth(app.authHandler.GetCurrentUser))
 		ar.Get("/user/current-room", app.withAuth(app.roomHandler.GetCurrentRoom))
 		ar.Get("/user/current/room-status", app.withAuth(app.roomHandler.GetUserRoomStatus))
 		ar.Post("/leave-current-room", app.withAuth(app.roomHandler.LeaveCurrentRoom))

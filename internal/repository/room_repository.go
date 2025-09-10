@@ -255,7 +255,7 @@ func (r *roomRepository) JoinRoom(roomID, userID uuid.UUID, password string) err
 					Email:          fmt.Sprintf("dev-user-%s@example.com", userID.String()[:8]),
 					DisplayName:    fmt.Sprintf("開発ユーザー_%s", userID.String()[:8]),
 					IsActive:       true,
-					Role:           "user",
+					Role:           "dummy",
 				}
 				if createErr := tx.Create(&user).Error; createErr != nil {
 					return fmt.Errorf("開発用ユーザー作成に失敗しました: %w", createErr)
