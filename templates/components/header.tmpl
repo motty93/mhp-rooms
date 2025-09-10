@@ -57,7 +57,11 @@
             <div
               class="relative hidden md:block"
               x-show="$store.auth.initialized && !$store.auth.loading && $store.auth.isAuthenticated"
-              x-data="{ open: false }"
+              x-data="{
+                open: false,
+                isRoomsPage: window.location.pathname === '/rooms',
+                isProfilePage: window.location.pathname === '/profile',
+              }"
               x-cloak
             >
               <button
@@ -114,8 +118,10 @@
                   </a>
                 </template>
                 <a
-                  href="/rooms"
-                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  :href="isRoomsPage ? '#' : '/rooms'"
+                  @click="isRoomsPage && $event.preventDefault()"
+                  class="block px-4 py-2 text-sm transition-colors"
+                  :class="isRoomsPage ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'"
                 >
                   部屋一覧
                 </a>
@@ -127,8 +133,10 @@
                 </button>
                 <hr class="my-1 border-gray-200" />
                 <a
-                  href="/profile"
-                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  :href="isProfilePage ? '#' : '/profile'"
+                  @click="isProfilePage && $event.preventDefault()"
+                  class="block px-4 py-2 text-sm transition-colors"
+                  :class="isProfilePage ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'"
                 >
                   プロフィール
                 </a>
