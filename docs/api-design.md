@@ -494,7 +494,7 @@ interface User {
     weekend?: string;
   };
   is_active: boolean;
-  role: string;                  // "user" | "admin"
+  role: string;                  // "user" | "admin" | "dummy"
   created_at: string;            // ISO 8601
   updated_at: string;            // ISO 8601
 }

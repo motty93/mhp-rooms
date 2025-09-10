@@ -12,6 +12,7 @@ document.addEventListener('alpine:init', () => {
     currentRoom: null,
     _currentRoomLoading: false,
     _currentRoomFetched: false,
+    dbUser: null,
 
     init() {
       // 初期化の重複実行を防ぐ
@@ -51,20 +52,36 @@ document.addEventListener('alpine:init', () => {
     },
 
     updateSession(session) {
+      // 前のユーザーIDを保存
+      const previousUserId = this.user?.id
+
       this.session = session
       this.user = session?.user || null
       this.error = null
 
-      if (this.user && session?.access_token && !this._syncInProgress) {
-        this.syncUser(session.access_token)
+      if (this.user && session?.access_token) {
+        // ローカルストレージからDBユーザー情報を読み込み
+        this.loadDbUserFromStorage()
+        
+        if (!this._syncInProgress) {
+          this.syncUser(session.access_token)
+        }
+        
         // 認証成功時にcurrentRoomを取得（初回のみ）
         if (!this._currentRoomFetched && !this._currentRoomLoading) {
           this.fetchCurrentRoom()
         }
       } else {
-        // 認証がない場合はcurrentRoomをクリア
+        // 認証がない場合はcurrentRoomとdbUserをクリア
         this.currentRoom = null
+        this.dbUser = null
         this._currentRoomFetched = false
+        // 前のユーザーIDを使ってローカルストレージをクリア
+        if (previousUserId) {
+          this.clearDbUserFromStorage(previousUserId)
+        } else {
+          this.clearDbUserFromStorage()
+        }
       }
     },
 
@@ -72,10 +89,14 @@ document.addEventListener('alpine:init', () => {
       // セッション情報をクリア
       this.session = null
       this.user = null
+      this.dbUser = null
       this.error = null
       this.currentRoom = null
       this._currentRoomFetched = false
       this._currentRoomLoading = false
+      
+      // ローカルストレージからDBユーザー情報を削除
+      this.clearDbUserFromStorage()
       
       // クッキーを削除
       document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
@@ -104,6 +125,11 @@ document.addEventListener('alpine:init', () => {
 
         if (!response.ok) {
           console.error('ユーザー同期に失敗しました:', response.status)
+        } else {
+          // 同期成功時にDBユーザー情報を取得（キャッシュされていない場合のみ）
+          if (!this.dbUser) {
+            await this.fetchDbUser(accessToken)
+          }
         }
       } catch (error) {
         console.error('ユーザー同期エラー:', error)
@@ -112,12 +138,104 @@ document.addEventListener('alpine:init', () => {
       }
     },
 
+    async fetchDbUser(accessToken) {
+      try {
+        const response = await fetch('/api/user/me', {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        })
+
+        if (response.ok) {
+          const userData = await response.json()
+          this.dbUser = userData.user
+          // ローカルストレージに保存
+          this.saveDbUserToStorage(userData.user)
+        }
+      } catch (error) {
+        console.error('DBユーザー情報取得エラー:', error)
+      }
+    },
+
+    saveDbUserToStorage(dbUser) {
+      try {
+        const storageKey = `mhp-rooms-dbuser-${this.user?.id}`
+        const storageData = {
+          user: dbUser,
+          timestamp: Date.now(),
+          expires: Date.now() + (24 * 60 * 60 * 1000) // 24時間後に期限切れ
+        }
+        localStorage.setItem(storageKey, JSON.stringify(storageData))
+      } catch (error) {
+        console.error('ローカルストレージへの保存エラー:', error)
+      }
+    },
+
+    loadDbUserFromStorage() {
+      try {
+        if (!this.user?.id) return null
+
+        const storageKey = `mhp-rooms-dbuser-${this.user.id}`
+        const storedData = localStorage.getItem(storageKey)
+        
+        if (!storedData) return null
+
+        const parsedData = JSON.parse(storedData)
+        
+        // 期限切れチェック
+        if (Date.now() > parsedData.expires) {
+          localStorage.removeItem(storageKey)
+          return null
+        }
+
+        this.dbUser = parsedData.user
+        return parsedData.user
+      } catch (error) {
+        console.error('ローカルストレージからの読み込みエラー:', error)
+        return null
+      }
+    },
+
+    clearDbUserFromStorage(userId = null) {
+      try {
+        // userIdが渡されない場合は、現在のユーザーIDを使用
+        const targetUserId = userId || this.user?.id
+        if (!targetUserId) {
+          // すべてのdbユーザーキャッシュをクリア
+          const keys = Object.keys(localStorage)
+          keys.forEach(key => {
+            if (key.startsWith('mhp-rooms-dbuser-')) {
+              localStorage.removeItem(key)
+            }
+          })
+          return
+        }
+
+        const storageKey = `mhp-rooms-dbuser-${targetUserId}`
+        localStorage.removeItem(storageKey)
+      } catch (error) {
+        console.error('ローカルストレージのクリアエラー:', error)
+      }
+    },
+
+    // DBユーザー情報を強制的に更新する
+    async refreshDbUser() {
+      if (!this.session?.access_token) return
+
+      this.clearDbUserFromStorage()
+      await this.fetchDbUser(this.session.access_token)
+    },
+
     get isAuthenticated() {
       return !!this.user
     },
 
+    get displayName() {
+      return this.dbUser?.display_name || ''
+    },
+
     get username() {
-      return this.user?.email?.split('@')[0] || this.user?.user_metadata?.name || 'ゲスト'
+      return this.dbUser?.username || this.user?.email?.split('@')[0] || this.user?.user_metadata?.name || 'ゲスト'
     },
 
     get needsPSNId() {

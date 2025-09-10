@@ -75,7 +75,7 @@
                 />
                 <span
                   class="font-medium hidden sm:block"
-                  x-text="$store.auth.username"
+                  x-text="$store.auth.displayName || $store.auth.username"
                 ></span>
                 <svg
                   class="w-4 h-4 transition-transform"

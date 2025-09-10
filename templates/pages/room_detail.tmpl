@@ -329,9 +329,9 @@
                 class="w-8 h-8 rounded-full object-cover"
                 alt="ユーザーアバター"
               />
-              <span class="text-gray-800 text-sm font-medium"
-                >{{ $member.DisplayName }}</span
-              >
+              <span class="text-gray-800 text-sm font-medium">
+                {{ if $member.User.DisplayName }}{{ $member.User.DisplayName }}{{ else if $member.User.Username }}{{ $member.User.Username }}{{ else }}{{ $member.DisplayName }}{{ end }}
+              </span>
               {{ if $member.IsHost }}
                 <span
                   class="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded"
@@ -671,7 +671,7 @@ function roomDetail() {
             id: '{{ .ID }}',
             type: 'system',
             subtype: 'create',
-            content: '{{ if .User }}{{ .User.DisplayName }}{{ else }}ユーザー{{ end }}さんが部屋を作成しました',
+            content: '{{ if .User }}{{ if .User.Username }}{{ .User.Username }}{{ else }}{{ .User.DisplayName }}{{ end }}{{ else }}ユーザー{{ end }}さんが部屋を作成しました',
             timestamp: new Date('{{ .CreatedAt.Format "2006-01-02T15:04:05Z07:00" }}')
           });
         {{ else if eq .Action "join" }}
@@ -715,7 +715,7 @@ function roomDetail() {
                 id: msg.id,
                 type: 'user',
                 content: msg.message,
-                userName: msg.user.display_name,
+                userName: msg.user.display_name || msg.user.username,
                 userAvatar: msg.user.avatar_url || '/static/images/default-avatar.png',
                 isOwn: isOwn,
                 timestamp: new Date(msg.created_at)
@@ -851,7 +851,7 @@ function roomDetail() {
         id: message.id,
         type: 'user',
         content: message.message,
-        userName: message.user.display_name,
+        userName: message.user.display_name || message.user.username,
         userAvatar: message.user.avatar_url || '/static/images/default-avatar.png',
         isOwn: false,
         timestamp: new Date(message.created_at)

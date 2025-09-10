@@ -83,6 +83,11 @@
         if (data.session) {
           console.log('認証成功。セッション取得完了。')
 
+          // アクセストークンをクッキーに保存（SSR用）
+          const maxAge = 3600 // 1時間
+          document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=${maxAge}; SameSite=Lax`
+          console.log('認証クッキーを設定しました')
+
           // Supabaseからユーザー情報を取得
           const user = data.session.user
           console.log('ユーザー情報:', {

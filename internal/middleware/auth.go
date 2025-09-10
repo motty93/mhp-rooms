@@ -406,15 +406,17 @@ func (j *JWTAuth) EnsureUserExistsWithContext(ctx context.Context, authUser *Aut
 		}
 	}
 
-	displayName := authUser.Email
+	username := authUser.Email
 	if idx := strings.Index(authUser.Email, "@"); idx > 0 {
-		displayName = authUser.Email[:idx]
+		username = authUser.Email[:idx]
 	}
+	displayName := ""
 
 	now := time.Now()
 	newUser := &models.User{
 		SupabaseUserID: supabaseUserID,
 		Email:          authUser.Email,
+		Username:       &username,
 		DisplayName:    displayName,
 		PSNOnlineID:    psnOnlineID,
 		IsActive:       true,

@@ -174,7 +174,7 @@
                 <div class="flex items-center justify-between min-h-[40px]">
                   <span
                     class="text-sm text-gray-500"
-                    x-text="'ホスト: ' + (room.host.username || room.host.displayName)"
+                    x-text="'ホスト: ' + (room.host.displayName || room.host.username)"
                   ></span>
 
                   <!-- ボタン領域 - 固定高さを確保 -->
@@ -1049,7 +1049,7 @@
             description: room.description,
             gameVersionCode: room.gameVersion.code,
             gameVersionName: room.gameVersion.name,
-            hostName: room.host.username || room.host.displayName,
+            hostName: room.host.displayName || room.host.username,
             currentPlayers: room.currentPlayers,
             maxPlayers: room.maxPlayers,
             hasPassword: room.hasPassword,
