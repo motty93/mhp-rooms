@@ -57,6 +57,15 @@ func renderTemplate(w http.ResponseWriter, templateName string, data TemplateDat
 			return template.HTML(utils.GetGameVersionIcon(code))
 		},
 		"gameVersionAbbr": utils.GetGameVersionAbbreviation,
+		"stringPtr": func(s *string) string {
+			if s == nil {
+				return ""
+			}
+			return *s
+		},
+		"hasStringValue": func(s *string) bool {
+			return s != nil && *s != ""
+		},
 	}
 
 	tmpl, err := template.New("").Funcs(funcMap).ParseFiles(
@@ -65,6 +74,12 @@ func renderTemplate(w http.ResponseWriter, templateName string, data TemplateDat
 		filepath.Join("templates", "components", "footer.tmpl"),
 		filepath.Join("templates", "components", "room_create_button.tmpl"),
 		filepath.Join("templates", "components", "room_create_modal.tmpl"),
+		filepath.Join("templates", "components", "profile_view.tmpl"),
+		filepath.Join("templates", "components", "profile_edit_form.tmpl"),
+		filepath.Join("templates", "components", "profile_activity.tmpl"),
+		filepath.Join("templates", "components", "profile_rooms.tmpl"),
+		filepath.Join("templates", "components", "profile_followers.tmpl"),
+		filepath.Join("templates", "components", "profile_following.tmpl"),
 		filepath.Join("templates", "pages", templateName),
 	)
 	if err != nil {
@@ -155,11 +170,27 @@ func renderPartialTemplate(w http.ResponseWriter, templateName string, data inte
 			return template.HTML(utils.GetGameVersionIcon(code))
 		},
 		"gameVersionAbbr": utils.GetGameVersionAbbreviation,
+		"stringPtr": func(s *string) string {
+			if s == nil {
+				return ""
+			}
+			return *s
+		},
+		"hasStringValue": func(s *string) bool {
+			return s != nil && *s != ""
+		},
 	}
 
-	tmpl, err := template.New("").Funcs(funcMap).ParseFiles(
-		filepath.Join("templates", "components", templateName),
-	)
+	// プロフィール関連のテンプレートの場合は、関連するテンプレートも一緒に読み込む
+	templateFiles := []string{filepath.Join("templates", "components", templateName)}
+	if strings.HasPrefix(templateName, "profile_") {
+		templateFiles = append(templateFiles,
+			filepath.Join("templates", "components", "profile_view.tmpl"),
+			filepath.Join("templates", "components", "profile_edit_form.tmpl"),
+		)
+	}
+
+	tmpl, err := template.New("").Funcs(funcMap).ParseFiles(templateFiles...)
 	if err != nil {
 		return fmt.Errorf("template parsing error: %w", err)
 	}

@@ -110,7 +110,8 @@
       "Bash(source .env)",
       "Bash(gh issue view:*)",
       "mcp__playwright__browser_tab_new",
-      "mcp__serena__list_memories"
+      "mcp__serena__list_memories",
+      "Bash(git log:*)"
     ],
     "deny": []
   }

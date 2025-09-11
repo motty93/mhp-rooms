@@ -1,19 +1,146 @@
 {{define "profile_edit_form"}}
-<div class="p-6">
-    <h3 class="text-xl font-bold text-gray-800 mb-4">プロフィール編集</h3>
-    <div class="space-y-4">
-        <div>
-            <label class="text-sm font-bold text-gray-600 block mb-1">ユーザー名</label>
-            <input type="text" value="{{.Username}}" class="w-full bg-gray-100 text-gray-800 rounded-lg p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+<div x-data="profileEditForm({
+    displayName: '{{.User.DisplayName}}',
+    bio: '{{stringPtr .User.Bio}}',
+    psnOnlineId: '{{stringPtr .User.PSNOnlineID}}',
+    nintendoNetworkId: '{{stringPtr .User.NintendoNetworkID}}',
+    nintendoSwitchId: '{{stringPtr .User.NintendoSwitchID}}',
+    twitterId: '{{stringPtr .User.TwitterID}}',
+    favoriteGames: {{json .FavoriteGames}},
+    playTimes: {
+        weekday: '{{if .PlayTimes}}{{.PlayTimes.Weekday}}{{end}}',
+        weekend: '{{if .PlayTimes}}{{.PlayTimes.Weekend}}{{end}}'
+    }
+})" x-init="init()" class="flex flex-col items-center">
+    <h3 class="text-xl font-bold text-gray-800 mb-6 text-center">プロフィール編集</h3>
+    
+    <form id="profile-edit-form" class="w-full space-y-6">
+        <!-- アバター画像 -->
+        <div class="flex flex-col items-center space-y-2">
+            <img class="w-24 h-24 rounded-full object-cover shadow-sm" 
+                 src="{{if .User.AvatarURL}}{{.User.AvatarURL}}{{else}}/static/images/default-avatar.png{{end}}" 
+                 alt="アバター">
+            <button type="button" class="text-sm text-blue-600 hover:underline">画像を変更</button>
         </div>
+
+        <!-- 表示名 -->
+        <div>
+            <label class="text-sm font-bold text-gray-600 block mb-1">表示名（ニックネーム）</label>
+            <input type="text" 
+                   x-model="displayName" 
+                   maxlength="100" 
+                   required
+                   class="w-full bg-gray-100 text-gray-800 rounded-lg p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <!-- 自己紹介 -->
         <div>
             <label class="text-sm font-bold text-gray-600 block mb-1">自己紹介</label>
-            <textarea class="w-full bg-gray-100 text-gray-800 rounded-lg p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500" rows="4">{{.Bio}}</textarea>
+            <textarea x-model="bio" 
+                      :maxlength="maxBioLength" 
+                      class="w-full bg-gray-100 text-gray-800 rounded-lg p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                      rows="4"></textarea>
+            <p class="text-xs text-right" 
+               :class="bio.length > maxBioLength ? 'text-red-500' : 'text-gray-500'">
+               <span x-text="bio.length"></span> / <span x-text="maxBioLength"></span>
+            </p>
         </div>
-        <div class="flex space-x-2">
-            <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">保存</button>
-            <button hx-get="/api/profile/view" hx-target="#profile-card" hx-swap="outerHTML" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition-colors">キャンセル</button>
+
+        <!-- プラットフォームID -->
+        <div class="space-y-4">
+            <div>
+                <label class="text-sm font-bold text-gray-600 block mb-1">PSN ID</label>
+                <input type="text" 
+                       x-model="psnOnlineId" 
+                       maxlength="16"
+                       class="w-full bg-gray-100 text-gray-800 rounded-lg p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="text-sm font-bold text-gray-600 block mb-1">Nintendo Network ID</label>
+                <input type="text" 
+                       x-model="nintendoNetworkId" 
+                       maxlength="16"
+                       class="w-full bg-gray-100 text-gray-800 rounded-lg p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="text-sm font-bold text-gray-600 block mb-1">Nintendo Switch ID</label>
+                <input type="text" 
+                       x-model="nintendoSwitchId" 
+                       maxlength="20"
+                       class="w-full bg-gray-100 text-gray-800 rounded-lg p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="text-sm font-bold text-gray-600 block mb-1">Twitter ID</label>
+                <input type="text" 
+                       x-model="twitterId" 
+                       maxlength="15"
+                       class="w-full bg-gray-100 text-gray-800 rounded-lg p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
         </div>
-    </div>
+
+        <!-- お気に入りゲーム -->
+        <div>
+            <label class="text-sm font-bold text-gray-600 block mb-2">主なゲーム (複数選択可)</label>
+            <div class="grid grid-cols-2 gap-2">
+                <template x-for="game in availableGames" :key="game">
+                    <label class="flex items-center space-x-2 p-2 rounded-lg bg-gray-50 border border-gray-200 cursor-pointer hover:bg-gray-100 has-[:checked]:bg-blue-50 has-[:checked]:border-blue-400">
+                        <input type="checkbox" 
+                               :value="game" 
+                               x-model="favoriteGames" 
+                               class="rounded text-blue-600 focus:ring-blue-500">
+                        <span class="text-sm text-gray-700" x-text="game"></span>
+                    </label>
+                </template>
+            </div>
+        </div>
+
+        <!-- プレイ時間帯 -->
+        <div>
+            <label class="text-sm font-bold text-gray-600 block mb-2">プレイ時間帯</label>
+            <div class="grid grid-cols-1 gap-3">
+                <div>
+                    <label class="text-sm text-gray-600 block mb-1">平日</label>
+                    <select x-model="playTimes.weekday" 
+                            class="w-full bg-gray-100 text-gray-800 rounded-lg p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">未設定</option>
+                        <option value="朝">朝（6:00-12:00）</option>
+                        <option value="昼">昼（12:00-18:00）</option>
+                        <option value="夜">夜（18:00-24:00）</option>
+                        <option value="深夜">深夜（24:00-6:00）</option>
+                        <option value="不定期">不定期</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-sm text-gray-600 block mb-1">休日</label>
+                    <select x-model="playTimes.weekend" 
+                            class="w-full bg-gray-100 text-gray-800 rounded-lg p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">未設定</option>
+                        <option value="朝">朝（6:00-12:00）</option>
+                        <option value="昼">昼（12:00-18:00）</option>
+                        <option value="夜">夜（18:00-24:00）</option>
+                        <option value="深夜">深夜（24:00-6:00）</option>
+                        <option value="一日中">一日中</option>
+                        <option value="不定期">不定期</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- 保存・キャンセルボタン -->
+        <div class="flex space-x-2 pt-4">
+            <button type="submit" 
+                    @click.prevent="saveProfile()"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                保存する
+            </button>
+            <button type="button" 
+                    hx-get="/profile/view" 
+                    hx-target="#profile-card-content" 
+                    hx-swap="innerHTML"
+                    class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition-colors">
+                キャンセル
+            </button>
+        </div>
+    </form>
 </div>
 {{end}}
