@@ -30,7 +30,7 @@ func (r *userRepository) CreateUser(user *models.User) error {
 func (r *userRepository) FindUserByID(id uuid.UUID) (*models.User, error) {
 	var user models.User
 	err := r.db.GetConn().
-		Select("id", "supabase_user_id", "email", "username", "display_name", "avatar_url", "bio", "psn_online_id", "nintendo_network_id", "nintendo_switch_id", "pretendo_network_id", "twitter_id", "is_active", "role", "created_at", "updated_at").
+		Select("id", "supabase_user_id", "email", "username", "display_name", "avatar_url", "bio", "psn_online_id", "nintendo_network_id", "nintendo_switch_id", "pretendo_network_id", "twitter_id", "favorite_games", "play_times", "is_active", "role", "created_at", "updated_at").
 		Where("id = ?", id).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -56,7 +56,7 @@ func (r *userRepository) FindUsersByIDs(ids []uuid.UUID) ([]models.User, error) 
 func (r *userRepository) FindUserBySupabaseUserID(supabaseUserID uuid.UUID) (*models.User, error) {
 	var user models.User
 	err := r.db.GetConn().
-		Select("id", "supabase_user_id", "email", "username", "display_name", "avatar_url", "bio", "psn_online_id", "nintendo_network_id", "nintendo_switch_id", "pretendo_network_id", "twitter_id", "is_active", "role", "created_at", "updated_at").
+		Select("id", "supabase_user_id", "email", "username", "display_name", "avatar_url", "bio", "psn_online_id", "nintendo_network_id", "nintendo_switch_id", "pretendo_network_id", "twitter_id", "favorite_games", "play_times", "is_active", "role", "created_at", "updated_at").
 		Where("supabase_user_id = ?", supabaseUserID).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -71,7 +71,7 @@ func (r *userRepository) FindUserBySupabaseUserID(supabaseUserID uuid.UUID) (*mo
 func (r *userRepository) FindUserByEmail(email string) (*models.User, error) {
 	var user models.User
 	err := r.db.GetConn().
-		Select("id", "supabase_user_id", "email", "username", "display_name", "avatar_url", "bio", "psn_online_id", "nintendo_network_id", "nintendo_switch_id", "pretendo_network_id", "twitter_id", "is_active", "role", "created_at", "updated_at").
+		Select("id", "supabase_user_id", "email", "username", "display_name", "avatar_url", "bio", "psn_online_id", "nintendo_network_id", "nintendo_switch_id", "pretendo_network_id", "twitter_id", "favorite_games", "play_times", "is_active", "role", "created_at", "updated_at").
 		Where("email = ?", email).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
