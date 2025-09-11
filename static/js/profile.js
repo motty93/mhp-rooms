@@ -202,6 +202,36 @@ window.profileEditForm = function(userData = {}) {
             console.log('プロフィール編集フォーム初期化完了');
         },
 
+        handleAvatarChange(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // ファイルタイプをチェック
+            if (!file.type.startsWith('image/')) {
+                showNotification('画像ファイルを選択してください', 'error');
+                return;
+            }
+
+            // ファイルサイズをチェック（5MB制限）
+            if (file.size > 5 * 1024 * 1024) {
+                showNotification('ファイルサイズは5MB以下にしてください', 'error');
+                return;
+            }
+
+            // プレビュー画像を更新
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const imgElement = event.target.closest('.flex').querySelector('img');
+                if (imgElement) {
+                    imgElement.src = e.target.result;
+                }
+            };
+            reader.readAsDataURL(file);
+
+            // TODO: 実際のアップロード処理はここに実装
+            showNotification('アバター画像を変更しました（保存ボタンを押してください）', 'info');
+        },
+
         async saveProfile() {
             try {
                 const response = await fetch('/api/profile/update', {

@@ -34,7 +34,7 @@
       <div class="bg-white rounded-xl p-6 shadow-md sticky top-8 border border-gray-200">
         <div id="profile-card-content">
           {{ if $profileData.IsOwnProfile }}
-            {{ template "profile_view" dict "User" $profileData.User "FavoriteGames" $profileData.FavoriteGames "PlayTimes" $profileData.PlayTimes "FollowerCount" $profileData.FollowerCount }}
+            {{ template "profile_view" map "User" $profileData.User "FavoriteGames" $profileData.FavoriteGames "PlayTimes" $profileData.PlayTimes "FollowerCount" $profileData.FollowerCount }}
           {{ else }}
             <!-- 他のユーザーのプロフィールの場合は従来通り -->
             <div class="flex flex-col items-center">
