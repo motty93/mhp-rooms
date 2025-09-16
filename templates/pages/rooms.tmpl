@@ -74,7 +74,7 @@
           >
             <option value="">すべてのゲーム</option>
             {{ range .PageData.GameVersions }}
-              <option value="{{ .Code }}">{{ .Name }}</option>
+              <option value="{{ .Code }}">{{ .Code }}</option>
             {{ end }}
           </select>
         </div>
