@@ -10,34 +10,23 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
-	"os"
 	"path"
 	"regexp"
-	"strconv"
 	"strings"
+
+	"mhp-rooms/internal/config"
 
 	"cloud.google.com/go/storage"
 )
 
-// Config GCSの設定
-type Config struct {
-	Bucket         string
-	BaseURL        string
-	MaxUploadBytes int64
-	AllowedMIMEs   map[string]struct{}
-	AssetPrefix    string
-}
-
 // GCSUploader Google Cloud Storageアップローダー
 type GCSUploader struct {
 	client *storage.Client
-	config *Config
+	config *config.GCSConfig
 }
 
 // NewGCSUploader 新しいGCSアップローダーを作成
 func NewGCSUploader(ctx context.Context) (*GCSUploader, error) {
-	config := mustConfig()
-
 	client, err := storage.NewClient(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("GCSクライアントの初期化に失敗しました: %w", err)
@@ -45,68 +34,10 @@ func NewGCSUploader(ctx context.Context) (*GCSUploader, error) {
 
 	return &GCSUploader{
 		client: client,
-		config: config,
+		config: &config.AppConfig.GCS,
 	}, nil
 }
 
-// mustConfig 必須の環境変数から設定を読み込む
-func mustConfig() *Config {
-	return &Config{
-		Bucket:         mustGetenv("GCS_BUCKET"),
-		BaseURL:        mustGetenv("BASE_PUBLIC_ASSET_URL"),
-		MaxUploadBytes: envInt64("MAX_UPLOAD_BYTES", 10<<20), // デフォルト10MB
-		AllowedMIMEs:   parseAllowed(os.Getenv("ALLOW_CONTENT_TYPES"), []string{"image/jpeg", "image/png", "image/webp"}),
-		AssetPrefix:    cleanPrefix(os.Getenv("ASSET_PREFIX")),
-	}
-}
-
-// mustGetenv 必須の環境変数を取得
-func mustGetenv(key string) string {
-	v := os.Getenv(key)
-	if v == "" {
-		panic(fmt.Sprintf("環境変数 %s が設定されていません", key))
-	}
-	return v
-}
-
-// envInt64 環境変数から数値を取得
-func envInt64(key string, def int64) int64 {
-	s := os.Getenv(key)
-	if s == "" {
-		return def
-	}
-	v, err := strconv.ParseInt(s, 10, 64)
-	if err != nil {
-		panic(fmt.Sprintf("環境変数 %s が無効な数値です: %v", key, err))
-	}
-	return v
-}
-
-// parseAllowed 許可されたMIMEタイプをパース
-func parseAllowed(env string, defaults []string) map[string]struct{} {
-	list := defaults
-	if env != "" {
-		list = strings.Split(env, ",")
-	}
-	m := make(map[string]struct{})
-	for _, s := range list {
-		m[strings.TrimSpace(s)] = struct{}{}
-	}
-	return m
-}
-
-// cleanPrefix プレフィックスをクリーンアップ（dev/stg/prodなどのみ許可）
-func cleanPrefix(s string) string {
-	s = strings.TrimSpace(strings.Trim(s, "/"))
-	if s == "" {
-		return "dev" // デフォルトをdevに
-	}
-	re := regexp.MustCompile(`^[a-z0-9._-]+$`)
-	if !re.MatchString(s) {
-		panic(fmt.Sprintf("無効なASSET_PREFIX: %s", s))
-	}
-	return s
-}
 
 // UploadResult アップロード結果
 type UploadResult struct {
