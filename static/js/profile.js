@@ -202,7 +202,7 @@ window.profileEditForm = function(userData = {}) {
             console.log('プロフィール編集フォーム初期化完了');
         },
 
-        handleAvatarChange(event) {
+        async handleAvatarChange(event) {
             const file = event.target.files[0];
             if (!file) return;
 
@@ -212,24 +212,50 @@ window.profileEditForm = function(userData = {}) {
                 return;
             }
 
-            // ファイルサイズをチェック（5MB制限）
-            if (file.size > 5 * 1024 * 1024) {
-                showNotification('ファイルサイズは5MB以下にしてください', 'error');
+            // ファイルサイズをチェック（10MB制限）
+            if (file.size > 10 * 1024 * 1024) {
+                showNotification('ファイルサイズは10MB以下にしてください', 'error');
                 return;
             }
 
             // プレビュー画像を更新
             const reader = new FileReader();
             reader.onload = (e) => {
-                const imgElement = event.target.closest('.flex').querySelector('img');
+                const imgElement = event.target.closest('.relative').querySelector('img');
                 if (imgElement) {
                     imgElement.src = e.target.result;
                 }
             };
             reader.readAsDataURL(file);
 
-            // TODO: 実際のアップロード処理はここに実装
-            showNotification('アバター画像を変更しました（保存ボタンを押してください）', 'info');
+            // 実際のアップロード処理
+            await this.uploadAvatar(file);
+        },
+
+        async uploadAvatar(file) {
+            try {
+                const formData = new FormData();
+                formData.append('avatar', file);
+
+                const response = await fetch('/api/profile/upload-avatar', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    showNotification(result.message || 'アバター画像を更新しました', 'success');
+                    
+                    // プロフィール表示に戻る
+                    returnToProfileView();
+                } else {
+                    const error = await response.json();
+                    showNotification(error.error || 'アバターの更新に失敗しました', 'error');
+                }
+            } catch (error) {
+                console.error('アバターアップロードエラー:', error);
+                showNotification('アバターの更新に失敗しました', 'error');
+            }
         },
 
         async saveProfile() {
