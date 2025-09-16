@@ -62,11 +62,11 @@ document.addEventListener('alpine:init', () => {
       if (this.user && session?.access_token) {
         // ローカルストレージからDBユーザー情報を読み込み
         this.loadDbUserFromStorage()
-        
+
         if (!this._syncInProgress) {
           this.syncUser(session.access_token)
         }
-        
+
         // 認証成功時にcurrentRoomを取得（初回のみ）
         if (!this._currentRoomFetched && !this._currentRoomLoading) {
           this.fetchCurrentRoom()
@@ -94,10 +94,10 @@ document.addEventListener('alpine:init', () => {
       this.currentRoom = null
       this._currentRoomFetched = false
       this._currentRoomLoading = false
-      
+
       // ローカルストレージからDBユーザー情報を削除
       this.clearDbUserFromStorage()
-      
+
       // クッキーを削除
       document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
     },
@@ -105,7 +105,7 @@ document.addEventListener('alpine:init', () => {
     async syncUser(accessToken) {
       // 同期処理の重複実行を防ぐ（5秒以内の重複実行を防ぐ）
       const now = Date.now()
-      if (this._syncInProgress || (now - this._lastSyncTime) < 5000) {
+      if (this._syncInProgress || now - this._lastSyncTime < 5000) {
         return
       }
       this._syncInProgress = true
@@ -142,12 +142,13 @@ document.addEventListener('alpine:init', () => {
       try {
         const response = await fetch('/api/user/me', {
           headers: {
-            'Authorization': `Bearer ${accessToken}`,
+            Authorization: `Bearer ${accessToken}`,
           },
         })
 
         if (response.ok) {
           const userData = await response.json()
+          console.log('fetchDbUser - 取得したユーザー情報:', userData.user)
           this.dbUser = userData.user
           // ローカルストレージに保存
           this.saveDbUserToStorage(userData.user)
@@ -163,7 +164,7 @@ document.addEventListener('alpine:init', () => {
         const storageData = {
           user: dbUser,
           timestamp: Date.now(),
-          expires: Date.now() + (24 * 60 * 60 * 1000) // 24時間後に期限切れ
+          expires: Date.now() + 24 * 60 * 60 * 1000, // 24時間後に期限切れ
         }
         localStorage.setItem(storageKey, JSON.stringify(storageData))
       } catch (error) {
@@ -177,11 +178,11 @@ document.addEventListener('alpine:init', () => {
 
         const storageKey = `mhp-rooms-dbuser-${this.user.id}`
         const storedData = localStorage.getItem(storageKey)
-        
+
         if (!storedData) return null
 
         const parsedData = JSON.parse(storedData)
-        
+
         // 期限切れチェック
         if (Date.now() > parsedData.expires) {
           localStorage.removeItem(storageKey)
@@ -203,7 +204,7 @@ document.addEventListener('alpine:init', () => {
         if (!targetUserId) {
           // すべてのdbユーザーキャッシュをクリア
           const keys = Object.keys(localStorage)
-          keys.forEach(key => {
+          keys.forEach((key) => {
             if (key.startsWith('mhp-rooms-dbuser-')) {
               localStorage.removeItem(key)
             }
@@ -235,7 +236,13 @@ document.addEventListener('alpine:init', () => {
     },
 
     get username() {
-      return this.dbUser?.username || this.user?.email?.split('@')[0] || this.user?.user_metadata?.name || 'ゲスト'
+      return (
+        this.dbUser?.username || this.user?.email?.split('@')[0] || this.user?.user_metadata?.name || 'ゲスト'
+      )
+    },
+
+    get avatarUrl() {
+      return this.dbUser?.avatar_url || '/static/images/default-avatar.png'
     },
 
     get needsPSNId() {
@@ -391,7 +398,7 @@ document.addEventListener('alpine:init', () => {
 
       try {
         const response = await fetch('/api/user/current-room', {
-          credentials: 'same-origin'
+          credentials: 'same-origin',
         })
 
         if (response.ok) {
@@ -418,7 +425,7 @@ document.addEventListener('alpine:init', () => {
       try {
         const response = await fetch('/api/leave-current-room', {
           method: 'POST',
-          credentials: 'same-origin'
+          credentials: 'same-origin',
         })
 
         if (response.ok) {

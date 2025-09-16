@@ -2,7 +2,7 @@
 <div class="flex flex-col items-center">
     <div class="relative">
         <img class="w-32 h-32 rounded-full mb-4 border-4 border-white object-cover shadow-sm" 
-             src="{{if .User.AvatarURL}}{{.User.AvatarURL}}{{else}}/static/images/default-avatar.png{{end}}" 
+             src="{{if .User.AvatarURL}}{{stringPtr .User.AvatarURL}}{{else}}/static/images/default-avatar.png{{end}}" 
              alt="{{.User.DisplayName}}のアバター">
         <span class="absolute bottom-4 right-2 bg-green-500 w-5 h-5 rounded-full border-2 border-white" title="オンライン"></span>
     </div>

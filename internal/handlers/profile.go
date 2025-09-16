@@ -21,9 +21,10 @@ type ProfileHandler struct {
 	BaseHandler
 	logger   *log.Logger
 	uploader *storage.GCSUploader
+	jwtAuth  *middleware.JWTAuth
 }
 
-func NewProfileHandler(repo *repository.Repository) *ProfileHandler {
+func NewProfileHandler(repo *repository.Repository, jwtAuth *middleware.JWTAuth) *ProfileHandler {
 	// GCSアップローダーを初期化
 	uploader, err := storage.NewGCSUploader(context.Background())
 	if err != nil {
@@ -38,6 +39,7 @@ func NewProfileHandler(repo *repository.Repository) *ProfileHandler {
 		},
 		logger:   log.New(log.Writer(), "[ProfileHandler] ", log.LstdFlags),
 		uploader: uploader,
+		jwtAuth:  jwtAuth,
 	}
 }
 
@@ -803,6 +805,12 @@ func (ph *ProfileHandler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 		ph.logger.Printf("ユーザー更新エラー: %v", err)
 		respondWithError(w, http.StatusInternalServerError, "プロフィール情報の更新に失敗しました")
 		return
+	}
+	
+	// キャッシュをクリア（jwtAuthが設定されている場合）
+	if ph.jwtAuth != nil && ph.jwtAuth.GetUserCache() != nil {
+		ph.logger.Printf("ユーザーキャッシュをクリア: %s", user.ID)
+		ph.jwtAuth.GetUserCache().Delete(user.SupabaseUserID)
 	}
 
 	response := map[string]interface{}{

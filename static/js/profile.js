@@ -246,6 +246,13 @@ window.profileEditForm = function(userData = {}) {
                     const result = await response.json();
                     showNotification(result.message || 'アバター画像を更新しました', 'success');
                     
+                    // Alpine.jsのauth storeを更新（DBから最新情報を取得）
+                    if (window.Alpine && Alpine.store('auth')) {
+                        const authStore = Alpine.store('auth');
+                        // DBから最新のユーザー情報を取得してstoreを更新
+                        await authStore.refreshDbUser();
+                    }
+                    
                     // プロフィール表示に戻る
                     returnToProfileView();
                 } else {

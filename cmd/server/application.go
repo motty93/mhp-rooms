@@ -88,7 +88,7 @@ func (app *Application) initHandlers() error {
 	app.configHandler = handlers.NewConfigHandler()
 	app.reactionHandler = handlers.NewReactionHandler(app.repo)
 	app.gameVersionHandler = handlers.NewGameVersionHandler(app.repo)
-	app.profileHandler = handlers.NewProfileHandler(app.repo)
+	app.profileHandler = handlers.NewProfileHandler(app.repo, app.authMiddleware)
 	app.followHandler = handlers.NewFollowHandler(app.repo)
 
 	// 認証ミドルウェアの初期化

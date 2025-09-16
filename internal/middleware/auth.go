@@ -73,6 +73,14 @@ func (c *UserCache) Set(userID uuid.UUID, user *models.User, ttl time.Duration) 
 	c.expiry[userID] = time.Now().Add(ttl)
 }
 
+func (c *UserCache) Delete(userID uuid.UUID) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	
+	delete(c.users, userID)
+	delete(c.expiry, userID)
+}
+
 func (c *UserCache) Cleanup() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
@@ -90,6 +98,10 @@ type JWTAuth struct {
 	jwtSecret []byte
 	repo      *repository.Repository
 	userCache *UserCache
+}
+
+func (j *JWTAuth) GetUserCache() *UserCache {
+	return j.userCache
 }
 
 func NewJWTAuth(repo *repository.Repository) (*JWTAuth, error) {
@@ -121,9 +133,6 @@ func NewJWTAuth(repo *repository.Repository) (*JWTAuth, error) {
 
 func (j *JWTAuth) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if config.AppConfig.Debug.AuthLogs {
-			log.Printf("AUTH DEBUG: %s %s - 認証チェック開始", r.Method, r.URL.Path)
-		}
 
 		var tokenString string
 
@@ -134,9 +143,6 @@ func (j *JWTAuth) Middleware(next http.Handler) http.Handler {
 			if len(tokenParts) == 2 && tokenParts[0] == "Bearer" {
 				tokenString = tokenParts[1]
 			} else {
-				if config.AppConfig.Debug.AuthLogs {
-					log.Printf("AUTH DEBUG: %s %s - 無効な認証ヘッダー形式: %s", r.Method, r.URL.Path, authHeader)
-				}
 				// htmxリクエストの場合はHX-Redirectヘッダーを使用
 				if r.Header.Get("HX-Request") == "true" {
 					w.Header().Set("HX-Redirect", "/auth/login")
@@ -154,20 +160,10 @@ func (j *JWTAuth) Middleware(next http.Handler) http.Handler {
 				// クエリパラメータにもない場合、クッキーを確認（ブラウザからのAJAX用）
 				if cookie, err := r.Cookie("sb-access-token"); err == nil {
 					tokenString = cookie.Value
-					if config.AppConfig.Debug.AuthLogs {
-						log.Printf("AUTH DEBUG: %s %s - クッキーからトークンを取得", r.Method, r.URL.Path)
-					}
-				}
-			} else {
-				if config.AppConfig.Debug.AuthLogs {
-					log.Printf("AUTH DEBUG: %s %s - クエリパラメータからトークンを取得", r.Method, r.URL.Path)
 				}
 			}
 
 			if tokenString == "" {
-				if config.AppConfig.Debug.AuthLogs {
-					log.Printf("AUTH DEBUG: %s %s - 認証トークンが見つかりません", r.Method, r.URL.Path)
-				}
 				// htmxリクエストの場合はHX-Redirectヘッダーを使用
 				if r.Header.Get("HX-Request") == "true" {
 					w.Header().Set("HX-Redirect", "/auth/login")
@@ -360,6 +356,9 @@ func (j *JWTAuth) loadDBUser(ctx context.Context, authUser *AuthUser) *models.Us
 
 	// キャッシュから取得を試行
 	if cachedUser, exists := j.userCache.Get(supabaseUserID); exists {
+		// デバッグログ：キャッシュから取得した場合
+		log.Printf("loadDBUser - キャッシュから取得: ID=%s, AvatarURL=%v", 
+			cachedUser.ID, cachedUser.AvatarURL)
 		return cachedUser
 	}
 
@@ -376,6 +375,13 @@ func (j *JWTAuth) loadDBUser(ctx context.Context, authUser *AuthUser) *models.Us
 	existingUser, err := j.repo.User.FindUserBySupabaseUserID(supabaseUserID)
 	if err != nil || existingUser == nil {
 		return nil
+	}
+
+	// デバッグログ：DBから取得した場合
+	log.Printf("loadDBUser - DBから取得: ID=%s, AvatarURL=%v", 
+		existingUser.ID, existingUser.AvatarURL)
+	if existingUser.AvatarURL != nil {
+		log.Printf("loadDBUser - AvatarURL value: %s", *existingUser.AvatarURL)
 	}
 
 	// キャッシュに保存（30秒間）
