@@ -76,7 +76,7 @@ func (c *UserCache) Set(userID uuid.UUID, user *models.User, ttl time.Duration) 
 func (c *UserCache) Delete(userID uuid.UUID) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	
+
 	delete(c.users, userID)
 	delete(c.expiry, userID)
 }
@@ -356,9 +356,6 @@ func (j *JWTAuth) loadDBUser(ctx context.Context, authUser *AuthUser) *models.Us
 
 	// キャッシュから取得を試行
 	if cachedUser, exists := j.userCache.Get(supabaseUserID); exists {
-		// デバッグログ：キャッシュから取得した場合
-		log.Printf("loadDBUser - キャッシュから取得: ID=%s, AvatarURL=%v", 
-			cachedUser.ID, cachedUser.AvatarURL)
 		return cachedUser
 	}
 
@@ -375,13 +372,6 @@ func (j *JWTAuth) loadDBUser(ctx context.Context, authUser *AuthUser) *models.Us
 	existingUser, err := j.repo.User.FindUserBySupabaseUserID(supabaseUserID)
 	if err != nil || existingUser == nil {
 		return nil
-	}
-
-	// デバッグログ：DBから取得した場合
-	log.Printf("loadDBUser - DBから取得: ID=%s, AvatarURL=%v", 
-		existingUser.ID, existingUser.AvatarURL)
-	if existingUser.AvatarURL != nil {
-		log.Printf("loadDBUser - AvatarURL value: %s", *existingUser.AvatarURL)
 	}
 
 	// キャッシュに保存（30秒間）
