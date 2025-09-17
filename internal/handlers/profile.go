@@ -190,8 +190,9 @@ func (ph *ProfileHandler) Activity(w http.ResponseWriter, r *http.Request) {
 	var targetUserID uuid.UUID
 	var err error
 
-	userIDParam := chi.URLParam(r, "userID")
+	userIDParam := chi.URLParam(r, "uuid")
 	if userIDParam != "" {
+		// 他のユーザーのプロフィール
 		targetUserID, err = uuid.Parse(userIDParam)
 		if err != nil {
 			ph.logger.Printf("無効なユーザーID: %s, エラー: %v", userIDParam, err)
@@ -310,6 +311,32 @@ func (ph *ProfileHandler) Rooms(w http.ResponseWriter, r *http.Request) {
 
 // Following フォロー中タブコンテンツを返す（htmx用）
 func (ph *ProfileHandler) Following(w http.ResponseWriter, r *http.Request) {
+	// URLパラメータからユーザーIDを取得（他ユーザーのプロフィール表示用）
+	var targetUserID uuid.UUID
+	var err error
+
+	userIDParam := chi.URLParam(r, "uuid")
+	if userIDParam != "" {
+		// 他のユーザーのプロフィール
+		targetUserID, err = uuid.Parse(userIDParam)
+		if err != nil {
+			ph.logger.Printf("無効なユーザーID: %s, エラー: %v", userIDParam, err)
+			http.Error(w, "無効なユーザーIDです", http.StatusBadRequest)
+			return
+		}
+	} else {
+		// URLパラメータがない場合は自分のプロフィール
+		dbUser, exists := middleware.GetDBUserFromContext(r.Context())
+		if !exists || dbUser == nil {
+			ph.logger.Printf("認証情報が取得できません")
+			http.Error(w, "認証されていません", http.StatusUnauthorized)
+			return
+		}
+		targetUserID = dbUser.ID
+	}
+
+	ph.logger.Printf("フォロー中データを取得中 - ユーザーID: %s", targetUserID.String())
+
 	if err := renderPartialTemplate(w, "profile_following.tmpl", nil); err != nil {
 		ph.logger.Printf("テンプレートレンダリングエラー: %v", err)
 		http.Error(w, "テンプレートの描画に失敗しました", http.StatusInternalServerError)
@@ -319,6 +346,32 @@ func (ph *ProfileHandler) Following(w http.ResponseWriter, r *http.Request) {
 
 // Followers フォロワータブコンテンツを返す（htmx用）
 func (ph *ProfileHandler) Followers(w http.ResponseWriter, r *http.Request) {
+	// URLパラメータからユーザーIDを取得（他ユーザーのプロフィール表示用）
+	var targetUserID uuid.UUID
+	var err error
+
+	userIDParam := chi.URLParam(r, "uuid")
+	if userIDParam != "" {
+		// 他のユーザーのプロフィール
+		targetUserID, err = uuid.Parse(userIDParam)
+		if err != nil {
+			ph.logger.Printf("無効なユーザーID: %s, エラー: %v", userIDParam, err)
+			http.Error(w, "無効なユーザーIDです", http.StatusBadRequest)
+			return
+		}
+	} else {
+		// URLパラメータがない場合は自分のプロフィール
+		dbUser, exists := middleware.GetDBUserFromContext(r.Context())
+		if !exists || dbUser == nil {
+			ph.logger.Printf("認証情報が取得できません")
+			http.Error(w, "認証されていません", http.StatusUnauthorized)
+			return
+		}
+		targetUserID = dbUser.ID
+	}
+
+	ph.logger.Printf("フォロワーデータを取得中 - ユーザーID: %s", targetUserID.String())
+
 	if err := renderPartialTemplate(w, "profile_followers.tmpl", nil); err != nil {
 		ph.logger.Printf("テンプレートレンダリングエラー: %v", err)
 		http.Error(w, "テンプレートの描画に失敗しました", http.StatusInternalServerError)

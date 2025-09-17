@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"mhp-rooms/internal/middleware"
@@ -10,6 +11,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
+
 
 // UserHandler 他ユーザー関連のハンドラー
 type UserHandler struct {
@@ -213,6 +215,69 @@ func (uh *UserHandler) getCurrentUser(r *http.Request) *models.User {
 	}
 	return nil
 }
+
+// GetProfileCard プロフィールカードの部分HTML取得
+func (uh *UserHandler) GetProfileCard(w http.ResponseWriter, r *http.Request) {
+	userIDStr := chi.URLParam(r, "uuid")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		http.Error(w, "無効なユーザーIDです", http.StatusBadRequest)
+		return
+	}
+
+	user, err := uh.repo.User.FindUserByID(userID)
+	if err != nil {
+		http.Error(w, "ユーザーが見つかりません", http.StatusNotFound)
+		return
+	}
+
+	currentUser := uh.getCurrentUser(r)
+	isOwnProfile := false
+	relationStatus := "none"
+
+	if currentUser != nil {
+		if currentUser.ID == user.ID {
+			isOwnProfile = true
+		} else {
+			relationStatus = uh.checkRelationStatus(currentUser.ID, user.ID)
+		}
+	}
+
+	profileData := struct {
+		User            *models.User
+		IsOwnProfile    bool
+		IsAuthenticated bool
+		RelationStatus  string
+		AvatarURL       string
+	}{
+		User:            user,
+		IsOwnProfile:    isOwnProfile,
+		IsAuthenticated: currentUser != nil,
+		RelationStatus:  relationStatus,
+		AvatarURL:       getAvatarURL(user),
+	}
+
+	if err := renderPartialTemplate(w, "profile_card_content.tmpl", profileData); err != nil {
+		http.Error(w, "テンプレートエラー: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+// Helper functions for profile card generation
+func getAvatarURL(user *models.User) string {
+	if user.AvatarURL != nil && *user.AvatarURL != "" {
+		return *user.AvatarURL
+	}
+	return "/static/images/default-avatar.png"
+}
+
+func getBioHTML(bio *string) string {
+	if bio != nil && *bio != "" {
+		return fmt.Sprintf(`<p class="text-center text-gray-600 mb-6 text-sm">%s</p>`, *bio)
+	}
+	return ""
+}
+
 
 // Helper functions（一時的なモックデータ）
 func (uh *UserHandler) getMockActivities() []Activity {

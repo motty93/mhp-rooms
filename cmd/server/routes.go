@@ -170,6 +170,7 @@ func (app *Application) setupAPIRoutes(r chi.Router) {
 
 		// 他のユーザーのプロフィール関連API（認証オプション）
 		ar.Get("/users/{uuid}", app.withOptionalAuth(app.userHandler.GetUserProfile))
+		ar.Get("/users/{uuid}/profile-card", app.withOptionalAuth(app.userHandler.GetProfileCard))
 		ar.Get("/users/{uuid}/rooms", app.withOptionalAuth(app.profileHandler.Rooms))
 		ar.Get("/users/{uuid}/activity", app.withOptionalAuth(app.profileHandler.Activity))
 		ar.Get("/users/{uuid}/followers", app.withOptionalAuth(app.profileHandler.Followers))
