@@ -138,137 +138,6 @@ func (ph *ProfileHandler) Profile(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "profile.tmpl", data)
 }
 
-// UserProfile 他のユーザーのプロフィールページを表示
-func (ph *ProfileHandler) UserProfile(w http.ResponseWriter, r *http.Request) {
-	userIDStr := chi.URLParam(r, "uuid")
-	userID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		http.Error(w, "無効なユーザーIDです", http.StatusBadRequest)
-		return
-	}
-
-	// データベースからユーザー情報を取得
-	user, err := ph.repo.User.FindUserByID(userID)
-	if err != nil {
-		http.Error(w, "ユーザーが見つかりません", http.StatusNotFound)
-		return
-	}
-
-	// 現在のユーザーと比較して自分のプロフィールかどうか判定
-	currentUser := getUserFromContext(r.Context())
-	isOwnProfile := false
-	if currentUser != nil && currentUser.ID == user.ID {
-		isOwnProfile = true
-	}
-
-	// お気に入りゲームとプレイ時間帯を取得
-	favoriteGames, _ := user.GetFavoriteGames()
-	playTimes, _ := user.GetPlayTimes()
-
-	// フォロワー数を取得
-	var followerCount int64 = 25
-	if ph.repo != nil && ph.repo.UserFollow != nil {
-		followers, err := ph.repo.UserFollow.GetFollowers(user.ID)
-		if err == nil {
-			followerCount = int64(len(followers))
-		}
-	}
-
-	// 実際に作成した部屋を取得
-	rooms, err := ph.repo.Room.GetRoomsByHostUser(user.ID, 10, 0) // 最大10件取得
-	var roomSummaries []RoomSummary
-	if err == nil {
-		for _, room := range rooms {
-			roomSummaries = append(roomSummaries, roomToSummary(room))
-		}
-	}
-
-	profileData := ProfileData{
-		User:          user,
-		IsOwnProfile:  isOwnProfile,
-		Activities:    ph.getMockActivities(),
-		Rooms:         roomSummaries,
-		Followers:     ph.getMockFollowers(),
-		FollowerCount: followerCount,
-		FavoriteGames: favoriteGames,
-		PlayTimes:     playTimes,
-	}
-
-	data := TemplateData{
-		Title:    user.DisplayName + "のプロフィール",
-		PageData: profileData,
-	}
-
-	renderTemplate(w, "profile.tmpl", data)
-}
-
-func (ph *ProfileHandler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
-	userIDStr := chi.URLParam(r, "uuid")
-	userID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "無効なユーザーIDです")
-		return
-	}
-
-	user, err := ph.repo.User.FindUserByID(userID)
-	if err != nil {
-		respondWithError(w, http.StatusNotFound, "ユーザーが見つかりません")
-		return
-	}
-
-	// 現在のユーザーと比較
-	currentUser := getUserFromContext(r.Context())
-	isOwnProfile := false
-	if currentUser != nil && currentUser.ID == user.ID {
-		isOwnProfile = true
-	}
-
-	// お気に入りゲームを取得
-	favoriteGames, err := user.GetFavoriteGames()
-	if err != nil {
-		ph.logger.Printf("お気に入りゲーム取得エラー: %v", err)
-		favoriteGames = []string{}
-	}
-
-	// プレイ時間帯を取得
-	playTimes, _ := user.GetPlayTimes()
-	if err != nil {
-		ph.logger.Printf("プレイ時間帯取得エラー: %v", err)
-		playTimes = &models.PlayTimes{}
-	}
-
-	// フォロワー数を取得
-	var followerCount int64 = 0
-	if ph.repo != nil && ph.repo.UserFollow != nil {
-		followers, err := ph.repo.UserFollow.GetFollowers(user.ID)
-		if err == nil {
-			followerCount = int64(len(followers))
-		}
-	}
-
-	// 実際に作成した部屋を取得
-	rooms, err := ph.repo.Room.GetRoomsByHostUser(user.ID, 10, 0) // 最大10件取得
-	var roomSummaries []RoomSummary
-	if err == nil {
-		for _, room := range rooms {
-			roomSummaries = append(roomSummaries, roomToSummary(room))
-		}
-	}
-
-	profileData := ProfileData{
-		User:          user,
-		IsOwnProfile:  isOwnProfile,
-		Activities:    ph.getMockActivities(),
-		Rooms:         roomSummaries,
-		Followers:     ph.getMockFollowers(),
-		FollowerCount: followerCount,
-		FavoriteGames: favoriteGames,
-		PlayTimes:     playTimes,
-	}
-
-	respondWithJSON(w, http.StatusOK, profileData)
-}
-
 // EditForm プロフィール編集フォームを返す（htmx用）
 func (ph *ProfileHandler) EditForm(w http.ResponseWriter, r *http.Request) {
 	contextUser := getUserFromContext(r.Context())
@@ -806,7 +675,7 @@ func (ph *ProfileHandler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusInternalServerError, "プロフィール情報の更新に失敗しました")
 		return
 	}
-	
+
 	// キャッシュをクリア（jwtAuthが設定されている場合）
 	if ph.jwtAuth != nil && ph.jwtAuth.GetUserCache() != nil {
 		ph.logger.Printf("ユーザーキャッシュをクリア: %s", user.ID)

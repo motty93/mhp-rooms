@@ -112,7 +112,9 @@
       "mcp__playwright__browser_tab_new",
       "mcp__serena__list_memories",
       "Bash(git log:*)",
-      "Bash(ENV=development make run)"
+      "Bash(ENV=development make run)",
+      "Bash(xargs kill:*)",
+      "Bash(docker ps:*)"
     ],
     "deny": []
   }

@@ -26,6 +26,7 @@ type Application struct {
 	reactionHandler    *handlers.ReactionHandler
 	gameVersionHandler *handlers.GameVersionHandler
 	profileHandler     *handlers.ProfileHandler
+	userHandler        *handlers.UserHandler
 	followHandler      *handlers.FollowHandler
 	authMiddleware     *middleware.JWTAuth
 	securityConfig     *middleware.SecurityConfig
@@ -89,6 +90,7 @@ func (app *Application) initHandlers() error {
 	app.reactionHandler = handlers.NewReactionHandler(app.repo)
 	app.gameVersionHandler = handlers.NewGameVersionHandler(app.repo)
 	app.profileHandler = handlers.NewProfileHandler(app.repo, app.authMiddleware)
+	app.userHandler = handlers.NewUserHandler(app.repo)
 	app.followHandler = handlers.NewFollowHandler(app.repo)
 
 	// 認証ミドルウェアの初期化

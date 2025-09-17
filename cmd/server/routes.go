@@ -78,7 +78,7 @@ func (app *Application) setupPageRoutes(r chi.Router) {
 	r.Get("/profile", app.withAuth(profileHandler.Profile))
 	r.Get("/profile/edit", app.withAuth(profileHandler.EditForm))
 	r.Get("/profile/view", app.withAuth(profileHandler.ViewProfile))
-	r.Get("/users/{uuid}", app.withOptionalAuth(profileHandler.UserProfile))
+	r.Get("/users/{uuid}", app.withOptionalAuth(app.userHandler.Show))
 }
 
 func (app *Application) setupRoomRoutes(r chi.Router) {
@@ -169,7 +169,7 @@ func (app *Application) setupAPIRoutes(r chi.Router) {
 		ar.Get("/game-versions/active", app.gameVersionHandler.GetActiveGameVersionsAPI)
 
 		// 他のユーザーのプロフィール関連API（認証オプション）
-		ar.Get("/users/{uuid}", app.withOptionalAuth(app.profileHandler.GetUserProfile))
+		ar.Get("/users/{uuid}", app.withOptionalAuth(app.userHandler.GetUserProfile))
 		ar.Get("/users/{uuid}/rooms", app.withOptionalAuth(app.profileHandler.Rooms))
 		ar.Get("/users/{uuid}/activity", app.withOptionalAuth(app.profileHandler.Activity))
 		ar.Get("/users/{uuid}/followers", app.withOptionalAuth(app.profileHandler.Followers))
