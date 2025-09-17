@@ -37,35 +37,40 @@
 
 ```
 .
-├── cmd/                    # アプリケーションエントリーポイント
-│   ├── server/            # Webサーバー
-│   ├── migrate/           # DBマイグレーション
-│   └── seed/              # シードデータ投入
-├── internal/              # 内部パッケージ
-│   ├── config/            # アプリケーション設定
-│   ├── database/          # DB接続・設定
-│   ├── handlers/          # HTTPハンドラー
-│   ├── models/            # データモデル
-│   ├── repository/        # データアクセス層
-│   └── utils/             # ユーティリティ関数
-├── templates/             # HTMLテンプレート
-│   ├── layouts/           # レイアウトテンプレート
-│   ├── pages/             # ページテンプレート
-│   └── components/        # 共通コンポーネント
-├── static/                # 静的ファイル
-│   ├── css/              # スタイルシート
-│   ├── js/               # JavaScript
-│   │   └── vendor/       # サードパーティライブラリ
-│   └── images/           # 画像ファイル
-│       └── icons/        # アイコン画像
-├── scripts/               # DBスクリプト
-├── docs/                  # ドキュメント
-│   └── logs/             # 実装ログ
-├── bin/                   # ビルド済みバイナリ
-├── Makefile              # ビルドタスク
-├── compose.yml           # Docker Compose設定
-├── CLAUDE.md             # AI開発支援ガイド
-└── README.md
+├── cmd/                     # アプリケーションエントリーポイント
+│   ├── server/              # Webサーバー起動コマンド
+│   ├── migrate/             # DBマイグレーション実行
+│   ├── seed/                # 基本シード投入
+│   ├── seed_rooms/          # ルーム初期データ投入
+│   ├── check_db/            # DB接続診断ユーティリティ
+│   └── test_password/       # パスワード検証ハーネス
+├── internal/                # ドメインロジックパッケージ
+│   ├── config/              # 設定ロード
+│   ├── handlers/            # HTTPハンドラー
+│   ├── infrastructure/      # 外部サービス連携
+│   ├── middleware/          # 共通ミドルウェア
+│   ├── models/              # GORMエンティティ
+│   ├── repository/          # 永続化レイヤー
+│   ├── services/            # ビジネスロジック
+│   ├── sse/                 # サーバー送信イベント処理
+│   ├── storage/             # ストレージ連携
+│   └── utils/               # 共通ヘルパー
+├── templates/               # HTMLテンプレート
+│   ├── layouts/             # レイアウトテンプレート
+│   ├── pages/               # ページテンプレート
+│   └── components/          # 再利用コンポーネント
+├── static/                  # 静的アセット
+│   ├── css/                 # スタイルシート
+│   ├── js/                  # JavaScript
+│   ├── images/              # 画像ファイル
+│   └── robots.txt           # クローラ設定
+├── docs/                    # ドキュメント
+│   ├── implement_logs/      # 実装ログ
+│   └── ...                  # 設計・運用資料
+├── scripts/                 # メンテナンススクリプト
+├── terraform/               # インフラ定義
+├── bin/                     # ビルド成果物
+└── tmp/                     # 開発用一時ファイル
 ```
 
 ## 開発環境のセットアップ
