@@ -125,6 +125,8 @@ func renderTemplate(w http.ResponseWriter, templateName string, data TemplateDat
 		filepath.Join("templates", "components", "profile_rooms.tmpl"),
 		filepath.Join("templates", "components", "profile_followers.tmpl"),
 		filepath.Join("templates", "components", "profile_following.tmpl"),
+		filepath.Join("templates", "components", "follow_buttons.tmpl"),
+		filepath.Join("templates", "components", "block_report_buttons.tmpl"),
 		filepath.Join("templates", "pages", templateName),
 	)
 	if err != nil {
@@ -139,6 +141,7 @@ func renderTemplate(w http.ResponseWriter, templateName string, data TemplateDat
 		return
 	}
 }
+
 
 func isValidEmail(email string) bool {
 	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
@@ -186,12 +189,15 @@ func isValidEmail(email string) bool {
 func renderPartialTemplate(w http.ResponseWriter, templateName string, data interface{}) error {
 	funcMap := getCommonFuncMap()
 
-	// プロフィール関連のテンプレートの場合は、関連するテンプレートも一緒に読み込む
-	templateFiles := []string{filepath.Join("templates", "components", templateName)}
-	if strings.HasPrefix(templateName, "profile_") {
+	// テンプレート名からファイル名を生成
+	templateFileName := templateName + ".tmpl"
+	templateFiles := []string{filepath.Join("templates", "components", templateFileName)}
+
+	// profile_card_contentの場合は、依存するテンプレートも読み込む
+	if templateName == "profile_card_content" {
 		templateFiles = append(templateFiles,
-			filepath.Join("templates", "components", "profile_view.tmpl"),
-			filepath.Join("templates", "components", "profile_edit_form.tmpl"),
+			filepath.Join("templates", "components", "follow_buttons.tmpl"),
+			filepath.Join("templates", "components", "block_report_buttons.tmpl"),
 		)
 	}
 
@@ -201,9 +207,8 @@ func renderPartialTemplate(w http.ResponseWriter, templateName string, data inte
 	}
 
 	w.Header().Set("Content-Type", "text/html")
-	// ".tmpl"を除去してテンプレート名を取得
-	templateBaseName := templateName[:len(templateName)-5]
-	err = tmpl.ExecuteTemplate(w, templateBaseName, data)
+	// テンプレート名でテンプレートを実行
+	err = tmpl.ExecuteTemplate(w, templateName, data)
 	if err != nil {
 		return fmt.Errorf("template execution error: %w", err)
 	}

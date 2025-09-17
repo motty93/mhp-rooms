@@ -1,0 +1,48 @@
+{{ if and .IsAuthenticated (not .IsOwnProfile) }}
+  {{ if eq .RelationStatus "none" }}
+    <div class="w-full space-y-2">
+      <button
+        hx-post="/api/users/{{ .User.ID }}/follow"
+        hx-target="#profile-card-content"
+        hx-swap="innerHTML"
+        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2">
+        <i class="fa-solid fa-user-plus"></i>
+        <span>フォローする</span>
+      </button>
+    </div>
+  {{ else if eq .RelationStatus "following" }}
+    <div class="w-full space-y-2">
+      <button
+        onclick="showUnfollowModal('{{ .User.ID }}', '{{ .User.DisplayName }}')"
+        class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2.5 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2">
+        <i class="fa-solid fa-user-check"></i>
+        <span>フォロー中</span>
+      </button>
+    </div>
+  {{ else if eq .RelationStatus "follower" }}
+    <div class="w-full space-y-2">
+      <button
+        hx-post="/api/users/{{ .User.ID }}/follow"
+        hx-target="#profile-card-content"
+        hx-swap="innerHTML"
+        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2">
+        <i class="fa-solid fa-user-plus"></i>
+        <span>フォローバックする</span>
+      </button>
+    </div>
+  {{ else if eq .RelationStatus "mutual" }}
+    <div class="w-full space-y-2">
+      <div class="text-center">
+        <span class="inline-block bg-green-100 text-green-800 text-sm px-3 py-1 rounded-full mb-2">
+          <i class="fa-solid fa-users"></i> フレンド
+        </span>
+      </div>
+      <button
+        onclick="showUnfollowModal('{{ .User.ID }}', '{{ .User.DisplayName }}', true)"
+        class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2">
+        <i class="fa-solid fa-user-minus"></i>
+        <span>フレンド解除</span>
+      </button>
+    </div>
+  {{ end }}
+{{ end }}

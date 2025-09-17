@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -67,15 +66,8 @@ func (fh *FollowHandler) FollowUser(w http.ResponseWriter, r *http.Request) {
 	// 既にフォロー関係があるかチェック
 	existingFollow, err := fh.repo.UserFollow.GetFollow(followerUserID, followingUserID)
 	if err == nil && existingFollow != nil {
-		// 既にフォローしている場合
-		response := map[string]interface{}{
-			"message":      "既にフォローしています",
-			"is_following": true,
-			"status":       existingFollow.Status,
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		// 既にフォローしている場合でもプロフィールカードのHTMLを返す
+		fh.returnProfileCardHTML(w, r, followingUser, dbUser)
 		return
 	}
 
@@ -98,16 +90,8 @@ func (fh *FollowHandler) FollowUser(w http.ResponseWriter, r *http.Request) {
 		// アクティビティ記録失敗はメイン処理に影響させない
 	}
 
-	// 成功レスポンス
-	response := map[string]interface{}{
-		"message":      fmt.Sprintf("%sさんをフォローしました", followingUser.DisplayName),
-		"is_following": true,
-		"status":       "accepted",
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(response)
+	// プロフィールカードのHTMLを返す
+	fh.returnProfileCardHTML(w, r, followingUser, dbUser)
 }
 
 // UnfollowUser ユーザーのフォローを解除する
@@ -146,19 +130,12 @@ func (fh *FollowHandler) UnfollowUser(w http.ResponseWriter, r *http.Request) {
 	// フォロー対象のユーザー情報を取得（アクティビティ記録用）
 	followingUser, userErr := fh.repo.User.FindUserByID(followingUserID)
 
-	// 成功レスポンス
-	response := map[string]interface{}{
-		"message":      "フォローを解除しました",
-		"is_following": false,
-	}
-
+	// フォロー解除後のプロフィールカードのHTMLを返す
 	if userErr == nil && followingUser != nil {
-		response["message"] = fmt.Sprintf("%sさんのフォローを解除しました", followingUser.DisplayName)
+		fh.returnProfileCardHTML(w, r, followingUser, dbUser)
+	} else {
+		http.Error(w, "ユーザー情報の取得に失敗しました", http.StatusInternalServerError)
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
 }
 
 // GetFollowStatus フォロー状態を取得する
@@ -217,4 +194,61 @@ func (fh *FollowHandler) GetFollowStatus(w http.ResponseWriter, r *http.Request)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+
+// returnProfileCardHTML プロフィールカードのHTMLを返す
+func (fh *FollowHandler) returnProfileCardHTML(w http.ResponseWriter, r *http.Request, targetUser *models.User, currentUser *models.User) {
+	// フォロー関係をチェック
+	relationStatus := fh.checkRelationStatus(currentUser.ID, targetUser.ID)
+
+	profileData := struct {
+		User            *models.User
+		IsOwnProfile    bool
+		IsAuthenticated bool
+		RelationStatus  string
+		AvatarURL       string
+	}{
+		User:            targetUser,
+		IsOwnProfile:    false,
+		IsAuthenticated: currentUser != nil,
+		RelationStatus:  relationStatus,
+		AvatarURL:       fh.getAvatarURL(targetUser),
+	}
+
+	if err := renderPartialTemplate(w, "profile_card_content.tmpl", profileData); err != nil {
+		http.Error(w, "テンプレートエラー: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+// checkRelationStatus 2人のユーザー間の関係性をチェック（user.goと同じロジック）
+func (fh *FollowHandler) checkRelationStatus(currentUserID, targetUserID uuid.UUID) string {
+	// 相互フォローのチェック
+	isMutual, err := fh.repo.UserFollow.IsMutualFollow(currentUserID, targetUserID)
+	if err == nil && isMutual {
+		return "mutual"
+	}
+
+	// currentUserがtargetUserをフォローしているかチェック
+	follow, err := fh.repo.UserFollow.GetFollow(currentUserID, targetUserID)
+	if err == nil && follow != nil && follow.Status == models.FollowStatusAccepted {
+		return "following"
+	}
+
+	// targetUserがcurrentUserをフォローしているかチェック
+	follow, err = fh.repo.UserFollow.GetFollow(targetUserID, currentUserID)
+	if err == nil && follow != nil && follow.Status == models.FollowStatusAccepted {
+		return "follower"
+	}
+
+	return "none"
+}
+
+// ヘルパー関数
+func (fh *FollowHandler) getAvatarURL(user *models.User) string {
+	if user.AvatarURL != nil && *user.AvatarURL != "" {
+		return *user.AvatarURL
+	}
+	return "/static/images/default-avatar.png"
 }

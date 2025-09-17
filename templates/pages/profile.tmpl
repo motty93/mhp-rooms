@@ -33,46 +33,8 @@
     <aside id="profile-card" class="lg:col-span-1">
       <div class="bg-white rounded-xl p-6 shadow-md sticky top-8 border border-gray-200">
         <div id="profile-card-content">
-          {{ if $profileData.IsOwnProfile }}
-            {{ template "profile_view" map "User" $profileData.User "FavoriteGames" $profileData.FavoriteGames "PlayTimes" $profileData.PlayTimes "FollowerCount" $profileData.FollowerCount }}
-          {{ else }}
-            <!-- 他のユーザーのプロフィールの場合は従来通り -->
-            <div class="flex flex-col items-center">
-              <!-- アバター -->
-              <div class="relative">
-                {{ if $profileData.User.AvatarURL }}
-                <img
-                  class="w-32 h-32 rounded-full mb-4 border-4 border-white object-cover shadow-sm"
-                  src="{{ stringPtr $profileData.User.AvatarURL }}"
-                  alt="{{ if $profileData.User.DisplayName }}{{ $profileData.User.DisplayName }}{{ else if $profileData.User.Username }}{{ $profileData.User.Username }}{{ else }}{{ $profileData.User.DisplayName }}{{ end }}のアバター"
-                />
-                {{ else }}
-                <img
-                  class="w-32 h-32 rounded-full mb-4 border-4 border-white object-cover shadow-sm"
-                  src="/static/images/default-avatar.png"
-                  alt="デフォルトアバター"
-                />
-                {{ end }}
-                <span class="absolute bottom-4 right-2 bg-green-500 w-5 h-5 rounded-full border-2 border-white" title="オンライン"></span>
-              </div>
-              <!-- ユーザー名とその他の情報 -->
-              <h2 class="text-2xl font-bold text-gray-800">{{ $profileData.User.DisplayName }}</h2>
-              {{ if $profileData.User.Bio }}
-              <p class="text-center text-gray-600 mb-6 text-sm">{{ $profileData.User.Bio }}</p>
-              {{ end }}
-              <!-- フォロー・メッセージボタン -->
-              <div class="w-full space-y-2">
-                <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2">
-                  <i class="fa-solid fa-user-plus"></i>
-                  <span>フォローする</span>
-                </button>
-                <button class="w-full bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 font-bold py-2.5 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2">
-                  <i class="fa-solid fa-envelope"></i>
-                  <span>メッセージを送る</span>
-                </button>
-              </div>
-            </div>
-          {{ end }}
+          <!-- 自分のプロフィール表示 -->
+          {{ template "profile_view" map "User" $profileData.User "FavoriteGames" $profileData.FavoriteGames "PlayTimes" $profileData.PlayTimes "FollowerCount" $profileData.FollowerCount }}
         </div>
       </div>
     </aside>

@@ -138,137 +138,6 @@ func (ph *ProfileHandler) Profile(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "profile.tmpl", data)
 }
 
-// UserProfile 他のユーザーのプロフィールページを表示
-func (ph *ProfileHandler) UserProfile(w http.ResponseWriter, r *http.Request) {
-	userIDStr := chi.URLParam(r, "uuid")
-	userID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		http.Error(w, "無効なユーザーIDです", http.StatusBadRequest)
-		return
-	}
-
-	// データベースからユーザー情報を取得
-	user, err := ph.repo.User.FindUserByID(userID)
-	if err != nil {
-		http.Error(w, "ユーザーが見つかりません", http.StatusNotFound)
-		return
-	}
-
-	// 現在のユーザーと比較して自分のプロフィールかどうか判定
-	currentUser := getUserFromContext(r.Context())
-	isOwnProfile := false
-	if currentUser != nil && currentUser.ID == user.ID {
-		isOwnProfile = true
-	}
-
-	// お気に入りゲームとプレイ時間帯を取得
-	favoriteGames, _ := user.GetFavoriteGames()
-	playTimes, _ := user.GetPlayTimes()
-
-	// フォロワー数を取得
-	var followerCount int64 = 25
-	if ph.repo != nil && ph.repo.UserFollow != nil {
-		followers, err := ph.repo.UserFollow.GetFollowers(user.ID)
-		if err == nil {
-			followerCount = int64(len(followers))
-		}
-	}
-
-	// 実際に作成した部屋を取得
-	rooms, err := ph.repo.Room.GetRoomsByHostUser(user.ID, 10, 0) // 最大10件取得
-	var roomSummaries []RoomSummary
-	if err == nil {
-		for _, room := range rooms {
-			roomSummaries = append(roomSummaries, roomToSummary(room))
-		}
-	}
-
-	profileData := ProfileData{
-		User:          user,
-		IsOwnProfile:  isOwnProfile,
-		Activities:    ph.getMockActivities(),
-		Rooms:         roomSummaries,
-		Followers:     ph.getMockFollowers(),
-		FollowerCount: followerCount,
-		FavoriteGames: favoriteGames,
-		PlayTimes:     playTimes,
-	}
-
-	data := TemplateData{
-		Title:    user.DisplayName + "のプロフィール",
-		PageData: profileData,
-	}
-
-	renderTemplate(w, "profile.tmpl", data)
-}
-
-func (ph *ProfileHandler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
-	userIDStr := chi.URLParam(r, "uuid")
-	userID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "無効なユーザーIDです")
-		return
-	}
-
-	user, err := ph.repo.User.FindUserByID(userID)
-	if err != nil {
-		respondWithError(w, http.StatusNotFound, "ユーザーが見つかりません")
-		return
-	}
-
-	// 現在のユーザーと比較
-	currentUser := getUserFromContext(r.Context())
-	isOwnProfile := false
-	if currentUser != nil && currentUser.ID == user.ID {
-		isOwnProfile = true
-	}
-
-	// お気に入りゲームを取得
-	favoriteGames, err := user.GetFavoriteGames()
-	if err != nil {
-		ph.logger.Printf("お気に入りゲーム取得エラー: %v", err)
-		favoriteGames = []string{}
-	}
-
-	// プレイ時間帯を取得
-	playTimes, _ := user.GetPlayTimes()
-	if err != nil {
-		ph.logger.Printf("プレイ時間帯取得エラー: %v", err)
-		playTimes = &models.PlayTimes{}
-	}
-
-	// フォロワー数を取得
-	var followerCount int64 = 0
-	if ph.repo != nil && ph.repo.UserFollow != nil {
-		followers, err := ph.repo.UserFollow.GetFollowers(user.ID)
-		if err == nil {
-			followerCount = int64(len(followers))
-		}
-	}
-
-	// 実際に作成した部屋を取得
-	rooms, err := ph.repo.Room.GetRoomsByHostUser(user.ID, 10, 0) // 最大10件取得
-	var roomSummaries []RoomSummary
-	if err == nil {
-		for _, room := range rooms {
-			roomSummaries = append(roomSummaries, roomToSummary(room))
-		}
-	}
-
-	profileData := ProfileData{
-		User:          user,
-		IsOwnProfile:  isOwnProfile,
-		Activities:    ph.getMockActivities(),
-		Rooms:         roomSummaries,
-		Followers:     ph.getMockFollowers(),
-		FollowerCount: followerCount,
-		FavoriteGames: favoriteGames,
-		PlayTimes:     playTimes,
-	}
-
-	respondWithJSON(w, http.StatusOK, profileData)
-}
-
 // EditForm プロフィール編集フォームを返す（htmx用）
 func (ph *ProfileHandler) EditForm(w http.ResponseWriter, r *http.Request) {
 	contextUser := getUserFromContext(r.Context())
@@ -321,8 +190,9 @@ func (ph *ProfileHandler) Activity(w http.ResponseWriter, r *http.Request) {
 	var targetUserID uuid.UUID
 	var err error
 
-	userIDParam := chi.URLParam(r, "userID")
+	userIDParam := chi.URLParam(r, "uuid")
 	if userIDParam != "" {
+		// 他のユーザーのプロフィール
 		targetUserID, err = uuid.Parse(userIDParam)
 		if err != nil {
 			ph.logger.Printf("無効なユーザーID: %s, エラー: %v", userIDParam, err)
@@ -340,12 +210,27 @@ func (ph *ProfileHandler) Activity(w http.ResponseWriter, r *http.Request) {
 		targetUserID = dbUser.ID
 	}
 
-	// データベースからアクティビティを取得
-	userActivities, err := ph.repo.UserActivity.GetUserActivities(targetUserID, 20, 0)
+	// データベースからアクティビティを取得（過去2週間分）
+	userActivities, err := ph.repo.UserActivity.GetUserActivities(targetUserID, 100, 0)
 	if err != nil {
 		ph.logger.Printf("アクティビティ取得エラー: %v", err)
 		// エラー時はフォールバック（空の配列を返す）
 		userActivities = []models.UserActivity{}
+	}
+
+	// 過去2週間のアクティビティのみフィルタリング
+	twoWeeksAgo := time.Now().AddDate(0, 0, -14)
+	var filteredActivities []models.UserActivity
+	for _, activity := range userActivities {
+		if activity.CreatedAt.After(twoWeeksAgo) {
+			filteredActivities = append(filteredActivities, activity)
+		}
+	}
+	userActivities = filteredActivities
+
+	// 最大20件に制限
+	if len(userActivities) > 20 {
+		userActivities = userActivities[:20]
 	}
 
 	// models.UserActivityをActivity構造体に変換
@@ -367,7 +252,7 @@ func (ph *ProfileHandler) Activity(w http.ResponseWriter, r *http.Request) {
 		Activities: displayActivities,
 	}
 
-	if err := renderPartialTemplate(w, "profile_activity.tmpl", data); err != nil {
+	if err := renderPartialTemplate(w, "profile_activity", data); err != nil {
 		ph.logger.Printf("テンプレートレンダリングエラー: %v", err)
 		http.Error(w, "テンプレートの描画に失敗しました", http.StatusInternalServerError)
 		return
@@ -432,7 +317,7 @@ func (ph *ProfileHandler) Rooms(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 部分テンプレートを使用してレンダリング
-	if err := renderPartialTemplate(w, "profile_rooms.tmpl", data); err != nil {
+	if err := renderPartialTemplate(w, "profile_rooms", data); err != nil {
 		ph.logger.Printf("テンプレートレンダリングエラー: %v", err)
 		http.Error(w, "テンプレートの描画に失敗しました", http.StatusInternalServerError)
 		return
@@ -441,7 +326,33 @@ func (ph *ProfileHandler) Rooms(w http.ResponseWriter, r *http.Request) {
 
 // Following フォロー中タブコンテンツを返す（htmx用）
 func (ph *ProfileHandler) Following(w http.ResponseWriter, r *http.Request) {
-	if err := renderPartialTemplate(w, "profile_following.tmpl", nil); err != nil {
+	// URLパラメータからユーザーIDを取得（他ユーザーのプロフィール表示用）
+	var targetUserID uuid.UUID
+	var err error
+
+	userIDParam := chi.URLParam(r, "uuid")
+	if userIDParam != "" {
+		// 他のユーザーのプロフィール
+		targetUserID, err = uuid.Parse(userIDParam)
+		if err != nil {
+			ph.logger.Printf("無効なユーザーID: %s, エラー: %v", userIDParam, err)
+			http.Error(w, "無効なユーザーIDです", http.StatusBadRequest)
+			return
+		}
+	} else {
+		// URLパラメータがない場合は自分のプロフィール
+		dbUser, exists := middleware.GetDBUserFromContext(r.Context())
+		if !exists || dbUser == nil {
+			ph.logger.Printf("認証情報が取得できません")
+			http.Error(w, "認証されていません", http.StatusUnauthorized)
+			return
+		}
+		targetUserID = dbUser.ID
+	}
+
+	ph.logger.Printf("フォロー中データを取得中 - ユーザーID: %s", targetUserID.String())
+
+	if err := renderPartialTemplate(w, "profile_following", nil); err != nil {
 		ph.logger.Printf("テンプレートレンダリングエラー: %v", err)
 		http.Error(w, "テンプレートの描画に失敗しました", http.StatusInternalServerError)
 		return
@@ -450,7 +361,33 @@ func (ph *ProfileHandler) Following(w http.ResponseWriter, r *http.Request) {
 
 // Followers フォロワータブコンテンツを返す（htmx用）
 func (ph *ProfileHandler) Followers(w http.ResponseWriter, r *http.Request) {
-	if err := renderPartialTemplate(w, "profile_followers.tmpl", nil); err != nil {
+	// URLパラメータからユーザーIDを取得（他ユーザーのプロフィール表示用）
+	var targetUserID uuid.UUID
+	var err error
+
+	userIDParam := chi.URLParam(r, "uuid")
+	if userIDParam != "" {
+		// 他のユーザーのプロフィール
+		targetUserID, err = uuid.Parse(userIDParam)
+		if err != nil {
+			ph.logger.Printf("無効なユーザーID: %s, エラー: %v", userIDParam, err)
+			http.Error(w, "無効なユーザーIDです", http.StatusBadRequest)
+			return
+		}
+	} else {
+		// URLパラメータがない場合は自分のプロフィール
+		dbUser, exists := middleware.GetDBUserFromContext(r.Context())
+		if !exists || dbUser == nil {
+			ph.logger.Printf("認証情報が取得できません")
+			http.Error(w, "認証されていません", http.StatusUnauthorized)
+			return
+		}
+		targetUserID = dbUser.ID
+	}
+
+	ph.logger.Printf("フォロワーデータを取得中 - ユーザーID: %s", targetUserID.String())
+
+	if err := renderPartialTemplate(w, "profile_followers", nil); err != nil {
 		ph.logger.Printf("テンプレートレンダリングエラー: %v", err)
 		http.Error(w, "テンプレートの描画に失敗しました", http.StatusInternalServerError)
 		return
@@ -806,7 +743,7 @@ func (ph *ProfileHandler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusInternalServerError, "プロフィール情報の更新に失敗しました")
 		return
 	}
-	
+
 	// キャッシュをクリア（jwtAuthが設定されている場合）
 	if ph.jwtAuth != nil && ph.jwtAuth.GetUserCache() != nil {
 		ph.logger.Printf("ユーザーキャッシュをクリア: %s", user.ID)
