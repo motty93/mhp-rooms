@@ -22,7 +22,9 @@
           @click="$store.mobileMenu.toggle()"
         >
           <div class="text-gray-800 font-bold text-base">
-            {{ if .PageData.Room.HasPassword }}🔑 {{ end }}{{ .PageData.Room.Name }}
+            {{ if .PageData.Room.HasPassword }}
+              🔑
+            {{ end }}{{ .PageData.Room.Name }}
           </div>
           <div class="text-gray-500 text-sm">
             参加者 {{ .PageData.MemberCount }}/4
@@ -89,9 +91,15 @@
         >
           <div class="flex-1 min-w-0">
             <div class="flex items-center space-x-3 mb-2">
-              <img src="/static/images/icon.png" alt="MonHub" class="w-8 h-8 flex-shrink-0" />
+              <img
+                src="/static/images/icon.png"
+                alt="MonHub"
+                class="w-8 h-8 flex-shrink-0"
+              />
               <h2 class="text-xl font-bold text-gray-800 truncate">
-                {{ if .PageData.Room.HasPassword }}🔑 {{ end }}{{ .PageData.Room.Name }}
+                {{ if .PageData.Room.HasPassword }}
+                  🔑
+                {{ end }}{{ .PageData.Room.Name }}
               </h2>
             </div>
             <!-- 部屋詳細情報（モバイル版） -->
@@ -149,12 +157,14 @@
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                />
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                />
               </svg>
               <span>部屋を編集</span>
             </button>
@@ -255,20 +265,35 @@
           </div>
           <div class="flex items-center justify-between">
             <div class="text-gray-800 font-bold text-lg">
-              {{ if .PageData.Room.HasPassword }}🔑 {{ end }}{{ .PageData.Room.Name }}
+              {{ if .PageData.Room.HasPassword }}
+                🔑
+              {{ end }}{{ .PageData.Room.Name }}
             </div>
             <!-- PC版のみ：ホストの場合に設定アイコンを表示 -->
-            <button 
+            <button
               x-show="isHost && $store.auth.initialized && $store.auth.isAuthenticated"
               @click="openSettingsModal()"
               class="hidden md:block text-gray-600 hover:text-gray-800 p-1 rounded hover:bg-gray-100 transition-colors"
               title="部屋設定を変更"
             >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                />
               </svg>
             </button>
           </div>
@@ -325,12 +350,22 @@
               :class="{'border-blue-500': currentUserId === '{{ $member.User.SupabaseUserID }}', 'border-gray-200': currentUserId !== '{{ $member.User.SupabaseUserID }}'}"
             >
               <img
-                src="/static/images/default-avatar.png"
+                src="{{ if and $member.User.AvatarURL (ne (stringPtr $member.User.AvatarURL) "") }}
+                  {{ stringPtr $member.User.AvatarURL }}
+                {{ else }}
+                  /static/images/default-avatar.png
+                {{ end }}"
                 class="w-8 h-8 rounded-full object-cover"
                 alt="ユーザーアバター"
               />
               <span class="text-gray-800 text-sm font-medium">
-                {{ if $member.User.DisplayName }}{{ $member.User.DisplayName }}{{ else if $member.User.Username }}{{ $member.User.Username }}{{ else }}{{ $member.DisplayName }}{{ end }}
+                {{ if $member.User.DisplayName }}
+                  {{ $member.User.DisplayName }}
+                {{ else if $member.User.Username }}
+                  {{ $member.User.Username }}
+                {{ else }}
+                  {{ $member.DisplayName }}
+                {{ end }}
               </span>
               {{ if $member.IsHost }}
                 <span
@@ -574,7 +609,7 @@ function roomDetail() {
 
     async init() {
 
-      
+
       // グローバルインスタンスとして登録
       window.roomDetailInstance = this;
 
@@ -939,16 +974,16 @@ function roomDetail() {
     updateHostStatus() {
       if (this.isAuthenticated && this.currentUserId) {
         this.isHost = this.currentUserId === this.hostUserId;
-        console.log('Host status updated:', { 
-          currentUserId: this.currentUserId, 
-          hostUserId: this.hostUserId, 
-          isHost: this.isHost 
+        console.log('Host status updated:', {
+          currentUserId: this.currentUserId,
+          hostUserId: this.hostUserId,
+          isHost: this.isHost
         });
       } else {
         this.isHost = false;
         console.log('Not authenticated or no current user, isHost set to false');
       }
-      
+
       // 強制的にAlpine.jsの反応を促す
       this.$nextTick(() => {
         this.$el.dispatchEvent(new CustomEvent('host-status-changed'));
@@ -970,7 +1005,7 @@ function roomDetail() {
 
     openSettingsModal() {
       console.log('openSettingsModal called');
-      
+
       // 現在の部屋データで設定フォームを初期化
       const room = {
         name: '{{ .PageData.Room.Name }}',
@@ -980,9 +1015,9 @@ function roomDetail() {
         target_monster: '{{ .PageData.Room.GetTargetMonster }}',
         rank_requirement: '{{ .PageData.Room.GetRankRequirement }}'
       };
-      
+
       console.log('Room data:', room);
-      
+
       this.settingsData = {
         name: room.name || '',
         description: room.description || '',
@@ -992,10 +1027,10 @@ function roomDetail() {
         rank_requirement: (room.rank_requirement && room.rank_requirement !== '<nil>') ? room.rank_requirement : '',
         password: '' // パスワードは常に空で初期化
       };
-      
+
       this.errors = {};
       this.showSettingsModal = true;
-      
+
       console.log('showSettingsModal set to:', this.showSettingsModal);
       console.log('settingsData:', this.settingsData);
     },
@@ -1103,13 +1138,13 @@ function roomDetail() {
         }
 
         const result = await response.json();
-        
+
         // 成功メッセージを表示
         alert('部屋設定を更新しました');
-        
+
         // モーダルを閉じる
         this.closeSettingsModal();
-        
+
         // ページをリロードして最新の情報を表示
         window.location.reload();
       } catch (error) {

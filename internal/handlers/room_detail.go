@@ -135,12 +135,10 @@ func (h *RoomDetailHandler) RoomDetail(w http.ResponseWriter, r *http.Request) {
 
 // renderRoomDetailTemplate は部屋詳細専用のテンプレートレンダリング関数
 func renderRoomDetailTemplate(w http.ResponseWriter, templateName string, data interface{}) {
-	funcMap := template.FuncMap{
-		"gameVersionColor": utils.GetGameVersionColor,
-		"gameVersionIcon": func(code string) template.HTML {
-			return template.HTML(utils.GetGameVersionIcon(code))
-		},
-		"gameVersionAbbr": utils.GetGameVersionAbbreviation,
+	funcMap := getCommonFuncMap()
+	// room_detail専用の関数を追加
+	funcMap["gameVersionIcon"] = func(code string) template.HTML {
+		return template.HTML(utils.GetGameVersionIcon(code))
 	}
 
 	tmpl, err := template.New("").Funcs(funcMap).ParseFiles(

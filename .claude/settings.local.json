@@ -111,7 +111,8 @@
       "Bash(gh issue view:*)",
       "mcp__playwright__browser_tab_new",
       "mcp__serena__list_memories",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(ENV=development make run)"
     ],
     "deny": []
   }
