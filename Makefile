@@ -81,10 +81,10 @@ setup: deps container-up migrate-dev seeds
 	@echo ""
 	@echo "アクセスURL: http://localhost:8080"
 
-# Docker開発環境コマンド（app以外のコンテナのみ）
+# Docker開発環境コマンド（app/dbコンテナ）
 container-up:
-	@echo "DBコンテナを起動中..."
-	@docker compose up -d
+	@echo "Dockerコンテナ(app/db)を起動中..."
+	@docker compose -f compose.db.yml up -d
 
 container-down:
 	@echo "コンテナを停止中..."

@@ -13,26 +13,6 @@ services:
     networks:
       - mhp-network
 
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    env_file:
-      - .env
-    environment:
-      DB_HOST: db
-      DATABASE_URL: postgres://mhp_user:mhp_password@db:5432/mhp_rooms_dev?sslmode=disable
-    ports:
-      - "8080:8080"
-    depends_on:
-      - db
-    volumes:
-      - ./templates:/app/templates
-      - ./static:/app/static
-      - ./.env:/app/.env:ro
-    networks:
-      - mhp-network
-
 volumes:
   postgres_data:
 
