@@ -45,6 +45,7 @@ lint:
 fmt:
 	@echo "コードをフォーマット中..."
 	@go fmt ./...
+	@prettier --write templates/**/*.tmpl
 
 # ビルド成果物をクリーンアップ
 clean:

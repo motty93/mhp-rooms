@@ -40,11 +40,13 @@
           <i class="fa-solid fa-clock w-5 mr-2 text-gray-400"></i>
           プレイ時間帯:
           {{ if .PlayTimes.Weekday }}
-            平日 {{ .PlayTimes.Weekday }}
+            平日
+            {{ .PlayTimes.Weekday }}
           {{ end }}{{ if and .PlayTimes.Weekday .PlayTimes.Weekend }}
             ,
           {{ end }}{{ if .PlayTimes.Weekend }}
-            休日 {{ .PlayTimes.Weekend }}
+            休日
+            {{ .PlayTimes.Weekend }}
           {{ end }}
         </div>
       {{ end }}
