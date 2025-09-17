@@ -2,7 +2,7 @@
   "plugins": ["prettier-plugin-go-template"],
   "overrides": [
     {
-      "files": "*.tmpl",
+      "files": ["*.tmpl", "*.gohtml", "*.tpl", "*.html"],
       "options": {
         "parser": "go-template"
       }
@@ -12,4 +12,3 @@
   "semi": false,
   "singleQuote": true
 }
-
