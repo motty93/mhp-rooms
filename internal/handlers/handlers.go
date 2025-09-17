@@ -189,9 +189,12 @@ func isValidEmail(email string) bool {
 func renderPartialTemplate(w http.ResponseWriter, templateName string, data interface{}) error {
 	funcMap := getCommonFuncMap()
 
-	// profile_card_content.tmplの場合は、依存するテンプレートも読み込む
-	templateFiles := []string{filepath.Join("templates", "components", templateName)}
-	if templateName == "profile_card_content.tmpl" {
+	// テンプレート名からファイル名を生成
+	templateFileName := templateName + ".tmpl"
+	templateFiles := []string{filepath.Join("templates", "components", templateFileName)}
+
+	// profile_card_contentの場合は、依存するテンプレートも読み込む
+	if templateName == "profile_card_content" {
 		templateFiles = append(templateFiles,
 			filepath.Join("templates", "components", "follow_buttons.tmpl"),
 			filepath.Join("templates", "components", "block_report_buttons.tmpl"),
@@ -204,7 +207,7 @@ func renderPartialTemplate(w http.ResponseWriter, templateName string, data inte
 	}
 
 	w.Header().Set("Content-Type", "text/html")
-	// ファイル名からベース名を取得
+	// テンプレート名でテンプレートを実行
 	err = tmpl.ExecuteTemplate(w, templateName, data)
 	if err != nil {
 		return fmt.Errorf("template execution error: %w", err)

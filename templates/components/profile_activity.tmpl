@@ -2,17 +2,25 @@
 <div>
     <h3 class="text-xl font-bold mb-4 text-gray-800">最近の活動履歴</h3>
     <div class="space-y-4">
-        {{range .Activities}}
-        <div class="bg-gray-50 p-4 rounded-lg flex justify-between items-center hover:bg-gray-100 transition-colors border border-gray-200">
-            <div class="flex items-center space-x-4">
-                <i class="fa-solid {{.Icon}} {{.IconColor}}"></i>
-                <div>
-                    <p class="font-semibold text-gray-800">{{.Title}}</p>
-                    <p class="text-sm text-gray-500">{{.Description}}</p>
+        {{if .Activities}}
+            {{range .Activities}}
+            <div class="bg-gray-50 p-4 rounded-lg flex justify-between items-center hover:bg-gray-100 transition-colors border border-gray-200">
+                <div class="flex items-center space-x-4">
+                    <i class="fa-solid {{.Icon}} {{.IconColor}}"></i>
+                    <div>
+                        <p class="font-semibold text-gray-800">{{.Title}}</p>
+                        <p class="text-sm text-gray-500">{{.Description}}</p>
+                    </div>
                 </div>
+                <span class="text-xs text-gray-400">{{.TimeAgo}}</span>
             </div>
-            <span class="text-xs text-gray-400">{{.TimeAgo}}</span>
-        </div>
+            {{end}}
+        {{else}}
+            <div class="text-center py-8">
+                <i class="fa-solid fa-history text-gray-300 text-4xl mb-3"></i>
+                <p class="text-gray-500">まだ活動履歴がありません</p>
+                <p class="text-sm text-gray-400 mt-1">部屋の作成や参加などの活動があるとここに表示されます</p>
+            </div>
         {{end}}
     </div>
 </div>

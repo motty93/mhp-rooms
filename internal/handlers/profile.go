@@ -210,12 +210,27 @@ func (ph *ProfileHandler) Activity(w http.ResponseWriter, r *http.Request) {
 		targetUserID = dbUser.ID
 	}
 
-	// データベースからアクティビティを取得
-	userActivities, err := ph.repo.UserActivity.GetUserActivities(targetUserID, 20, 0)
+	// データベースからアクティビティを取得（過去2週間分）
+	userActivities, err := ph.repo.UserActivity.GetUserActivities(targetUserID, 100, 0)
 	if err != nil {
 		ph.logger.Printf("アクティビティ取得エラー: %v", err)
 		// エラー時はフォールバック（空の配列を返す）
 		userActivities = []models.UserActivity{}
+	}
+
+	// 過去2週間のアクティビティのみフィルタリング
+	twoWeeksAgo := time.Now().AddDate(0, 0, -14)
+	var filteredActivities []models.UserActivity
+	for _, activity := range userActivities {
+		if activity.CreatedAt.After(twoWeeksAgo) {
+			filteredActivities = append(filteredActivities, activity)
+		}
+	}
+	userActivities = filteredActivities
+
+	// 最大20件に制限
+	if len(userActivities) > 20 {
+		userActivities = userActivities[:20]
 	}
 
 	// models.UserActivityをActivity構造体に変換
@@ -237,7 +252,7 @@ func (ph *ProfileHandler) Activity(w http.ResponseWriter, r *http.Request) {
 		Activities: displayActivities,
 	}
 
-	if err := renderPartialTemplate(w, "profile_activity.tmpl", data); err != nil {
+	if err := renderPartialTemplate(w, "profile_activity", data); err != nil {
 		ph.logger.Printf("テンプレートレンダリングエラー: %v", err)
 		http.Error(w, "テンプレートの描画に失敗しました", http.StatusInternalServerError)
 		return
@@ -302,7 +317,7 @@ func (ph *ProfileHandler) Rooms(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 部分テンプレートを使用してレンダリング
-	if err := renderPartialTemplate(w, "profile_rooms.tmpl", data); err != nil {
+	if err := renderPartialTemplate(w, "profile_rooms", data); err != nil {
 		ph.logger.Printf("テンプレートレンダリングエラー: %v", err)
 		http.Error(w, "テンプレートの描画に失敗しました", http.StatusInternalServerError)
 		return
@@ -337,7 +352,7 @@ func (ph *ProfileHandler) Following(w http.ResponseWriter, r *http.Request) {
 
 	ph.logger.Printf("フォロー中データを取得中 - ユーザーID: %s", targetUserID.String())
 
-	if err := renderPartialTemplate(w, "profile_following.tmpl", nil); err != nil {
+	if err := renderPartialTemplate(w, "profile_following", nil); err != nil {
 		ph.logger.Printf("テンプレートレンダリングエラー: %v", err)
 		http.Error(w, "テンプレートの描画に失敗しました", http.StatusInternalServerError)
 		return
@@ -372,7 +387,7 @@ func (ph *ProfileHandler) Followers(w http.ResponseWriter, r *http.Request) {
 
 	ph.logger.Printf("フォロワーデータを取得中 - ユーザーID: %s", targetUserID.String())
 
-	if err := renderPartialTemplate(w, "profile_followers.tmpl", nil); err != nil {
+	if err := renderPartialTemplate(w, "profile_followers", nil); err != nil {
 		ph.logger.Printf("テンプレートレンダリングエラー: %v", err)
 		http.Error(w, "テンプレートの描画に失敗しました", http.StatusInternalServerError)
 		return
