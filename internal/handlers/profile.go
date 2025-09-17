@@ -8,28 +8,41 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 	"mhp-rooms/internal/middleware"
 	"mhp-rooms/internal/models"
 	"mhp-rooms/internal/repository"
+	"mhp-rooms/internal/storage"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
 
 type ProfileHandler struct {
 	BaseHandler
-	logger *log.Logger
+	logger   *log.Logger
+	uploader *storage.GCSUploader
+	jwtAuth  *middleware.JWTAuth
 }
 
-func NewProfileHandler(repo *repository.Repository) *ProfileHandler {
+func NewProfileHandler(repo *repository.Repository, jwtAuth *middleware.JWTAuth) *ProfileHandler {
+	// GCSアップローダーを初期化
+	uploader, err := storage.NewGCSUploader(context.Background())
+	if err != nil {
+		log.Printf("GCSアップローダーの初期化に失敗: %v", err)
+		// 開発環境では警告のみ、本番では必須
+		uploader = nil
+	}
+
 	return &ProfileHandler{
 		BaseHandler: BaseHandler{
 			repo: repo,
 		},
-		logger: log.New(log.Writer(), "[ProfileHandler] ", log.LstdFlags),
+		logger:   log.New(log.Writer(), "[ProfileHandler] ", log.LstdFlags),
+		uploader: uploader,
+		jwtAuth:  jwtAuth,
 	}
 }
 
-// ProfileData プロフィールページ用のデータ構造
 type ProfileData struct {
 	User          *models.User      `json:"user"`
 	IsOwnProfile  bool              `json:"isOwnProfile"`
@@ -41,7 +54,6 @@ type ProfileData struct {
 	PlayTimes     *models.PlayTimes `json:"playTimes"`
 }
 
-// Activity アクティビティ情報
 type Activity struct {
 	Type        string `json:"type"`
 	Title       string `json:"title"`
@@ -51,7 +63,6 @@ type Activity struct {
 	IconColor   string `json:"iconColor"`
 }
 
-// RoomSummary 部屋の概要情報
 type RoomSummary struct {
 	ID          uuid.UUID `json:"id"`
 	Name        string    `json:"name"`
@@ -64,7 +75,6 @@ type RoomSummary struct {
 	IsClickable bool      `json:"isClickable"`
 }
 
-// Follower フォロワー情報
 type Follower struct {
 	ID             uuid.UUID `json:"id"`
 	Username       string    `json:"username"`
@@ -73,20 +83,26 @@ type Follower struct {
 	FollowingSince string    `json:"followingSince"`
 }
 
-// Profile 自分のプロフィールページを表示
 func (ph *ProfileHandler) Profile(w http.ResponseWriter, r *http.Request) {
-	user := getUserFromContext(r.Context())
-	if user == nil {
+	contextUser := getUserFromContext(r.Context())
+	if contextUser == nil {
 		// 認証が必要 - 開発環境も本番環境も同じ処理
 		http.Redirect(w, r, "/auth/login", http.StatusFound)
+		return
+	}
+
+	user, err := ph.repo.User.FindUserByID(contextUser.ID)
+	if err != nil {
+		ph.logger.Printf("ユーザー情報取得エラー: %v", err)
+		http.Error(w, "ユーザー情報の取得に失敗しました", http.StatusInternalServerError)
 		return
 	}
 
 	favoriteGames, _ := user.GetFavoriteGames()
 	playTimes, _ := user.GetPlayTimes()
 
-	// フォロワー数を取得（開発環境では25人固定）
-	var followerCount int64 = 25
+	// フォロワー数を取得（開発環境では20人固定）
+	var followerCount int64 = 20
 	if ph.repo != nil && ph.repo.UserFollow != nil {
 		followers, err := ph.repo.UserFollow.GetFollowers(user.ID)
 		if err == nil {
@@ -186,7 +202,6 @@ func (ph *ProfileHandler) UserProfile(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "profile.tmpl", data)
 }
 
-// GetUserProfile API経由でユーザープロフィール情報を取得
 func (ph *ProfileHandler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 	userIDStr := chi.URLParam(r, "uuid")
 	userID, err := uuid.Parse(userIDStr)
@@ -208,9 +223,19 @@ func (ph *ProfileHandler) GetUserProfile(w http.ResponseWriter, r *http.Request)
 		isOwnProfile = true
 	}
 
-	// お気に入りゲームとプレイ時間帯を取得
-	favoriteGames, _ := user.GetFavoriteGames()
+	// お気に入りゲームを取得
+	favoriteGames, err := user.GetFavoriteGames()
+	if err != nil {
+		ph.logger.Printf("お気に入りゲーム取得エラー: %v", err)
+		favoriteGames = []string{}
+	}
+
+	// プレイ時間帯を取得
 	playTimes, _ := user.GetPlayTimes()
+	if err != nil {
+		ph.logger.Printf("プレイ時間帯取得エラー: %v", err)
+		playTimes = &models.PlayTimes{}
+	}
 
 	// フォロワー数を取得
 	var followerCount int64 = 0
@@ -246,8 +271,8 @@ func (ph *ProfileHandler) GetUserProfile(w http.ResponseWriter, r *http.Request)
 
 // EditForm プロフィール編集フォームを返す（htmx用）
 func (ph *ProfileHandler) EditForm(w http.ResponseWriter, r *http.Request) {
-	user := getUserFromContext(r.Context())
-	if user == nil {
+	contextUser := getUserFromContext(r.Context())
+	if contextUser == nil {
 		// 認証が必要 - 開発環境も本番環境も同じ処理
 		// htmxリクエストの場合はHX-Redirectヘッダーを使用
 		if r.Header.Get("HX-Request") == "true" {
@@ -260,21 +285,27 @@ func (ph *ProfileHandler) EditForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	username := ""
-	if user.Username != nil {
-		username = *user.Username
-	}
-	bio := ""
-	if user.Bio != nil {
-		bio = *user.Bio
+	// データベースから最新のユーザー情報を取得
+	user, err := ph.repo.User.FindUserByID(contextUser.ID)
+	if err != nil {
+		ph.logger.Printf("ユーザー情報取得エラー: %v", err)
+		http.Error(w, "ユーザー情報の取得に失敗しました", http.StatusInternalServerError)
+		return
 	}
 
+	// お気に入りゲームとプレイ時間帯を取得
+	favoriteGames, _ := user.GetFavoriteGames()
+	playTimes, _ := user.GetPlayTimes()
+
+	// テンプレート用データ
 	data := struct {
-		Username string
-		Bio      string
+		User          *models.User
+		FavoriteGames []string
+		PlayTimes     *models.PlayTimes
 	}{
-		Username: username,
-		Bio:      bio,
+		User:          user,
+		FavoriteGames: favoriteGames,
+		PlayTimes:     playTimes,
 	}
 
 	if err := renderPartialTemplate(w, "profile_edit_form.tmpl", data); err != nil {
@@ -585,6 +616,209 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 
 func respondWithError(w http.ResponseWriter, code int, message string) {
 	respondWithJSON(w, code, map[string]string{"error": message})
+}
+
+// UpdateProfileRequest プロフィール更新リクエスト
+type UpdateProfileRequest struct {
+	DisplayName       string   `json:"display_name"`
+	Bio               string   `json:"bio"`
+	PSNOnlineID       string   `json:"psn_online_id"`
+	NintendoNetworkID string   `json:"nintendo_network_id"`
+	NintendoSwitchID  string   `json:"nintendo_switch_id"`
+	TwitterID         string   `json:"twitter_id"`
+	FavoriteGames     []string `json:"favorite_games"`
+	PlayTimes         struct {
+		Weekday string `json:"weekday"`
+		Weekend string `json:"weekend"`
+	} `json:"play_times"`
+}
+
+// UpdateProfile プロフィール更新APIハンドラー
+func (ph *ProfileHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
+	user := getUserFromContext(r.Context())
+	if user == nil {
+		respondWithError(w, http.StatusUnauthorized, "認証が必要です")
+		return
+	}
+
+	var req UpdateProfileRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		ph.logger.Printf("JSONデコードエラー: %v", err)
+		respondWithError(w, http.StatusBadRequest, "リクエストの形式が正しくありません")
+		return
+	}
+
+	// ユーザー情報を更新
+	user.DisplayName = req.DisplayName
+	if req.Bio != "" {
+		user.Bio = strPtr(req.Bio)
+	} else {
+		user.Bio = nil
+	}
+
+	// プラットフォームID
+	if req.PSNOnlineID != "" {
+		user.PSNOnlineID = strPtr(req.PSNOnlineID)
+	} else {
+		user.PSNOnlineID = nil
+	}
+	if req.NintendoNetworkID != "" {
+		user.NintendoNetworkID = strPtr(req.NintendoNetworkID)
+	} else {
+		user.NintendoNetworkID = nil
+	}
+	if req.NintendoSwitchID != "" {
+		user.NintendoSwitchID = strPtr(req.NintendoSwitchID)
+	} else {
+		user.NintendoSwitchID = nil
+	}
+	if req.TwitterID != "" {
+		user.TwitterID = strPtr(req.TwitterID)
+	} else {
+		user.TwitterID = nil
+	}
+
+	// お気に入りゲーム
+	if err := user.SetFavoriteGames(req.FavoriteGames); err != nil {
+		ph.logger.Printf("お気に入りゲーム設定エラー: %v", err)
+		respondWithError(w, http.StatusInternalServerError, "お気に入りゲームの設定に失敗しました")
+		return
+	}
+
+	// プレイ時間帯
+	playTimes := models.PlayTimes{
+		Weekday: req.PlayTimes.Weekday,
+		Weekend: req.PlayTimes.Weekend,
+	}
+	if err := user.SetPlayTimes(&playTimes); err != nil {
+		ph.logger.Printf("プレイ時間帯設定エラー: %v", err)
+		respondWithError(w, http.StatusInternalServerError, "プレイ時間帯の設定に失敗しました")
+		return
+	}
+
+	// データベースを更新
+	if err := ph.repo.User.UpdateUser(user); err != nil {
+		ph.logger.Printf("ユーザー更新エラー: %v", err)
+		respondWithError(w, http.StatusInternalServerError, "プロフィールの更新に失敗しました")
+		return
+	}
+
+	// 成功レスポンス
+	response := map[string]interface{}{
+		"message": "プロフィールを更新しました",
+		"user":    user,
+	}
+	respondWithJSON(w, http.StatusOK, response)
+}
+
+// ViewProfile プロフィールカード表示用APIハンドラー（htmx用）
+func (ph *ProfileHandler) ViewProfile(w http.ResponseWriter, r *http.Request) {
+	contextUser := getUserFromContext(r.Context())
+	if contextUser == nil {
+		// htmxリクエストの場合はHX-Redirectヘッダーを使用
+		if r.Header.Get("HX-Request") == "true" {
+			w.Header().Set("HX-Redirect", "/auth/login")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		http.Redirect(w, r, "/auth/login", http.StatusFound)
+		return
+	}
+
+	// データベースから最新のユーザー情報を取得
+	user, err := ph.repo.User.FindUserByID(contextUser.ID)
+	if err != nil {
+		ph.logger.Printf("ユーザー情報取得エラー: %v", err)
+		http.Error(w, "ユーザー情報の取得に失敗しました", http.StatusInternalServerError)
+		return
+	}
+
+	// お気に入りゲームとプレイ時間帯を取得
+	favoriteGames, _ := user.GetFavoriteGames()
+	playTimes, _ := user.GetPlayTimes()
+
+	// フォロワー数を取得
+	var followerCount int64 = 0
+	if ph.repo != nil && ph.repo.UserFollow != nil {
+		followers, err := ph.repo.UserFollow.GetFollowers(user.ID)
+		if err == nil {
+			followerCount = int64(len(followers))
+		}
+	}
+
+	// テンプレート用データ
+	data := struct {
+		User          *models.User
+		FavoriteGames []string
+		PlayTimes     *models.PlayTimes
+		FollowerCount int64
+	}{
+		User:          user,
+		FavoriteGames: favoriteGames,
+		PlayTimes:     playTimes,
+		FollowerCount: followerCount,
+	}
+
+	if err := renderPartialTemplate(w, "profile_view.tmpl", data); err != nil {
+		ph.logger.Printf("テンプレートレンダリングエラー: %v", err)
+		http.Error(w, "テンプレートの描画に失敗しました", http.StatusInternalServerError)
+		return
+	}
+}
+
+func (ph *ProfileHandler) UploadAvatar(w http.ResponseWriter, r *http.Request) {
+	user := getUserFromContext(r.Context())
+	if user == nil {
+		respondWithError(w, http.StatusUnauthorized, "認証が必要です")
+		return
+	}
+
+	if ph.uploader == nil {
+		respondWithError(w, http.StatusServiceUnavailable, "画像アップロードサービスが利用できません")
+		return
+	}
+
+	if err := r.ParseMultipartForm(32 << 20); err != nil {
+		ph.logger.Printf("マルチパートフォーム解析エラー: %v", err)
+		respondWithError(w, http.StatusBadRequest, "ファイルの解析に失敗しました")
+		return
+	}
+
+	file, header, err := r.FormFile("avatar")
+	if err != nil {
+		ph.logger.Printf("ファイル取得エラー: %v", err)
+		respondWithError(w, http.StatusBadRequest, "アバター画像が選択されていません")
+		return
+	}
+	defer file.Close()
+
+	result, err := ph.uploader.UploadAvatar(r.Context(), user.ID.String(), file, header)
+	if err != nil {
+		ph.logger.Printf("アバターアップロードエラー: %v", err)
+		// エラーメッセージはクライアントに詳細を返さない
+		respondWithError(w, http.StatusInternalServerError, "画像のアップロードに失敗しました")
+		return
+	}
+
+	user.AvatarURL = &result.URL
+	if err := ph.repo.User.UpdateUser(user); err != nil {
+		ph.logger.Printf("ユーザー更新エラー: %v", err)
+		respondWithError(w, http.StatusInternalServerError, "プロフィール情報の更新に失敗しました")
+		return
+	}
+	
+	// キャッシュをクリア（jwtAuthが設定されている場合）
+	if ph.jwtAuth != nil && ph.jwtAuth.GetUserCache() != nil {
+		ph.logger.Printf("ユーザーキャッシュをクリア: %s", user.ID)
+		ph.jwtAuth.GetUserCache().Delete(user.SupabaseUserID)
+	}
+
+	response := map[string]interface{}{
+		"message":     "アバター画像を更新しました",
+		"avatar_url":  result.URL,
+		"object_path": result.ObjectPath,
+	}
+	respondWithJSON(w, http.StatusOK, response)
 }
 
 func getUserFromContext(ctx context.Context) *models.User {

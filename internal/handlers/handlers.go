@@ -25,39 +25,93 @@ type TemplateData struct {
 	PageData interface{}
 }
 
+// テンプレート関数の定義
+
+// toLower は文字列を小文字に変換する
+func toLower(s string) string {
+	return strings.ToLower(s)
+}
+
+// toJSON は値をJSONに変換してテンプレートで使用可能にする
+func toJSON(v interface{}) template.JS {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return template.JS("[]")
+	}
+	return template.JS(b)
+}
+
+// makeMap キーと値のペアからマップを作成する（テンプレート内で動的にデータを構築する際に使用）
+func makeMap(values ...interface{}) (map[string]interface{}, error) {
+	if len(values)%2 != 0 {
+		return nil, fmt.Errorf("makeMap called with odd number of arguments")
+	}
+	m := make(map[string]interface{}, len(values)/2)
+	for i := 0; i < len(values); i += 2 {
+		key, ok := values[i].(string)
+		if !ok {
+			return nil, fmt.Errorf("makeMap keys must be strings")
+		}
+		m[key] = values[i+1]
+	}
+	return m, nil
+}
+
+// ゲームバージョンアイコンをHTMLとして返す
+func gameVersionIconHTML(code string) template.HTML {
+	return template.HTML(utils.GetGameVersionIcon(code))
+}
+
+// ポインタ文字列を通常の文字列に変換
+func derefString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+// ポインタ文字列が値を持つかチェック
+func hasStringValue(s *string) bool {
+	return s != nil && *s != ""
+}
+
+// JavaScript文字列内で使用するための文字列エスケープ
+func jsEscape(s string) string {
+	s = strings.ReplaceAll(s, "\\", "\\\\")
+	s = strings.ReplaceAll(s, "'", "\\'")
+	s = strings.ReplaceAll(s, "\"", "\\\"")
+	s = strings.ReplaceAll(s, "\n", "\\n")
+	s = strings.ReplaceAll(s, "\r", "\\r")
+	s = strings.ReplaceAll(s, "\t", "\\t")
+	return s
+}
+
+// ポインタ文字列に対してJavaScriptエスケープ
+func jsEscapePtr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return jsEscape(*s)
+}
+
+func getCommonFuncMap() template.FuncMap {
+	return template.FuncMap{
+		"lower":            toLower,
+		"json":             toJSON,
+		"map":              makeMap,
+		"gameVersionColor": utils.GetGameVersionColor,
+		"gameVersionIcon":  gameVersionIconHTML,
+		"gameVersionAbbr":  utils.GetGameVersionAbbreviation,
+		"stringPtr":        derefString,
+		"hasStringValue":   hasStringValue,
+		"jsEscape":         jsEscape,
+		"jsEscapePtr":      jsEscapePtr,
+	}
+}
+
 // renderTemplate は全てのハンドラーで使用可能なテンプレートレンダリング関数
 func renderTemplate(w http.ResponseWriter, templateName string, data TemplateData) {
-	funcMap := template.FuncMap{
-		"lower": func(s string) string {
-			return strings.ToLower(s)
-		},
-		"json": func(v interface{}) template.JS {
-			b, err := json.Marshal(v)
-			if err != nil {
-				return template.JS("[]")
-			}
-			return template.JS(b)
-		},
-		"dict": func(values ...interface{}) (map[string]interface{}, error) {
-			if len(values)%2 != 0 {
-				return nil, fmt.Errorf("dict called with odd number of arguments")
-			}
-			dict := make(map[string]interface{}, len(values)/2)
-			for i := 0; i < len(values); i += 2 {
-				key, ok := values[i].(string)
-				if !ok {
-					return nil, fmt.Errorf("dict keys must be strings")
-				}
-				dict[key] = values[i+1]
-			}
-			return dict, nil
-		},
-		"gameVersionColor": utils.GetGameVersionColor,
-		"gameVersionIcon": func(code string) template.HTML {
-			return template.HTML(utils.GetGameVersionIcon(code))
-		},
-		"gameVersionAbbr": utils.GetGameVersionAbbreviation,
-	}
+	funcMap := getCommonFuncMap()
 
 	tmpl, err := template.New("").Funcs(funcMap).ParseFiles(
 		filepath.Join("templates", "layouts", "base.tmpl"),
@@ -65,6 +119,12 @@ func renderTemplate(w http.ResponseWriter, templateName string, data TemplateDat
 		filepath.Join("templates", "components", "footer.tmpl"),
 		filepath.Join("templates", "components", "room_create_button.tmpl"),
 		filepath.Join("templates", "components", "room_create_modal.tmpl"),
+		filepath.Join("templates", "components", "profile_view.tmpl"),
+		filepath.Join("templates", "components", "profile_edit_form.tmpl"),
+		filepath.Join("templates", "components", "profile_activity.tmpl"),
+		filepath.Join("templates", "components", "profile_rooms.tmpl"),
+		filepath.Join("templates", "components", "profile_followers.tmpl"),
+		filepath.Join("templates", "components", "profile_following.tmpl"),
 		filepath.Join("templates", "pages", templateName),
 	)
 	if err != nil {
@@ -80,7 +140,6 @@ func renderTemplate(w http.ResponseWriter, templateName string, data TemplateDat
 	}
 }
 
-// isValidEmail はメールアドレスの妥当性を検証する共通関数
 func isValidEmail(email string) bool {
 	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 
@@ -125,41 +184,18 @@ func isValidEmail(email string) bool {
 
 // renderPartialTemplate は部分テンプレート（コンポーネント）をレンダリングする関数
 func renderPartialTemplate(w http.ResponseWriter, templateName string, data interface{}) error {
-	funcMap := template.FuncMap{
-		"lower": func(s string) string {
-			return strings.ToLower(s)
-		},
-		"json": func(v interface{}) template.JS {
-			b, err := json.Marshal(v)
-			if err != nil {
-				return template.JS("[]")
-			}
-			return template.JS(b)
-		},
-		"dict": func(values ...interface{}) (map[string]interface{}, error) {
-			if len(values)%2 != 0 {
-				return nil, fmt.Errorf("dict called with odd number of arguments")
-			}
-			dict := make(map[string]interface{}, len(values)/2)
-			for i := 0; i < len(values); i += 2 {
-				key, ok := values[i].(string)
-				if !ok {
-					return nil, fmt.Errorf("dict keys must be strings")
-				}
-				dict[key] = values[i+1]
-			}
-			return dict, nil
-		},
-		"gameVersionColor": utils.GetGameVersionColor,
-		"gameVersionIcon": func(code string) template.HTML {
-			return template.HTML(utils.GetGameVersionIcon(code))
-		},
-		"gameVersionAbbr": utils.GetGameVersionAbbreviation,
+	funcMap := getCommonFuncMap()
+
+	// プロフィール関連のテンプレートの場合は、関連するテンプレートも一緒に読み込む
+	templateFiles := []string{filepath.Join("templates", "components", templateName)}
+	if strings.HasPrefix(templateName, "profile_") {
+		templateFiles = append(templateFiles,
+			filepath.Join("templates", "components", "profile_view.tmpl"),
+			filepath.Join("templates", "components", "profile_edit_form.tmpl"),
+		)
 	}
 
-	tmpl, err := template.New("").Funcs(funcMap).ParseFiles(
-		filepath.Join("templates", "components", templateName),
-	)
+	tmpl, err := template.New("").Funcs(funcMap).ParseFiles(templateFiles...)
 	if err != nil {
 		return fmt.Errorf("template parsing error: %w", err)
 	}

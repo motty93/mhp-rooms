@@ -1,8 +1,11 @@
 package config
 
 import (
+	"fmt"
 	"os"
+	"regexp"
 	"strconv"
+	"strings"
 )
 
 type Config struct {
@@ -11,6 +14,7 @@ type Config struct {
 	Environment string
 	Migration   MigrationConfig
 	Debug       DebugConfig
+	GCS         GCSConfig
 }
 
 type DebugConfig struct {
@@ -37,6 +41,14 @@ type MigrationConfig struct {
 	AutoRun bool
 }
 
+type GCSConfig struct {
+	Bucket         string
+	BaseURL        string
+	MaxUploadBytes int64
+	AllowedMIMEs   map[string]struct{}
+	AssetPrefix    string
+}
+
 var AppConfig *Config
 
 func Init() {
@@ -61,6 +73,13 @@ func Init() {
 		Debug: DebugConfig{
 			AuthLogs: getEnvBool("DEBUG_AUTH_LOGS", false),
 			SQLLogs:  getEnvBool("DEBUG_SQL_LOGS", false),
+		},
+		GCS: GCSConfig{
+			Bucket:         MustGetEnv("GCS_BUCKET"),
+			BaseURL:        MustGetEnv("BASE_PUBLIC_ASSET_URL"),
+			MaxUploadBytes: GetEnvInt64("MAX_UPLOAD_BYTES", 10<<20), // デフォルト10MB
+			AllowedMIMEs:   parseAllowedMIMEs(getEnv("ALLOW_CONTENT_TYPES", ""), []string{"image/jpeg", "image/png", "image/webp"}),
+			AssetPrefix:    cleanAssetPrefix(getEnv("ASSET_PREFIX", "")),
 		},
 	}
 }
@@ -125,4 +144,52 @@ func getDefaultSSLMode() string {
 		return "require"
 	}
 	return "disable"
+}
+
+// MustGetEnv 必須環境変数の取得
+func MustGetEnv(key string) string {
+	v := os.Getenv(key)
+	if v == "" {
+		panic(fmt.Sprintf("環境変数 %s が設定されていません", key))
+	}
+	return v
+}
+
+// GetEnvInt64 int64型環境変数の取得
+func GetEnvInt64(key string, defaultValue int64) int64 {
+	s := os.Getenv(key)
+	if s == "" {
+		return defaultValue
+	}
+	v, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		panic(fmt.Sprintf("環境変数 %s が無効な数値です: %v", key, err))
+	}
+	return v
+}
+
+// parseAllowedMIMEs 許可されたMIMEタイプをパース
+func parseAllowedMIMEs(env string, defaults []string) map[string]struct{} {
+	list := defaults
+	if env != "" {
+		list = strings.Split(env, ",")
+	}
+	m := make(map[string]struct{})
+	for _, s := range list {
+		m[strings.TrimSpace(s)] = struct{}{}
+	}
+	return m
+}
+
+// cleanAssetPrefix プレフィックスをクリーンアップ（dev/stg/prodなどのみ許可）
+func cleanAssetPrefix(s string) string {
+	s = strings.TrimSpace(strings.Trim(s, "/"))
+	if s == "" {
+		return "dev" // デフォルトをdevに
+	}
+	re := regexp.MustCompile(`^[a-z0-9._-]+$`)
+	if !re.MatchString(s) {
+		panic(fmt.Sprintf("無効なASSET_PREFIX: %s", s))
+	}
+	return s
 }

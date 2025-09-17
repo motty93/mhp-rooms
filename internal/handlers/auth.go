@@ -372,11 +372,26 @@ func (h *AuthHandler) UpdatePSNId(w http.ResponseWriter, r *http.Request) {
 
 // GetCurrentUser は現在ログイン中のユーザー情報を取得する
 func (h *AuthHandler) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
-	dbUser, hasDBUser := middleware.GetDBUserFromContext(r.Context())
-	if !hasDBUser || dbUser == nil {
+	// キャッシュ問題を回避するため、直接DBからユーザー情報を取得
+	authUser, hasAuthUser := middleware.GetUserFromContext(r.Context())
+	if !hasAuthUser {
+		http.Error(w, "認証情報が見つかりません", http.StatusUnauthorized)
+		return
+	}
+
+	supabaseUserID, err := uuid.Parse(authUser.ID)
+	if err != nil {
+		http.Error(w, "無効なユーザーIDです", http.StatusBadRequest)
+		return
+	}
+
+	// データベースから直接最新のユーザー情報を取得
+	dbUser, err := h.repo.User.FindUserBySupabaseUserID(supabaseUserID)
+	if err != nil || dbUser == nil {
 		http.Error(w, "ユーザー情報が見つかりません", http.StatusNotFound)
 		return
 	}
+
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{

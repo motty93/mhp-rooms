@@ -76,6 +76,8 @@ func (app *Application) setupPageRoutes(r chi.Router) {
 	r.Get("/hello", app.withOptionalAuth(ph.Hello))
 	r.Get("/sitemap.xml", app.withOptionalAuth(ph.Sitemap))
 	r.Get("/profile", app.withAuth(profileHandler.Profile))
+	r.Get("/profile/edit", app.withAuth(profileHandler.EditForm))
+	r.Get("/profile/view", app.withAuth(profileHandler.ViewProfile))
 	r.Get("/users/{uuid}", app.withOptionalAuth(profileHandler.UserProfile))
 }
 
@@ -192,6 +194,9 @@ func (app *Application) setupAPIRoutes(r chi.Router) {
 
 		// プロフィール関連API（認証必須）
 		ar.Get("/profile/edit-form", app.withAuth(app.profileHandler.EditForm))
+		ar.Get("/profile/view", app.withAuth(app.profileHandler.ViewProfile))
+		ar.Post("/profile/update", app.withAuth(app.profileHandler.UpdateProfile))
+		ar.Post("/profile/upload-avatar", app.withAuth(app.profileHandler.UploadAvatar))
 		ar.Get("/profile/activity", app.withAuth(app.profileHandler.Activity))
 		ar.Get("/profile/rooms", app.withAuth(app.profileHandler.Rooms))
 		ar.Get("/profile/followers", app.withAuth(app.profileHandler.Followers))

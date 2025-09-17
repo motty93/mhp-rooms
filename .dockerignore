@@ -16,6 +16,9 @@ compose.yml
 Makefile
 biome.json
 .env*
+node_modules
+bun.lock
+package.json
 
 # Ignore IDE files
 .vscode/

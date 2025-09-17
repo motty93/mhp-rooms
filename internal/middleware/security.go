@@ -103,6 +103,26 @@ func buildCSP(config *SecurityConfig) string {
 		"data:",
 		"blob:",
 	}
+	
+	// GCS/CDN URLを追加
+	if baseAssetURL := os.Getenv("BASE_PUBLIC_ASSET_URL"); baseAssetURL != "" {
+		// URLからドメイン部分を抽出
+		if strings.HasPrefix(baseAssetURL, "https://") {
+			domain := strings.TrimPrefix(baseAssetURL, "https://")
+			// パスが含まれる場合は削除
+			if idx := strings.Index(domain, "/"); idx > 0 {
+				domain = domain[:idx]
+			}
+			imgSrc = append(imgSrc, "https://"+domain)
+		} else if strings.HasPrefix(baseAssetURL, "http://") {
+			domain := strings.TrimPrefix(baseAssetURL, "http://")
+			// パスが含まれる場合は削除
+			if idx := strings.Index(domain, "/"); idx > 0 {
+				domain = domain[:idx]
+			}
+			imgSrc = append(imgSrc, "http://"+domain)
+		}
+	}
 	policies = append(policies, "img-src "+strings.Join(imgSrc, " "))
 
 	// フォントソース
