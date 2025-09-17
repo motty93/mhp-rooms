@@ -38,7 +38,6 @@ func NewGCSUploader(ctx context.Context) (*GCSUploader, error) {
 	}, nil
 }
 
-
 // UploadResult アップロード結果
 type UploadResult struct {
 	URL         string `json:"url"`

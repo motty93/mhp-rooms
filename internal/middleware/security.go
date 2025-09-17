@@ -103,7 +103,7 @@ func buildCSP(config *SecurityConfig) string {
 		"data:",
 		"blob:",
 	}
-	
+
 	// GCS/CDN URLを追加
 	if baseAssetURL := os.Getenv("BASE_PUBLIC_ASSET_URL"); baseAssetURL != "" {
 		// URLからドメイン部分を抽出
