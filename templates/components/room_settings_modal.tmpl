@@ -52,7 +52,10 @@
         <div class="space-y-4">
           <!-- 部屋名 -->
           <div>
-            <label for="settings-room-name" class="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              for="settings-room-name"
+              class="block text-sm font-medium text-gray-700 mb-1"
+            >
               部屋名（必須）
             </label>
             <input
@@ -66,12 +69,19 @@
               :class="{ 'border-red-500': errors.name }"
               placeholder="部屋名を入力してください"
             />
-            <p x-show="errors.name" class="text-red-500 text-xs mt-1" x-text="errors.name"></p>
+            <p
+              x-show="errors.name"
+              class="text-red-500 text-xs mt-1"
+              x-text="errors.name"
+            ></p>
           </div>
 
           <!-- ゲームバージョン -->
           <div>
-            <label for="settings-game-version" class="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              for="settings-game-version"
+              class="block text-sm font-medium text-gray-700 mb-1"
+            >
               ゲームバージョン（必須）
             </label>
             <select
@@ -84,10 +94,7 @@
             >
               <option value="">ゲームバージョンを選択してください</option>
               <template x-for="version in gameVersions" :key="version.id">
-                <option
-                  :value="version.id"
-                  x-text="version.name"
-                ></option>
+                <option :value="version.id" x-text="version.name"></option>
               </template>
             </select>
             <p
@@ -99,7 +106,10 @@
 
           <!-- 説明文 -->
           <div>
-            <label for="settings-description" class="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              for="settings-description"
+              class="block text-sm font-medium text-gray-700 mb-1"
+            >
               説明文（任意）
             </label>
             <textarea
@@ -121,7 +131,10 @@
 
           <!-- 最大プレイヤー数 -->
           <div>
-            <label for="settings-max-players" class="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              for="settings-max-players"
+              class="block text-sm font-medium text-gray-700 mb-1"
+            >
               最大プレイヤー数
             </label>
             <select
@@ -145,7 +158,10 @@
 
           <!-- ターゲットモンスター -->
           <div>
-            <label for="settings-target-monster" class="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              for="settings-target-monster"
+              class="block text-sm font-medium text-gray-700 mb-1"
+            >
               ターゲットモンスター（任意）
             </label>
             <input
@@ -167,7 +183,10 @@
 
           <!-- ランク要求 -->
           <div>
-            <label for="settings-rank-requirement" class="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              for="settings-rank-requirement"
+              class="block text-sm font-medium text-gray-700 mb-1"
+            >
               ランク要求（任意）
             </label>
             <input
@@ -189,7 +208,10 @@
 
           <!-- パスワード -->
           <div>
-            <label for="settings-password" class="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              for="settings-password"
+              class="block text-sm font-medium text-gray-700 mb-1"
+            >
               パスワード（任意）
             </label>
             <input

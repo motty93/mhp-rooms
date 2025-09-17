@@ -20,7 +20,13 @@
             <button
               class="font-medium text-gray-800 text-sm hover:text-gray-600 hover:underline transition-colors"
             >
-              {{ if .User.DisplayName }}{{ .User.DisplayName }}{{ else if .User.Username }}{{ .User.Username }}{{ else }}{{ .User.DisplayName }}{{ end }}
+              {{ if .User.DisplayName }}
+                {{ .User.DisplayName }}
+              {{ else if .User.Username }}
+                {{ .User.Username }}
+              {{ else }}
+                {{ .User.DisplayName }}
+              {{ end }}
             </button>
             <span class="text-gray-500 text-xs">
               {{ .CreatedAt.Format "15:04" }}

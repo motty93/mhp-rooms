@@ -160,10 +160,14 @@
                     <template x-if="room.questType">
                       <div x-text="'タイプ: ' + room.questType"></div>
                     </template>
-                    <template x-if="room.targetMonster && room.targetMonster !== ''">
+                    <template
+                      x-if="room.targetMonster && room.targetMonster !== ''"
+                    >
                       <div x-text="'ターゲット: ' + room.targetMonster"></div>
                     </template>
-                    <template x-if="room.rankRequirement && room.rankRequirement !== ''">
+                    <template
+                      x-if="room.rankRequirement && room.rankRequirement !== ''"
+                    >
                       <div x-text="'ランク: ' + room.rankRequirement"></div>
                     </template>
                   </div>
@@ -353,7 +357,9 @@
                 x-text="`${currentRoom.currentPlayers}/${currentRoom.maxPlayers}`"
               ></span>
             </div>
-            <template x-if="currentRoom.targetMonster && currentRoom.targetMonster !== ''">
+            <template
+              x-if="currentRoom.targetMonster && currentRoom.targetMonster !== ''"
+            >
               <div class="flex items-center justify-between">
                 <span class="text-gray-500">ターゲット</span>
                 <span
@@ -362,7 +368,9 @@
                 ></span>
               </div>
             </template>
-            <template x-if="currentRoom.rankRequirement && currentRoom.rankRequirement !== ''">
+            <template
+              x-if="currentRoom.rankRequirement && currentRoom.rankRequirement !== ''"
+            >
               <div class="flex items-center justify-between">
                 <span class="text-gray-500">ランク</span>
                 <span
@@ -622,15 +630,23 @@
         <!-- ヘッダー -->
         <div class="p-6 border-b border-gray-200">
           <div class="flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-gray-900">
-              参加確認
-            </h3>
+            <h3 class="text-lg font-semibold text-gray-900">参加確認</h3>
             <button
               @click="closeBlockWarningDialog()"
               class="text-gray-400 hover:text-gray-600 transition-colors"
             >
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              <svg
+                class="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                ></path>
               </svg>
             </button>
           </div>
@@ -760,8 +776,18 @@
               @click="() => { showHostRestrictionModal = false; hostRoomInfo = null; }"
               class="text-gray-400 hover:text-gray-600 transition-colors"
             >
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              <svg
+                class="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                ></path>
               </svg>
             </button>
           </div>
@@ -812,7 +838,6 @@
     <!-- 部屋作成モーダルはグローバルモーダルに移動済み -->
     <!-- ホスト中警告モーダルとゲスト確認モーダルもグローバルモーダルに移動済み -->
   </div>
-
 
 <script>
   document.addEventListener('alpine:init', () => {
@@ -887,51 +912,51 @@
           this.filterRooms(gameVersionFilter);
           // イベントリスナー設定
           document.addEventListener('keydown', this.handleEsc.bind(this));
-          
+
           // 認証状態の変化を監視
           this.watchAuthState();
         },
-        
+
         // 認証状態監視
         watchAuthState() {
           let lastAuthState = null;
-          
+
           const checkAuthChange = () => {
             const authStore = Alpine.store('auth');
             if (!authStore) return;
-            
+
             const currentAuthState = {
               initialized: authStore.initialized,
               isAuthenticated: authStore.isAuthenticated,
               userId: authStore.user?.id
             };
-            
+
             // 初回チェック時は記録のみ
             if (lastAuthState === null) {
               lastAuthState = currentAuthState;
               return;
             }
-            
+
             // 認証状態が変化した場合（未認証→認証済み、またはユーザーが変更）
-            if (currentAuthState.initialized && 
-                currentAuthState.isAuthenticated && 
+            if (currentAuthState.initialized &&
+                currentAuthState.isAuthenticated &&
                 (!lastAuthState.isAuthenticated || lastAuthState.userId !== currentAuthState.userId)) {
               console.log('認証状態変化を検出、部屋データを再取得します');
               this.refreshRoomData();
             }
-            
+
             lastAuthState = currentAuthState;
           };
-          
+
           // 定期的にチェック（認証完了を検出するため）
           const authWatcher = setInterval(checkAuthChange, 1000);
-          
+
           // 5分後にウォッチャーを停止（パフォーマンス配慮）
           setTimeout(() => {
             clearInterval(authWatcher);
           }, 300000);
         },
-        
+
         // 部屋データ再取得
         async refreshRoomData() {
           try {
@@ -940,7 +965,7 @@
               console.log('認証されていないため、部屋データ再取得をスキップ');
               return;
             }
-            
+
             const response = await fetch('/api/rooms', {
               method: 'GET',
               headers: {
@@ -948,14 +973,14 @@
                 'Content-Type': 'application/json'
               }
             });
-            
+
             if (!response.ok) {
               console.error('部屋データ取得エラー:', response.status);
               return;
             }
-            
+
             const data = await response.json();
-            
+
             // 部屋データを更新
             this.allRooms = data.rooms.map(room => ({
               id: room.id,
@@ -977,18 +1002,18 @@
             rankRequirement: room.rank_requirement === '<nil>' || !room.rank_requirement ? '' : room.rank_requirement,
               isJoined: room.is_joined || false
             }));
-            
+
             // フィルタを再適用
             this.filterRooms(this.activeFilter);
-            
+
             console.log('部屋データ再取得完了');
-            
+
             // デバッグ: 初心者歓迎部屋の参加状態を確認
             const shoshinsha = this.allRooms.find(r => r.name === '初心者歓迎部屋');
             if (shoshinsha) {
               console.log('再取得後 - 初心者歓迎部屋:', shoshinsha.name, 'isJoined:', shoshinsha.isJoined);
             }
-            
+
           } catch (error) {
             console.error('部屋データ再取得エラー:', error);
           }
@@ -1025,7 +1050,7 @@
                   'Authorization': `Bearer ${authStore.session.access_token}`
                 }
               });
-              
+
               if (response.ok) {
                 const data = await response.json();
                 if (data.status === 'HOST') {
@@ -1040,7 +1065,7 @@
               // エラーの場合は通常通り続行
             }
           }
-          
+
           // 現在のフォーカス位置を保存
           this.lastFocusedElement = document.activeElement;
           this.currentRoom = {
@@ -1264,12 +1289,12 @@
 
             if (!joinResponse.ok) {
               const errorText = await joinResponse.text()
-              
+
               // パスワードエラーの場合
               if (joinResponse.status === 400 && errorText.includes('パスワードが間違っています')) {
                 throw new Error('パスワードが間違っています')
               }
-              
+
               throw new Error(errorText || '参加に失敗しました')
             }
 
@@ -1287,10 +1312,10 @@
 
           } catch (error) {
             console.error('処理エラー:', error)
-            
+
             // エラーメッセージを適切に表示
             let errorMessage = error.message || '処理に失敗しました。もう一度お試しください。'
-            
+
             // パスワードエラーの場合は、パスワード入力欄をクリアしてフォーカス
             if (errorMessage.includes('パスワードが間違っています')) {
               this.password = ''
@@ -1301,7 +1326,7 @@
                 if (passwordInput) passwordInput.focus()
               })
             }
-            
+
             this.showErrorMessage(errorMessage)
             this.isJoining = false
           }
@@ -1364,7 +1389,7 @@
             this.isJoining = false
           }
         },
-        
+
         // クリーンアップ処理
         destroy() {
           document.removeEventListener('keydown', this.handleEsc.bind(this))
@@ -1375,5 +1400,4 @@
   })
 
 </script>
-
 {{ end }}

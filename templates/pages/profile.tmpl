@@ -1,49 +1,52 @@
 {{ define "head" }}
-<style>
-  /* htmxでコンテンツが読み込まれる際のフェードインアニメーション */
-  .htmx-swapping {
+  <style>
+    /* htmxでコンテンツが読み込まれる際のフェードインアニメーション */
+    .htmx-swapping {
       opacity: 0;
       transition: opacity 300ms ease-in-out;
-  }
+    }
 
-  /* htmxインジケーター */
-  .htmx-indicator {
+    /* htmxインジケーター */
+    .htmx-indicator {
       display: none;
-  }
+    }
 
-  .htmx-request .htmx-indicator {
+    .htmx-request .htmx-indicator {
       display: flex;
-  }
+    }
 
-  /* 通知スタイル */
-  .notification {
+    /* 通知スタイル */
+    .notification {
       min-width: 300px;
       max-width: 500px;
-  }
-</style>
-<script src="/static/js/profile.js"></script>
+    }
+  </style>
+  <script src="/static/js/profile.js"></script>
 {{ end }}
 
 {{ define "page" }}
-{{ $profileData := .PageData }}
-<div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-6xl">
-  <!-- メインコンテンツ (PCではグリッドレイアウト) -->
-  <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-    <!-- 左カラム: プロフィールカード -->
-    <aside id="profile-card" class="lg:col-span-1">
-      <div class="bg-white rounded-xl p-6 shadow-md sticky top-8 border border-gray-200">
-        <div id="profile-card-content">
-          <!-- 自分のプロフィール表示 -->
-          {{ template "profile_view" map "User" $profileData.User "FavoriteGames" $profileData.FavoriteGames "PlayTimes" $profileData.PlayTimes "FollowerCount" $profileData.FollowerCount }}
+  {{ $profileData := .PageData }}
+  <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-6xl">
+    <!-- メインコンテンツ (PCではグリッドレイアウト) -->
+    <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- 左カラム: プロフィールカード -->
+      <aside id="profile-card" class="lg:col-span-1">
+        <div
+          class="bg-white rounded-xl p-6 shadow-md sticky top-8 border border-gray-200"
+        >
+          <div id="profile-card-content">
+            <!-- 自分のプロフィール表示 -->
+            {{ template "profile_view" map "User" $profileData.User "FavoriteGames" $profileData.FavoriteGames "PlayTimes" $profileData.PlayTimes "FollowerCount" $profileData.FollowerCount }}
+          </div>
         </div>
-      </div>
-    </aside>
+      </aside>
 
-    <!-- 右カラム: アクティビティ -->
-    <section class="lg:col-span-2">
-      <div class="bg-white rounded-xl shadow-md border border-gray-200">
-        <!-- タブナビゲーション -->
-        <div x-data="{
+      <!-- 右カラム: アクティビティ -->
+      <section class="lg:col-span-2">
+        <div class="bg-white rounded-xl shadow-md border border-gray-200">
+          <!-- タブナビゲーション -->
+          <div
+            x-data="{
           tab: 'rooms',
           loadTab(newTab, event) {
             if (this.tab !== newTab) {
@@ -52,120 +55,146 @@
               htmx.trigger(event.target, 'tabChange');
             }
           }
-        }" class="border-b border-gray-200">
-          <nav class="flex space-x-2 px-4">
-            <!-- 作成した部屋タブ -->
-            <button
-              @click="loadTab('rooms', $event)"
-              :class="{'border-blue-500 text-blue-600': tab === 'rooms', 'border-transparent text-gray-500 hover:text-gray-700': tab !== 'rooms'}"
-              class="py-4 px-4 block font-medium border-b-2 focus:outline-none transition-colors duration-200"
-              {{ if $profileData.IsOwnProfile }}
-                hx-get="/api/profile/rooms"
-              {{ else }}
-                hx-get="/api/users/{{ $profileData.User.ID }}/rooms"
-              {{ end }}
-              hx-trigger="tabChange"
-              hx-target="#tab-content"
-              hx-indicator="#tab-loader"
-            >
-              作成した部屋
-            </button>
-            <!-- アクティビティタブ -->
-            <button
-              @click="loadTab('activity', $event)"
-              :class="{'border-blue-500 text-blue-600': tab === 'activity', 'border-transparent text-gray-500 hover:text-gray-700': tab !== 'activity'}"
-              class="py-4 px-4 block font-medium border-b-2 focus:outline-none transition-colors duration-200"
-              {{ if $profileData.IsOwnProfile }}
-              hx-get="/api/profile/activity"
-              {{ else }}
-              hx-get="/api/users/{{ $profileData.User.ID }}/activity"
-              {{ end }}
-              hx-trigger="tabChange"
-              hx-target="#tab-content"
-              hx-indicator="#tab-loader"
-            >
-              アクティビティ
-            </button>
-             <!-- フォロワータブ -->
-            <button
-              @click="loadTab('followers', $event)"
-              :class="{'border-blue-500 text-blue-600': tab === 'followers', 'border-transparent text-gray-500 hover:text-gray-700': tab !== 'followers'}"
-              class="py-4 px-4 block font-medium border-b-2 focus:outline-none transition-colors duration-200"
-              {{ if $profileData.IsOwnProfile }}
-              hx-get="/api/profile/followers"
-              {{ else }}
-              hx-get="/api/users/{{ $profileData.User.ID }}/followers"
-              {{ end }}
-              hx-trigger="tabChange"
-              hx-target="#tab-content"
-              hx-indicator="#tab-loader"
-            >
-              フォロワー
-            </button>
-             <!-- フォロー中タブ -->
-            <button
-              @click="loadTab('following', $event)"
-              :class="{'border-blue-500 text-blue-600': tab === 'following', 'border-transparent text-gray-500 hover:text-gray-700': tab !== 'following'}"
-              class="py-4 px-4 block font-medium border-b-2 focus:outline-none transition-colors duration-200"
-              {{ if $profileData.IsOwnProfile }}
-              hx-get="/api/profile/following"
-              {{ else }}
-              hx-get="/api/users/{{ $profileData.User.ID }}/following"
-              {{ end }}
-              hx-trigger="tabChange"
-              hx-target="#tab-content"
-              hx-indicator="#tab-loader"
-            >
-              フォロー中
-            </button>
-          </nav>
-        </div>
-
-        <!-- タブコンテンツ -->
-        <div class="p-6 relative min-h-[300px]">
-          <!-- htmx読み込み中のローディングインジケーター -->
-          <div id="tab-loader" class="htmx-indicator absolute inset-0 bg-white bg-opacity-50 flex items-center justify-center">
-             <i class="fa-solid fa-spinner fa-spin text-2xl text-blue-600"></i>
+        }"
+            class="border-b border-gray-200"
+          >
+            <nav class="flex space-x-2 px-4">
+              <!-- 作成した部屋タブ -->
+              <button
+                @click="loadTab('rooms', $event)"
+                :class="{'border-blue-500 text-blue-600': tab === 'rooms', 'border-transparent text-gray-500 hover:text-gray-700': tab !== 'rooms'}"
+                class="py-4 px-4 block font-medium border-b-2 focus:outline-none transition-colors duration-200"
+                {{ if $profileData.IsOwnProfile }}
+                  hx-get="/api/profile/rooms"
+                {{ else }}
+                  hx-get="/api/users/{{ $profileData.User.ID }}/rooms"
+                {{ end }}
+                hx-trigger="tabChange"
+                hx-target="#tab-content"
+                hx-indicator="#tab-loader"
+              >
+                作成した部屋
+              </button>
+              <!-- アクティビティタブ -->
+              <button
+                @click="loadTab('activity', $event)"
+                :class="{'border-blue-500 text-blue-600': tab === 'activity', 'border-transparent text-gray-500 hover:text-gray-700': tab !== 'activity'}"
+                class="py-4 px-4 block font-medium border-b-2 focus:outline-none transition-colors duration-200"
+                {{ if $profileData.IsOwnProfile }}
+                  hx-get="/api/profile/activity"
+                {{ else }}
+                  hx-get="/api/users/{{ $profileData.User.ID }}/activity"
+                {{ end }}
+                hx-trigger="tabChange"
+                hx-target="#tab-content"
+                hx-indicator="#tab-loader"
+              >
+                アクティビティ
+              </button>
+              <!-- フォロワータブ -->
+              <button
+                @click="loadTab('followers', $event)"
+                :class="{'border-blue-500 text-blue-600': tab === 'followers', 'border-transparent text-gray-500 hover:text-gray-700': tab !== 'followers'}"
+                class="py-4 px-4 block font-medium border-b-2 focus:outline-none transition-colors duration-200"
+                {{ if $profileData.IsOwnProfile }}
+                  hx-get="/api/profile/followers"
+                {{ else }}
+                  hx-get="/api/users/{{ $profileData.User.ID }}/followers"
+                {{ end }}
+                hx-trigger="tabChange"
+                hx-target="#tab-content"
+                hx-indicator="#tab-loader"
+              >
+                フォロワー
+              </button>
+              <!-- フォロー中タブ -->
+              <button
+                @click="loadTab('following', $event)"
+                :class="{'border-blue-500 text-blue-600': tab === 'following', 'border-transparent text-gray-500 hover:text-gray-700': tab !== 'following'}"
+                class="py-4 px-4 block font-medium border-b-2 focus:outline-none transition-colors duration-200"
+                {{ if $profileData.IsOwnProfile }}
+                  hx-get="/api/profile/following"
+                {{ else }}
+                  hx-get="/api/users/{{ $profileData.User.ID }}/following"
+                {{ end }}
+                hx-trigger="tabChange"
+                hx-target="#tab-content"
+                hx-indicator="#tab-loader"
+              >
+                フォロー中
+              </button>
+            </nav>
           </div>
 
-          <!-- htmxによってコンテンツが挿入される場所 -->
-          <div id="tab-content">
-            <!-- 初期表示コンテンツ（作成した部屋） -->
-            <div>
-              <h3 class="text-xl font-bold mb-4 text-gray-800">作成した部屋</h3>
-              {{if $profileData.Rooms}}
-                <div class="space-y-4">
-                  {{range $profileData.Rooms}}
-                  <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 {{if .IsClickable}}cursor-pointer hover:bg-gray-100 transition-colors{{else}}cursor-default{{end}}" 
-                       {{if .IsClickable}}onclick="window.location.href='/rooms/{{.ID}}'"{{end}}>
-                    <div class="flex justify-between items-start mb-2">
-                      <h4 class="font-semibold text-gray-800">{{.Name}}</h4>
-                      <span class="text-xs text-gray-500">{{.CreatedAt}}</span>
-                    </div>
-                    {{if .Description}}
-                    <p class="text-sm text-gray-600 mb-2">{{.Description}}</p>
-                    {{end}}
-                    <div class="flex items-center space-x-4 text-xs text-gray-500">
-                      <span>{{.GameVersion}}</span>
-                      <span>{{.PlayerCount}}</span>
-                      <span class="{{.StatusColor}}">{{.Status}}</span>
-                    </div>
+          <!-- タブコンテンツ -->
+          <div class="p-6 relative min-h-[300px]">
+            <!-- htmx読み込み中のローディングインジケーター -->
+            <div
+              id="tab-loader"
+              class="htmx-indicator absolute inset-0 bg-white bg-opacity-50 flex items-center justify-center"
+            >
+              <i class="fa-solid fa-spinner fa-spin text-2xl text-blue-600"></i>
+            </div>
+
+            <!-- htmxによってコンテンツが挿入される場所 -->
+            <div id="tab-content">
+              <!-- 初期表示コンテンツ（作成した部屋） -->
+              <div>
+                <h3 class="text-xl font-bold mb-4 text-gray-800">
+                  作成した部屋
+                </h3>
+                {{ if $profileData.Rooms }}
+                  <div class="space-y-4">
+                    {{ range $profileData.Rooms }}
+                      <div
+                        class="bg-gray-50 p-4 rounded-lg border border-gray-200 {{ if .IsClickable }}
+                          cursor-pointer hover:bg-gray-100 transition-colors
+                        {{ else }}
+                          cursor-default
+                        {{ end }}"
+                        {{ if .IsClickable }}
+                          onclick="window.location.href='/rooms/{{ .ID }}'"
+                        {{ end }}
+                      >
+                        <div class="flex justify-between items-start mb-2">
+                          <h4 class="font-semibold text-gray-800">
+                            {{ .Name }}
+                          </h4>
+                          <span class="text-xs text-gray-500"
+                            >{{ .CreatedAt }}</span
+                          >
+                        </div>
+                        {{ if .Description }}
+                          <p class="text-sm text-gray-600 mb-2">
+                            {{ .Description }}
+                          </p>
+                        {{ end }}
+                        <div
+                          class="flex items-center space-x-4 text-xs text-gray-500"
+                        >
+                          <span>{{ .GameVersion }}</span>
+                          <span>{{ .PlayerCount }}</span>
+                          <span class="{{ .StatusColor }}">{{ .Status }}</span>
+                        </div>
+                      </div>
+                    {{ end }}
                   </div>
-                  {{end}}
-                </div>
-              {{else}}
-                <div class="text-center py-8">
-                  <i class="fa-solid fa-door-open text-gray-300 text-4xl mb-3"></i>
-                  <p class="text-gray-500">まだ部屋を作成していません</p>
-                  <p class="text-sm text-gray-400 mt-1">部屋を作成して他のハンターと狩りに出かけましょう！</p>
-                </div>
-              {{end}}
+                {{ else }}
+                  <div class="text-center py-8">
+                    <i
+                      class="fa-solid fa-door-open text-gray-300 text-4xl mb-3"
+                    ></i>
+                    <p class="text-gray-500">まだ部屋を作成していません</p>
+                    <p class="text-sm text-gray-400 mt-1">
+                      部屋を作成して他のハンターと狩りに出かけましょう！
+                    </p>
+                  </div>
+                {{ end }}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
-  </main>
-</div>
+      </section>
+    </main>
+  </div>
 {{ end }}
-

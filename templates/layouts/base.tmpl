@@ -129,7 +129,10 @@
         rel="stylesheet"
       />
       <link rel="stylesheet" href="/static/css/style.css" />
-      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
+      <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css"
+      />
 
       {{ template "head" . }}
     </head>
@@ -245,12 +248,23 @@
                     class="block px-4 py-3 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border-l-4 border-blue-500"
                   >
                     <div class="flex items-center space-x-2">
-                      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                      <svg
+                        class="w-5 h-5"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fill-rule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                          clip-rule="evenodd"
+                        />
                       </svg>
                       <div>
                         <div class="font-medium" x-text="'参加中の部屋'"></div>
-                        <div class="text-sm opacity-75" x-text="$store.auth.currentRoom.name"></div>
+                        <div
+                          class="text-sm opacity-75"
+                          x-text="$store.auth.currentRoom.name"
+                        ></div>
                       </div>
                     </div>
                   </a>
@@ -312,8 +326,10 @@
 
       {{ template "footer" . }}
 
+
       <!-- グローバル部屋作成モーダル -->
-      <div x-data="{ 
+      <div
+        x-data="{ 
         init() { 
           Alpine.store('roomCreate').init() 
         },
@@ -323,7 +339,9 @@
             Alpine.store('roomCreate').handleEscape()
           }
         }
-      }" @keydown.window="handleEscape">
+      }"
+        @keydown.window="handleEscape"
+      >
         <!-- 部屋作成モーダル -->
         <div
           x-show="$store.roomCreate.showModal"
@@ -344,23 +362,43 @@
             class="bg-white rounded-lg shadow-xl w-full max-w-md max-h-screen overflow-y-auto"
           >
             <!-- ヘッダー -->
-            <div class="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 class="text-xl font-semibold text-gray-900">新しい部屋を作る</h2>
+            <div
+              class="flex items-center justify-between p-6 border-b border-gray-200"
+            >
+              <h2 class="text-xl font-semibold text-gray-900">
+                新しい部屋を作る
+              </h2>
               <button
                 @click="$store.roomCreate.close()"
                 class="text-gray-400 hover:text-gray-500 focus:outline-none"
               >
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  class="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
 
             <!-- フォーム -->
-            <form @submit.prevent="$store.roomCreate.createRoom()" class="p-6 space-y-4">
+            <form
+              @submit.prevent="$store.roomCreate.createRoom()"
+              class="p-6 space-y-4"
+            >
               <!-- 部屋名 -->
               <div>
-                <label for="global-create-room-name" class="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  for="global-create-room-name"
+                  class="block text-sm font-medium text-gray-700 mb-1"
+                >
                   部屋名 <span class="text-red-500">*</span>
                 </label>
                 <input
@@ -374,14 +412,24 @@
                   placeholder="部屋の名前を入力してください"
                 />
                 <div class="flex justify-between mt-1">
-                  <div x-show="$store.roomCreate.formErrors.name" class="text-red-500 text-sm" x-text="$store.roomCreate.formErrors.name"></div>
-                  <div class="text-gray-500 text-sm" x-text="`${$store.roomCreate.formData.name.length}/50`"></div>
+                  <div
+                    x-show="$store.roomCreate.formErrors.name"
+                    class="text-red-500 text-sm"
+                    x-text="$store.roomCreate.formErrors.name"
+                  ></div>
+                  <div
+                    class="text-gray-500 text-sm"
+                    x-text="`${$store.roomCreate.formData.name.length}/50`"
+                  ></div>
                 </div>
               </div>
 
               <!-- ゲーム -->
               <div>
-                <label for="global-create-game-version" class="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  for="global-create-game-version"
+                  class="block text-sm font-medium text-gray-700 mb-1"
+                >
                   ゲーム <span class="text-red-500">*</span>
                 </label>
                 <select
@@ -392,16 +440,26 @@
                   :class="{ 'border-red-500': $store.roomCreate.formErrors.gameVersionId }"
                 >
                   <option value="">ゲームを選択してください</option>
-                  <template x-for="version in $store.roomCreate.gameVersions" :key="version.id">
+                  <template
+                    x-for="version in $store.roomCreate.gameVersions"
+                    :key="version.id"
+                  >
                     <option :value="version.id" x-text="version.name"></option>
                   </template>
                 </select>
-                <div x-show="$store.roomCreate.formErrors.gameVersionId" class="text-red-500 text-sm mt-1" x-text="$store.roomCreate.formErrors.gameVersionId"></div>
+                <div
+                  x-show="$store.roomCreate.formErrors.gameVersionId"
+                  class="text-red-500 text-sm mt-1"
+                  x-text="$store.roomCreate.formErrors.gameVersionId"
+                ></div>
               </div>
 
               <!-- 募集人数 -->
               <div>
-                <label for="global-create-max-players" class="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  for="global-create-max-players"
+                  class="block text-sm font-medium text-gray-700 mb-1"
+                >
                   募集人数 <span class="text-red-500">*</span>
                 </label>
                 <select
@@ -416,12 +474,19 @@
                   <option value="3">3人</option>
                   <option value="4">4人</option>
                 </select>
-                <div x-show="$store.roomCreate.formErrors.maxPlayers" class="text-red-500 text-sm mt-1" x-text="$store.roomCreate.formErrors.maxPlayers"></div>
+                <div
+                  x-show="$store.roomCreate.formErrors.maxPlayers"
+                  class="text-red-500 text-sm mt-1"
+                  x-text="$store.roomCreate.formErrors.maxPlayers"
+                ></div>
               </div>
 
               <!-- パスワード -->
               <div>
-                <label for="global-create-password" class="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  for="global-create-password"
+                  class="block text-sm font-medium text-gray-700 mb-1"
+                >
                   パスワード（任意）
                 </label>
                 <input
@@ -434,14 +499,24 @@
                   placeholder="パスワードを入力してください（任意）"
                 />
                 <div class="flex justify-between mt-1">
-                  <div x-show="$store.roomCreate.formErrors.password" class="text-red-500 text-sm" x-text="$store.roomCreate.formErrors.password"></div>
-                  <div class="text-gray-500 text-sm" x-text="`${$store.roomCreate.formData.password.length}/20`"></div>
+                  <div
+                    x-show="$store.roomCreate.formErrors.password"
+                    class="text-red-500 text-sm"
+                    x-text="$store.roomCreate.formErrors.password"
+                  ></div>
+                  <div
+                    class="text-gray-500 text-sm"
+                    x-text="`${$store.roomCreate.formData.password.length}/20`"
+                  ></div>
                 </div>
               </div>
 
               <!-- ターゲットモンスター -->
               <div>
-                <label for="global-create-target-monster" class="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  for="global-create-target-monster"
+                  class="block text-sm font-medium text-gray-700 mb-1"
+                >
                   ターゲットモンスター（任意）
                 </label>
                 <input
@@ -454,14 +529,24 @@
                   placeholder="討伐予定のモンスターを入力してください（任意）"
                 />
                 <div class="flex justify-between mt-1">
-                  <div x-show="$store.roomCreate.formErrors.targetMonster" class="text-red-500 text-sm" x-text="$store.roomCreate.formErrors.targetMonster"></div>
-                  <div class="text-gray-500 text-sm" x-text="`${$store.roomCreate.formData.targetMonster.length}/50`"></div>
+                  <div
+                    x-show="$store.roomCreate.formErrors.targetMonster"
+                    class="text-red-500 text-sm"
+                    x-text="$store.roomCreate.formErrors.targetMonster"
+                  ></div>
+                  <div
+                    class="text-gray-500 text-sm"
+                    x-text="`${$store.roomCreate.formData.targetMonster.length}/50`"
+                  ></div>
                 </div>
               </div>
 
               <!-- ランク条件 -->
               <div>
-                <label for="global-create-rank-requirement" class="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  for="global-create-rank-requirement"
+                  class="block text-sm font-medium text-gray-700 mb-1"
+                >
                   ランク条件（任意）
                 </label>
                 <input
@@ -474,14 +559,24 @@
                   placeholder="参加条件（例：HR6以上、制限なし）を入力してください（任意）"
                 />
                 <div class="flex justify-between mt-1">
-                  <div x-show="$store.roomCreate.formErrors.rankRequirement" class="text-red-500 text-sm" x-text="$store.roomCreate.formErrors.rankRequirement"></div>
-                  <div class="text-gray-500 text-sm" x-text="`${$store.roomCreate.formData.rankRequirement.length}/30`"></div>
+                  <div
+                    x-show="$store.roomCreate.formErrors.rankRequirement"
+                    class="text-red-500 text-sm"
+                    x-text="$store.roomCreate.formErrors.rankRequirement"
+                  ></div>
+                  <div
+                    class="text-gray-500 text-sm"
+                    x-text="`${$store.roomCreate.formData.rankRequirement.length}/30`"
+                  ></div>
                 </div>
               </div>
 
               <!-- 説明 -->
               <div>
-                <label for="global-create-description" class="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  for="global-create-description"
+                  class="block text-sm font-medium text-gray-700 mb-1"
+                >
                   説明（任意）
                 </label>
                 <textarea
@@ -494,13 +589,22 @@
                   placeholder="部屋の説明を入力してください（任意）"
                 ></textarea>
                 <div class="flex justify-between mt-1">
-                  <div x-show="$store.roomCreate.formErrors.description" class="text-red-500 text-sm" x-text="$store.roomCreate.formErrors.description"></div>
-                  <div class="text-gray-500 text-sm" x-text="`${$store.roomCreate.formData.description.length}/200`"></div>
+                  <div
+                    x-show="$store.roomCreate.formErrors.description"
+                    class="text-red-500 text-sm"
+                    x-text="$store.roomCreate.formErrors.description"
+                  ></div>
+                  <div
+                    class="text-gray-500 text-sm"
+                    x-text="`${$store.roomCreate.formData.description.length}/200`"
+                  ></div>
                 </div>
               </div>
 
               <!-- アクションボタン -->
-              <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+              <div
+                class="flex justify-end space-x-3 pt-4 border-t border-gray-200"
+              >
                 <button
                   type="button"
                   @click="$store.roomCreate.close()"
@@ -517,11 +621,31 @@
                   }"
                   class="px-4 py-2 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                 >
-                  <span x-show="!$store.roomCreate.isSubmitting">部屋を作る</span>
-                  <span x-show="$store.roomCreate.isSubmitting" class="flex items-center">
-                    <svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <span x-show="!$store.roomCreate.isSubmitting"
+                    >部屋を作る</span
+                  >
+                  <span
+                    x-show="$store.roomCreate.isSubmitting"
+                    class="flex items-center"
+                  >
+                    <svg
+                      class="animate-spin -ml-1 mr-3 h-4 w-4 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                      ></circle>
+                      <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     作成中...
                   </span>
@@ -571,8 +695,18 @@
                   @click="$store.roomCreate.closeHostWarningModal()"
                   class="text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                  <svg
+                    class="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    ></path>
                   </svg>
                 </button>
               </div>
@@ -581,8 +715,16 @@
             <!-- コンテンツ -->
             <div class="p-6">
               <div class="text-gray-600 mb-4">
-                <p>あなたは現在「<span class="font-semibold" x-text="$store.roomCreate.currentRoomInfo?.name"></span>」のホストです。</p>
-                <p class="mt-2">新しい部屋を作成する前に、この部屋を終了してください。</p>
+                <p>
+                  あなたは現在「<span
+                    class="font-semibold"
+                    x-text="$store.roomCreate.currentRoomInfo?.name"
+                  ></span
+                  >」のホストです。
+                </p>
+                <p class="mt-2">
+                  新しい部屋を作成する前に、この部屋を終了してください。
+                </p>
               </div>
 
               <div class="mb-4">
@@ -656,8 +798,18 @@
                   @click="$store.roomCreate.closeGuestConfirmModal()"
                   class="text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                  <svg
+                    class="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    ></path>
                   </svg>
                 </button>
               </div>
@@ -666,8 +818,16 @@
             <!-- コンテンツ -->
             <div class="p-6">
               <div class="text-gray-600 mb-4">
-                <p>あなたは現在「<span class="font-semibold" x-text="$store.roomCreate.currentRoomInfo?.name"></span>」に参加中です。</p>
-                <p class="mt-2">新しい部屋を作成すると、この部屋から退出します。</p>
+                <p>
+                  あなたは現在「<span
+                    class="font-semibold"
+                    x-text="$store.roomCreate.currentRoomInfo?.name"
+                  ></span
+                  >」に参加中です。
+                </p>
+                <p class="mt-2">
+                  新しい部屋を作成すると、この部屋から退出します。
+                </p>
               </div>
 
               <div class="mb-4">
@@ -707,7 +867,6 @@
           </div>
         </div>
       </div>
-
     </body>
   </html>
 {{ end }}

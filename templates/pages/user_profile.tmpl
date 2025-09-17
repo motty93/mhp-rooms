@@ -25,48 +25,50 @@
   <script>
     // フォロー解除確認モーダル
     function showUnfollowModal(userId, displayName, isFriend = false) {
-      const modal = document.getElementById('unfollow-modal');
-      const message = document.getElementById('unfollow-message');
-      const confirmBtn = document.getElementById('confirm-unfollow');
+      const modal = document.getElementById('unfollow-modal')
+      const message = document.getElementById('unfollow-message')
+      const confirmBtn = document.getElementById('confirm-unfollow')
 
       if (isFriend) {
-        message.textContent = `${displayName}さんとのフレンド関係を解除しますか？`;
-        confirmBtn.textContent = 'フレンド解除';
+        message.textContent = `${displayName}さんとのフレンド関係を解除しますか？`
+        confirmBtn.textContent = 'フレンド解除'
       } else {
-        message.textContent = `${displayName}さんのフォローを解除しますか？`;
-        confirmBtn.textContent = 'フォロー解除';
+        message.textContent = `${displayName}さんのフォローを解除しますか？`
+        confirmBtn.textContent = 'フォロー解除'
       }
 
       // 確認ボタンにHTMXリクエストを設定
-      confirmBtn.setAttribute('hx-delete', `/api/users/${userId}/unfollow`);
-      confirmBtn.setAttribute('hx-target', '#profile-card-content');
-      confirmBtn.setAttribute('hx-swap', 'innerHTML');
-      confirmBtn.setAttribute('onclick', 'hideUnfollowModal()');
+      confirmBtn.setAttribute('hx-delete', `/api/users/${userId}/unfollow`)
+      confirmBtn.setAttribute('hx-target', '#profile-card-content')
+      confirmBtn.setAttribute('hx-swap', 'innerHTML')
+      confirmBtn.setAttribute('onclick', 'hideUnfollowModal()')
 
       // HTMXを再初期化
-      htmx.process(confirmBtn);
+      htmx.process(confirmBtn)
 
-      modal.classList.remove('hidden');
+      modal.classList.remove('hidden')
     }
 
     function hideUnfollowModal() {
-      const modal = document.getElementById('unfollow-modal');
-      modal.classList.add('hidden');
+      const modal = document.getElementById('unfollow-modal')
+      modal.classList.add('hidden')
     }
 
     // ESCキーでモーダルを閉じる
-    document.addEventListener('keydown', function(event) {
+    document.addEventListener('keydown', function (event) {
       if (event.key === 'Escape') {
-        hideUnfollowModal();
+        hideUnfollowModal()
       }
-    });
+    })
 
     // モーダル背景クリックで閉じる
-    document.getElementById('unfollow-modal').addEventListener('click', function(event) {
-      if (event.target === this) {
-        hideUnfollowModal();
-      }
-    });
+    document
+      .getElementById('unfollow-modal')
+      .addEventListener('click', function (event) {
+        if (event.target === this) {
+          hideUnfollowModal()
+        }
+      })
   </script>
 {{ end }}
 
@@ -84,23 +86,37 @@
             <div class="flex flex-col items-center">
               <div class="relative">
                 {{ if $profileData.User.AvatarURL }}
-                  <img class="w-32 h-32 rounded-full mb-4 border-4 border-white object-cover shadow-sm"
-                       src="{{ stringPtr $profileData.User.AvatarURL }}" alt="{{ $profileData.User.DisplayName }} のアバター" />
+                  <img
+                    class="w-32 h-32 rounded-full mb-4 border-4 border-white object-cover shadow-sm"
+                    src="{{ stringPtr $profileData.User.AvatarURL }}"
+                    alt="{{ $profileData.User.DisplayName }} のアバター"
+                  />
                 {{ else }}
-                  <img class="w-32 h-32 rounded-full mb-4 border-4 border-white object-cover shadow-sm"
-                       src="/static/images/default-avatar.png" alt="デフォルトアバター" />
+                  <img
+                    class="w-32 h-32 rounded-full mb-4 border-4 border-white object-cover shadow-sm"
+                    src="/static/images/default-avatar.png"
+                    alt="デフォルトアバター"
+                  />
                 {{ end }}
-                <span class="absolute bottom-4 right-2 bg-green-500 w-5 h-5 rounded-full border-2 border-white"
-                      title="オンライン"></span>
+                <span
+                  class="absolute bottom-4 right-2 bg-green-500 w-5 h-5 rounded-full border-2 border-white"
+                  title="オンライン"
+                ></span>
               </div>
-              <h2 class="text-2xl font-bold text-gray-800">{{ $profileData.User.DisplayName }}</h2>
+              <h2 class="text-2xl font-bold text-gray-800">
+                {{ $profileData.User.DisplayName }}
+              </h2>
 
               {{ if $profileData.User.Bio }}
-              <p class="text-center text-gray-600 mb-6 text-sm">{{ $profileData.User.Bio }}</p>
+                <p class="text-center text-gray-600 mb-6 text-sm">
+                  {{ $profileData.User.Bio }}
+                </p>
               {{ end }}
+
 
               <!-- フォローボタン -->
               {{ template "follow_buttons.tmpl" $profileData }}
+
 
               <!-- ブロック・通報ボタン -->
               {{ template "block_report_buttons.tmpl" $profileData }}
