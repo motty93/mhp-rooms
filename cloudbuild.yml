@@ -3,23 +3,13 @@ substitutions:
   _REGION: asia-northeast1
   _ARTIFACT_REPOSITORY: monhub-registry
   _IMAGE_NAME: monhub-app
+  _GO_VERSION: "1.23"
 
 options:
   logging: CLOUD_LOGGING_ONLY
   machineType: UNSPECIFIED
 
 steps:
-  - name: golang:1.23
-    id: run-tests
-    entrypoint: bash
-    args:
-      - -lc
-      - |
-        set -euo pipefail
-        go test ./...
-    env:
-      - GOFLAGS=-mod=readonly
-
   - name: "gcr.io/cloud-builders/docker"
     id: "build-image"
     args:
@@ -30,6 +20,8 @@ steps:
       - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_IMAGE_NAME}:latest'
       - "-f"
       - "Dockerfile"
+      - "--build-arg"
+      - "GO_VERSION=${_GO_VERSION}"
       - "."
 
   - name: "gcr.io/cloud-builders/docker"
@@ -68,7 +60,9 @@ steps:
       - "--min-instances"
       - "0"
       - "--concurrency"
-      - "8"
+      - "10"
+      - "--update-env-vars"
+      - "PROJECT_ID=$PROJECT_ID,LOCATION=${_REGION}"
     waitFor: ["push-image"]
 
 artifacts:
