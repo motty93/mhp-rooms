@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 
 	"mhp-rooms/internal/infrastructure/persistence/postgres"
 	"mhp-rooms/internal/models"
@@ -43,18 +42,21 @@ func (r *userFollowRepository) DeleteFollow(followerUserID, followingUserID uuid
 
 // GetFollow 特定のフォロー関係を取得
 func (r *userFollowRepository) GetFollow(followerUserID, followingUserID uuid.UUID) (*models.UserFollow, error) {
-	var follow models.UserFollow
+	var follows []models.UserFollow
 	err := r.db.GetConn().
 		Where("follower_user_id = ? AND following_user_id = ?", followerUserID, followingUserID).
-		First(&follow).Error
+		Limit(1).
+		Find(&follows).Error
 
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
 		return nil, err
 	}
-	return &follow, nil
+
+	if len(follows) == 0 {
+		return nil, nil
+	}
+
+	return &follows[0], nil
 }
 
 // UpdateFollowStatus フォローステータスを更新

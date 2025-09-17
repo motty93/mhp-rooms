@@ -72,115 +72,100 @@
                   {{ $profileData.User.Bio }}
                 </p>
               {{ end }}
-              <!-- フォロー・メッセージボタン（関係性に応じて表示を切り替え） -->
-              <div class="w-full space-y-2">
-                {{ if eq $profileData.RelationStatus "none" }}
-                  <!-- フォローしていない場合 -->
-                  <button
-                    hx-post="/api/friends/add/{{ $profileData.User.ID }}"
-                    hx-target="#profile-card-content"
-                    hx-swap="innerHTML"
-                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
-                  >
-                    <i class="fa-solid fa-user-plus"></i>
-                    <span>フォローする</span>
-                  </button>
-                {{ else if eq $profileData.RelationStatus "following" }}
-                  <!-- フォロー中の場合 -->
-                  <button
-                    hx-post="/api/friends/remove/{{ $profileData.User.ID }}"
-                    hx-target="#profile-card-content"
-                    hx-swap="innerHTML"
-                    class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2.5 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
-                  >
-                    <i class="fa-solid fa-user-check"></i>
-                    <span>フォロー中</span>
-                  </button>
-                {{ else if eq $profileData.RelationStatus "mutual" }}
-                  <!-- 相互フォロー（フレンド）の場合 -->
-                  <div class="text-center">
-                    <span
-                      class="inline-block bg-green-100 text-green-800 text-sm px-3 py-1 rounded-full mb-2"
+              <!-- フォロー・メッセージボタン（認証済みユーザーのみ表示） -->
+              {{ if $profileData.IsAuthenticated }}
+                <div class="w-full space-y-2">
+                  {{ if eq $profileData.RelationStatus "none" }}
+                    <!-- フォローしていない場合 -->
+                    <button
+                      hx-post="/api/friends/add/{{ $profileData.User.ID }}"
+                      hx-target="#profile-card-content"
+                      hx-swap="innerHTML"
+                      class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
                     >
-                      <i class="fa-solid fa-users"></i> フレンド
-                    </span>
-                  </div>
-                  <button
-                    hx-post="/api/friends/remove/{{ $profileData.User.ID }}"
-                    hx-target="#profile-card-content"
-                    hx-swap="innerHTML"
-                    class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
-                  >
-                    <i class="fa-solid fa-user-minus"></i>
-                    <span>フレンド解除</span>
-                  </button>
-                {{ else if eq $profileData.RelationStatus "pending" }}
-                  <!-- フォローリクエスト中の場合 -->
-                  <button
-                    hx-post="/api/friends/cancel/{{ $profileData.User.ID }}"
-                    hx-target="#profile-card-content"
-                    hx-swap="innerHTML"
-                    class="w-full bg-gray-400 hover:bg-gray-500 text-white font-bold py-2.5 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
-                  >
-                    <i class="fa-solid fa-hourglass-half"></i>
-                    <span>申請中</span>
-                  </button>
-                {{ else if eq $profileData.RelationStatus "follower" }}
-                  <!-- フォロワー（相手が自分をフォロー）の場合 -->
-                  <button
-                    hx-post="/api/friends/add/{{ $profileData.User.ID }}"
-                    hx-target="#profile-card-content"
-                    hx-swap="innerHTML"
-                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
-                  >
-                    <i class="fa-solid fa-user-plus"></i>
-                    <span>フォローバックする</span>
-                  </button>
-                {{ end }}
-
-
-                <!-- メッセージボタンは全ケースで表示 -->
-                <button
-                  class="w-full bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 font-bold py-2.5 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
-                >
-                  <i class="fa-solid fa-envelope"></i>
-                  <span>メッセージを送る</span>
-                </button>
-              </div>
-
-              <!-- ブロックや通報ボタン -->
-              <div x-data="{ open: false }" class="relative mt-4">
-                <button
-                  @click="open = !open"
-                  class="text-gray-400 hover:text-gray-600"
-                >
-                  <i class="fa-solid fa-ellipsis-h"></i>
-                </button>
-                <div
-                  x-show="open"
-                  @click.away="open = false"
-                  x-transition
-                  class="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-lg shadow-xl z-10 border border-gray-200"
-                  style="display: none;"
-                >
-                  <button
-                    hx-post="/api/users/block/{{ $profileData.User.ID }}"
-                    hx-target="#profile-card-content"
-                    hx-swap="innerHTML"
-                    class="w-full text-left flex items-center space-x-2 px-4 py-2 text-sm text-red-500 hover:bg-gray-100"
-                  >
-                    <i class="fa-solid fa-user-slash w-4"></i>
-                    <span>{{ $profileData.User.DisplayName }}をブロック</span>
-                  </button>
-                  <a
-                    href="#"
-                    class="block flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    <i class="fa-solid fa-flag w-4"></i>
-                    <span>通報する</span>
-                  </a>
+                      <i class="fa-solid fa-user-plus"></i>
+                      <span>フォローする</span>
+                    </button>
+                  {{ else if eq $profileData.RelationStatus "following" }}
+                    <!-- フォロー中の場合 -->
+                    <button
+                      hx-post="/api/friends/remove/{{ $profileData.User.ID }}"
+                      hx-target="#profile-card-content"
+                      hx-swap="innerHTML"
+                      class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2.5 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
+                    >
+                      <i class="fa-solid fa-user-check"></i>
+                      <span>フォロー中</span>
+                    </button>
+                  {{ else if eq $profileData.RelationStatus "mutual" }}
+                    <!-- 相互フォロー（フレンド）の場合 -->
+                    <div class="text-center">
+                      <span
+                        class="inline-block bg-green-100 text-green-800 text-sm px-3 py-1 rounded-full mb-2"
+                      >
+                        <i class="fa-solid fa-users"></i> フレンド
+                      </span>
+                    </div>
+                    <button
+                      hx-post="/api/friends/remove/{{ $profileData.User.ID }}"
+                      hx-target="#profile-card-content"
+                      hx-swap="innerHTML"
+                      class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
+                    >
+                      <i class="fa-solid fa-user-minus"></i>
+                      <span>フレンド解除</span>
+                    </button>
+                  {{ else if eq $profileData.RelationStatus "follower" }}
+                    <!-- フォロワー（相手が自分をフォロー）の場合 -->
+                    <button
+                      hx-post="/api/friends/add/{{ $profileData.User.ID }}"
+                      hx-target="#profile-card-content"
+                      hx-swap="innerHTML"
+                      class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
+                    >
+                      <i class="fa-solid fa-user-plus"></i>
+                      <span>フォローバックする</span>
+                    </button>
+                  {{ end }}
                 </div>
-              </div>
+              {{ end }}
+
+
+              <!-- ブロックや通報ボタン（認証済みユーザーのみ表示） -->
+              {{ if $profileData.IsAuthenticated }}
+                <div x-data="{ open: false }" class="relative mt-4">
+                  <button
+                    @click="open = !open"
+                    class="text-gray-400 hover:text-gray-600"
+                  >
+                    <i class="fa-solid fa-ellipsis-h"></i>
+                  </button>
+                  <div
+                    x-show="open"
+                    @click.away="open = false"
+                    x-transition
+                    class="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-lg shadow-xl z-10 border border-gray-200"
+                    style="display: none;"
+                  >
+                    <button
+                      hx-post="/api/users/block/{{ $profileData.User.ID }}"
+                      hx-target="#profile-card-content"
+                      hx-swap="innerHTML"
+                      class="w-full text-left flex items-center space-x-2 px-4 py-2 text-sm text-red-500 hover:bg-gray-100"
+                    >
+                      <i class="fa-solid fa-user-slash w-4"></i>
+                      <span>{{ $profileData.User.DisplayName }}をブロック</span>
+                    </button>
+                    <a
+                      href="#"
+                      class="block flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      <i class="fa-solid fa-flag w-4"></i>
+                      <span>通報する</span>
+                    </a>
+                  </div>
+                </div>
+              {{ end }}
             </div>
           </div>
         </div>

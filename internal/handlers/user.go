@@ -29,7 +29,8 @@ func NewUserHandler(repo *repository.Repository) *UserHandler {
 type UserProfileData struct {
 	User           *models.User      `json:"user"`
 	IsOwnProfile   bool              `json:"isOwnProfile"`
-	RelationStatus string            `json:"relationStatus"` // none, following, follower, mutual, pending, blocked
+	IsAuthenticated bool             `json:"isAuthenticated"`
+	RelationStatus string            `json:"relationStatus"` // none, following, follower, mutual, blocked
 	Activities     []Activity        `json:"activities"`
 	Rooms          []RoomSummary     `json:"rooms"`
 	Followers      []Follower        `json:"followers"`
@@ -58,6 +59,7 @@ func (uh *UserHandler) Show(w http.ResponseWriter, r *http.Request) {
 	currentUser := uh.getCurrentUser(r)
 	isOwnProfile := false
 	relationStatus := "none"
+	var followerCount int64 = 0
 
 	if currentUser != nil {
 		if currentUser.ID == user.ID {
@@ -65,22 +67,21 @@ func (uh *UserHandler) Show(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/profile", http.StatusFound)
 			return
 		}
-		// フォロー関係をチェック
+		// 認証済みユーザーのみフォロー関係をチェック
 		relationStatus = uh.checkRelationStatus(currentUser.ID, user.ID)
+
+		// 認証済みユーザーのみフォロワー数を取得
+		if uh.repo != nil && uh.repo.UserFollow != nil {
+			followers, err := uh.repo.UserFollow.GetFollowers(user.ID)
+			if err == nil {
+				followerCount = int64(len(followers))
+			}
+		}
 	}
 
 	// お気に入りゲームとプレイ時間帯を取得
 	favoriteGames, _ := user.GetFavoriteGames()
 	playTimes, _ := user.GetPlayTimes()
-
-	// フォロワー数を取得
-	var followerCount int64 = 0
-	if uh.repo != nil && uh.repo.UserFollow != nil {
-		followers, err := uh.repo.UserFollow.GetFollowers(user.ID)
-		if err == nil {
-			followerCount = int64(len(followers))
-		}
-	}
 
 	// 実際に作成した部屋を取得
 	rooms, err := uh.repo.Room.GetRoomsByHostUser(user.ID, 10, 0)
@@ -92,15 +93,16 @@ func (uh *UserHandler) Show(w http.ResponseWriter, r *http.Request) {
 	}
 
 	profileData := UserProfileData{
-		User:           user,
-		IsOwnProfile:   isOwnProfile,
-		RelationStatus: relationStatus,
-		Activities:     uh.getMockActivities(),
-		Rooms:          roomSummaries,
-		Followers:      uh.getMockFollowers(),
-		FollowerCount:  followerCount,
-		FavoriteGames:  favoriteGames,
-		PlayTimes:      playTimes,
+		User:            user,
+		IsOwnProfile:    isOwnProfile,
+		IsAuthenticated: currentUser != nil,
+		RelationStatus:  relationStatus,
+		Activities:      uh.getMockActivities(),
+		Rooms:           roomSummaries,
+		Followers:       uh.getMockFollowers(),
+		FollowerCount:   followerCount,
+		FavoriteGames:   favoriteGames,
+		PlayTimes:       playTimes,
 	}
 
 	data := TemplateData{
@@ -130,27 +132,28 @@ func (uh *UserHandler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 	currentUser := uh.getCurrentUser(r)
 	isOwnProfile := false
 	relationStatus := "none"
+	var followerCount int64 = 0
 
 	if currentUser != nil {
 		if currentUser.ID == user.ID {
 			isOwnProfile = true
 		} else {
+			// 認証済みユーザーのみフォロー関係をチェック
 			relationStatus = uh.checkRelationStatus(currentUser.ID, user.ID)
+		}
+
+		// 認証済みユーザーのみフォロワー数を取得
+		if uh.repo != nil && uh.repo.UserFollow != nil {
+			followers, err := uh.repo.UserFollow.GetFollowers(user.ID)
+			if err == nil {
+				followerCount = int64(len(followers))
+			}
 		}
 	}
 
 	// お気に入りゲームとプレイ時間帯を取得
 	favoriteGames, _ := user.GetFavoriteGames()
 	playTimes, _ := user.GetPlayTimes()
-
-	// フォロワー数を取得
-	var followerCount int64 = 0
-	if uh.repo != nil && uh.repo.UserFollow != nil {
-		followers, err := uh.repo.UserFollow.GetFollowers(user.ID)
-		if err == nil {
-			followerCount = int64(len(followers))
-		}
-	}
 
 	// 実際に作成した部屋を取得
 	rooms, err := uh.repo.Room.GetRoomsByHostUser(user.ID, 10, 0)
@@ -162,15 +165,16 @@ func (uh *UserHandler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	profileData := UserProfileData{
-		User:           user,
-		IsOwnProfile:   isOwnProfile,
-		RelationStatus: relationStatus,
-		Activities:     uh.getMockActivities(),
-		Rooms:          roomSummaries,
-		Followers:      uh.getMockFollowers(),
-		FollowerCount:  followerCount,
-		FavoriteGames:  favoriteGames,
-		PlayTimes:      playTimes,
+		User:            user,
+		IsOwnProfile:    isOwnProfile,
+		IsAuthenticated: currentUser != nil,
+		RelationStatus:  relationStatus,
+		Activities:      uh.getMockActivities(),
+		Rooms:           roomSummaries,
+		Followers:       uh.getMockFollowers(),
+		FollowerCount:   followerCount,
+		FavoriteGames:   favoriteGames,
+		PlayTimes:       playTimes,
 	}
 
 	respondWithJSON(w, http.StatusOK, profileData)
@@ -194,12 +198,6 @@ func (uh *UserHandler) checkRelationStatus(currentUserID, targetUserID uuid.UUID
 	follow, err = uh.repo.UserFollow.GetFollow(targetUserID, currentUserID)
 	if err == nil && follow != nil && follow.Status == models.FollowStatusAccepted {
 		return "follower"
-	}
-
-	// フォローリクエスト中かチェック
-	follow, err = uh.repo.UserFollow.GetFollow(currentUserID, targetUserID)
-	if err == nil && follow != nil && follow.Status == models.FollowStatusPending {
-		return "pending"
 	}
 
 	// TODO: ブロック機能が実装されたらここでチェック
