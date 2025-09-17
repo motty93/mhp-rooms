@@ -142,7 +142,6 @@ func renderTemplate(w http.ResponseWriter, templateName string, data TemplateDat
 	}
 }
 
-
 func isValidEmail(email string) bool {
 	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 

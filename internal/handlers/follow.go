@@ -196,7 +196,6 @@ func (fh *FollowHandler) GetFollowStatus(w http.ResponseWriter, r *http.Request)
 	json.NewEncoder(w).Encode(response)
 }
 
-
 // returnProfileCardHTML プロフィールカードのHTMLを返す
 func (fh *FollowHandler) returnProfileCardHTML(w http.ResponseWriter, r *http.Request, targetUser *models.User, currentUser *models.User) {
 	// フォロー関係をチェック

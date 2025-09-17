@@ -12,7 +12,6 @@ import (
 	"github.com/google/uuid"
 )
 
-
 // UserHandler 他ユーザー関連のハンドラー
 type UserHandler struct {
 	BaseHandler
@@ -29,16 +28,16 @@ func NewUserHandler(repo *repository.Repository) *UserHandler {
 
 // UserProfileData 他ユーザーのプロフィール用データ構造
 type UserProfileData struct {
-	User           *models.User      `json:"user"`
-	IsOwnProfile   bool              `json:"isOwnProfile"`
-	IsAuthenticated bool             `json:"isAuthenticated"`
-	RelationStatus string            `json:"relationStatus"` // none, following, follower, mutual, blocked
-	Activities     []Activity        `json:"activities"`
-	Rooms          []RoomSummary     `json:"rooms"`
-	Followers      []Follower        `json:"followers"`
-	FollowerCount  int64             `json:"followerCount"`
-	FavoriteGames  []string          `json:"favoriteGames"`
-	PlayTimes      *models.PlayTimes `json:"playTimes"`
+	User            *models.User      `json:"user"`
+	IsOwnProfile    bool              `json:"isOwnProfile"`
+	IsAuthenticated bool              `json:"isAuthenticated"`
+	RelationStatus  string            `json:"relationStatus"` // none, following, follower, mutual, blocked
+	Activities      []Activity        `json:"activities"`
+	Rooms           []RoomSummary     `json:"rooms"`
+	Followers       []Follower        `json:"followers"`
+	FollowerCount   int64             `json:"followerCount"`
+	FavoriteGames   []string          `json:"favoriteGames"`
+	PlayTimes       *models.PlayTimes `json:"playTimes"`
 }
 
 // Show 他のユーザーのプロフィールページを表示
@@ -277,7 +276,6 @@ func getBioHTML(bio *string) string {
 	}
 	return ""
 }
-
 
 // Helper functions（一時的なモックデータ）
 func (uh *UserHandler) getMockActivities() []Activity {
