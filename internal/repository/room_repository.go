@@ -8,15 +8,14 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"mhp-rooms/internal/infrastructure/persistence/postgres"
 	"mhp-rooms/internal/models"
 )
 
 type roomRepository struct {
-	db *postgres.DB
+	db DBInterface
 }
 
-func NewRoomRepository(db *postgres.DB) RoomRepository {
+func NewRoomRepository(db DBInterface) RoomRepository {
 	return &roomRepository{db: db}
 }
 
@@ -200,12 +199,16 @@ func (r *roomRepository) GetActiveRoomsWithJoinStatus(userID *uuid.UUID, gameVer
 	for _, result := range results {
 		// GameVersionとHostの情報を設定
 		result.Room.GameVersion = models.GameVersion{
-			ID:   result.Room.GameVersionID,
+			BaseModel: models.BaseModel{
+				ID: result.Room.GameVersionID,
+			},
 			Name: result.GameVersionName,
 			Code: result.GameVersionCode,
 		}
 		result.Room.Host = models.User{
-			ID:          result.Room.HostUserID,
+			BaseModel: models.BaseModel{
+				ID: result.Room.HostUserID,
+			},
 			DisplayName: result.HostDisplayName,
 			PSNOnlineID: result.HostPSNOnlineID,
 		}
@@ -250,7 +253,9 @@ func (r *roomRepository) JoinRoom(roomID, userID uuid.UUID, password string) err
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				// 開発環境でのみダミーユーザーを作成
 				user = models.User{
-					ID:             userID,
+					BaseModel: models.BaseModel{
+						ID: userID,
+					},
 					SupabaseUserID: userID, // 開発用
 					Email:          fmt.Sprintf("dev-user-%s@example.com", userID.String()[:8]),
 					DisplayName:    fmt.Sprintf("開発ユーザー_%s", userID.String()[:8]),
@@ -631,12 +636,16 @@ func (r *roomRepository) GetRoomsByHostUser(userID uuid.UUID, limit, offset int)
 	for _, result := range results {
 		// GameVersionとHostの情報を設定
 		result.Room.GameVersion = models.GameVersion{
-			ID:   result.Room.GameVersionID,
+			BaseModel: models.BaseModel{
+				ID: result.Room.GameVersionID,
+			},
 			Name: result.GameVersionName,
 			Code: result.GameVersionCode,
 		}
 		result.Room.Host = models.User{
-			ID:          result.Room.HostUserID,
+			BaseModel: models.BaseModel{
+				ID: result.Room.HostUserID,
+			},
 			DisplayName: result.HostDisplayName,
 			PSNOnlineID: result.HostPSNOnlineID,
 		}

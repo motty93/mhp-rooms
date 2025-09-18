@@ -451,7 +451,9 @@ func (h *RoomHandler) JoinRoom(w http.ResponseWriter, r *http.Request) {
 	// 入室メッセージをSSEで通知
 	if h.hub != nil {
 		joinMessage := models.RoomMessage{
-			ID:          uuid.New(),
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
 			RoomID:      roomID,
 			UserID:      userID,
 			Message:     fmt.Sprintf("%sさんが入室しました", dbUser.DisplayName),
@@ -888,7 +890,9 @@ func (h *RoomHandler) DismissRoom(w http.ResponseWriter, r *http.Request) {
 	// 解散メッセージをSSEで通知
 	if h.hub != nil {
 		dismissMessage := models.RoomMessage{
-			ID:          uuid.New(),
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
 			RoomID:      roomID,
 			UserID:      userID,
 			Message:     fmt.Sprintf("ルームがホスト（%s）によって解散されました", dbUser.DisplayName),

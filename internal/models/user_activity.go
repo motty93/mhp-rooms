@@ -2,14 +2,13 @@ package models
 
 import (
 	"encoding/json"
-	"time"
 
 	"github.com/google/uuid"
 )
 
 // UserActivity ユーザーの行動履歴を記録するモデル
 type UserActivity struct {
-	ID                uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	BaseModel
 	UserID            uuid.UUID  `gorm:"type:uuid;not null;index" json:"user_id"`
 	ActivityType      string     `gorm:"size:50;not null;index" json:"activity_type"`
 	Title             string     `gorm:"size:255;not null" json:"title"`
@@ -19,8 +18,6 @@ type UserActivity struct {
 	Metadata          JSONB      `gorm:"type:jsonb;default:'{}'" json:"metadata"`
 	Icon              string     `gorm:"size:100" json:"icon"`
 	IconColor         string     `gorm:"size:50" json:"icon_color"`
-	CreatedAt         time.Time  `gorm:"index" json:"created_at"`
-	UpdatedAt         time.Time  `json:"updated_at"`
 
 	// リレーション
 	User User `gorm:"foreignKey:UserID" json:"user,omitempty"`
@@ -61,6 +58,7 @@ const (
 
 // RoomActivityMetadata 部屋関連アクティビティのメタデータ
 type RoomActivityMetadata struct {
+	BaseModel
 	GameVersion   string `json:"game_version,omitempty"`
 	MaxPlayers    int    `json:"max_players,omitempty"`
 	TargetMonster string `json:"target_monster,omitempty"`
@@ -70,6 +68,7 @@ type RoomActivityMetadata struct {
 
 // FollowActivityMetadata フォロー関連アクティビティのメタデータ
 type FollowActivityMetadata struct {
+	BaseModel
 	FollowingUserID string `json:"following_user_id,omitempty"`
 	FollowerUserID  string `json:"follower_user_id,omitempty"`
 	IsMutualFollow  bool   `json:"is_mutual_follow,omitempty"`
@@ -77,12 +76,14 @@ type FollowActivityMetadata struct {
 
 // MessageActivityMetadata メッセージ関連アクティビティのメタデータ
 type MessageActivityMetadata struct {
+	BaseModel
 	RoomID      string `json:"room_id,omitempty"`
 	MessageType string `json:"message_type,omitempty"`
 }
 
 // UserJoinActivityMetadata ユーザー登録関連アクティビティのメタデータ
 type UserJoinActivityMetadata struct {
+	BaseModel
 	RegistrationMethod string `json:"registration_method,omitempty"` // email, google, githubなど
 }
 

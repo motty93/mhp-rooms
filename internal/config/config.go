@@ -23,13 +23,16 @@ type DebugConfig struct {
 }
 
 type DatabaseConfig struct {
-	URL      string
-	Host     string
-	Port     string
-	User     string
-	Password string
-	Name     string
-	SSLMode  string
+	Type           string // "turso" or "postgres"
+	URL            string
+	Host           string
+	Port           string
+	User           string
+	Password       string
+	Name           string
+	SSLMode        string
+	TursoURL       string // Turso用のデータベースURL
+	TursoAuthToken string // Turso用の認証トークン
 }
 
 type ServerConfig struct {
@@ -54,13 +57,16 @@ var AppConfig *Config
 func Init() {
 	AppConfig = &Config{
 		Database: DatabaseConfig{
-			URL:      getEnv("DATABASE_URL", ""),
-			Host:     getEnv("DB_HOST", "localhost"),
-			Port:     getEnv("DB_PORT", "5432"),
-			User:     getEnv("DB_USER", "postgres"),
-			Password: getEnv("DB_PASSWORD", "postgres"),
-			Name:     getEnv("DB_NAME", "mhp_rooms"),
-			SSLMode:  getEnv("DB_SSLMODE", getDefaultSSLMode()),
+			Type:           getEnv("DB_TYPE", "turso"),
+			URL:            getEnv("DATABASE_URL", ""),
+			Host:           getEnv("DB_HOST", "localhost"),
+			Port:           getEnv("DB_PORT", "5432"),
+			User:           getEnv("DB_USER", "postgres"),
+			Password:       getEnv("DB_PASSWORD", "postgres"),
+			Name:           getEnv("DB_NAME", "mhp_rooms"),
+			SSLMode:        getEnv("DB_SSLMODE", getDefaultSSLMode()),
+			TursoURL:       getEnv("TURSO_DATABASE_URL", ""),
+			TursoAuthToken: getEnv("TURSO_AUTH_TOKEN", ""),
 		},
 		Server: ServerConfig{
 			Port: getEnv("PORT", "8080"),

@@ -410,14 +410,16 @@ func (j *JWTAuth) EnsureUserExistsWithContext(ctx context.Context, authUser *Aut
 
 	now := time.Now()
 	newUser := &models.User{
+		BaseModel: models.BaseModel{
+			CreatedAt: now,
+			UpdatedAt: now,
+		},
 		SupabaseUserID: supabaseUserID,
 		Email:          authUser.Email,
 		Username:       &username,
 		DisplayName:    displayName,
 		PSNOnlineID:    psnOnlineID,
 		IsActive:       true,
-		CreatedAt:      now,
-		UpdatedAt:      now,
 	}
 
 	if err := j.repo.User.CreateUser(newUser); err != nil {

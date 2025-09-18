@@ -1,9 +1,8 @@
 package models
 
 import (
-	"time"
-
 	"github.com/google/uuid"
+
 	"mhp-rooms/internal/utils"
 )
 
@@ -14,7 +13,7 @@ type PlayTimes struct {
 }
 
 type User struct {
-	ID                uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	BaseModel
 	SupabaseUserID    uuid.UUID `gorm:"type:uuid;uniqueIndex;not null" json:"supabase_user_id"`
 	Email             string    `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`
 	Username          *string   `gorm:"type:varchar(50);uniqueIndex" json:"username"`
@@ -30,8 +29,6 @@ type User struct {
 	PlayTimes         JSONB     `gorm:"type:jsonb;default:'{}'" json:"play_times"`
 	IsActive          bool      `gorm:"not null;default:true" json:"is_active"`
 	Role              string    `gorm:"type:varchar(20);not null;default:'user'" json:"role"`
-	CreatedAt         time.Time `json:"created_at"`
-	UpdatedAt         time.Time `json:"updated_at"`
 
 	// リレーション
 	HostedRooms  []Room        `gorm:"foreignKey:HostUserID" json:"hosted_rooms,omitempty"`

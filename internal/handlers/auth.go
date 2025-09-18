@@ -220,8 +220,6 @@ func (h *AuthHandler) SyncUser(w http.ResponseWriter, r *http.Request) {
 			DisplayName:    displayName,
 			PSNOnlineID:    psnOnlineID,
 			IsActive:       true,
-			CreatedAt:      now,
-			UpdatedAt:      now,
 		}
 
 		if err := h.repo.User.CreateUser(newUser); err != nil {
@@ -330,7 +328,6 @@ func (h *AuthHandler) UpdatePSNId(w http.ResponseWriter, r *http.Request) {
 		}
 		displayName := ""
 
-		now := time.Now()
 		newUser := &models.User{
 			SupabaseUserID: supabaseUserID,
 			Email:          user.Email,
@@ -338,8 +335,6 @@ func (h *AuthHandler) UpdatePSNId(w http.ResponseWriter, r *http.Request) {
 			DisplayName:    displayName,
 			PSNOnlineID:    &req.PSNId,
 			IsActive:       true,
-			CreatedAt:      now,
-			UpdatedAt:      now,
 		}
 
 		if err := h.repo.User.CreateUser(newUser); err != nil {

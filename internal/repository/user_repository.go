@@ -7,17 +7,16 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"mhp-rooms/internal/infrastructure/persistence/postgres"
 	"mhp-rooms/internal/models"
 )
 
 // userRepository はユーザー関連の操作を行うリポジトリの実装
 type userRepository struct {
-	db *postgres.DB
+	db DBInterface
 }
 
 // NewUserRepository は新しいUserRepositoryインスタンスを作成
-func NewUserRepository(db *postgres.DB) UserRepository {
+func NewUserRepository(db DBInterface) UserRepository {
 	return &userRepository{db: db}
 }
 

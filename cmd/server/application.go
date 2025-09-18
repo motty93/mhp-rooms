@@ -3,10 +3,11 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"mhp-rooms/internal/config"
 	"mhp-rooms/internal/handlers"
-	"mhp-rooms/internal/infrastructure/persistence/postgres"
+	"mhp-rooms/internal/infrastructure/persistence"
 	"mhp-rooms/internal/middleware"
 	"mhp-rooms/internal/repository"
 	"mhp-rooms/internal/sse"
@@ -14,7 +15,7 @@ import (
 
 type Application struct {
 	config             *config.Config
-	db                 *postgres.DB
+	db                 persistence.DBAdapter
 	repo               *repository.Repository
 	authHandler        *handlers.AuthHandler
 	roomHandler        *handlers.RoomHandler
@@ -52,11 +53,11 @@ func NewApplication(cfg *config.Config) (*Application, error) {
 }
 
 func (app *Application) initDatabase() error {
-	if err := postgres.WaitForDB(app.config, 30, 2); err != nil {
+	if err := persistence.WaitForDB(app.config, 30, 2*time.Second); err != nil {
 		return fmt.Errorf("データベース接続待機に失敗しました: %w", err)
 	}
 
-	db, err := postgres.NewDB(app.config)
+	db, err := persistence.NewDBAdapter(app.config)
 	if err != nil {
 		return fmt.Errorf("データベース接続に失敗しました: %w", err)
 	}

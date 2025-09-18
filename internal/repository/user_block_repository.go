@@ -3,7 +3,6 @@ package repository
 import (
 	"errors"
 	"fmt"
-	"mhp-rooms/internal/infrastructure/persistence/postgres"
 	"mhp-rooms/internal/models"
 
 	"github.com/google/uuid"
@@ -11,10 +10,10 @@ import (
 )
 
 type userBlockRepository struct {
-	db *postgres.DB
+	db DBInterface
 }
 
-func NewUserBlockRepository(db *postgres.DB) UserBlockRepository {
+func NewUserBlockRepository(db DBInterface) UserBlockRepository {
 	return &userBlockRepository{db: db}
 }
 
