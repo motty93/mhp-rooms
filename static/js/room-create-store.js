@@ -35,16 +35,10 @@ document.addEventListener('alpine:init', () => {
 
     // ゲームバージョンを取得
     async loadGameVersions() {
-      console.log('loadGameVersions called, current length:', this.gameVersions.length)
-      console.trace('Stack trace for loadGameVersions call:')
-
       // 既に取得済みの場合はスキップ
       if (this.gameVersions.length > 0) {
-        console.log('Skipping loadGameVersions - already loaded')
         return
       }
-
-      console.log('Fetching game versions from API...')
       try {
         const response = await fetch('/api/game-versions/active', {
           credentials: 'same-origin',
@@ -53,7 +47,6 @@ document.addEventListener('alpine:init', () => {
         if (response.ok) {
           const data = await response.json()
           this.gameVersions = data.game_versions || []
-          console.log('Loaded game versions:', this.gameVersions.length)
         } else {
           console.error('ゲーム情報の取得に失敗しました')
         }
@@ -64,9 +57,6 @@ document.addEventListener('alpine:init', () => {
 
     // モーダルを開く
     async open() {
-      console.log('roomCreate.open() called - SHOULD ONLY BE CALLED WHEN BUTTON CLICKED')
-      console.trace('Stack trace for open() call:')
-      console.log('roomCreate.open() called')
 
       // 認証チェック
       const authStore = Alpine.store('auth')
@@ -107,7 +97,6 @@ document.addEventListener('alpine:init', () => {
           this.showModal = true
         }
       } catch (error) {
-        console.error('部屋状態チェックエラー:', error)
         // エラーの場合も作成モーダルを開く（サーバー側でチェックされる）
         this.resetForm()
         this.showModal = true

@@ -90,7 +90,7 @@
       </div>
     </section>
 
-    <section class="py-8">
+    <section class="py-8 min-h-[calc(100vh-200px)] md:min-h-0">
       <div class="container mx-auto px-4" id="room-list-container">
         <div
           class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
@@ -910,6 +910,14 @@
           this.activeFilter = gameVersionFilter;
           // 初期フィルタリング
           this.filterRooms(gameVersionFilter);
+
+          // セレクトボックスの値を設定
+          this.$nextTick(() => {
+            const selectElement = document.getElementById('game-version-select');
+            if (selectElement) {
+              selectElement.value = gameVersionFilter;
+            }
+          });
           // イベントリスナー設定
           document.addEventListener('keydown', this.handleEsc.bind(this));
 

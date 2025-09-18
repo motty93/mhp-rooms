@@ -6,12 +6,14 @@
         {{ range .Rooms }}
           <div
             class="bg-gray-50 p-4 rounded-lg border border-gray-200 {{ if .IsClickable }}
-              cursor-pointer hover:bg-gray-100 transition-colors
-            {{ else }}
-              cursor-default
+              hover:bg-gray-100 transition-colors
             {{ end }}"
             {{ if .IsClickable }}
+              style="cursor: pointer !important;"
               onclick="window.location.href='/rooms/{{ .ID }}'"
+              data-room-id="{{ .ID }}" data-clickable="true"
+            {{ else }}
+              style="cursor: default;" data-clickable="false"
             {{ end }}
           >
             <div class="flex justify-between items-start mb-2">

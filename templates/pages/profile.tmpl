@@ -9,10 +9,12 @@
     /* htmxインジケーター */
     .htmx-indicator {
       display: none;
+      pointer-events: none !important;
     }
 
     .htmx-request .htmx-indicator {
       display: flex;
+      pointer-events: none !important;
     }
 
     /* 通知スタイル */
@@ -92,37 +94,37 @@
                 アクティビティ
               </button>
               <!-- フォロワータブ -->
-              <button
+              <!-- <button
                 @click="loadTab('followers', $event)"
                 :class="{'border-blue-500 text-blue-600': tab === 'followers', 'border-transparent text-gray-500 hover:text-gray-700': tab !== 'followers'}"
                 class="py-4 px-4 block font-medium border-b-2 focus:outline-none transition-colors duration-200"
                 {{ if $profileData.IsOwnProfile }}
-                  hx-get="/api/profile/followers"
-                {{ else }}
-                  hx-get="/api/users/{{ $profileData.User.ID }}/followers"
-                {{ end }}
+                hx-get="/api/profile/followers"
+              {{ else }}
+                hx-get="/api/users/{{ $profileData.User.ID }}/followers"
+              {{ end }}
                 hx-trigger="tabChange"
                 hx-target="#tab-content"
                 hx-indicator="#tab-loader"
               >
                 フォロワー
-              </button>
+              </button> -->
               <!-- フォロー中タブ -->
-              <button
+              <!-- <button
                 @click="loadTab('following', $event)"
                 :class="{'border-blue-500 text-blue-600': tab === 'following', 'border-transparent text-gray-500 hover:text-gray-700': tab !== 'following'}"
                 class="py-4 px-4 block font-medium border-b-2 focus:outline-none transition-colors duration-200"
                 {{ if $profileData.IsOwnProfile }}
-                  hx-get="/api/profile/following"
-                {{ else }}
-                  hx-get="/api/users/{{ $profileData.User.ID }}/following"
-                {{ end }}
+                hx-get="/api/profile/following"
+              {{ else }}
+                hx-get="/api/users/{{ $profileData.User.ID }}/following"
+              {{ end }}
                 hx-trigger="tabChange"
                 hx-target="#tab-content"
                 hx-indicator="#tab-loader"
               >
                 フォロー中
-              </button>
+              </button> -->
             </nav>
           </div>
 
@@ -131,7 +133,7 @@
             <!-- htmx読み込み中のローディングインジケーター -->
             <div
               id="tab-loader"
-              class="htmx-indicator absolute inset-0 bg-white bg-opacity-50 flex items-center justify-center"
+              class="htmx-indicator absolute inset-0 bg-white bg-opacity-50 flex items-center justify-center pointer-events-none"
             >
               <i class="fa-solid fa-spinner fa-spin text-2xl text-blue-600"></i>
             </div>
@@ -148,12 +150,14 @@
                     {{ range $profileData.Rooms }}
                       <div
                         class="bg-gray-50 p-4 rounded-lg border border-gray-200 {{ if .IsClickable }}
-                          cursor-pointer hover:bg-gray-100 transition-colors
-                        {{ else }}
-                          cursor-default
+                          hover:bg-gray-100 transition-colors
                         {{ end }}"
                         {{ if .IsClickable }}
+                          style="cursor: pointer !important;"
                           onclick="window.location.href='/rooms/{{ .ID }}'"
+                          data-room-id="{{ .ID }}" data-clickable="true"
+                        {{ else }}
+                          style="cursor: default;" data-clickable="false"
                         {{ end }}
                       >
                         <div class="flex justify-between items-start mb-2">

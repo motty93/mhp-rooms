@@ -135,7 +135,6 @@ function updateLocalStorageDisplayName(userId, displayName) {
       dbUser.display_name = displayName
       localStorage.setItem(dbUserKey, JSON.stringify(dbUser))
 
-      console.log('LocalStorageのdisplay_nameを更新しました:', displayName)
     }
   } catch (error) {
     console.error('LocalStorage更新エラー:', error)
@@ -198,7 +197,6 @@ window.profileEditForm = (userData = {}) => ({
     if (!this.favoriteGames) {
       this.favoriteGames = []
     }
-    console.log('プロフィール編集フォーム初期化完了')
   },
 
   // data属性から初期値を読み込む
@@ -340,14 +338,12 @@ window.profileEditForm = (userData = {}) => ({
 // DOMContentLoaded時の初期化
 document.addEventListener('DOMContentLoaded', () => {
   // プロフィール関連のイベントリスナーを設定
-  console.log('プロフィール機能が初期化されました')
 })
 
 // htmx関連のイベントリスナー
 document.addEventListener('htmx:afterRequest', (event) => {
   // プロフィール更新後の処理
   if (event.detail.xhr.status === 200 && event.detail.pathInfo.requestPath.includes('/profile/')) {
-    console.log('プロフィール関連のhtmxリクエストが完了しました')
   }
 })
 
