@@ -656,7 +656,6 @@ function roomDetail() {
           if (isAuth && user) {
             this.isAuthenticated = true;
             this.currentUserId = user.id;
-            console.log('Alpine auth initialized:', { isAuth, userId: user.id });
             return;
           }
         }
@@ -665,7 +664,6 @@ function roomDetail() {
         retries++;
       }
 
-      console.warn('Alpine.js authentication initialization timeout');
     },
 
     checkDescriptionLength() {
@@ -758,7 +756,6 @@ function roomDetail() {
             });
           }
         } catch (err) {
-          console.error('メッセージの取得に失敗しました:', err);
         }
       }
     },
@@ -807,7 +804,6 @@ function roomDetail() {
         // 一時的なSSEトークンを取得
         const authToken = Alpine.store('auth').session?.access_token;
         if (!authToken) {
-          console.error('SSE接続: 認証トークンが取得できません');
           return;
         }
 
@@ -826,11 +822,13 @@ function roomDetail() {
         const tokenData = await response.json();
         const sseToken = tokenData.token;
 
-        const url = `/rooms/${this.roomId}/messages/stream?token=${encodeURIComponent(sseToken)}`;
+        // SSEサーバーのホストを取得（環境変数で設定可能）
+        const sseHost = '{{ .SSEHost }}' || window.location.origin;
+        const basePath = sseHost.endsWith('/') ? sseHost.slice(0, -1) : sseHost;
+        const url = `${basePath}/rooms/${this.roomId}/messages/stream?token=${encodeURIComponent(sseToken)}`;
 
         this.eventSource = new EventSource(url);
       } catch (error) {
-        console.error('SSEトークン取得エラー:', error);
         return;
       }
       this.sseReconnectCount = (this.sseReconnectCount || 0);
@@ -853,12 +851,10 @@ function roomDetail() {
             this.handleSystemMessage(data.data);
           }
         } catch (err) {
-          console.error('SSEメッセージの解析エラー:', err);
         }
       });
 
       this.eventSource.addEventListener('error', (event) => {
-        console.error('SSE接続エラー:', event, '状態:', this.eventSource.readyState);
 
         // 再接続の制限（最大5回まで）
         if (this.sseReconnectCount < 5) {
@@ -871,7 +867,6 @@ function roomDetail() {
             }
           }, delay);
         } else {
-          console.error('SSE最大再接続回数に達しました。手動でページをリロードしてください。');
         }
       });
     },
@@ -965,7 +960,6 @@ function roomDetail() {
         // 部屋一覧へリダイレクト
         window.location.href = '/rooms';
       } catch (error) {
-        console.error('退出エラー:', error);
         alert('退出処理に失敗しました。もう一度お試しください。');
         this.isLeaving = false;
       }
@@ -974,14 +968,8 @@ function roomDetail() {
     updateHostStatus() {
       if (this.isAuthenticated && this.currentUserId) {
         this.isHost = this.currentUserId === this.hostUserId;
-        console.log('Host status updated:', {
-          currentUserId: this.currentUserId,
-          hostUserId: this.hostUserId,
-          isHost: this.isHost
-        });
       } else {
         this.isHost = false;
-        console.log('Not authenticated or no current user, isHost set to false');
       }
 
       // 強制的にAlpine.jsの反応を促す
@@ -996,15 +984,12 @@ function roomDetail() {
         if (response.ok) {
           const data = await response.json();
           this.gameVersions = data.game_versions || [];
-          console.log('Loaded game versions:', this.gameVersions);
         }
       } catch (error) {
-        console.error('ゲームバージョンの取得に失敗しました:', error);
       }
     },
 
     openSettingsModal() {
-      console.log('openSettingsModal called');
 
       // 現在の部屋データで設定フォームを初期化
       const room = {
@@ -1016,7 +1001,6 @@ function roomDetail() {
         rank_requirement: '{{ .PageData.Room.GetRankRequirement }}'
       };
 
-      console.log('Room data:', room);
 
       this.settingsData = {
         name: room.name || '',
@@ -1031,8 +1015,6 @@ function roomDetail() {
       this.errors = {};
       this.showSettingsModal = true;
 
-      console.log('showSettingsModal set to:', this.showSettingsModal);
-      console.log('settingsData:', this.settingsData);
     },
 
     closeSettingsModal() {
@@ -1148,7 +1130,6 @@ function roomDetail() {
         // ページをリロードして最新の情報を表示
         window.location.reload();
       } catch (error) {
-        console.error('部屋設定更新エラー:', error);
         alert('部屋設定の更新に失敗しました: ' + error.message);
         this.isSubmitting = false;
       }
@@ -1192,7 +1173,6 @@ function roomDetail() {
         // リダイレクト先が指定されている場合はそちらへ、そうでなければ部屋一覧へ
         window.location.href = result.redirect || '/rooms';
       } catch (error) {
-        console.error('解散エラー:', error);
         alert('解散処理に失敗しました。もう一度お試しください。');
         this.isDismissing = false;
       }

@@ -359,16 +359,6 @@ func (j *JWTAuth) loadDBUser(ctx context.Context, authUser *AuthUser) *models.Us
 		return cachedUser
 	}
 
-	// デバッグ用ログ：どのリクエストでSQLが実行されているかを追跡
-	if req := ctx.Value("request"); req != nil {
-		if httpReq, ok := req.(*http.Request); ok {
-			if config.AppConfig.Debug.SQLLogs {
-				fmt.Printf("DEBUG: SQL実行 - Path: %s, Method: %s, UserAgent: %s\n",
-					httpReq.URL.Path, httpReq.Method, httpReq.Header.Get("User-Agent"))
-			}
-		}
-	}
-
 	existingUser, err := j.repo.User.FindUserBySupabaseUserID(supabaseUserID)
 	if err != nil || existingUser == nil {
 		return nil
