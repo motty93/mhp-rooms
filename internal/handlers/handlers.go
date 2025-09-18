@@ -23,6 +23,7 @@ type TemplateData struct {
 	HasHero  bool
 	User     interface{}
 	PageData interface{}
+	SSEHost  string // SSEサーバーのホスト
 }
 
 // テンプレート関数の定義
