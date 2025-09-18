@@ -15,7 +15,7 @@ type UserActivity struct {
 	Description       *string    `gorm:"type:text" json:"description"`
 	RelatedEntityType *string    `gorm:"size:50" json:"related_entity_type"`
 	RelatedEntityID   *uuid.UUID `gorm:"type:uuid" json:"related_entity_id"`
-	Metadata          JSONB      `gorm:"type:jsonb;default:'{}'" json:"metadata"`
+	Metadata          JSONB      `gorm:"type:text;default:'{}'" json:"metadata"`
 	Icon              string     `gorm:"size:100" json:"icon"`
 	IconColor         string     `gorm:"size:50" json:"icon_color"`
 

@@ -83,7 +83,13 @@ func (r *userRepository) FindUserByEmail(email string) (*models.User, error) {
 
 // UpdateUser はユーザー情報を更新
 func (r *userRepository) UpdateUser(user *models.User) error {
-	return r.db.GetConn().Save(user).Error
+	// Turso対応：明示的なトランザクション処理
+	return r.db.GetConn().Transaction(func(tx *gorm.DB) error {
+		if err := tx.Save(user).Error; err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 // GetActiveUsers はアクティブなユーザー一覧を取得
