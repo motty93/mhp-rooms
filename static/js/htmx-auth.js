@@ -2,7 +2,7 @@
 async function clearAuthSession() {
   // クッキーを削除
   document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-  
+
   // Supabaseセッションをクリア
   if (window.supabaseClient && window.supabaseClient.auth) {
     try {
@@ -11,7 +11,7 @@ async function clearAuthSession() {
       console.warn('Supabaseサインアウトエラー:', error)
     }
   }
-  
+
   // Alpineストアをリセット
   if (window.Alpine && window.Alpine.store('auth')) {
     window.Alpine.store('auth').clearSession()

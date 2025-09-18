@@ -129,7 +129,9 @@
       "Bash(do)",
       "Bash(echo:*)",
       "Bash(done)",
-      "Bash(goimports:*)"
+      "Bash(goimports:*)",
+      "Bash(npx prettier:*)",
+      "Bash(PORT=8081 ENV=development timeout 10s make run)"
     ],
     "deny": []
   }
