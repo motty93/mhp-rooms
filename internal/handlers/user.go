@@ -256,7 +256,7 @@ func (uh *UserHandler) GetProfileCard(w http.ResponseWriter, r *http.Request) {
 		AvatarURL:       getAvatarURL(user),
 	}
 
-	if err := renderPartialTemplate(w, "profile_card_content.tmpl", profileData); err != nil {
+	if err := renderPartialTemplate(w, "profile_card_content", profileData); err != nil {
 		http.Error(w, "テンプレートエラー: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

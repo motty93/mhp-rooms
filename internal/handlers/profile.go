@@ -177,7 +177,7 @@ func (ph *ProfileHandler) EditForm(w http.ResponseWriter, r *http.Request) {
 		PlayTimes:     playTimes,
 	}
 
-	if err := renderPartialTemplate(w, "profile_edit_form.tmpl", data); err != nil {
+	if err := renderPartialTemplate(w, "profile_edit_form", data); err != nil {
 		ph.logger.Printf("テンプレートレンダリングエラー: %v", err)
 		http.Error(w, "テンプレートの描画に失敗しました", http.StatusInternalServerError)
 		return
@@ -696,7 +696,7 @@ func (ph *ProfileHandler) ViewProfile(w http.ResponseWriter, r *http.Request) {
 		FollowerCount: followerCount,
 	}
 
-	if err := renderPartialTemplate(w, "profile_view.tmpl", data); err != nil {
+	if err := renderPartialTemplate(w, "profile_view", data); err != nil {
 		ph.logger.Printf("テンプレートレンダリングエラー: %v", err)
 		http.Error(w, "テンプレートの描画に失敗しました", http.StatusInternalServerError)
 		return

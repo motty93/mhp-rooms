@@ -215,7 +215,7 @@ func (fh *FollowHandler) returnProfileCardHTML(w http.ResponseWriter, r *http.Re
 		AvatarURL:       fh.getAvatarURL(targetUser),
 	}
 
-	if err := renderPartialTemplate(w, "profile_card_content.tmpl", profileData); err != nil {
+	if err := renderPartialTemplate(w, "profile_card_content", profileData); err != nil {
 		http.Error(w, "テンプレートエラー: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
