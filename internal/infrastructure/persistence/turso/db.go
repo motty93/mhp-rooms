@@ -108,6 +108,7 @@ func (db *DB) createConstraintsAndIndexes() error {
 
 		// パフォーマンス用インデックス
 		"CREATE INDEX IF NOT EXISTS idx_users_is_active_created_at ON users(is_active, created_at)",
+		"CREATE INDEX IF NOT EXISTS idx_users_supabase_user_id ON users(supabase_user_id)",
 		"CREATE INDEX IF NOT EXISTS idx_game_versions_is_active_display_order ON game_versions(is_active, display_order)",
 		"CREATE INDEX IF NOT EXISTS idx_rooms_game_version_is_active ON rooms(game_version_id, is_active)",
 		"CREATE INDEX IF NOT EXISTS idx_rooms_host_user_id ON rooms(host_user_id)",

@@ -374,8 +374,8 @@ func (j *JWTAuth) loadDBUser(ctx context.Context, authUser *AuthUser) *models.Us
 		return nil
 	}
 
-	// キャッシュに保存（30秒間）
-	j.userCache.Set(supabaseUserID, existingUser, 30*time.Second)
+	// キャッシュに保存（5分間）
+	j.userCache.Set(supabaseUserID, existingUser, 5*time.Minute)
 
 	return existingUser
 }

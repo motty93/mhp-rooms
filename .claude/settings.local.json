@@ -135,7 +135,11 @@
       "Bash(SQLITE_DB_PATH=\"./data/mhp_rooms.db\" DB_TYPE=sqlite sqlite3 ./data/mhp_rooms.db \"SELECT id, display_name, favorite_games FROM users LIMIT 5;\")",
       "Bash(ENV=development DB_TYPE=turso go run cmd/migrate/main.go)",
       "Bash(ENV=development timeout 10s make run)",
-      "Bash(PORT=8082 ENV=development timeout 10s make run)"
+      "Bash(PORT=8082 ENV=development timeout 10s make run)",
+      "Bash(turso db shell:*)",
+      "Read(//home/motty93/**)",
+      "Bash(~/.turso/turso db list)",
+      "Bash(~/.turso/turso:*)"
     ],
     "deny": []
   }
