@@ -148,7 +148,6 @@ document.addEventListener('alpine:init', () => {
 
         if (response.ok) {
           const userData = await response.json()
-          console.log('fetchDbUser - 取得したユーザー情報:', userData.user)
           this.dbUser = userData.user
           // ローカルストレージに保存
           this.saveDbUserToStorage(userData.user)
@@ -406,11 +405,9 @@ document.addEventListener('alpine:init', () => {
           this.currentRoom = data.current_room
           this._currentRoomFetched = true
         } else {
-          console.log('参加中の部屋の取得に失敗しました')
           this.currentRoom = null
         }
       } catch (error) {
-        console.log('参加中の部屋の取得に失敗:', error)
         this.currentRoom = null
       } finally {
         this._currentRoomLoading = false

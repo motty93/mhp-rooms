@@ -12,6 +12,7 @@ type Config struct {
 	Database    DatabaseConfig
 	Server      ServerConfig
 	Environment string
+	ServiceMode string // "main" または "sse"
 	Migration   MigrationConfig
 	Debug       DebugConfig
 	GCS         GCSConfig
@@ -36,8 +37,9 @@ type DatabaseConfig struct {
 }
 
 type ServerConfig struct {
-	Port string
-	Host string
+	Port    string
+	Host    string
+	SSEHost string // SSEサーバーのホスト（空の場合は同一サーバー）
 }
 
 type MigrationConfig struct {
@@ -69,10 +71,12 @@ func Init() {
 			TursoAuthToken: getEnv("TURSO_AUTH_TOKEN", ""),
 		},
 		Server: ServerConfig{
-			Port: getEnv("PORT", "8080"),
-			Host: getEnv("HOST", "0.0.0.0"),
+			Port:    getEnv("PORT", "8080"),
+			Host:    getEnv("HOST", "0.0.0.0"),
+			SSEHost: getEnv("SSE_HOST", ""), // 空の場合は同一サーバー
 		},
 		Environment: getEnv("ENV", "development"),
+		ServiceMode: getEnv("SERVICE_MODE", "main"), // "main" または "sse"
 		Migration: MigrationConfig{
 			AutoRun: getEnvBool("RUN_MIGRATION", false),
 		},

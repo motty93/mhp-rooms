@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"path/filepath"
 
+	"mhp-rooms/internal/config"
 	"mhp-rooms/internal/middleware"
 	"mhp-rooms/internal/models"
 	"mhp-rooms/internal/repository"
@@ -120,6 +121,7 @@ func (h *RoomDetailHandler) RoomDetail(w http.ResponseWriter, r *http.Request) {
 		Title:   room.Name + " - 部屋詳細",
 		HasHero: false,
 		User:    r.Context().Value("user"),
+		SSEHost: config.AppConfig.Server.SSEHost, // SSEサーバーのホスト
 		PageData: RoomDetailPageData{
 			Room:        room,
 			Members:     memberSlots,

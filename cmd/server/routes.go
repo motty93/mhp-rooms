@@ -52,13 +52,20 @@ func (app *Application) SetupRoutes() chi.Router {
 	r.Use(middleware.SecurityHeaders(app.securityConfig))
 	r.Use(middleware.RateLimitMiddleware(app.generalLimiter))
 
-	// 静的ファイルを最初に設定（追加のミドルウェアを適用しない）
-	app.setupStaticRoutes(r)
+	// SERVICE_MODEに基づいてルーティングを分岐
+	if app.config.ServiceMode == "sse" {
+		// SSE専用モード：最小限のルーティング
+		app.setupSSEOnlyRoutes(r)
+	} else {
+		// 通常モード：全ルーティング
+		// 静的ファイルを最初に設定（追加のミドルウェアを適用しない）
+		app.setupStaticRoutes(r)
 
-	app.setupPageRoutes(r)
-	app.setupRoomRoutes(r)
-	app.setupAuthRoutes(r)
-	app.setupAPIRoutes(r)
+		app.setupPageRoutes(r)
+		app.setupRoomRoutes(r)
+		app.setupAuthRoutes(r)
+		app.setupAPIRoutes(r)
+	}
 
 	return r
 }
@@ -222,6 +229,36 @@ func (app *Application) setupAPIRoutes(r chi.Router) {
 func (app *Application) setupStaticRoutes(r chi.Router) {
 	fileServer := http.FileServer(http.Dir("static"))
 	r.Handle("/static/*", http.StripPrefix("/static/", fileServer))
+}
+
+func (app *Application) setupSSEOnlyRoutes(r chi.Router) {
+	// SSE専用モード：メッセージストリーミング機能のみ提供
+	r.Route("/rooms", func(rr chi.Router) {
+		rmh := app.roomMessageHandler
+
+		// SSE関連のルート（認証必須）
+		if app.hasAuthMiddleware() {
+			rr.Group(func(protected chi.Router) {
+				protected.Use(app.authMiddleware.Middleware)
+
+				// SSEトークン取得とメッセージストリーミング
+				protected.Get("/{id}/messages/sse-token", rmh.GetSSEToken)
+				protected.Get("/{id}/messages/stream", rmh.StreamMessages)
+			})
+		} else {
+			// 開発環境での認証なしアクセス
+			rr.Get("/{id}/messages/sse-token", rmh.GetSSEToken)
+			rr.Get("/{id}/messages/stream", rmh.StreamMessages)
+		}
+	})
+
+	// ヘルスチェック
+	r.Get("/health", app.healthCheck)
+
+	// 最小限のAPI
+	r.Route("/api", func(ar chi.Router) {
+		ar.Get("/health", app.healthCheck)
+	})
 }
 
 func (app *Application) healthCheck(w http.ResponseWriter, r *http.Request) {
