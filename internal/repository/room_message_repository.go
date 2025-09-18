@@ -3,15 +3,15 @@ package repository
 import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
-	"mhp-rooms/internal/infrastructure/persistence/postgres"
+
 	"mhp-rooms/internal/models"
 )
 
 type roomMessageRepository struct {
-	db *postgres.DB
+	db DBInterface
 }
 
-func NewRoomMessageRepository(db *postgres.DB) RoomMessageRepository {
+func NewRoomMessageRepository(db DBInterface) RoomMessageRepository {
 	return &roomMessageRepository{db: db}
 }
 

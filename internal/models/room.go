@@ -9,7 +9,7 @@ import (
 )
 
 type Room struct {
-	ID              uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	BaseModel
 	RoomCode        string     `gorm:"type:varchar(20);uniqueIndex;not null" json:"room_code"`
 	Name            string     `gorm:"type:varchar(100);not null" json:"name"`
 	Description     *string    `gorm:"type:text" json:"description"`
@@ -22,8 +22,6 @@ type Room struct {
 	RankRequirement *string    `gorm:"type:varchar(20)" json:"rank_requirement"`
 	IsActive        bool       `gorm:"not null;default:true" json:"is_active"`
 	IsClosed        bool       `gorm:"not null;default:false" json:"is_closed"`
-	CreatedAt       time.Time  `json:"created_at"`
-	UpdatedAt       time.Time  `json:"updated_at"`
 	ClosedAt        *time.Time `json:"closed_at"`
 
 	// リレーション

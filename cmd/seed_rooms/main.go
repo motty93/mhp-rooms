@@ -56,7 +56,9 @@ func main() {
 	rooms := []models.Room{
 		// MHP部屋
 		{
-			ID:              uuid.New(),
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
 			RoomCode:        "MHP-001",
 			Name:            "初心者歓迎！村クエスト",
 			Description:     stringPtr("MHP初心者歓迎です！村クエストを一緒に進めましょう"),
@@ -69,7 +71,9 @@ func main() {
 			IsActive:        true,
 		},
 		{
-			ID:              uuid.New(),
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
 			RoomCode:        "MHP-002",
 			Name:            "リオレウス討伐",
 			Description:     stringPtr("リオレウス討伐を手伝ってください"),
@@ -83,7 +87,9 @@ func main() {
 		},
 		// MHP2部屋
 		{
-			ID:              uuid.New(),
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
 			RoomCode:        "MHP2-001",
 			Name:            "素材集め周回",
 			Description:     stringPtr("素材集めを効率よく周回します"),
@@ -96,7 +102,9 @@ func main() {
 			IsActive:        true,
 		},
 		{
-			ID:              uuid.New(),
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
 			RoomCode:        "MHP2-002",
 			Name:            "訓練所でスキル上げ",
 			Description:     stringPtr("訓練所でスキルを磨きましょう"),
@@ -110,7 +118,9 @@ func main() {
 		},
 		// MHP2G部屋
 		{
-			ID:              uuid.New(),
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
 			RoomCode:        "MHP2G-001",
 			Name:            "G級ナルガクルガ",
 			Description:     stringPtr("G級ナルガクルガ討伐！装備自由"),
@@ -123,7 +133,9 @@ func main() {
 			IsActive:        true,
 		},
 		{
-			ID:              uuid.New(),
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
 			RoomCode:        "MHP2G-002",
 			Name:            "古龍種連戦",
 			Description:     stringPtr("古龍種を順番に討伐していきます"),
@@ -137,7 +149,9 @@ func main() {
 		},
 		// パスワード付き部屋（MHP2G）
 		{
-			ID:              uuid.New(),
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
 			RoomCode:        "MHP2G-003",
 			Name:            "【鍵】レア素材狙い専用",
 			Description:     stringPtr("効率重視！パスワードはDMで"),
@@ -151,7 +165,9 @@ func main() {
 		},
 		// MHP3部屋
 		{
-			ID:              uuid.New(),
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
 			RoomCode:        "MHP3-001",
 			Name:            "温泉チケット集め",
 			Description:     stringPtr("温泉チケット集めましょう！"),
@@ -164,7 +180,9 @@ func main() {
 			IsActive:        true,
 		},
 		{
-			ID:              uuid.New(),
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
 			RoomCode:        "MHP3-002",
 			Name:            "ジンオウガ狩猟",
 			Description:     stringPtr("ジンオウガの素材が欲しいです"),
@@ -178,7 +196,9 @@ func main() {
 		},
 		// パスワード付き部屋の例
 		{
-			ID:              uuid.New(),
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
 			RoomCode:        "MHP3-003",
 			Name:            "【鍵付き】上級者限定部屋",
 			Description:     stringPtr("上級者のみ！パスワード: hunter123"),
@@ -192,7 +212,9 @@ func main() {
 		},
 		// MHXX部屋
 		{
-			ID:              uuid.New(),
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
 			RoomCode:        "MHXX-001",
 			Name:            "二つ名持ちモンスター",
 			Description:     stringPtr("二つ名持ちモンスターに挑戦！"),
@@ -205,7 +227,9 @@ func main() {
 			IsActive:        true,
 		},
 		{
-			ID:              uuid.New(),
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
 			RoomCode:        "MHXX-002",
 			Name:            "G級クエスト進行",
 			Description:     stringPtr("G級クエストを順番に進めていきます"),

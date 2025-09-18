@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm/logger"
 
 	"mhp-rooms/internal/config"
+
 	"mhp-rooms/internal/models"
 )
 
@@ -47,6 +48,10 @@ func (db *DB) GetConn() *gorm.DB {
 	return db.conn
 }
 
+func (db *DB) GetType() string {
+	return "postgres"
+}
+
 func (db *DB) Close() error {
 	sqlDB, err := db.conn.DB()
 	if err != nil {
@@ -56,24 +61,8 @@ func (db *DB) Close() error {
 }
 
 func (db *DB) Migrate() error {
-	// テーブル作成順序に注意（外部キー制約のため）
-	err := db.conn.AutoMigrate(
-		&models.Platform{},
-		&models.User{},
-		&models.GameVersion{},
-		&models.PlayerName{},
-		&models.Room{},
-		&models.RoomMember{},
-		&models.RoomMessage{},
-		&models.ReactionType{},
-		&models.MessageReaction{},
-		&models.UserBlock{},
-		&models.UserFollow{},
-		&models.UserActivity{},
-		&models.RoomLog{},
-		&models.PasswordReset{},
-	)
-	if err != nil {
+	// 共通のマイグレーションを実行
+	if err := db.commonMigrate(); err != nil {
 		return fmt.Errorf("マイグレーションに失敗しました: %w", err)
 	}
 
@@ -265,4 +254,25 @@ func (db *DB) insertInitialData() error {
 	}
 
 	return tx.Commit().Error
+}
+
+// commonMigrate はデータベース共通のマイグレーションを実行
+func (db *DB) commonMigrate() error {
+	// 共通のテーブル作成
+	return db.conn.AutoMigrate(
+		&models.Platform{},
+		&models.GameVersion{},
+		&models.User{},
+		&models.Room{},
+		&models.RoomMember{},
+		&models.RoomMessage{},
+		&models.MessageReaction{},
+		&models.ReactionType{},
+		&models.UserBlock{},
+		&models.PlayerName{},
+		&models.UserFollow{},
+		&models.UserActivity{},
+		&models.RoomLog{},
+		&models.PasswordReset{},
+	)
 }

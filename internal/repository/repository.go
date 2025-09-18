@@ -2,9 +2,15 @@ package repository
 
 import (
 	"github.com/google/uuid"
-	"mhp-rooms/internal/infrastructure/persistence/postgres"
+	"gorm.io/gorm"
 	"mhp-rooms/internal/models"
 )
+
+type DBInterface interface {
+	GetConn() *gorm.DB
+	Close() error
+	GetType() string
+}
 
 type Repository struct {
 	User          UserRepository
@@ -20,7 +26,7 @@ type Repository struct {
 	UserActivity  UserActivityRepository
 }
 
-func NewRepository(db *postgres.DB) *Repository {
+func NewRepository(db DBInterface) *Repository {
 	return &Repository{
 		User:          NewUserRepository(db),
 		GameVersion:   NewGameVersionRepository(db),

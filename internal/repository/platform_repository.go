@@ -1,17 +1,16 @@
 package repository
 
 import (
-	"mhp-rooms/internal/infrastructure/persistence/postgres"
 	"mhp-rooms/internal/models"
 )
 
 // platformRepository はプラットフォーム関連の操作を行うリポジトリの実装
 type platformRepository struct {
-	db *postgres.DB
+	db DBInterface
 }
 
 // NewPlatformRepository は新しいPlatformRepositoryインスタンスを作成
-func NewPlatformRepository(db *postgres.DB) PlatformRepository {
+func NewPlatformRepository(db DBInterface) PlatformRepository {
 	return &platformRepository{db: db}
 }
 

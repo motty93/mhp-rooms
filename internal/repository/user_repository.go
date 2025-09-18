@@ -7,17 +7,16 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"mhp-rooms/internal/infrastructure/persistence/postgres"
 	"mhp-rooms/internal/models"
 )
 
 // userRepository はユーザー関連の操作を行うリポジトリの実装
 type userRepository struct {
-	db *postgres.DB
+	db DBInterface
 }
 
 // NewUserRepository は新しいUserRepositoryインスタンスを作成
-func NewUserRepository(db *postgres.DB) UserRepository {
+func NewUserRepository(db DBInterface) UserRepository {
 	return &userRepository{db: db}
 }
 
@@ -84,7 +83,13 @@ func (r *userRepository) FindUserByEmail(email string) (*models.User, error) {
 
 // UpdateUser はユーザー情報を更新
 func (r *userRepository) UpdateUser(user *models.User) error {
-	return r.db.GetConn().Save(user).Error
+	// Turso対応：明示的なトランザクション処理
+	return r.db.GetConn().Transaction(func(tx *gorm.DB) error {
+		if err := tx.Save(user).Error; err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 // GetActiveUsers はアクティブなユーザー一覧を取得

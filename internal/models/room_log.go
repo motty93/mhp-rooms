@@ -4,7 +4,6 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -20,7 +19,13 @@ func (j JSONB) Value() (driver.Value, error) {
 		return nil, nil
 	}
 
-	return json.Marshal(j.Data)
+	marshaled, err := json.Marshal(j.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	// SQLite/Turso用：文字列として返す（BLOB型を避ける）
+	return string(marshaled), nil
 }
 
 // Scan はsql.Scannerインターフェースを実装
@@ -52,12 +57,11 @@ func (j *JSONB) Scan(value interface{}) error {
 
 // RoomLog はルームアクションの監査ログ
 type RoomLog struct {
-	ID        uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	RoomID    uuid.UUID  `gorm:"type:uuid;not null" json:"room_id"`
-	UserID    *uuid.UUID `gorm:"type:uuid" json:"user_id"`
-	Action    string     `gorm:"type:varchar(50);not null" json:"action"`
-	Details   JSONB      `gorm:"type:jsonb" json:"details"`
-	CreatedAt time.Time  `json:"created_at"`
+	BaseModel
+	RoomID  uuid.UUID  `gorm:"type:uuid;not null" json:"room_id"`
+	UserID  *uuid.UUID `gorm:"type:uuid" json:"user_id"`
+	Action  string     `gorm:"type:varchar(50);not null" json:"action"`
+	Details JSONB      `gorm:"type:text" json:"details"`
 
 	// リレーション
 	Room Room  `gorm:"foreignKey:RoomID" json:"room"`

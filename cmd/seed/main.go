@@ -34,7 +34,9 @@ func main() {
 
 	users := []models.User{
 		{
-			ID:             uuid.New(),
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
 			SupabaseUserID: uuid.New(),
 			Email:          "hunter1@example.com",
 			Username:       stringPtr("hunter_taro"),
@@ -45,7 +47,9 @@ func main() {
 			Role:           "user",
 		},
 		{
-			ID:             uuid.New(),
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
 			SupabaseUserID: uuid.New(),
 			Email:          "hunter2@example.com",
 			Username:       stringPtr("neko_hunter"),
@@ -56,7 +60,9 @@ func main() {
 			Role:           "user",
 		},
 		{
-			ID:             uuid.New(),
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
 			SupabaseUserID: uuid.New(),
 			Email:          "hunter3@example.com",
 			Username:       stringPtr("material_collector"),
@@ -85,7 +91,9 @@ func main() {
 
 	rooms := []models.Room{
 		{
-			ID:              uuid.New(),
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
 			RoomCode:        "ROOM-001",
 			Name:            "上位ティガレックス討伐",
 			Description:     stringPtr("ティガレックス討伐クエストを一緒にやりませんか？装備自由です"),
@@ -98,7 +106,9 @@ func main() {
 			IsActive:        true,
 		},
 		{
-			ID:              uuid.New(),
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
 			RoomCode:        "ROOM-002",
 			Name:            "初心者歓迎部屋",
 			Description:     stringPtr("下位クエストでゆっくり楽しみましょう！初心者大歓迎です"),
@@ -111,7 +121,9 @@ func main() {
 			IsActive:        true,
 		},
 		{
-			ID:              uuid.New(),
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
 			RoomCode:        "ROOM-003",
 			Name:            "レア素材狙い",
 			Description:     stringPtr("レア素材狙いで効率よく周回します。経験者推奨"),
@@ -124,7 +136,9 @@ func main() {
 			IsActive:        true,
 		},
 		{
-			ID:              uuid.New(),
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
 			RoomCode:        "ROOM-004",
 			Name:            "進行中の部屋",
 			Description:     stringPtr("現在クエスト中です"),
@@ -137,7 +151,9 @@ func main() {
 			IsActive:        true,
 		},
 		{
-			ID:              uuid.New(),
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
 			RoomCode:        "ROOM-005",
 			Name:            "【鍵付き】プライベート部屋",
 			Description:     stringPtr("友達限定です。パスワード: test1234"),

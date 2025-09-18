@@ -7,7 +7,7 @@ import (
 )
 
 type RoomMember struct {
-	ID           uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID           uuid.UUID  `gorm:"type:uuid;primary_key" json:"id"`
 	RoomID       uuid.UUID  `gorm:"type:uuid;not null" json:"room_id"`
 	UserID       uuid.UUID  `gorm:"type:uuid;not null" json:"user_id"`
 	PlayerNumber int        `gorm:"not null" json:"player_number"`

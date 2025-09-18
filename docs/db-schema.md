@@ -1,16 +1,27 @@
 # データベーススキーマ
 
 ## 概要
-MonHubのデータベーススキーマ設計書です。PostgreSQL（開発環境）およびNeon（本番環境）を使用しています。
+MonHubのデータベーススキーマ設計書です。
+- **開発環境**: PostgreSQL (Docker Compose)
+- **本番環境**: Turso (libSQL) - SQLiteベースのクラウドデータベース
 
 ## テーブル定義
+
+### 共通フィールド（BaseModel）
+すべてのテーブルには以下の共通フィールドが含まれています：
+
+| カラム名 | 型 | 制約 | 説明 |
+|---------|-----|------|------|
+| id | UUID | PRIMARY KEY | 主キー（UUIDv7使用） |
+| created_at | TIMESTAMP | NOT NULL | 作成日時（GORMにより自動設定） |
+| updated_at | TIMESTAMP | NOT NULL | 更新日時（GORMにより自動更新） |
 
 ### users（ユーザー）
 ユーザー認証と管理のためのテーブル。Supabase認証システムと連携。
 
 | カラム名 | 型 | 制約 | 説明 |
 |---------|-----|------|------|
-| id | UUID | PRIMARY KEY | 主キー |
+| id | UUID | PRIMARY KEY | 主キー（BaseModel継承） |
 | supabase_user_id | UUID | UNIQUE, NOT NULL | Supabase認証システムのユーザーID |
 | email | VARCHAR(255) | UNIQUE, NOT NULL | メールアドレス |
 | username | VARCHAR(50) | UNIQUE | ユーザー名（オプション） |
@@ -21,29 +32,29 @@ MonHubのデータベーススキーマ設計書です。PostgreSQL（開発環�
 | twitter_id | VARCHAR(50) | | Twitter ID |
 | is_active | BOOLEAN | NOT NULL, DEFAULT true | アクティブフラグ |
 | role | VARCHAR(20) | NOT NULL, DEFAULT 'user' | ユーザー権限 |
-| created_at | TIMESTAMP | NOT NULL | 作成日時 |
-| updated_at | TIMESTAMP | NOT NULL | 更新日時 |
+| created_at | TIMESTAMP | NOT NULL | 作成日時（BaseModel継承） |
+| updated_at | TIMESTAMP | NOT NULL | 更新日時（BaseModel継承） |
 
 ### game_versions（ゲームバージョン）
 対応ゲームバージョンのマスターデータ。
 
 | カラム名 | 型 | 制約 | 説明 |
 |---------|-----|------|------|
-| id | UUID | PRIMARY KEY | 主キー |
+| id | UUID | PRIMARY KEY | 主キー（BaseModel継承） |
 | code | VARCHAR(10) | UNIQUE, NOT NULL | ゲームコード（MHP、MHP2、MHP2G、MHP3） |
 | name | VARCHAR(100) | NOT NULL | ゲーム名 |
 | short_name | VARCHAR(50) | NOT NULL | 略称 |
 | display_order | INTEGER | NOT NULL | 表示順序 |
 | is_active | BOOLEAN | NOT NULL, DEFAULT true | アクティブフラグ |
-| created_at | TIMESTAMP | NOT NULL | 作成日時 |
-| updated_at | TIMESTAMP | NOT NULL | 更新日時 |
+| created_at | TIMESTAMP | NOT NULL | 作成日時（BaseModel継承） |
+| updated_at | TIMESTAMP | NOT NULL | 更新日時（BaseModel継承） |
 
 ### rooms（ルーム）
 ゲームルームの管理テーブル。
 
 | カラム名 | 型 | 制約 | 説明 |
 |---------|-----|------|------|
-| id | UUID | PRIMARY KEY | 主キー |
+| id | UUID | PRIMARY KEY | 主キー（BaseModel継承） |
 | room_code | VARCHAR(8) | UNIQUE, NOT NULL | ルームコード（8文字） |
 | name | VARCHAR(100) | NOT NULL | ルーム名 |
 | description | TEXT | | ルーム説明 |
@@ -55,15 +66,15 @@ MonHubのデータベーススキーマ設計書です。PostgreSQL（開発環�
 | rank_requirement | VARCHAR(20) | | ランク条件 |
 | is_active | BOOLEAN | NOT NULL, DEFAULT true | アクティブフラグ |
 | is_closed | BOOLEAN | NOT NULL, DEFAULT false | クローズフラグ |
-| created_at | TIMESTAMP | NOT NULL | 作成日時 |
-| updated_at | TIMESTAMP | NOT NULL | 更新日時 |
+| created_at | TIMESTAMP | NOT NULL | 作成日時（BaseModel継承） |
+| updated_at | TIMESTAMP | NOT NULL | 更新日時（BaseModel継承） |
 
 ### room_members（ルームメンバー）
 ルーム参加者の管理テーブル。
 
 | カラム名 | 型 | 制約 | 説明 |
 |---------|-----|------|------|
-| id | UUID | PRIMARY KEY | 主キー |
+| id | UUID | PRIMARY KEY | 主キー（BaseModel継承） |
 | room_id | UUID | NOT NULL, FOREIGN KEY | ルームID |
 | user_id | UUID | NOT NULL, FOREIGN KEY | ユーザーID |
 | player_number | INTEGER | NOT NULL, CHECK (1-4) | プレイヤー番号 |
@@ -76,21 +87,21 @@ MonHubのデータベーススキーマ設計書です。PostgreSQL（開発環�
 
 | カラム名 | 型 | 制約 | 説明 |
 |---------|-----|------|------|
-| id | UUID | PRIMARY KEY | 主キー |
+| id | UUID | PRIMARY KEY | 主キー（BaseModel継承） |
 | room_id | UUID | NOT NULL, FOREIGN KEY | ルームID |
 | user_id | UUID | NOT NULL, FOREIGN KEY | ユーザーID |
 | message_type | VARCHAR(20) | NOT NULL, DEFAULT 'chat' | メッセージタイプ |
 | content | TEXT | NOT NULL | メッセージ内容 |
 | is_deleted | BOOLEAN | NOT NULL, DEFAULT false | 削除フラグ |
-| created_at | TIMESTAMP | NOT NULL | 作成日時 |
-| updated_at | TIMESTAMP | NOT NULL | 更新日時 |
+| created_at | TIMESTAMP | NOT NULL | 作成日時（BaseModel継承） |
+| updated_at | TIMESTAMP | NOT NULL | 更新日時（BaseModel継承） |
 
 ### room_logs（ルームログ）
 ルームアクションの監査ログ。
 
 | カラム名 | 型 | 制約 | 説明 |
 |---------|-----|------|------|
-| id | UUID | PRIMARY KEY | 主キー |
+| id | UUID | PRIMARY KEY | 主キー（BaseModel継承） |
 | room_id | UUID | NOT NULL, FOREIGN KEY | ルームID |
 | user_id | UUID | FOREIGN KEY | ユーザーID（システムアクションの場合NULL） |
 | action_type | VARCHAR(50) | NOT NULL | アクションタイプ |
@@ -102,7 +113,7 @@ MonHubのデータベーススキーマ設計書です。PostgreSQL（開発環�
 
 | カラム名 | 型 | 制約 | 説明 |
 |---------|-----|------|------|
-| id | UUID | PRIMARY KEY | 主キー |
+| id | UUID | PRIMARY KEY | 主キー（BaseModel継承） |
 | blocker_user_id | UUID | NOT NULL, FOREIGN KEY | ブロックしたユーザーID |
 | blocked_user_id | UUID | NOT NULL, FOREIGN KEY | ブロックされたユーザーID |
 | reason | VARCHAR(255) | | ブロック理由 |
@@ -113,25 +124,25 @@ MonHubのデータベーススキーマ設計書です。PostgreSQL（開発環�
 
 | カラム名 | 型 | 制約 | 説明 |
 |---------|-----|------|------|
-| id | UUID | PRIMARY KEY | 主キー |
+| id | UUID | PRIMARY KEY | 主キー（BaseModel継承） |
 | user_id | UUID | NOT NULL, FOREIGN KEY, INDEX | ユーザーID |
 | game_version_id | UUID | NOT NULL, FOREIGN KEY, INDEX | ゲームバージョンID |
 | name | VARCHAR(50) | NOT NULL | プレイヤー名 |
-| created_at | TIMESTAMP | NOT NULL | 作成日時 |
-| updated_at | TIMESTAMP | NOT NULL | 更新日時 |
+| created_at | TIMESTAMP | NOT NULL | 作成日時（BaseModel継承） |
+| updated_at | TIMESTAMP | NOT NULL | 更新日時（BaseModel継承） |
 
 ### password_resets（パスワードリセット）
 パスワードリセット用トークン管理。
 
 | カラム名 | 型 | 制約 | 説明 |
 |---------|-----|------|------|
-| id | UUID | PRIMARY KEY | 主キー |
+| id | UUID | PRIMARY KEY | 主キー（BaseModel継承） |
 | user_id | UUID | NOT NULL, FOREIGN KEY | ユーザーID |
 | token | VARCHAR(255) | UNIQUE, NOT NULL | リセットトークン |
 | expires_at | TIMESTAMP | NOT NULL | 有効期限 |
 | used | BOOLEAN | NOT NULL, DEFAULT false | 使用済みフラグ |
-| created_at | TIMESTAMP | NOT NULL | 作成日時 |
-| updated_at | TIMESTAMP | NOT NULL | 更新日時 |
+| created_at | TIMESTAMP | NOT NULL | 作成日時（BaseModel継承） |
+| updated_at | TIMESTAMP | NOT NULL | 更新日時（BaseModel継承） |
 
 ## 初期データ
 

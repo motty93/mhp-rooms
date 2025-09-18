@@ -1,11 +1,15 @@
 {{ define "profile_edit_form" }}
   <div
     x-data="profileEditForm()"
-    x-init="displayName = '{{ jsEscape .User.DisplayName }}'; bio = '{{ jsEscapePtr .User.Bio }}'; psnOnlineId = '{{ jsEscapePtr .User.PSNOnlineID }}'; nintendoNetworkId = '{{ jsEscapePtr .User.NintendoNetworkID }}'; nintendoSwitchId = '{{ jsEscapePtr .User.NintendoSwitchID }}'; twitterId = '{{ jsEscapePtr .User.TwitterID }}'; favoriteGames = {{ json .FavoriteGames }}; playTimes = { weekday: '{{ if .PlayTimes }}
-      {{ jsEscape .PlayTimes.Weekday }}
-    {{ end }}', weekend: '{{ if .PlayTimes }}
-      {{ jsEscape .PlayTimes.Weekend }}
-    {{ end }}' }; init()"
+    data-init-display-name="{{ .User.DisplayName }}"
+    data-init-bio="{{ safeString .User.Bio }}"
+    data-init-psn-online-id="{{ safeString .User.PSNOnlineID }}"
+    data-init-nintendo-network-id="{{ safeString .User.NintendoNetworkID }}"
+    data-init-nintendo-switch-id="{{ safeString .User.NintendoSwitchID }}"
+    data-init-twitter-id="{{ safeString .User.TwitterID }}"
+    data-init-favorite-games="{{ json .FavoriteGames }}"
+    data-init-play-times="{{ json .PlayTimes }}"
+    x-init="$data.initFromDataAttributes($el)"
     class="flex flex-col items-center"
   >
     <h3 class="text-xl font-bold text-gray-800 mb-6 text-center">

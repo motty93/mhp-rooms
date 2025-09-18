@@ -879,7 +879,7 @@
         init() {
           // サーバーサイドレンダリングのデータを使用
           const roomsData = {{.PageData.Rooms | json}};
-          this.allRooms = roomsData.map(room => ({
+          this.allRooms = (roomsData || []).map(room => ({
             id: room.id,
             name: room.name,
             description: room.description || '',
@@ -982,7 +982,7 @@
             const data = await response.json();
 
             // 部屋データを更新
-            this.allRooms = data.rooms.map(room => ({
+            this.allRooms = (data.rooms || []).map(room => ({
               id: room.id,
               name: room.name,
               description: room.description || '',

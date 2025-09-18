@@ -2,11 +2,10 @@ package main
 
 import (
 	"log"
-	"time"
 
 	"github.com/joho/godotenv"
 	"mhp-rooms/internal/config"
-	"mhp-rooms/internal/infrastructure/persistence/postgres"
+	"mhp-rooms/internal/infrastructure/persistence"
 )
 
 func main() {
@@ -18,13 +17,8 @@ func main() {
 
 	config.Init()
 
-	log.Println("データベース接続を待機中...")
-	if err := postgres.WaitForDB(config.AppConfig, 30, 2*time.Second); err != nil {
-		log.Fatalf("データベース接続待機に失敗しました: %v", err)
-	}
-
-	log.Println("データベース接続を初期化中...")
-	db, err := postgres.NewDB(config.AppConfig)
+	log.Printf("データベース接続を初期化中... (タイプ: %s)", config.AppConfig.Database.Type)
+	db, err := persistence.NewDBAdapter(config.AppConfig)
 	if err != nil {
 		log.Fatalf("データベース接続に失敗しました: %v", err)
 	}

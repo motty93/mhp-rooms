@@ -62,12 +62,17 @@ func gameVersionIconHTML(code string) template.HTML {
 	return template.HTML(utils.GetGameVersionIcon(code))
 }
 
-// ポインタ文字列を通常の文字列に変換
-func derefString(s *string) string {
+// ポインタ文字列を通常の文字列に変換（nil安全）
+func safeString(s *string) string {
 	if s == nil {
 		return ""
 	}
 	return *s
+}
+
+// ポインタ文字列を通常の文字列に変換（旧名、互換性のため維持）
+func derefString(s *string) string {
+	return safeString(s)
 }
 
 // ポインタ文字列が値を持つかチェック
@@ -102,7 +107,8 @@ func getCommonFuncMap() template.FuncMap {
 		"gameVersionColor": utils.GetGameVersionColor,
 		"gameVersionIcon":  gameVersionIconHTML,
 		"gameVersionAbbr":  utils.GetGameVersionAbbreviation,
-		"stringPtr":        derefString,
+		"stringPtr":        derefString, // 互換性のため維持
+		"safeString":       safeString,  // nil安全な文字列変換（推奨）
 		"hasStringValue":   hasStringValue,
 		"jsEscape":         jsEscape,
 		"jsEscapePtr":      jsEscapePtr,

@@ -6,17 +6,16 @@ import (
 
 	"github.com/google/uuid"
 
-	"mhp-rooms/internal/infrastructure/persistence/postgres"
 	"mhp-rooms/internal/models"
 )
 
 // userFollowRepository はユーザーフォロー関連の操作を行うリポジトリの実装
 type userFollowRepository struct {
-	db *postgres.DB
+	db DBInterface
 }
 
 // NewUserFollowRepository は新しいUserFollowRepositoryインスタンスを作成
-func NewUserFollowRepository(db *postgres.DB) UserFollowRepository {
+func NewUserFollowRepository(db DBInterface) UserFollowRepository {
 	return &userFollowRepository{db: db}
 }
 

@@ -3,7 +3,6 @@ package repository
 import (
 	"errors"
 	"github.com/google/uuid"
-	"mhp-rooms/internal/infrastructure/persistence/postgres"
 	"mhp-rooms/internal/models"
 )
 
@@ -19,10 +18,10 @@ type ReactionRepository interface {
 }
 
 type reactionRepository struct {
-	db *postgres.DB
+	db DBInterface
 }
 
-func NewReactionRepository(db *postgres.DB) ReactionRepository {
+func NewReactionRepository(db DBInterface) ReactionRepository {
 	return &reactionRepository{db: db}
 }
 

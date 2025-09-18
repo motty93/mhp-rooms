@@ -6,17 +6,16 @@ import (
 
 	"github.com/google/uuid"
 
-	"mhp-rooms/internal/infrastructure/persistence/postgres"
 	"mhp-rooms/internal/models"
 )
 
 // userActivityRepository はユーザーアクティビティ関連の操作を行うリポジトリの実装
 type userActivityRepository struct {
-	db *postgres.DB
+	db DBInterface
 }
 
 // NewUserActivityRepository は新しいUserActivityRepositoryインスタンスを作成
-func NewUserActivityRepository(db *postgres.DB) UserActivityRepository {
+func NewUserActivityRepository(db DBInterface) UserActivityRepository {
 	return &userActivityRepository{db: db}
 }
 

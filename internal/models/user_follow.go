@@ -8,11 +8,10 @@ import (
 
 // UserFollow ユーザー間のフォロー関係を管理
 type UserFollow struct {
-	ID              uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	BaseModel
 	FollowerUserID  uuid.UUID  `gorm:"type:uuid;not null" json:"follower_user_id"`
 	FollowingUserID uuid.UUID  `gorm:"type:uuid;not null" json:"following_user_id"`
 	Status          string     `gorm:"type:varchar(20);default:'pending'" json:"status"` // pending, accepted, rejected
-	CreatedAt       time.Time  `json:"created_at"`
 	AcceptedAt      *time.Time `json:"accepted_at"`
 
 	// リレーション

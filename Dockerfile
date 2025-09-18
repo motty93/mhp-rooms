@@ -1,7 +1,7 @@
 # Build stage
-FROM golang:1.23-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
-RUN apk add --no-cache git
+RUN apk add --no-cache git gcc musl-dev sqlite-dev
 
 WORKDIR /app
 
@@ -13,8 +13,8 @@ RUN go mod download
 COPY . .
 
 # Build optimized static binary for Linux
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
-    -ldflags='-w -s -extldflags "-static"' \
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build \
+    -ldflags='-w -s' \
     -a -installsuffix cgo \
     -o main ./cmd/server
 

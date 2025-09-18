@@ -3,7 +3,7 @@ substitutions:
   _REGION: asia-northeast1
   _ARTIFACT_REPOSITORY: monhub-registry
   _IMAGE_NAME: monhub-app
-  _GO_VERSION: "1.23"
+  _GO_VERSION: "1.24"
 
 options:
   logging: CLOUD_LOGGING_ONLY

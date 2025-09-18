@@ -4,15 +4,14 @@ import (
 	"errors"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
-	"mhp-rooms/internal/infrastructure/persistence/postgres"
 	"mhp-rooms/internal/models"
 )
 
 type playerNameRepository struct {
-	db *postgres.DB
+	db DBInterface
 }
 
-func NewPlayerNameRepository(db *postgres.DB) PlayerNameRepository {
+func NewPlayerNameRepository(db DBInterface) PlayerNameRepository {
 	return &playerNameRepository{db: db}
 }
 
