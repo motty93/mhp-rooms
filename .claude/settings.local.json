@@ -131,7 +131,11 @@
       "Bash(done)",
       "Bash(goimports:*)",
       "Bash(npx prettier:*)",
-      "Bash(PORT=8081 ENV=development timeout 10s make run)"
+      "Bash(PORT=8081 ENV=development timeout 10s make run)",
+      "Bash(SQLITE_DB_PATH=\"./data/mhp_rooms.db\" DB_TYPE=sqlite sqlite3 ./data/mhp_rooms.db \"SELECT id, display_name, favorite_games FROM users LIMIT 5;\")",
+      "Bash(ENV=development DB_TYPE=turso go run cmd/migrate/main.go)",
+      "Bash(ENV=development timeout 10s make run)",
+      "Bash(PORT=8082 ENV=development timeout 10s make run)"
     ],
     "deny": []
   }
