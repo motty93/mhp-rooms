@@ -241,13 +241,13 @@ func (app *Application) setupSSEOnlyRoutes(r chi.Router) {
 			rr.Group(func(protected chi.Router) {
 				protected.Use(app.authMiddleware.Middleware)
 
-				// SSEトークン取得とメッセージストリーミング
-				protected.Get("/{id}/messages/sse-token", rmh.GetSSEToken)
+				// SSEトークン生成とメッセージストリーミング
+				protected.Post("/{id}/sse-token", app.sseTokenHandler.GenerateSSEToken)
 				protected.Get("/{id}/messages/stream", rmh.StreamMessages)
 			})
 		} else {
 			// 開発環境での認証なしアクセス
-			rr.Get("/{id}/messages/sse-token", rmh.GetSSEToken)
+			rr.Post("/{id}/sse-token", app.sseTokenHandler.GenerateSSEToken)
 			rr.Get("/{id}/messages/stream", rmh.StreamMessages)
 		}
 	})
