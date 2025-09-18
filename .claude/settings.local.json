@@ -114,7 +114,22 @@
       "Bash(git log:*)",
       "Bash(ENV=development make run)",
       "Bash(xargs kill:*)",
-      "Bash(docker ps:*)"
+      "Bash(docker ps:*)",
+      "mcp__serena__insert_after_symbol",
+      "mcp__serena__insert_before_symbol",
+      "Bash(DB_TYPE=sqlite go run cmd/migrate/main.go)",
+      "mcp__serena__insert_at_line",
+      "Bash(DB_TYPE=postgres go run cmd/migrate/main.go)",
+      "Bash(sed:*)",
+      "Bash(SQLITE_DB_PATH=\"./data/mhp_rooms.db\" DB_TYPE=sqlite go run cmd/migrate/main.go)",
+      "Bash(SQLITE_DB_PATH=\"./data/mhp_rooms.db\" DB_TYPE=sqlite timeout 10s go run cmd/server/main.go)",
+      "Bash(SQLITE_DB_PATH=\"../../data/mhp_rooms.db\" DB_TYPE=sqlite timeout 10s go run .)",
+      "mcp__gemini-google-search__google_search",
+      "Bash(for file in internal/models/player_name.go internal/models/user_activity.go internal/models/user_block.go internal/models/password_reset.go internal/models/room_log.go)",
+      "Bash(do)",
+      "Bash(echo:*)",
+      "Bash(done)",
+      "Bash(goimports:*)"
     ],
     "deny": []
   }
