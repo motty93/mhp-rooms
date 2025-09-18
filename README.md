@@ -20,7 +20,9 @@
 - **言語**: Go 1.22.2
 - **Webフレームワーク**: Chi
 - **ORM**: GORM v2
-- **データベース**: PostgreSQL
+- **データベース**:
+  - **開発環境**: PostgreSQL (Docker Compose)
+  - **本番環境**: Turso (libSQL) - SQLiteベースのクラウドデータベース
 
 ### フロントエンド
 - **テンプレートエンジン**: Go HTML/Template
@@ -137,6 +139,8 @@ docker exec -it mhp-rooms-db-1 psql -U mhp_user -d mhp_rooms_dev
 アプリケーションは以下の環境変数を使用します：
 
 ### データベース設定
+
+#### PostgreSQL（開発環境）
 - `DATABASE_URL`: PostgreSQL接続文字列（優先使用）
 - `DB_HOST`: データベースホスト
 - `DB_USER`: データベースユーザー名
@@ -144,6 +148,11 @@ docker exec -it mhp-rooms-db-1 psql -U mhp_user -d mhp_rooms_dev
 - `DB_NAME`: データベース名
 - `DB_PORT`: データベースポート（デフォルト: 5432）
 - `DB_SSLMODE`: SSL接続モード（デフォルト: disable）
+
+#### Turso（本番環境）
+- `DB_TYPE`: データベースタイプ（`turso` または `postgres`）
+- `TURSO_DATABASE_URL`: TursoデータベースURL（`libsql://...`）
+- `TURSO_AUTH_TOKEN`: Turso認証トークン
 
 ### アプリケーション設定
 - `PORT`: サーバーポート（デフォルト: 8080）
