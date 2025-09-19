@@ -139,7 +139,8 @@
       "Bash(turso db shell:*)",
       "Read(//home/motty93/**)",
       "Bash(~/.turso/turso db list)",
-      "Bash(~/.turso/turso:*)"
+      "Bash(~/.turso/turso:*)",
+      "WebSearch"
     ],
     "deny": []
   }

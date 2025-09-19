@@ -244,7 +244,7 @@ func (h *RoomHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		HostUserID:     hostUserID,
 		MaxPlayers:     req.MaxPlayers,
 		IsActive:       true,
-		CurrentPlayers: 1, // ホストを含めた初期人数
+		CurrentPlayers: 0, // 初期人数（メンバー追加処理で更新される）
 	}
 
 	if req.Description != "" {

@@ -274,5 +274,7 @@ func (db *DB) commonMigrate() error {
 		&models.UserActivity{},
 		&models.RoomLog{},
 		&models.PasswordReset{},
+		&models.UserReport{},
+		&models.ReportAttachment{},
 	)
 }

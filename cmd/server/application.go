@@ -29,6 +29,7 @@ type Application struct {
 	profileHandler     *handlers.ProfileHandler
 	userHandler        *handlers.UserHandler
 	followHandler      *handlers.FollowHandler
+	reportHandler      *handlers.ReportHandler
 	authMiddleware     *middleware.JWTAuth
 	securityConfig     *middleware.SecurityConfig
 	generalLimiter     *middleware.RateLimiter
@@ -93,6 +94,7 @@ func (app *Application) initHandlers() error {
 	app.profileHandler = handlers.NewProfileHandler(app.repo, app.authMiddleware)
 	app.userHandler = handlers.NewUserHandler(app.repo)
 	app.followHandler = handlers.NewFollowHandler(app.repo)
+	app.reportHandler = handlers.NewReportHandler(app.repo.Report, app.repo.User)
 
 	// 認証ミドルウェアの初期化
 	authMiddleware, err := middleware.NewJWTAuth(app.repo)
