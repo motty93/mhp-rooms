@@ -102,28 +102,72 @@ func (r *roomRepository) RoomCodeExists(roomCode string) (bool, error) {
 }
 
 func (r *roomRepository) GetActiveRooms(gameVersionID *uuid.UUID, limit, offset int) ([]models.Room, error) {
-	var rooms []models.Room
-	query := r.db.GetConn().
-		Select("rooms.*, COUNT(room_members.id) as current_players").
-		Joins("LEFT JOIN room_members ON rooms.id = room_members.room_id AND room_members.status = 'active'").
-		Preload("GameVersion").
-		Preload("Host", func(db *gorm.DB) *gorm.DB {
-			return db.Select("id", "supabase_user_id", "email", "username", "display_name", "avatar_url", "bio", "psn_online_id", "nintendo_network_id", "nintendo_switch_id", "pretendo_network_id", "twitter_id", "is_active", "role", "created_at", "updated_at")
-		}).
-		Where("rooms.is_active = ?", true).
-		Group("rooms.id")
-
-	if gameVersionID != nil {
-		query = query.Where("rooms.game_version_id = ?", *gameVersionID)
+	// 効率的なクエリ: 1つのクエリで部屋情報と参加者数を取得
+	type roomQueryResult struct {
+		models.Room
+		GameVersionName string  `json:"game_version_name"`
+		GameVersionCode string  `json:"game_version_code"`
+		HostDisplayName string  `json:"host_display_name"`
+		HostPSNOnlineID *string `json:"host_psn_online_id"`
+		CurrentPlayers  int     `json:"current_players"`
 	}
 
-	err := query.
-		Order("rooms.created_at DESC").
-		Limit(limit).
-		Offset(offset).
-		Find(&rooms).Error
+	var results []roomQueryResult
+	sqlQuery := `
+		SELECT
+			rooms.id, rooms.room_code, rooms.name, rooms.description,
+			rooms.game_version_id, rooms.host_user_id, rooms.max_players,
+			rooms.password_hash, rooms.target_monster, rooms.rank_requirement,
+			rooms.is_active, rooms.is_closed, rooms.created_at, rooms.updated_at, rooms.closed_at,
+			gv.name as game_version_name,
+			gv.code as game_version_code,
+			u.display_name as host_display_name,
+			u.psn_online_id as host_psn_online_id,
+			COUNT(DISTINCT rm.id) as current_players
+		FROM rooms
+		LEFT JOIN game_versions gv ON rooms.game_version_id = gv.id
+		LEFT JOIN users u ON rooms.host_user_id = u.id
+		LEFT JOIN room_members rm ON rooms.id = rm.room_id AND rm.status = 'active'
+		WHERE rooms.is_active = true`
 
-	return rooms, err
+	params := []interface{}{}
+	if gameVersionID != nil {
+		sqlQuery += " AND rooms.game_version_id = ?"
+		params = append(params, *gameVersionID)
+	}
+
+	sqlQuery += `
+		GROUP BY rooms.id, gv.id, u.id
+		ORDER BY rooms.created_at DESC
+		LIMIT ? OFFSET ?`
+	params = append(params, limit, offset)
+
+	if err := r.db.GetConn().Raw(sqlQuery, params...).Scan(&results).Error; err != nil {
+		return nil, err
+	}
+
+	// 結果をRoomに変換
+	rooms := make([]models.Room, len(results))
+	for i, result := range results {
+		rooms[i] = result.Room
+		rooms[i].GameVersion = models.GameVersion{
+			BaseModel: models.BaseModel{
+				ID: result.Room.GameVersionID,
+			},
+			Name: result.GameVersionName,
+			Code: result.GameVersionCode,
+		}
+		rooms[i].Host = models.User{
+			BaseModel: models.BaseModel{
+				ID: result.Room.HostUserID,
+			},
+			DisplayName: result.HostDisplayName,
+			PSNOnlineID: result.HostPSNOnlineID,
+		}
+		rooms[i].CurrentPlayers = result.CurrentPlayers
+	}
+
+	return rooms, nil
 }
 
 // GetActiveRoomsWithJoinStatus ユーザーの参加状態を含めて部屋一覧を取得（パフォーマンス最適化版）
@@ -145,22 +189,34 @@ func (r *roomRepository) GetActiveRoomsWithJoinStatus(userID *uuid.UUID, gameVer
 		return roomsWithStatus, nil
 	}
 
-	// 1つのクエリで部屋一覧とユーザーの参加状態を同時に取得（最適化）
+	// 効率的なクエリ: サブクエリを使用してroom_membersの重複JOINを回避
 	var roomsWithStatus []models.RoomWithJoinStatus
 	query := `
-		SELECT 
-			rooms.*,
+		SELECT
+			rooms.id, rooms.room_code, rooms.name, rooms.description,
+			rooms.game_version_id, rooms.host_user_id, rooms.max_players,
+			rooms.password_hash, rooms.target_monster, rooms.rank_requirement,
+			rooms.is_active, rooms.is_closed, rooms.created_at, rooms.updated_at, rooms.closed_at,
 			gv.name as game_version_name,
 			gv.code as game_version_code,
 			u.display_name as host_display_name,
 			u.psn_online_id as host_psn_online_id,
-			COUNT(DISTINCT rm_all.id) as current_players,
-			CASE WHEN rm_user.id IS NOT NULL THEN true ELSE false END as is_joined
+			COALESCE(member_counts.current_players, 0) as current_players,
+			COALESCE(user_membership.is_joined, false) as is_joined
 		FROM rooms
 		LEFT JOIN game_versions gv ON rooms.game_version_id = gv.id
 		LEFT JOIN users u ON rooms.host_user_id = u.id
-		LEFT JOIN room_members rm_all ON rooms.id = rm_all.room_id AND rm_all.status = 'active'
-		LEFT JOIN room_members rm_user ON rooms.id = rm_user.room_id AND rm_user.user_id = ? AND rm_user.status = 'active'
+		LEFT JOIN (
+			SELECT room_id, COUNT(*) as current_players
+			FROM room_members
+			WHERE status = 'active'
+			GROUP BY room_id
+		) member_counts ON rooms.id = member_counts.room_id
+		LEFT JOIN (
+			SELECT room_id, true as is_joined
+			FROM room_members
+			WHERE user_id = ? AND status = 'active'
+		) user_membership ON rooms.id = user_membership.room_id
 		WHERE rooms.is_active = true
 	`
 
@@ -172,9 +228,8 @@ func (r *roomRepository) GetActiveRoomsWithJoinStatus(userID *uuid.UUID, gameVer
 	}
 
 	query += `
-		GROUP BY rooms.id, gv.id, u.id, rm_user.id
-		ORDER BY 
-			CASE WHEN rm_user.id IS NOT NULL THEN 0 ELSE 1 END,
+		ORDER BY
+			CASE WHEN user_membership.is_joined IS NOT NULL THEN 0 ELSE 1 END,
 			rooms.created_at DESC
 		LIMIT ? OFFSET ?
 	`
