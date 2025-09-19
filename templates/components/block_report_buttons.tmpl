@@ -29,6 +29,7 @@
         </button>
         -->
           <button
+            @click="$dispatch('open-report-modal', { userId: '{{ .User.ID }}', userName: '{{ .User.DisplayName }}' })"
             class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
           >
             <i class="fa-solid fa-flag text-yellow-500"></i>

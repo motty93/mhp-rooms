@@ -219,6 +219,11 @@ func (app *Application) setupAPIRoutes(r chi.Router) {
 		ar.Post("/messages/{messageId}/reactions", app.withAuth(app.reactionHandler.AddReaction))
 		ar.Delete("/messages/{messageId}/reactions/{reactionType}", app.withAuth(app.reactionHandler.RemoveReaction))
 
+		// 通報関連API（認証必須）
+		ar.Post("/users/{id}/report", app.withAuth(app.reportHandler.CreateReport))
+		ar.Post("/reports/{id}/upload", app.withAuth(app.reportHandler.UploadAttachment))
+		ar.Get("/report/reasons", app.withAuth(app.reportHandler.GetReportReasons))
+
 		// 認証オプションのAPIエンドポイント
 		ar.Get("/rooms", app.withOptionalAuth(app.roomHandler.GetAllRoomsAPI))
 		ar.Get("/messages/{messageId}/reactions", app.withOptionalAuth(app.reactionHandler.GetMessageReactions))

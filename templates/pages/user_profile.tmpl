@@ -314,4 +314,27 @@
       </div>
     </div>
   </div>
+
+  <!-- 通報モーダル -->
+  {{ template "report-modal" }}
+
+  <script>
+    // Alpine.jsのグローバル機能を待つ
+    document.addEventListener('alpine:init', () => {
+      // 通報モーダルのイベントリスナー
+      document.addEventListener('open-report-modal', (event) => {
+        const { userId, userName } = event.detail;
+        // reportModalはAlpine.jsのグローバル関数として定義されている
+        if (window.Alpine && window.Alpine.store('reportModal')) {
+          window.Alpine.store('reportModal').openModal(userId, userName);
+        } else {
+          // fallback: 直接モーダルを表示
+          const modalElement = document.querySelector('#reportModal');
+          if (modalElement && modalElement._x_dataStack) {
+            modalElement._x_dataStack[0].openModal(userId, userName);
+          }
+        }
+      });
+    });
+  </script>
 {{ end }}
