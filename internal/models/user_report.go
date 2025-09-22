@@ -33,44 +33,13 @@ const (
 	ReasonOther            ReportReason = "other"             // その他
 )
 
-// ReportReasons 複数の通報理由を保持する型
-type ReportReasons []ReportReason
-
-// Value データベースに保存する際の値を返す
-func (r ReportReasons) Value() (driver.Value, error) {
-	if r == nil || len(r) == 0 {
-		return "[]", nil
-	}
-
-	bytes, err := json.Marshal(r)
-	if err != nil {
-		return nil, err
-	}
-
-	return string(bytes), nil
-}
-
-// Scan データベースから読み込む際の処理
-func (r *ReportReasons) Scan(value interface{}) error {
-	if value == nil {
-		*r = nil
-		return nil
-	}
-
-	bytes, ok := value.([]byte)
-	if !ok {
-		bytes = []byte(value.(string))
-	}
-
-	return json.Unmarshal(bytes, r)
-}
 
 // UserReport ユーザー通報モデル
 type UserReport struct {
 	BaseModel
 	ReporterUserID uuid.UUID     `gorm:"type:uuid;not null;index" json:"reporter_user_id"`
 	ReportedUserID uuid.UUID     `gorm:"type:uuid;not null;index" json:"reported_user_id"`
-	Reasons        ReportReasons `gorm:"type:text;not null" json:"reasons"`
+	Reason         ReportReason  `gorm:"type:varchar(50);not null" json:"reason"`
 	Description    string        `gorm:"type:text;not null" json:"description"`
 	Status         ReportStatus  `gorm:"type:varchar(20);not null;default:'pending'" json:"status"`
 	AdminNote      *string       `gorm:"type:text" json:"admin_note"`

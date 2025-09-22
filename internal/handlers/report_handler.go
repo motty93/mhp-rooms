@@ -36,8 +36,8 @@ func NewReportHandler(reportRepo repository.ReportRepositoryInterface, userRepo 
 
 // ReportRequest 通報リクエストの構造体
 type ReportRequest struct {
-	Reasons     []models.ReportReason `json:"reasons"`
-	Description string                `json:"description"`
+	Reason      models.ReportReason `json:"reason"`
+	Description string              `json:"description"`
 }
 
 // CreateReport ユーザーを通報する
@@ -82,10 +82,10 @@ func (h *ReportHandler) CreateReport(w http.ResponseWriter, r *http.Request) {
 
 	// デバッグ用ログ
 	fmt.Printf("受信したリクエスト: %+v\n", req)
-	fmt.Printf("受信した理由: %+v (len: %d)\n", req.Reasons, len(req.Reasons))
+	fmt.Printf("受信した理由: %+v\n", req.Reason)
 
 	// バリデーション
-	if len(req.Reasons) == 0 {
+	if req.Reason == "" {
 		renderJSON(w, http.StatusBadRequest, map[string]string{"error": "通報理由を選択してください"})
 		return
 	}
@@ -117,13 +117,12 @@ func (h *ReportHandler) CreateReport(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 通報を作成
-	reasonsForDB := models.ReportReasons(req.Reasons)
-	fmt.Printf("データベース用理由: %+v\n", reasonsForDB)
+	fmt.Printf("データベース用理由: %+v\n", req.Reason)
 
 	report := &models.UserReport{
 		ReporterUserID: reporterUserID,
 		ReportedUserID: reportedUserID,
-		Reasons:        reasonsForDB,
+		Reason:         req.Reason,
 		Description:    req.Description,
 		Status:         models.ReportStatusPending,
 	}
