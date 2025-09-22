@@ -212,49 +212,24 @@ func (h *ReportHandler) UploadAttachment(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// ファイル名を生成
-	ext := getFileExtension(header.Filename)
-	filename := fmt.Sprintf("%s_%d_%s%s",
-		reportID.String(),
-		time.Now().Unix(),
-		generateRandomString(8),
-		ext,
-	)
-
-	// 保存先ディレクトリを作成
-	uploadDir := filepath.Join("static", "uploads", "reports")
-	if err := os.MkdirAll(uploadDir, 0755); err != nil {
-		renderJSON(w, http.StatusInternalServerError, map[string]string{"error": "ファイルの保存に失敗しました"})
-		return
-	}
-
-	// ファイルを保存
-	filePath := filepath.Join(uploadDir, filename)
-	dst, err := os.Create(filePath)
+	// GCSのプライベートバケットにアップロード
+	result, err := h.gcsUploader.UploadReportAttachment(r.Context(), reportID.String(), file, header)
 	if err != nil {
-		renderJSON(w, http.StatusInternalServerError, map[string]string{"error": "ファイルの保存に失敗しました"})
-		return
-	}
-	defer dst.Close()
-
-	fileSize, err := io.Copy(dst, file)
-	if err != nil {
-		renderJSON(w, http.StatusInternalServerError, map[string]string{"error": "ファイルの保存に失敗しました"})
+		renderJSON(w, http.StatusInternalServerError, map[string]string{"error": "画像のアップロードに失敗しました"})
 		return
 	}
 
 	// データベースに保存
 	attachment := &models.ReportAttachment{
 		ReportID:     reportID,
-		FilePath:     "/" + strings.ReplaceAll(filePath, "\\", "/"), // URLパスに変換
-		FileType:     contentType,
-		FileSize:     fileSize,
+		FilePath:     result.URL, // プライベートバケットのgs://URL
+		FileType:     result.ContentType,
+		FileSize:     header.Size, // ファイルサイズ
 		OriginalName: header.Filename,
 	}
 
 	if err := h.reportRepo.AddAttachment(attachment); err != nil {
-		// ファイルを削除
-		os.Remove(filePath)
+		// TODO: GCSからファイルを削除する処理を追加
 		renderJSON(w, http.StatusInternalServerError, map[string]string{"error": "添付ファイルの登録に失敗しました"})
 		return
 	}

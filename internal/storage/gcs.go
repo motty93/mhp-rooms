@@ -184,13 +184,13 @@ func (u *GCSUploader) UploadReportAttachment(ctx context.Context, reportID strin
 		fmt.Sprintf("%s-%s%s", base, hash12, ext),
 	)
 
-	// GCSにアップロード
-	bucket := u.client.Bucket(u.config.Bucket)
+	// プライベートバケットにアップロード
+	bucket := u.client.Bucket(u.config.PrivateBucket)
 	obj := bucket.Object(objectPath)
 	writer := obj.NewWriter(ctx)
 
-	// メタデータ設定
-	writer.CacheControl = "public, max-age=31536000, immutable"
+	// メタデータ設定（プライベートなのでキャッシュ無効）
+	writer.CacheControl = "no-cache, no-store, must-revalidate"
 	writer.ContentType = contentType
 
 	// 書き込み
@@ -202,11 +202,11 @@ func (u *GCSUploader) UploadReportAttachment(ctx context.Context, reportID strin
 		return nil, fmt.Errorf("GCSクローズエラー: %w", err)
 	}
 
-	// 公開URL生成
-	publicURL := u.PublicURL(objectPath)
+	// プライベートURL（gs://形式で保存、アクセス時に署名付きURLを生成）
+	privateURL := fmt.Sprintf("gs://%s/%s", u.config.PrivateBucket, objectPath)
 
 	return &UploadResult{
-		URL:         publicURL,
+		URL:         privateURL, // プライベートなのでgs://形式で保存
 		ObjectPath:  objectPath,
 		ContentType: contentType,
 	}, nil

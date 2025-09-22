@@ -49,6 +49,7 @@ type MigrationConfig struct {
 type GCSConfig struct {
 	Bucket         string
 	BaseURL        string
+	PrivateBucket  string // 通報用プライベートバケット
 	MaxUploadBytes int64
 	AllowedMIMEs   map[string]struct{}
 	AssetPrefix    string
@@ -87,6 +88,7 @@ func Init() {
 		GCS: GCSConfig{
 			Bucket:         MustGetEnv("GCS_BUCKET"),
 			BaseURL:        MustGetEnv("BASE_PUBLIC_ASSET_URL"),
+			PrivateBucket:  MustGetEnv("GCS_PRIVATE_BUCKET"), // 通報用プライベートバケット
 			MaxUploadBytes: GetEnvInt64("MAX_UPLOAD_BYTES", 10<<20), // デフォルト10MB
 			AllowedMIMEs:   parseAllowedMIMEs(getEnv("ALLOW_CONTENT_TYPES", ""), []string{"image/jpeg", "image/png", "image/webp"}),
 			AssetPrefix:    cleanAssetPrefix(getEnv("ASSET_PREFIX", "")),
