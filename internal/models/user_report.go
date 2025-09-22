@@ -1,8 +1,6 @@
 package models
 
 import (
-	"database/sql/driver"
-	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"

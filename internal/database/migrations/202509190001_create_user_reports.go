@@ -1,8 +1,8 @@
 package migrations
 
 import (
-	"github.com/motty93/mhp-rooms/internal/models"
 	"gorm.io/gorm"
+	"mhp-rooms/internal/models"
 )
 
 // CreateUserReportsTables ユーザー通報関連のテーブルを作成

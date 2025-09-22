@@ -2,8 +2,9 @@ package repository
 
 import (
 	"errors"
-	"github.com/google/uuid"
 	"mhp-rooms/internal/models"
+
+	"github.com/google/uuid"
 )
 
 var ErrNotFound = errors.New("not found")

@@ -11,7 +11,6 @@ import (
 	"time"
 )
 
-// RateLimiter レート制限を管理する構造体
 type RateLimiter struct {
 	visitors map[string]*Visitor
 	mu       sync.RWMutex
@@ -19,13 +18,11 @@ type RateLimiter struct {
 	window   time.Duration // 時間窓
 }
 
-// Visitor 訪問者の情報
 type Visitor struct {
 	requests []time.Time
 	mu       sync.Mutex
 }
 
-// NewRateLimiter 新しいレート制限器を作成
 func NewRateLimiter(requestsPerMinute int) *RateLimiter {
 	rl := &RateLimiter{
 		visitors: make(map[string]*Visitor),
@@ -39,7 +36,7 @@ func NewRateLimiter(requestsPerMinute int) *RateLimiter {
 	return rl
 }
 
-// Allow 指定されたIPアドレスのリクエストを許可するかチェック
+// 指定されたIPアドレスのリクエストを許可するかチェック
 func (rl *RateLimiter) Allow(ip string) bool {
 	rl.mu.RLock()
 	visitor, exists := rl.visitors[ip]

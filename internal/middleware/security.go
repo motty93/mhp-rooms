@@ -6,7 +6,6 @@ import (
 	"strings"
 )
 
-// SecurityConfig セキュリティミドルウェアの設定
 type SecurityConfig struct {
 	SupabaseURL    string
 	Environment    string
@@ -15,7 +14,6 @@ type SecurityConfig struct {
 	EnableCSP      bool
 }
 
-// NewSecurityConfig 環境変数からセキュリティ設定を作成
 func NewSecurityConfig() *SecurityConfig {
 	config := &SecurityConfig{
 		SupabaseURL: os.Getenv("SUPABASE_URL"),
@@ -27,7 +25,6 @@ func NewSecurityConfig() *SecurityConfig {
 	// 許可ドメインの設定
 	if domains := os.Getenv("SECURITY_ALLOWED_DOMAINS"); domains != "" {
 		config.AllowedDomains = strings.Split(domains, ",")
-		// 空白を削除
 		for i, domain := range config.AllowedDomains {
 			config.AllowedDomains[i] = strings.TrimSpace(domain)
 		}
@@ -36,7 +33,7 @@ func NewSecurityConfig() *SecurityConfig {
 	return config
 }
 
-// SecurityHeaders セキュリティヘッダーを設定するミドルウェア
+// セキュリティヘッダーを設定するミドルウェア
 func SecurityHeaders(config *SecurityConfig) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -62,7 +59,6 @@ func SecurityHeaders(config *SecurityConfig) func(http.Handler) http.Handler {
 	}
 }
 
-// buildCSP CSPポリシーを構築
 func buildCSP(config *SecurityConfig) string {
 	var policies []string
 

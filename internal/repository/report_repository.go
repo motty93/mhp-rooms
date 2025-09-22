@@ -1,31 +1,39 @@
-package repositories
+package repository
 
 import (
 	"fmt"
 	"time"
 
+	"mhp-rooms/internal/models"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
-	"mhp-rooms/internal/models"
 )
 
-// ReportRepository ユーザー通報関連のリポジトリ
-type ReportRepository struct {
+type ReportSearchParams struct {
+	Status     *models.ReportStatus
+	ReporterID *uuid.UUID
+	ReportedID *uuid.UUID
+	StartDate  *time.Time
+	EndDate    *time.Time
+	OrderBy    string
+	Limit      int
+	Offset     int
+}
+
+type reportRepository struct {
 	db *gorm.DB
 }
 
-// NewReportRepository リポジトリのコンストラクタ
-func NewReportRepository(db *gorm.DB) *ReportRepository {
-	return &ReportRepository{db: db}
+func NewReportRepository(db *gorm.DB) ReportRepository {
+	return &reportRepository{db: db}
 }
 
-// Create 通報を作成
-func (r *ReportRepository) Create(report *models.UserReport) error {
+func (r *reportRepository) Create(report *models.UserReport) error {
 	return r.db.Create(report).Error
 }
 
-// GetByID IDで通報を取得
-func (r *ReportRepository) GetByID(id uuid.UUID) (*models.UserReport, error) {
+func (r *reportRepository) GetByID(id uuid.UUID) (*models.UserReport, error) {
 	var report models.UserReport
 	err := r.db.Preload("Reporter").
 		Preload("Reported").
@@ -37,8 +45,7 @@ func (r *ReportRepository) GetByID(id uuid.UUID) (*models.UserReport, error) {
 	return &report, nil
 }
 
-// GetByReportedUserID 通報対象ユーザーの通報一覧を取得
-func (r *ReportRepository) GetByReportedUserID(userID uuid.UUID, limit int) ([]models.UserReport, error) {
+func (r *reportRepository) GetByReportedUserID(userID uuid.UUID, limit int) ([]models.UserReport, error) {
 	var reports []models.UserReport
 	query := r.db.Preload("Reporter").
 		Where("reported_user_id = ?", userID).
@@ -52,8 +59,7 @@ func (r *ReportRepository) GetByReportedUserID(userID uuid.UUID, limit int) ([]m
 	return reports, err
 }
 
-// GetByReporterUserID 通報者の通報一覧を取得
-func (r *ReportRepository) GetByReporterUserID(userID uuid.UUID, limit int) ([]models.UserReport, error) {
+func (r *reportRepository) GetByReporterUserID(userID uuid.UUID, limit int) ([]models.UserReport, error) {
 	var reports []models.UserReport
 	query := r.db.Preload("Reported").
 		Where("reporter_user_id = ?", userID).
@@ -67,19 +73,16 @@ func (r *ReportRepository) GetByReporterUserID(userID uuid.UUID, limit int) ([]m
 	return reports, err
 }
 
-// GetPendingReports 未対応の通報一覧を取得
-func (r *ReportRepository) GetPendingReports(limit int, offset int) ([]models.UserReport, int64, error) {
+func (r *reportRepository) GetPendingReports(limit int, offset int) ([]models.UserReport, int64, error) {
 	var reports []models.UserReport
 	var total int64
 
-	// 合計数を取得
 	if err := r.db.Model(&models.UserReport{}).
 		Where("status = ?", models.ReportStatusPending).
 		Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// データを取得
 	err := r.db.Preload("Reporter").
 		Preload("Reported").
 		Preload("Attachments").
@@ -92,8 +95,7 @@ func (r *ReportRepository) GetPendingReports(limit int, offset int) ([]models.Us
 	return reports, total, err
 }
 
-// UpdateStatus 通報のステータスを更新
-func (r *ReportRepository) UpdateStatus(id uuid.UUID, status models.ReportStatus, adminNote *string) error {
+func (r *reportRepository) UpdateStatus(id uuid.UUID, status models.ReportStatus, adminNote *string) error {
 	updates := map[string]interface{}{
 		"status":     status,
 		"admin_note": adminNote,
@@ -110,8 +112,8 @@ func (r *ReportRepository) UpdateStatus(id uuid.UUID, status models.ReportStatus
 		Updates(updates).Error
 }
 
-// CheckDuplicateReport 重複通報をチェック（24時間以内の同じ通報者・対象者の組み合わせ）
-func (r *ReportRepository) CheckDuplicateReport(reporterID, reportedID uuid.UUID) (bool, error) {
+// 重複通報をチェック（24時間以内の同じ通報者・対象者の組み合わせ）
+func (r *reportRepository) CheckDuplicateReport(reporterID, reportedID uuid.UUID) (bool, error) {
 	var count int64
 	yesterday := time.Now().Add(-24 * time.Hour)
 
@@ -123,25 +125,21 @@ func (r *ReportRepository) CheckDuplicateReport(reporterID, reportedID uuid.UUID
 	return count > 0, err
 }
 
-// AddAttachment 通報に添付ファイルを追加
-func (r *ReportRepository) AddAttachment(attachment *models.ReportAttachment) error {
+func (r *reportRepository) AddAttachment(attachment *models.ReportAttachment) error {
 	return r.db.Create(attachment).Error
 }
 
-// GetAttachmentsByReportID 通報IDで添付ファイル一覧を取得
-func (r *ReportRepository) GetAttachmentsByReportID(reportID uuid.UUID) ([]models.ReportAttachment, error) {
+func (r *reportRepository) GetAttachmentsByReportID(reportID uuid.UUID) ([]models.ReportAttachment, error) {
 	var attachments []models.ReportAttachment
 	err := r.db.Where("report_id = ?", reportID).Find(&attachments).Error
 	return attachments, err
 }
 
-// DeleteAttachment 添付ファイルを削除
-func (r *ReportRepository) DeleteAttachment(id uuid.UUID) error {
+func (r *reportRepository) DeleteAttachment(id uuid.UUID) error {
 	return r.db.Delete(&models.ReportAttachment{}, "id = ?", id).Error
 }
 
-// GetReportStatsByUserID ユーザーの通報統計を取得
-func (r *ReportRepository) GetReportStatsByUserID(userID uuid.UUID) (map[string]int64, error) {
+func (r *reportRepository) GetReportStatsByUserID(userID uuid.UUID) (map[string]int64, error) {
 	stats := make(map[string]int64)
 
 	// 通報された回数
@@ -174,22 +172,9 @@ func (r *ReportRepository) GetReportStatsByUserID(userID uuid.UUID) (map[string]
 	return stats, nil
 }
 
-// SearchReports 通報を検索（管理画面用）
-type ReportSearchParams struct {
-	Status     *models.ReportStatus
-	ReporterID *uuid.UUID
-	ReportedID *uuid.UUID
-	StartDate  *time.Time
-	EndDate    *time.Time
-	OrderBy    string
-	Limit      int
-	Offset     int
-}
-
-func (r *ReportRepository) SearchReports(params ReportSearchParams) ([]models.UserReport, int64, error) {
+func (r *reportRepository) SearchReports(params ReportSearchParams) ([]models.UserReport, int64, error) {
 	query := r.db.Model(&models.UserReport{})
 
-	// 条件を追加
 	if params.Status != nil {
 		query = query.Where("status = ?", *params.Status)
 	}
@@ -206,18 +191,15 @@ func (r *ReportRepository) SearchReports(params ReportSearchParams) ([]models.Us
 		query = query.Where("created_at <= ?", *params.EndDate)
 	}
 
-	// 合計数を取得
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// ソート順を設定
 	if params.OrderBy == "" {
 		params.OrderBy = "created_at DESC"
 	}
 
-	// データを取得
 	var reports []models.UserReport
 	err := query.
 		Preload("Reporter").
@@ -231,8 +213,8 @@ func (r *ReportRepository) SearchReports(params ReportSearchParams) ([]models.Us
 	return reports, total, err
 }
 
-// BatchUpdateStatus 複数の通報のステータスを一括更新
-func (r *ReportRepository) BatchUpdateStatus(ids []uuid.UUID, status models.ReportStatus, adminNote *string) error {
+// 複数の通報のステータスを一括更新
+func (r *reportRepository) BatchUpdateStatus(ids []uuid.UUID, status models.ReportStatus, adminNote *string) error {
 	if len(ids) == 0 {
 		return fmt.Errorf("更新対象のIDが指定されていません")
 	}

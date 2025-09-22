@@ -12,12 +12,10 @@ import (
 	"github.com/google/uuid"
 )
 
-// UserHandler 他ユーザー関連のハンドラー
 type UserHandler struct {
 	BaseHandler
 }
 
-// NewUserHandler 新しいUserHandlerインスタンスを作成
 func NewUserHandler(repo *repository.Repository) *UserHandler {
 	return &UserHandler{
 		BaseHandler: BaseHandler{
@@ -26,7 +24,6 @@ func NewUserHandler(repo *repository.Repository) *UserHandler {
 	}
 }
 
-// UserProfileData 他ユーザーのプロフィール用データ構造
 type UserProfileData struct {
 	User            *models.User      `json:"user"`
 	IsOwnProfile    bool              `json:"isOwnProfile"`

@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// UserRepository はユーザー関連の操作を定義するインターフェース
 type UserRepository interface {
 	CreateUser(user *models.User) error
 	FindUserByID(id uuid.UUID) (*models.User, error)
@@ -19,19 +18,16 @@ type UserRepository interface {
 	GetActiveUsers(limit, offset int) ([]models.User, error)
 }
 
-// GameVersionRepository はゲームバージョン関連の操作を定義するインターフェース
 type GameVersionRepository interface {
 	FindGameVersionByID(id uuid.UUID) (*models.GameVersion, error)
 	FindGameVersionByCode(code string) (*models.GameVersion, error)
 	GetActiveGameVersions() ([]models.GameVersion, error)
 }
 
-// PlatformRepository はプラットフォーム関連の操作を定義するインターフェース
 type PlatformRepository interface {
 	GetActivePlatforms() ([]models.Platform, error)
 }
 
-// RoomRepository はルーム関連の操作を定義するインターフェース
 type RoomRepository interface {
 	CreateRoom(room *models.Room) error
 	FindRoomByID(id uuid.UUID) (*models.Room, error)
@@ -54,7 +50,6 @@ type RoomRepository interface {
 	GetRoomsByHostUser(userID uuid.UUID, limit, offset int) ([]models.Room, error)
 }
 
-// PlayerNameRepository はプレイヤー名関連の操作を定義するインターフェース
 type PlayerNameRepository interface {
 	CreatePlayerName(playerName *models.PlayerName) error
 	UpdatePlayerName(playerName *models.PlayerName) error
@@ -64,14 +59,12 @@ type PlayerNameRepository interface {
 	UpsertPlayerName(playerName *models.PlayerName) error
 }
 
-// RoomMessageRepository はルームメッセージ関連の操作を定義するインターフェース
 type RoomMessageRepository interface {
 	CreateMessage(message *models.RoomMessage) error
 	GetMessages(roomID uuid.UUID, limit int, beforeID *uuid.UUID) ([]models.RoomMessage, error)
 	DeleteMessage(id uuid.UUID) error
 }
 
-// UserBlockRepository はユーザーブロック関連の操作を定義するインターフェース
 type UserBlockRepository interface {
 	CreateBlock(block *models.UserBlock) error
 	DeleteBlock(blockerUserID, blockedUserID uuid.UUID) error
@@ -82,7 +75,6 @@ type UserBlockRepository interface {
 	GetBlockingUsers(blockedUserID uuid.UUID) ([]models.User, error)
 }
 
-// UserFollowRepository はユーザーフォロー関連の操作を定義するインターフェース
 type UserFollowRepository interface {
 	CreateFollow(follow *models.UserFollow) error
 	DeleteFollow(followerUserID, followingUserID uuid.UUID) error
@@ -95,7 +87,6 @@ type UserFollowRepository interface {
 	IsMutualFollow(userID1, userID2 uuid.UUID) (bool, error)
 }
 
-// UserActivityRepository はユーザーアクティビティ関連の操作を定義するインターフェース
 type UserActivityRepository interface {
 	CreateActivity(activity *models.UserActivity) error
 	GetUserActivities(userID uuid.UUID, limit, offset int) ([]models.UserActivity, error)
@@ -103,4 +94,20 @@ type UserActivityRepository interface {
 	CountUserActivities(userID uuid.UUID) (int64, error)
 	DeleteActivity(id uuid.UUID) error
 	DeleteOldActivities(olderThan time.Time) error
+}
+
+type ReportRepository interface {
+	Create(report *models.UserReport) error
+	GetByID(id uuid.UUID) (*models.UserReport, error)
+	GetByReportedUserID(userID uuid.UUID, limit int) ([]models.UserReport, error)
+	GetByReporterUserID(userID uuid.UUID, limit int) ([]models.UserReport, error)
+	GetPendingReports(limit int, offset int) ([]models.UserReport, int64, error)
+	UpdateStatus(id uuid.UUID, status models.ReportStatus, adminNote *string) error
+	CheckDuplicateReport(reporterID, reportedID uuid.UUID) (bool, error)
+	AddAttachment(attachment *models.ReportAttachment) error
+	GetAttachmentsByReportID(reportID uuid.UUID) ([]models.ReportAttachment, error)
+	DeleteAttachment(id uuid.UUID) error
+	GetReportStatsByUserID(userID uuid.UUID) (map[string]int64, error)
+	SearchReports(params ReportSearchParams) ([]models.UserReport, int64, error)
+	BatchUpdateStatus(ids []uuid.UUID, status models.ReportStatus, adminNote *string) error
 }

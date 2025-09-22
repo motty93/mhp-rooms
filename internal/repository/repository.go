@@ -1,9 +1,10 @@
 package repository
 
 import (
+	"mhp-rooms/internal/models"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
-	"mhp-rooms/internal/models"
 )
 
 type DBInterface interface {
@@ -24,7 +25,7 @@ type Repository struct {
 	UserBlock     UserBlockRepository
 	UserFollow    UserFollowRepository
 	UserActivity  UserActivityRepository
-	Report        ReportRepositoryInterface
+	Report        ReportRepository
 }
 
 func NewRepository(db DBInterface) *Repository {
