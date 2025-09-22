@@ -467,7 +467,7 @@
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify({
-                  reasons: [this.selectedReason], // 配列形式を維持（バックエンドとの互換性）
+                  reason: this.selectedReason,
                   description: this.description,
                 }),
               },

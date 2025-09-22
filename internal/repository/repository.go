@@ -41,7 +41,7 @@ func NewRepository(db DBInterface) *Repository {
 		UserBlock:     NewUserBlockRepository(db),
 		UserFollow:    NewUserFollowRepository(db),
 		UserActivity:  NewUserActivityRepository(db),
-		Report:        NewReportRepository(db.GetConn()),
+		Report:        NewReportRepository(db),
 	}
 }
 

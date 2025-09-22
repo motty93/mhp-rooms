@@ -25,8 +25,8 @@ type reportRepository struct {
 	db *gorm.DB
 }
 
-func NewReportRepository(db *gorm.DB) ReportRepository {
-	return &reportRepository{db: db}
+func NewReportRepository(db DBInterface) ReportRepository {
+	return &reportRepository{db: db.GetConn()}
 }
 
 func (r *reportRepository) Create(report *models.UserReport) error {

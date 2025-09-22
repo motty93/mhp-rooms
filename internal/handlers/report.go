@@ -91,7 +91,16 @@ func (h *ReportHandler) CreateReport(w http.ResponseWriter, r *http.Request) {
 	// 通報対象ユーザーが存在するか確認
 	reportedUser, err := h.userRepo.FindUserByID(reportedUserID)
 	if err != nil || reportedUser == nil {
+
 		renderJSON(w, http.StatusNotFound, map[string]string{"error": "通報対象のユーザーが見つかりません"})
+		return
+	}
+
+	// 通報者ユーザーが存在するか確認
+	reporterUser, err := h.userRepo.FindUserByID(reporterUserID)
+	if err != nil || reporterUser == nil {
+
+		renderJSON(w, http.StatusInternalServerError, map[string]string{"error": "通報者のユーザー情報が見つかりません"})
 		return
 	}
 
@@ -220,18 +229,12 @@ func (h *ReportHandler) GetReportReasons(w http.ResponseWriter, r *http.Request)
 
 // セッションからユーザーIDを取得
 func getUserIDFromSession(r *http.Request) uuid.UUID {
-	// middleware.UserContextKeyを使用してユーザー情報を取得
-	if user, ok := middleware.GetUserFromContext(r.Context()); ok && user != nil {
-		if id, err := uuid.Parse(user.ID); err == nil {
-			return id
-		}
-	}
-
-	// middleware.DBUserContextKeyも試す
+	// 最初にDBUserContextKeyを確認（ローカルDBのIDが必要）
 	if dbUser, ok := middleware.GetDBUserFromContext(r.Context()); ok && dbUser != nil {
 		return dbUser.ID
 	}
 
+	// DBUserが見つからない場合はNilを返す
 	return uuid.Nil
 }
 

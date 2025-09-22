@@ -361,7 +361,14 @@ func (j *JWTAuth) loadDBUser(ctx context.Context, authUser *AuthUser) *models.Us
 
 	existingUser, err := j.repo.User.FindUserBySupabaseUserID(supabaseUserID)
 	if err != nil || existingUser == nil {
-		return nil
+		// ユーザーが見つからない場合は自動作成を試行
+		newUser, createErr := j.EnsureUserExistsWithContext(ctx, authUser)
+		if createErr != nil {
+			return nil
+		}
+		// キャッシュに保存（5分間）
+		j.userCache.Set(supabaseUserID, newUser, 5*time.Minute)
+		return newUser
 	}
 
 	// キャッシュに保存（5分間）
