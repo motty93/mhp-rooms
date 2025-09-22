@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"mhp-rooms/internal/models"
 	"gorm.io/gorm"
+	"mhp-rooms/internal/models"
 )
 
 // ReportRepository ユーザー通報関連のリポジトリ
@@ -176,14 +176,14 @@ func (r *ReportRepository) GetReportStatsByUserID(userID uuid.UUID) (map[string]
 
 // SearchReports 通報を検索（管理画面用）
 type ReportSearchParams struct {
-	Status         *models.ReportStatus
-	ReporterID     *uuid.UUID
-	ReportedID     *uuid.UUID
-	StartDate      *time.Time
-	EndDate        *time.Time
-	OrderBy        string
-	Limit          int
-	Offset         int
+	Status     *models.ReportStatus
+	ReporterID *uuid.UUID
+	ReportedID *uuid.UUID
+	StartDate  *time.Time
+	EndDate    *time.Time
+	OrderBy    string
+	Limit      int
+	Offset     int
 }
 
 func (r *ReportRepository) SearchReports(params ReportSearchParams) ([]models.UserReport, int64, error) {

@@ -1,426 +1,536 @@
 {{ define "report-modal" }}
-<div
-  id="reportModal"
-  x-data="reportModal()"
-  x-show="showModal"
-  x-cloak
-  @keydown.escape.window="closeModal()"
-  class="fixed inset-0 z-50 overflow-y-auto"
-  style="display: none;"
->
-  <!-- オーバーレイ -->
   <div
+    id="reportModal"
+    x-data="reportModal()"
     x-show="showModal"
-    @click="closeModal()"
-    x-transition:enter="ease-out duration-300"
-    x-transition:enter-start="opacity-0"
-    x-transition:enter-end="opacity-100"
-    x-transition:leave="ease-in duration-200"
-    x-transition:leave-start="opacity-100"
-    x-transition:leave-end="opacity-0"
-    class="fixed inset-0 bg-black bg-opacity-50"
-  ></div>
-
-  <!-- モーダル本体 -->
-  <div class="flex items-center justify-center min-h-screen p-4">
+    x-cloak
+    @keydown.escape.window="closeModal()"
+    class="fixed inset-0 z-50 overflow-y-auto"
+    style="display: none;"
+  >
+    <!-- オーバーレイ -->
     <div
       x-show="showModal"
-      @click.stop
+      @click="closeModal()"
       x-transition:enter="ease-out duration-300"
-      x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-      x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
       x-transition:leave="ease-in duration-200"
-      x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-      x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-      class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0"
+      class="fixed inset-0 bg-black bg-opacity-50 z-40"
+    ></div>
+
+    <!-- モーダル本体 -->
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
     >
-      <!-- ヘッダー -->
-      <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
-        <div class="flex items-center justify-between">
-          <h3 class="text-lg font-semibold text-gray-900">ユーザーを通報</h3>
-          <button
-            @click="closeModal()"
-            class="text-gray-400 hover:text-gray-500 transition-colors"
-          >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <!-- コンテンツ -->
-      <form @submit.prevent="submitReport()">
-        <div class="px-6 py-4">
-          <!-- 警告メッセージ -->
-          <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-            <div class="flex">
-              <div class="flex-shrink-0">
-                <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
-                </svg>
-              </div>
-              <div class="ml-3">
-                <p class="text-sm text-yellow-700">
-                  虚偽の通報は規約違反となる場合があります。正確な情報を提供してください。
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <!-- 通報理由 -->
-          <div class="mb-6">
-            <label class="block text-sm font-medium text-gray-700 mb-3">
-              通報理由を選択してください <span class="text-red-500">*</span>
-            </label>
-            <div class="space-y-2">
-              <template x-for="reason in reportReasons" :key="reason.value">
-                <label class="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
-                       :class="selectedReasons.includes(reason.value) ? 'border-blue-500 bg-blue-50' : 'border-gray-300'">
-                  <input
-                    type="checkbox"
-                    :value="reason.value"
-                    @change="toggleReason(reason.value)"
-                    :checked="selectedReasons.includes(reason.value)"
-                    class="mt-1 h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                  />
-                  <div class="ml-3 flex-1">
-                    <div class="text-sm font-medium text-gray-900" x-text="reason.label"></div>
-                    <div class="text-xs text-gray-500 mt-1" x-text="reason.description"></div>
-                  </div>
-                </label>
-              </template>
-            </div>
-            <template x-if="errors.reasons">
-              <p class="mt-1 text-sm text-red-600" x-text="errors.reasons"></p>
-            </template>
-          </div>
-
-          <!-- 詳細説明 -->
-          <div class="mb-6">
-            <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
-              詳細な説明 <span class="text-red-500">*</span>
-            </label>
-            <textarea
-              id="description"
-              x-model="description"
-              @input="validateDescription()"
-              rows="5"
-              maxlength="500"
-              placeholder="具体的な状況や問題点を記載してください"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-              :class="errors.description ? 'border-red-300' : ''"
-            ></textarea>
-            <div class="flex justify-between items-center mt-1">
-              <template x-if="errors.description">
-                <p class="text-sm text-red-600" x-text="errors.description"></p>
-              </template>
-              <span class="text-xs text-gray-500">
-                <span x-text="description.length"></span>/500文字
-              </span>
-            </div>
-          </div>
-
-          <!-- 画像アップロード -->
-          <div class="mb-6">
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              スクリーンショット（最大3枚）
-            </label>
-            <div class="space-y-2">
-              <!-- アップロード済み画像 -->
-              <div x-show="uploadedImages.length > 0" class="grid grid-cols-3 gap-2">
-                <template x-for="(image, index) in uploadedImages" :key="index">
-                  <div class="relative">
-                    <img :src="image.url" alt="アップロード画像" class="w-full h-24 object-cover rounded-lg">
-                    <button
-                      type="button"
-                      @click="removeImage(index)"
-                      class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
-                    >
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                </template>
-              </div>
-
-              <!-- アップロードボタン -->
-              <div x-show="uploadedImages.length < 3">
-                <label class="flex items-center justify-center w-full px-4 py-3 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:border-gray-400 transition-colors">
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/jpg,image/png,image/gif"
-                    @change="handleImageUpload($event)"
-                    class="hidden"
-                    :disabled="uploadedImages.length >= 3"
-                  />
-                  <div class="flex items-center space-x-2">
-                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
-                    <span class="text-sm text-gray-600">画像をアップロード</span>
-                  </div>
-                </label>
-                <p class="mt-1 text-xs text-gray-500">
-                  jpg, jpeg, png, gif形式、最大5MB
-                </p>
-              </div>
-            </div>
-            <template x-if="errors.images">
-              <p class="mt-1 text-sm text-red-600" x-text="errors.images"></p>
-            </template>
-          </div>
-        </div>
-
-        <!-- フッター -->
-        <div class="sticky bottom-0 bg-gray-50 px-6 py-4 border-t border-gray-200">
-          <div class="flex justify-end space-x-3">
+      <div
+        x-show="showModal"
+        @click.stop
+        x-transition:enter="ease-out duration-300"
+        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+        x-transition:leave="ease-in duration-200"
+        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+        class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto pointer-events-auto"
+      >
+        <!-- ヘッダー -->
+        <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-gray-900">ユーザーを通報</h3>
             <button
-              type="button"
               @click="closeModal()"
-              class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              class="text-gray-400 hover:text-gray-500 transition-colors"
             >
-              キャンセル
-            </button>
-            <button
-              type="submit"
-              :disabled="isSubmitting || !isValid()"
-              class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <span x-show="!isSubmitting">通報する</span>
-              <span x-show="isSubmitting" class="flex items-center">
-                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                送信中...
-              </span>
+              <svg
+                class="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
             </button>
           </div>
         </div>
-      </form>
+
+        <!-- コンテンツ -->
+        <form @submit.prevent="submitReport()">
+          <div class="px-6 py-4">
+            <!-- 警告メッセージ -->
+            <div
+              class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6"
+            >
+              <div class="flex">
+                <div class="flex-shrink-0">
+                  <svg
+                    class="h-5 w-5 text-yellow-400"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div class="ml-3">
+                  <p class="text-sm text-yellow-700">
+                    虚偽の通報は規約違反となる場合があります。正確な情報を提供してください。
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 通報理由 -->
+            <div class="mb-6">
+              <label
+                for="reportReason"
+                class="block text-sm font-medium text-gray-700 mb-2"
+              >
+                通報理由を選択してください <span class="text-red-500">*</span>
+              </label>
+              <select
+                id="reportReason"
+                x-model="selectedReason"
+                @change="validateReason()"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                :class="errors.reason ? 'border-red-300' : ''"
+              >
+                <option value="">理由を選択してください</option>
+                <template x-for="reason in reportReasons" :key="reason.value">
+                  <option :value="reason.value" x-text="reason.label"></option>
+                </template>
+              </select>
+              <template x-if="selectedReason">
+                <div class="mt-2 p-3 bg-gray-50 rounded-lg">
+                  <p
+                    class="text-xs text-gray-600"
+                    x-text="reportReasons.find(r => r.value === selectedReason)?.description"
+                  ></p>
+                </div>
+              </template>
+              <template x-if="errors.reason">
+                <p class="mt-1 text-sm text-red-600" x-text="errors.reason"></p>
+              </template>
+            </div>
+
+            <!-- 詳細説明 -->
+            <div class="mb-6">
+              <label
+                for="description"
+                class="block text-sm font-medium text-gray-700 mb-2"
+              >
+                詳細な説明 <span class="text-red-500">*</span>
+              </label>
+              <textarea
+                id="description"
+                x-model="description"
+                @input="validateDescription()"
+                rows="5"
+                maxlength="500"
+                placeholder="具体的な状況や問題点を記載してください"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                :class="errors.description ? 'border-red-300' : ''"
+              ></textarea>
+              <div class="flex justify-between items-center mt-1">
+                <template x-if="errors.description">
+                  <p
+                    class="text-sm text-red-600"
+                    x-text="errors.description"
+                  ></p>
+                </template>
+                <span class="text-xs text-gray-500">
+                  <span x-text="description.length"></span>/500文字
+                </span>
+              </div>
+            </div>
+
+            <!-- 画像アップロード -->
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                スクリーンショット（最大3枚）
+              </label>
+              <div class="space-y-2">
+                <!-- アップロード済み画像 -->
+                <div
+                  x-show="uploadedImages.length > 0"
+                  class="grid grid-cols-3 gap-2"
+                >
+                  <template
+                    x-for="(image, index) in uploadedImages"
+                    :key="index"
+                  >
+                    <div class="relative">
+                      <img
+                        :src="image.url"
+                        alt="アップロード画像"
+                        class="w-full h-24 object-cover rounded-lg"
+                      />
+                      <button
+                        type="button"
+                        @click="removeImage(index)"
+                        class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
+                      >
+                        <svg
+                          class="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </template>
+                </div>
+
+                <!-- アップロードボタン -->
+                <div x-show="uploadedImages.length < 3">
+                  <label
+                    class="flex items-center justify-center w-full px-4 py-3 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:border-gray-400 transition-colors"
+                  >
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/gif"
+                      @change="handleImageUpload($event)"
+                      class="hidden"
+                      :disabled="uploadedImages.length >= 3"
+                    />
+                    <div class="flex items-center space-x-2">
+                      <svg
+                        class="w-5 h-5 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                        />
+                      </svg>
+                      <span class="text-sm text-gray-600"
+                        >画像をアップロード</span
+                      >
+                    </div>
+                  </label>
+                  <p class="mt-1 text-xs text-gray-500">
+                    jpg, jpeg, png, gif形式、最大5MB
+                  </p>
+                </div>
+              </div>
+              <template x-if="errors.images">
+                <p class="mt-1 text-sm text-red-600" x-text="errors.images"></p>
+              </template>
+            </div>
+          </div>
+
+          <!-- フッター -->
+          <div
+            class="sticky bottom-0 bg-gray-50 px-6 py-4 border-t border-gray-200"
+          >
+            <div class="flex justify-end space-x-3">
+              <button
+                type="button"
+                @click="closeModal()"
+                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                キャンセル
+              </button>
+              <button
+                type="submit"
+                :disabled="isSubmitting || !isValid()"
+                class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <span x-show="!isSubmitting">通報する</span>
+                <span x-show="isSubmitting" class="flex items-center">
+                  <svg
+                    class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      class="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="4"
+                    ></circle>
+                    <path
+                      class="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  送信中...
+                </span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
-</div>
 
-<script>
-function reportModal() {
-  return {
-    showModal: false,
-    reportedUserId: '',
-    reportedUserName: '',
-    selectedReasons: [],
-    description: '',
-    uploadedImages: [],
-    isSubmitting: false,
-    errors: {},
-    reportReasons: [
-      {
-        value: 'spam',
-        label: 'スパム・迷惑行為',
-        description: '繰り返しの宣伝、無関係な投稿'
-      },
-      {
-        value: 'harassment',
-        label: '嫌がらせ・誹謗中傷',
-        description: '暴言、脅迫、いじめ'
-      },
-      {
-        value: 'impersonation',
-        label: 'なりすまし',
-        description: '他人を装う行為'
-      },
-      {
-        value: 'inappropriate',
-        label: '不適切なコンテンツ',
-        description: '規約違反のコンテンツ投稿'
-      },
-      {
-        value: 'scam',
-        label: '詐欺・フィッシング',
-        description: '詐欺的な行為、個人情報の不正取得'
-      },
-      {
-        value: 'privacy_violation',
-        label: 'プライバシー侵害',
-        description: '無断で個人情報を公開'
-      },
-      {
-        value: 'cheating',
-        label: 'チート行為',
-        description: 'ゲーム内での不正行為、改造、ツール使用'
-      },
-      {
-        value: 'offensive',
-        label: '公序良俗違反',
-        description: 'わいせつ、暴力的、差別的な内容'
-      },
-      {
-        value: 'other',
-        label: 'その他',
-        description: '上記以外の問題'
-      }
-    ],
-
-    openModal(userId, userName) {
-      this.reportedUserId = userId;
-      this.reportedUserName = userName;
-      this.showModal = true;
-      this.resetForm();
-    },
-
-    closeModal() {
-      this.showModal = false;
-      this.resetForm();
-    },
-
-    resetForm() {
-      this.selectedReasons = [];
-      this.description = '';
-      this.uploadedImages = [];
-      this.errors = {};
-      this.isSubmitting = false;
-    },
-
-    toggleReason(value) {
-      const index = this.selectedReasons.indexOf(value);
-      if (index > -1) {
-        this.selectedReasons.splice(index, 1);
-      } else {
-        this.selectedReasons.push(value);
-      }
-      this.validateReasons();
-    },
-
-    validateReasons() {
-      if (this.selectedReasons.length === 0) {
-        this.errors.reasons = '通報理由を1つ以上選択してください';
-        return false;
-      }
-      delete this.errors.reasons;
-      return true;
-    },
-
-    validateDescription() {
-      if (!this.description.trim()) {
-        this.errors.description = '詳細な説明を入力してください';
-        return false;
-      }
-      if (this.description.length > 500) {
-        this.errors.description = '説明は500文字以内で入力してください';
-        return false;
-      }
-      delete this.errors.description;
-      return true;
-    },
-
-    isValid() {
-      return this.selectedReasons.length > 0 &&
-             this.description.trim().length > 0 &&
-             this.description.length <= 500;
-    },
-
-    async handleImageUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      // ファイルタイプチェック
-      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
-      if (!validTypes.includes(file.type)) {
-        this.errors.images = '対応していない画像形式です';
-        return;
-      }
-
-      // ファイルサイズチェック（5MB）
-      if (file.size > 5 * 1024 * 1024) {
-        this.errors.images = 'ファイルサイズは5MB以下にしてください';
-        return;
-      }
-
-      // プレビュー用URLを作成
-      const url = URL.createObjectURL(file);
-      this.uploadedImages.push({
-        file: file,
-        url: url
-      });
-
-      delete this.errors.images;
-      event.target.value = ''; // inputをリセット
-    },
-
-    removeImage(index) {
-      URL.revokeObjectURL(this.uploadedImages[index].url);
-      this.uploadedImages.splice(index, 1);
-    },
-
-    async submitReport() {
-      if (!this.isValid()) {
-        this.validateReasons();
-        this.validateDescription();
-        return;
-      }
-
-      this.isSubmitting = true;
-
-      try {
-        // 通報を送信
-        const response = await fetch(`/users/${this.reportedUserId}/report`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+  <script>
+    function reportModal() {
+      return {
+        showModal: false,
+        reportedUserId: '',
+        reportedUserName: '',
+        selectedReason: '', // 単一選択に変更
+        description: '',
+        uploadedImages: [],
+        isSubmitting: false,
+        errors: {},
+        reportReasons: [
+          {
+            value: 'spam',
+            label: 'スパム・迷惑行為',
+            description: '繰り返しの宣伝、無関係な投稿',
           },
-          body: JSON.stringify({
-            reasons: this.selectedReasons,
-            description: this.description
+          {
+            value: 'harassment',
+            label: '嫌がらせ・誹謗中傷',
+            description: '暴言、脅迫、いじめ',
+          },
+          {
+            value: 'impersonation',
+            label: 'なりすまし',
+            description: '他人を装う行為',
+          },
+          {
+            value: 'inappropriate',
+            label: '不適切なコンテンツ',
+            description: '規約違反のコンテンツ投稿',
+          },
+          {
+            value: 'scam',
+            label: '詐欺・フィッシング',
+            description: '詐欺的な行為、個人情報の不正取得',
+          },
+          {
+            value: 'privacy_violation',
+            label: 'プライバシー侵害',
+            description: '無断で個人情報を公開',
+          },
+          {
+            value: 'cheating',
+            label: 'チート行為',
+            description: 'ゲーム内での不正行為、改造、ツール使用',
+          },
+          {
+            value: 'offensive',
+            label: '公序良俗違反',
+            description: 'わいせつ、暴力的、差別的な内容',
+          },
+          {
+            value: 'other',
+            label: 'その他',
+            description: '上記以外の問題',
+          },
+        ],
+
+        openModal(userId, userName) {
+          this.reportedUserId = userId
+          this.reportedUserName = userName
+          this.showModal = true
+          this.resetForm()
+        },
+
+        closeModal() {
+          this.showModal = false
+          this.resetForm()
+        },
+
+        resetForm() {
+          this.selectedReason = '' // 単一選択に変更
+          this.description = ''
+          this.uploadedImages = []
+          this.errors = {}
+          this.isSubmitting = false
+        },
+
+        validateReason() {
+          if (!this.selectedReason) {
+            this.errors.reason = '通報理由を選択してください'
+            return false
+          }
+          delete this.errors.reason
+          return true
+        },
+
+        validateDescription() {
+          if (!this.description.trim()) {
+            this.errors.description = '詳細な説明を入力してください'
+            return false
+          }
+          if (this.description.length > 500) {
+            this.errors.description = '説明は500文字以内で入力してください'
+            return false
+          }
+          delete this.errors.description
+          return true
+        },
+
+        isValid() {
+          return (
+            this.selectedReason && // 単一選択に変更
+            this.description.trim().length > 0 &&
+            this.description.length <= 500
+          )
+        },
+
+        async handleImageUpload(event) {
+          const file = event.target.files[0]
+          if (!file) return
+
+          // ファイルタイプチェック
+          const validTypes = [
+            'image/jpeg',
+            'image/jpg',
+            'image/png',
+            'image/gif',
+          ]
+          if (!validTypes.includes(file.type)) {
+            this.errors.images = '対応していない画像形式です'
+            return
+          }
+
+          // ファイルサイズチェック（5MB）
+          if (file.size > 5 * 1024 * 1024) {
+            this.errors.images = 'ファイルサイズは5MB以下にしてください'
+            return
+          }
+
+          // プレビュー用URLを作成
+          const url = URL.createObjectURL(file)
+          this.uploadedImages.push({
+            file: file,
+            url: url,
           })
-        });
 
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || '通報の送信に失敗しました');
-        }
+          delete this.errors.images
+          event.target.value = '' // inputをリセット
+        },
 
-        const result = await response.json();
-        const reportId = result.report_id;
+        removeImage(index) {
+          URL.revokeObjectURL(this.uploadedImages[index].url)
+          this.uploadedImages.splice(index, 1)
+        },
 
-        // 画像をアップロード
-        for (const image of this.uploadedImages) {
-          const formData = new FormData();
-          formData.append('image', image.file);
+        async submitReport() {
+          if (!this.isValid()) {
+            this.validateReason() // 単一選択用のバリデーション
+            this.validateDescription()
+            return
+          }
 
-          await fetch(`/reports/${reportId}/upload`, {
-            method: 'POST',
-            headers: {
-              'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
-            },
-            body: formData
-          });
-        }
+          this.isSubmitting = true
 
-        // 成功メッセージを表示
-        this.showSuccessMessage('通報を受け付けました。ご報告ありがとうございます。');
-        this.closeModal();
+          try {
+            // 通報を送信
+            // 認証トークンを取得
+            const authStore = Alpine.store('auth')
+            const headers = {
+              'Content-Type': 'application/json',
+              'X-CSRF-Token':
+                document.querySelector('meta[name="csrf-token"]')?.content ||
+                '',
+            }
 
-      } catch (error) {
-        console.error('通報エラー:', error);
-        this.showErrorMessage(error.message);
-      } finally {
-        this.isSubmitting = false;
+            // 認証済みの場合はAuthorizationヘッダーを追加
+            if (authStore.isAuthenticated && authStore.session?.access_token) {
+              headers['Authorization'] =
+                `Bearer ${authStore.session.access_token}`
+            }
+
+            const response = await fetch(
+              `/api/users/${this.reportedUserId}/report`,
+              {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({
+                  reasons: [this.selectedReason], // 配列形式を維持（バックエンドとの互換性）
+                  description: this.description,
+                }),
+              },
+            )
+
+            if (!response.ok) {
+              const error = await response.json()
+              throw new Error(error.error || '通報の送信に失敗しました')
+            }
+
+            const result = await response.json()
+            const reportId = result.report_id
+
+            // 画像をアップロード
+            for (const image of this.uploadedImages) {
+              const formData = new FormData()
+              formData.append('image', image.file)
+
+              const uploadHeaders = {
+                'X-CSRF-Token':
+                  document.querySelector('meta[name="csrf-token"]')?.content ||
+                  '',
+              }
+
+              // 認証済みの場合はAuthorizationヘッダーを追加
+              if (
+                authStore.isAuthenticated &&
+                authStore.session?.access_token
+              ) {
+                uploadHeaders['Authorization'] =
+                  `Bearer ${authStore.session.access_token}`
+              }
+
+              await fetch(`/api/reports/${reportId}/upload`, {
+                method: 'POST',
+                headers: uploadHeaders,
+                body: formData,
+              })
+            }
+
+            // 成功メッセージを表示
+            this.showSuccessMessage(
+              '通報を受け付けました。ご報告ありがとうございます。',
+            )
+            this.closeModal()
+          } catch (error) {
+            console.error('通報エラー:', error)
+            this.showErrorMessage(error.message)
+          } finally {
+            this.isSubmitting = false
+          }
+        },
+
+        showSuccessMessage(message) {
+          // トースト通知などを表示（実装は省略）
+          alert(message)
+        },
+
+        showErrorMessage(message) {
+          // エラートースト通知などを表示（実装は省略）
+          alert('エラー: ' + message)
+        },
       }
-    },
-
-    showSuccessMessage(message) {
-      // トースト通知などを表示（実装は省略）
-      alert(message);
-    },
-
-    showErrorMessage(message) {
-      // エラートースト通知などを表示（実装は省略）
-      alert('エラー: ' + message);
     }
-  }
-}
-</script>
+  </script>
 {{ end }}

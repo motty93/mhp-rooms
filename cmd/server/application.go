@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"mhp-rooms/internal/middleware"
 	"mhp-rooms/internal/repository"
 	"mhp-rooms/internal/sse"
+	"mhp-rooms/internal/storage"
 )
 
 type Application struct {
@@ -82,6 +84,18 @@ func (app *Application) initHandlers() error {
 	app.sseHub = sse.NewHub()
 	go app.sseHub.Run()
 
+	// 認証ミドルウェアの初期化（他のハンドラーより先に初期化）
+	authMiddleware, err := middleware.NewJWTAuth(app.repo)
+	if err != nil {
+		log.Printf("JWT認証ミドルウェアの初期化に失敗しました: %v", err)
+		// 本番環境では認証ミドルウェアの初期化失敗は致命的エラーとして扱う
+		if app.config.IsProduction() {
+			return fmt.Errorf("本番環境では認証ミドルウェアが必須です: %w", err)
+		}
+		log.Printf("開発環境では認証ミドルウェアなしで継続しますが、認証が必要な機能は利用できません")
+	}
+	app.authMiddleware = authMiddleware
+
 	app.authHandler = handlers.NewAuthHandler(app.repo)
 	app.roomHandler = handlers.NewRoomHandler(app.repo, app.sseHub)
 	app.roomDetailHandler = handlers.NewRoomDetailHandler(app.repo)
@@ -94,19 +108,13 @@ func (app *Application) initHandlers() error {
 	app.profileHandler = handlers.NewProfileHandler(app.repo, app.authMiddleware)
 	app.userHandler = handlers.NewUserHandler(app.repo)
 	app.followHandler = handlers.NewFollowHandler(app.repo)
-	app.reportHandler = handlers.NewReportHandler(app.repo.Report, app.repo.User)
-
-	// 認証ミドルウェアの初期化
-	authMiddleware, err := middleware.NewJWTAuth(app.repo)
+	// GCSUploaderを初期化
+	gcsUploader, err := storage.NewGCSUploader(context.Background())
 	if err != nil {
-		log.Printf("JWT認証ミドルウェアの初期化に失敗しました: %v", err)
-		// 本番環境では認証ミドルウェアの初期化失敗は致命的エラーとして扱う
-		if app.config.IsProduction() {
-			return fmt.Errorf("本番環境では認証ミドルウェアが必須です: %w", err)
-		}
-		log.Printf("開発環境では認証ミドルウェアなしで継続しますが、認証が必要な機能は利用できません")
+		return fmt.Errorf("GCSアップローダーの初期化に失敗しました: %w", err)
 	}
-	app.authMiddleware = authMiddleware
+
+	app.reportHandler = handlers.NewReportHandler(app.repo.Report, app.repo.User, gcsUploader)
 
 	// セキュリティ設定の初期化
 	app.securityConfig = middleware.NewSecurityConfig()

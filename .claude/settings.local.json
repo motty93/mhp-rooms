@@ -151,7 +151,11 @@
       "Bash(PORT=8086 ENV=development DB_TYPE=turso timeout 10s make run)",
       "Bash(PORT=8087 ENV=development DB_TYPE=turso make run)",
       "Bash(PORT=8088 ENV=development DB_TYPE=turso timeout 10s make run)",
-      "Bash(PORT=8089 ENV=development DB_TYPE=turso make run)"
+      "Bash(PORT=8089 ENV=development DB_TYPE=turso make run)",
+      "Bash(PORT=8089 ENV=development DB_TYPE=turso timeout 15s make run)",
+      "Bash(PORT=8089 ENV=development DB_TYPE=turso timeout 10s make run)",
+      "Bash(PORT=8090 ENV=development DB_TYPE=turso timeout 15s make run)",
+      "Bash(PORT=8090 ENV=development DB_TYPE=turso make run)"
     ],
     "deny": []
   }

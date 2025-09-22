@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
 	"os"
 
@@ -29,7 +30,11 @@ func (app *Application) withAuth(handler http.HandlerFunc) http.HandlerFunc {
 	}
 	// 認証ミドルウェアが利用できない場合は認証エラーを返す
 	return func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, "認証システムが初期化されていません。SUPABASE_JWT_SECRETが設定されていることを確認してください。", http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "認証システムが初期化されていません。SUPABASE_JWT_SECRETが設定されていることを確認してください。",
+		})
 	}
 }
 

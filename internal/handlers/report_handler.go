@@ -12,21 +12,25 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"mhp-rooms/internal/middleware"
 	"mhp-rooms/internal/models"
 	"mhp-rooms/internal/repository"
+	"mhp-rooms/internal/storage"
 )
 
 // ReportHandler 通報関連のハンドラー
 type ReportHandler struct {
-	reportRepo repository.ReportRepositoryInterface
-	userRepo   repository.UserRepository
+	reportRepo  repository.ReportRepositoryInterface
+	userRepo    repository.UserRepository
+	gcsUploader *storage.GCSUploader
 }
 
 // NewReportHandler ハンドラーのコンストラクタ
-func NewReportHandler(reportRepo repository.ReportRepositoryInterface, userRepo repository.UserRepository) *ReportHandler {
+func NewReportHandler(reportRepo repository.ReportRepositoryInterface, userRepo repository.UserRepository, gcsUploader *storage.GCSUploader) *ReportHandler {
 	return &ReportHandler{
-		reportRepo: reportRepo,
-		userRepo:   userRepo,
+		reportRepo:  reportRepo,
+		userRepo:    userRepo,
+		gcsUploader: gcsUploader,
 	}
 }
 
@@ -47,9 +51,20 @@ func (h *ReportHandler) CreateReport(w http.ResponseWriter, r *http.Request) {
 
 	// セッションから通報者のユーザーIDを取得
 	reporterUserID := getUserIDFromSession(r)
+	fmt.Printf("通報者のユーザーID: %s\n", reporterUserID)
 	if reporterUserID == uuid.Nil {
 		renderJSON(w, http.StatusUnauthorized, map[string]string{"error": "ログインが必要です"})
 		return
+	}
+
+	// デバッグ: 存在しないユーザーIDの場合、既存のユーザーIDを使用
+	// TODO: 本番環境では削除すること
+	if os.Getenv("ENV") == "development" {
+		// ユーザーが存在するか確認
+		if _, err := h.userRepo.FindUserByID(reporterUserID); err != nil {
+			fmt.Printf("通報者ユーザーが存在しません。デフォルトユーザーを使用: %s -> d4d3e6ec-128a-44e6-be58-d59f0a8d993d\n", reporterUserID)
+			reporterUserID = uuid.MustParse("d4d3e6ec-128a-44e6-be58-d59f0a8d993d") // プロハンター
+		}
 	}
 
 	// 自分自身を通報できないようにする
@@ -64,6 +79,10 @@ func (h *ReportHandler) CreateReport(w http.ResponseWriter, r *http.Request) {
 		renderJSON(w, http.StatusBadRequest, map[string]string{"error": "リクエストの形式が正しくありません"})
 		return
 	}
+
+	// デバッグ用ログ
+	fmt.Printf("受信したリクエスト: %+v\n", req)
+	fmt.Printf("受信した理由: %+v (len: %d)\n", req.Reasons, len(req.Reasons))
 
 	// バリデーション
 	if len(req.Reasons) == 0 {
@@ -98,10 +117,13 @@ func (h *ReportHandler) CreateReport(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 通報を作成
+	reasonsForDB := models.ReportReasons(req.Reasons)
+	fmt.Printf("データベース用理由: %+v\n", reasonsForDB)
+
 	report := &models.UserReport{
 		ReporterUserID: reporterUserID,
 		ReportedUserID: reportedUserID,
-		Reasons:        req.Reasons,
+		Reasons:        reasonsForDB,
 		Description:    req.Description,
 		Status:         models.ReportStatusPending,
 	}
@@ -134,12 +156,26 @@ func (h *ReportHandler) UploadAttachment(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// デバッグ: 存在しないユーザーIDの場合、既存のユーザーIDを使用
+	// TODO: 本番環境では削除すること
+	if os.Getenv("ENV") == "development" {
+		// ユーザーが存在するか確認
+		if _, err := h.userRepo.FindUserByID(userID); err != nil {
+			fmt.Printf("アップロードユーザーが存在しません。デフォルトユーザーを使用: %s -> d4d3e6ec-128a-44e6-be58-d59f0a8d993d\n", userID)
+			userID = uuid.MustParse("d4d3e6ec-128a-44e6-be58-d59f0a8d993d") // プロハンター
+		}
+	}
+
 	// 通報が存在し、通報者が本人か確認
 	report, err := h.reportRepo.GetByID(reportID)
 	if err != nil || report == nil {
 		renderJSON(w, http.StatusNotFound, map[string]string{"error": "通報が見つかりません"})
 		return
 	}
+
+	// デバッグログ
+	fmt.Printf("アップロード権限チェック: report.ReporterUserID=%s, userID=%s\n", report.ReporterUserID, userID)
+
 	if report.ReporterUserID != userID {
 		renderJSON(w, http.StatusForbidden, map[string]string{"error": "この通報にアクセスする権限がありません"})
 		return
@@ -253,18 +289,18 @@ func (h *ReportHandler) GetReportReasons(w http.ResponseWriter, r *http.Request)
 
 // getUserIDFromSession セッションからユーザーIDを取得（実際の実装に合わせて調整必要）
 func getUserIDFromSession(r *http.Request) uuid.UUID {
-	// TODO: 実際のセッション処理に置き換える
-	userID := r.Context().Value("user_id")
-	if userID != nil {
-		if id, ok := userID.(uuid.UUID); ok {
+	// middleware.UserContextKeyを使用してユーザー情報を取得
+	if user, ok := middleware.GetUserFromContext(r.Context()); ok && user != nil {
+		if id, err := uuid.Parse(user.ID); err == nil {
 			return id
 		}
-		if idStr, ok := userID.(string); ok {
-			if id, err := uuid.Parse(idStr); err == nil {
-				return id
-			}
-		}
 	}
+
+	// middleware.DBUserContextKeyも試す
+	if dbUser, ok := middleware.GetDBUserFromContext(r.Context()); ok && dbUser != nil {
+		return dbUser.ID
+	}
+
 	return uuid.Nil
 }
 

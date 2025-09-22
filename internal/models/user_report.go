@@ -22,15 +22,15 @@ const (
 type ReportReason string
 
 const (
-	ReasonSpam            ReportReason = "spam"               // スパム・迷惑行為
-	ReasonHarassment      ReportReason = "harassment"         // 嫌がらせ・誹謗中傷
-	ReasonImpersonation   ReportReason = "impersonation"      // なりすまし
-	ReasonInappropriate   ReportReason = "inappropriate"      // 不適切なコンテンツ
-	ReasonScam            ReportReason = "scam"               // 詐欺・フィッシング
+	ReasonSpam             ReportReason = "spam"              // スパム・迷惑行為
+	ReasonHarassment       ReportReason = "harassment"        // 嫌がらせ・誹謗中傷
+	ReasonImpersonation    ReportReason = "impersonation"     // なりすまし
+	ReasonInappropriate    ReportReason = "inappropriate"     // 不適切なコンテンツ
+	ReasonScam             ReportReason = "scam"              // 詐欺・フィッシング
 	ReasonPrivacyViolation ReportReason = "privacy_violation" // プライバシー侵害
-	ReasonCheating        ReportReason = "cheating"           // チート行為
-	ReasonOffensive       ReportReason = "offensive"          // 公序良俗違反
-	ReasonOther           ReportReason = "other"              // その他
+	ReasonCheating         ReportReason = "cheating"          // チート行為
+	ReasonOffensive        ReportReason = "offensive"         // 公序良俗違反
+	ReasonOther            ReportReason = "other"             // その他
 )
 
 // ReportReasons 複数の通報理由を保持する型
@@ -38,10 +38,16 @@ type ReportReasons []ReportReason
 
 // Value データベースに保存する際の値を返す
 func (r ReportReasons) Value() (driver.Value, error) {
-	if r == nil {
-		return nil, nil
+	if r == nil || len(r) == 0 {
+		return "[]", nil
 	}
-	return json.Marshal(r)
+
+	bytes, err := json.Marshal(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return string(bytes), nil
 }
 
 // Scan データベースから読み込む際の処理

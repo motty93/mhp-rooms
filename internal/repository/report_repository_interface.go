@@ -2,9 +2,9 @@ package repository
 
 import (
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 	"mhp-rooms/internal/models"
 	"mhp-rooms/internal/repositories"
-	"gorm.io/gorm"
 )
 
 // ReportRepositoryInterface 通報リポジトリのインターフェース
