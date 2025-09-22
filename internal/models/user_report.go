@@ -33,17 +33,16 @@ const (
 	ReasonOther            ReportReason = "other"             // その他
 )
 
-
 // UserReport ユーザー通報モデル
 type UserReport struct {
 	BaseModel
-	ReporterUserID uuid.UUID     `gorm:"type:uuid;not null;index" json:"reporter_user_id"`
-	ReportedUserID uuid.UUID     `gorm:"type:uuid;not null;index" json:"reported_user_id"`
-	Reason         ReportReason  `gorm:"type:varchar(50);not null" json:"reason"`
-	Description    string        `gorm:"type:text;not null" json:"description"`
-	Status         ReportStatus  `gorm:"type:varchar(20);not null;default:'pending'" json:"status"`
-	AdminNote      *string       `gorm:"type:text" json:"admin_note"`
-	ResolvedAt     *time.Time    `json:"resolved_at"`
+	ReporterUserID uuid.UUID    `gorm:"type:uuid;not null;index" json:"reporter_user_id"`
+	ReportedUserID uuid.UUID    `gorm:"type:uuid;not null;index" json:"reported_user_id"`
+	Reason         ReportReason `gorm:"type:varchar(50);not null" json:"reason"`
+	Description    string       `gorm:"type:text;not null" json:"description"`
+	Status         ReportStatus `gorm:"type:varchar(20);not null;default:'pending'" json:"status"`
+	AdminNote      *string      `gorm:"type:text" json:"admin_note"`
+	ResolvedAt     *time.Time   `json:"resolved_at"`
 
 	// リレーション
 	Reporter    User               `gorm:"foreignKey:ReporterUserID" json:"reporter"`
