@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	_ "github.com/tursodatabase/libsql-client-go/libsql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -139,127 +138,66 @@ func (db *DB) insertInitialData() error {
 		}
 	}()
 
-	// プラットフォームの初期データ
-	platforms := []models.Platform{
-		{
-			BaseModel: models.BaseModel{
-				ID: uuid.New(),
-			},
-			Name:         "Playstation Portable",
-			DisplayOrder: 1,
-		},
-		{
-			BaseModel: models.BaseModel{
-				ID: uuid.New(),
-			},
-			Name:         "Nintendo",
-			DisplayOrder: 2,
-		},
-		{
-			BaseModel: models.BaseModel{
-				ID: uuid.New(),
-			},
-			Name:         "Playstation",
-			DisplayOrder: 3,
-		},
-	}
+	// プラットフォームの初期データを挿入（既に存在する場合はスキップ）
+	var platformCount int64
+	tx.Model(&models.Platform{}).Count(&platformCount)
 
-	for _, platform := range platforms {
-		if err := tx.FirstOrCreate(&platform, models.Platform{BaseModel: models.BaseModel{ID: platform.ID}}).Error; err != nil {
-			tx.Rollback()
-			return err
+	if platformCount == 0 {
+		platforms := []models.Platform{
+			{Name: "Playstation Portable", DisplayOrder: 1},
+			{Name: "Nintendo", DisplayOrder: 2},
+			{Name: "Playstation", DisplayOrder: 3},
+		}
+
+		for _, platform := range platforms {
+			if err := tx.Create(&platform).Error; err != nil {
+				tx.Rollback()
+				return fmt.Errorf("プラットフォームの挿入に失敗しました: %w", err)
+			}
 		}
 	}
 
-	// ゲームバージョンの初期データ
-	gameVersions := []models.GameVersion{
-		{
-			BaseModel: models.BaseModel{
-				ID: uuid.New(),
-			},
-			Code:         "MHP",
-			Name:         "モンスターハンターポータブル",
-			PlatformID:   platforms[0].ID,
-			DisplayOrder: 1,
-			IsActive:     true,
-		},
-		{
-			BaseModel: models.BaseModel{
-				ID: uuid.New(),
-			},
-			Code:         "MHP2",
-			Name:         "モンスターハンターポータブル 2nd",
-			PlatformID:   platforms[0].ID,
-			DisplayOrder: 2,
-			IsActive:     true,
-		},
-		{
-			BaseModel: models.BaseModel{
-				ID: uuid.New(),
-			},
-			Code:         "MHP2G",
-			Name:         "モンスターハンターポータブル 2nd G",
-			PlatformID:   platforms[0].ID,
-			DisplayOrder: 3,
-			IsActive:     true,
-		},
-		{
-			BaseModel: models.BaseModel{
-				ID: uuid.New(),
-			},
-			Code:         "MHP3",
-			Name:         "モンスターハンターポータブル 3rd",
-			PlatformID:   platforms[0].ID,
-			DisplayOrder: 4,
-			IsActive:     true,
-		},
-		{
-			BaseModel: models.BaseModel{
-				ID: uuid.New(),
-			},
-			Code:         "MHXX",
-			Name:         "モンスターハンターダブルクロス",
-			PlatformID:   platforms[1].ID,
-			DisplayOrder: 5,
-			IsActive:     true,
-		},
-	}
+	// ゲームバージョンの初期データを挿入（既に存在する場合はスキップ）
+	var gameVersionCount int64
+	tx.Model(&models.GameVersion{}).Count(&gameVersionCount)
 
-	for _, gameVersion := range gameVersions {
-		if err := tx.FirstOrCreate(&gameVersion, models.GameVersion{BaseModel: models.BaseModel{ID: gameVersion.ID}}).Error; err != nil {
-			tx.Rollback()
-			return err
+	if gameVersionCount == 0 {
+		// プラットフォームを取得
+		var pspPlatform, nintendoPlatform models.Platform
+		tx.First(&pspPlatform, "name = ?", "Playstation Portable")
+		tx.First(&nintendoPlatform, "name = ?", "Nintendo")
+
+		gameVersions := []models.GameVersion{
+			{Code: "MHP", Name: "モンスターハンターポータブル", PlatformID: pspPlatform.ID, DisplayOrder: 1, IsActive: true},
+			{Code: "MHP2", Name: "モンスターハンターポータブル 2nd", PlatformID: pspPlatform.ID, DisplayOrder: 2, IsActive: true},
+			{Code: "MHP2G", Name: "モンスターハンターポータブル 2nd G", PlatformID: pspPlatform.ID, DisplayOrder: 3, IsActive: true},
+			{Code: "MHP3", Name: "モンスターハンターポータブル 3rd", PlatformID: pspPlatform.ID, DisplayOrder: 4, IsActive: true},
+			{Code: "MHXX", Name: "モンスターハンターダブルクロス", PlatformID: nintendoPlatform.ID, DisplayOrder: 5, IsActive: true},
+		}
+
+		for _, gameVersion := range gameVersions {
+			if err := tx.Create(&gameVersion).Error; err != nil {
+				tx.Rollback()
+				return fmt.Errorf("ゲームバージョンの挿入に失敗しました: %w", err)
+			}
 		}
 	}
 
-	// リアクションタイプの初期データ
-	reactionTypes := []models.ReactionType{
-		{
-			BaseModel: models.BaseModel{
-				ID: uuid.New(),
-			},
-			Code:         "like",
-			Name:         "いいね",
-			Emoji:        "👍",
-			DisplayOrder: 1,
-			IsActive:     true,
-		},
-		{
-			BaseModel: models.BaseModel{
-				ID: uuid.New(),
-			},
-			Code:         "heart",
-			Name:         "ハート",
-			Emoji:        "❤ ",
-			DisplayOrder: 2,
-			IsActive:     true,
-		},
-	}
+	// リアクションタイプの初期データを挿入（既に存在する場合はスキップ）
+	var reactionTypeCount int64
+	tx.Model(&models.ReactionType{}).Count(&reactionTypeCount)
 
-	for _, reactionType := range reactionTypes {
-		if err := tx.FirstOrCreate(&reactionType, models.ReactionType{BaseModel: models.BaseModel{ID: reactionType.ID}}).Error; err != nil {
-			tx.Rollback()
-			return err
+	if reactionTypeCount == 0 {
+		reactionTypes := []models.ReactionType{
+			{Code: "like", Name: "いいね", Emoji: "👍", DisplayOrder: 1, IsActive: true},
+			{Code: "heart", Name: "ハート", Emoji: "❤ ", DisplayOrder: 2, IsActive: true},
+		}
+
+		for _, reactionType := range reactionTypes {
+			if err := tx.Create(&reactionType).Error; err != nil {
+				tx.Rollback()
+				return fmt.Errorf("リアクションタイプの挿入に失敗しました: %w", err)
+			}
 		}
 	}
 
@@ -284,5 +222,7 @@ func (db *DB) commonMigrate() error {
 		&models.UserActivity{},
 		&models.RoomLog{},
 		&models.PasswordReset{},
+		&models.UserReport{},
+		&models.ReportAttachment{},
 	)
 }

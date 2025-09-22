@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"mhp-rooms/internal/config"
-	"mhp-rooms/internal/infrastructure/persistence/postgres"
+	"mhp-rooms/internal/infrastructure/persistence"
 	"mhp-rooms/internal/models"
 
 	"github.com/google/uuid"
@@ -22,11 +22,11 @@ func main() {
 	config.Init()
 
 	log.Println("データベース接続を待機中...")
-	if err := postgres.WaitForDB(config.AppConfig, 30, 2*time.Second); err != nil {
+	if err := persistence.WaitForDB(config.AppConfig, 30, 2*time.Second); err != nil {
 		log.Fatalf("データベース接続待機に失敗しました: %v", err)
 	}
 
-	db, err := postgres.NewDB(config.AppConfig)
+	db, err := persistence.NewDBAdapter(config.AppConfig)
 	if err != nil {
 		log.Fatalf("データベース接続に失敗しました: %v", err)
 	}
@@ -72,6 +72,97 @@ func main() {
 			IsActive:       true,
 			Role:           "user",
 		},
+		{
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
+			SupabaseUserID: uuid.New(),
+			Email:          "hunter4@example.com",
+			Username:       stringPtr("speed_runner"),
+			DisplayName:    "スピードランナー",
+			AvatarURL:      nil,
+			Bio:            stringPtr("タイムアタック専門です"),
+			IsActive:       true,
+			Role:           "user",
+		},
+		{
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
+			SupabaseUserID: uuid.New(),
+			Email:          "hunter5@example.com",
+			Username:       stringPtr("casual_gamer"),
+			DisplayName:    "まったりハンター",
+			AvatarURL:      nil,
+			Bio:            stringPtr("のんびりやってます"),
+			IsActive:       true,
+			Role:           "user",
+		},
+		{
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
+			SupabaseUserID: uuid.New(),
+			Email:          "hunter6@example.com",
+			Username:       stringPtr("pro_hunter"),
+			DisplayName:    "プロハンター",
+			AvatarURL:      nil,
+			Bio:            stringPtr("攻略情報を共有します"),
+			IsActive:       true,
+			Role:           "user",
+		},
+		{
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
+			SupabaseUserID: uuid.New(),
+			Email:          "hunter7@example.com",
+			Username:       stringPtr("weapon_master"),
+			DisplayName:    "武器マスター",
+			AvatarURL:      nil,
+			Bio:            stringPtr("全武器使えます"),
+			IsActive:       true,
+			Role:           "user",
+		},
+		{
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
+			SupabaseUserID: uuid.New(),
+			Email:          "hunter8@example.com",
+			Username:       stringPtr("monster_scholar"),
+			DisplayName:    "モンスター博士",
+			AvatarURL:      nil,
+			Bio:            stringPtr("モンスターの生態研究中"),
+			IsActive:       true,
+			Role:           "user",
+		},
+		{
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
+			SupabaseUserID: uuid.New(),
+			Email:          "hunter9@example.com",
+			Username:       stringPtr("item_vendor"),
+			DisplayName:    "アイテム商人",
+			AvatarURL:      nil,
+			Bio:            stringPtr("レアアイテム持ってます"),
+			IsActive:       true,
+			Role:           "user",
+		},
+		{
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
+			SupabaseUserID: uuid.New(),
+			Email:          "hunter10@example.com",
+			Username:       stringPtr("team_leader"),
+			DisplayName:    "チームリーダー",
+			AvatarURL:      nil,
+			Bio:            stringPtr("チーム戦略が得意です"),
+			IsActive:       true,
+			Role:           "user",
+		},
 	}
 
 	for _, user := range users {
@@ -100,7 +191,7 @@ func main() {
 			GameVersionID:   gameVersions[2].ID, // MHP2G
 			HostUserID:      users[0].ID,
 			MaxPlayers:      4,
-			CurrentPlayers:  3,
+			CurrentPlayers:  1,
 			TargetMonster:   stringPtr("ティガレックス"),
 			RankRequirement: stringPtr("HR6以上"),
 			IsActive:        true,
@@ -115,7 +206,7 @@ func main() {
 			GameVersionID:   gameVersions[3].ID, // MHP3
 			HostUserID:      users[1].ID,
 			MaxPlayers:      4,
-			CurrentPlayers:  2,
+			CurrentPlayers:  1,
 			TargetMonster:   nil,
 			RankRequirement: stringPtr("制限なし"),
 			IsActive:        true,
@@ -130,7 +221,7 @@ func main() {
 			GameVersionID:   gameVersions[1].ID, // MHP2
 			HostUserID:      users[2].ID,
 			MaxPlayers:      4,
-			CurrentPlayers:  4,
+			CurrentPlayers:  1,
 			TargetMonster:   stringPtr("リオレウス"),
 			RankRequirement: stringPtr("HR4以上"),
 			IsActive:        true,
@@ -145,7 +236,7 @@ func main() {
 			GameVersionID:   gameVersions[0].ID, // MHP
 			HostUserID:      users[0].ID,
 			MaxPlayers:      4,
-			CurrentPlayers:  3,
+			CurrentPlayers:  1,
 			TargetMonster:   stringPtr("モノブロス"),
 			RankRequirement: stringPtr("HR3以上"),
 			IsActive:        true,
@@ -160,7 +251,7 @@ func main() {
 			GameVersionID:   gameVersions[2].ID, // MHP2G
 			HostUserID:      users[1].ID,
 			MaxPlayers:      4,
-			CurrentPlayers:  2,
+			CurrentPlayers:  1,
 			TargetMonster:   stringPtr("ラージャン"),
 			RankRequirement: stringPtr("HR7以上"),
 			IsActive:        true,
@@ -184,6 +275,20 @@ func main() {
 		if err := db.GetConn().Create(&room).Error; err != nil {
 			log.Printf("ルーム作成エラー: %v", err)
 		} else {
+			// ホストをroom_membersテーブルに追加
+			member := models.RoomMember{
+				ID:           uuid.New(),
+				RoomID:       room.ID,
+				UserID:       room.HostUserID,
+				PlayerNumber: 1,
+				IsHost:       true,
+				Status:       "active",
+				JoinedAt:     time.Now(),
+			}
+			if err := db.GetConn().Create(&member).Error; err != nil {
+				log.Printf("ホストメンバー追加エラー (%s): %v", room.Name, err)
+			}
+
 			if room.HasPassword() {
 				log.Printf("ルーム作成: %s - パスワード付き", room.Name)
 			} else {

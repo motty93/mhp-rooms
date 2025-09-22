@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
 	"os"
 
@@ -29,7 +30,11 @@ func (app *Application) withAuth(handler http.HandlerFunc) http.HandlerFunc {
 	}
 	// 認証ミドルウェアが利用できない場合は認証エラーを返す
 	return func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, "認証システムが初期化されていません。SUPABASE_JWT_SECRETが設定されていることを確認してください。", http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "認証システムが初期化されていません。SUPABASE_JWT_SECRETが設定されていることを確認してください。",
+		})
 	}
 }
 
@@ -218,6 +223,11 @@ func (app *Application) setupAPIRoutes(r chi.Router) {
 		// リアクション関連API（認証必須）
 		ar.Post("/messages/{messageId}/reactions", app.withAuth(app.reactionHandler.AddReaction))
 		ar.Delete("/messages/{messageId}/reactions/{reactionType}", app.withAuth(app.reactionHandler.RemoveReaction))
+
+		// 通報関連API（認証必須）
+		ar.Post("/users/{id}/report", app.withAuth(app.reportHandler.CreateReport))
+		ar.Post("/reports/{id}/upload", app.withAuth(app.reportHandler.UploadAttachment))
+		ar.Get("/report/reasons", app.withAuth(app.reportHandler.GetReportReasons))
 
 		// 認証オプションのAPIエンドポイント
 		ar.Get("/rooms", app.withOptionalAuth(app.roomHandler.GetAllRoomsAPI))

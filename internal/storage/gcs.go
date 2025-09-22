@@ -125,6 +125,93 @@ func (u *GCSUploader) UploadAvatar(ctx context.Context, userID string, file mult
 	}, nil
 }
 
+// UploadReportAttachment 通報添付ファイルをアップロード
+func (u *GCSUploader) UploadReportAttachment(ctx context.Context, reportID string, file multipart.File, header *multipart.FileHeader) (*UploadResult, error) {
+	// ファイルサイズチェック（5MB制限）
+	maxSize := int64(5 << 20) // 5MB
+	if header.Size > maxSize {
+		return nil, fmt.Errorf("ファイルサイズが制限を超えています（最大 5MB）")
+	}
+
+	// ファイルを読み込み
+	buf := bytes.NewBuffer(nil)
+	if _, err := io.CopyN(buf, file, maxSize+1); err != nil && err != io.EOF {
+		return nil, fmt.Errorf("ファイル読み込みエラー: %w", err)
+	}
+
+	// Content-Type判定
+	contentType := header.Header.Get("Content-Type")
+	if contentType == "" {
+		bufBytes := buf.Bytes()
+		detectSize := 512
+		if len(bufBytes) < detectSize {
+			detectSize = len(bufBytes)
+		}
+		contentType = http.DetectContentType(bufBytes[:detectSize])
+	}
+
+	// 画像ファイルのみ許可
+	allowedTypes := map[string]bool{
+		"image/jpeg": true,
+		"image/jpg":  true,
+		"image/png":  true,
+		"image/gif":  true,
+	}
+	if !allowedTypes[contentType] {
+		return nil, errors.New("対応していない画像形式です（jpg, jpeg, png, gif のみ）")
+	}
+
+	// 拡張子取得
+	ext := getExtension(header.Filename, contentType)
+
+	// ハッシュ計算（重複防止）
+	h := md5.New()
+	h.Write(buf.Bytes())
+	hash12 := hex.EncodeToString(h.Sum(nil))[:12]
+
+	// ベースネーム取得
+	base := baseNameSansExt(header.Filename)
+	if base == "" {
+		base = "attachment"
+	}
+	base = sanitizeName(base)
+
+	// オブジェクトパス生成（環境別フォルダ付き）
+	objectPath := path.Join(
+		u.config.AssetPrefix, // dev/prod などを先頭に
+		"reports",
+		reportID,
+		fmt.Sprintf("%s-%s%s", base, hash12, ext),
+	)
+
+	// プライベートバケットにアップロード
+	bucket := u.client.Bucket(u.config.PrivateBucket)
+	obj := bucket.Object(objectPath)
+	writer := obj.NewWriter(ctx)
+
+	// メタデータ設定（プライベートなのでキャッシュ無効）
+	writer.CacheControl = "no-cache, no-store, must-revalidate"
+	writer.ContentType = contentType
+
+	// 書き込み
+	if _, err := writer.Write(buf.Bytes()); err != nil {
+		return nil, fmt.Errorf("GCS書き込みエラー: %w", err)
+	}
+
+	if err := writer.Close(); err != nil {
+		return nil, fmt.Errorf("GCSクローズエラー: %w", err)
+	}
+
+	// プライベートURL（gs://形式で保存、アクセス時に署名付きURLを生成）
+	privateURL := fmt.Sprintf("gs://%s/%s", u.config.PrivateBucket, objectPath)
+
+	return &UploadResult{
+		URL:         privateURL, // プライベートなのでgs://形式で保存
+		ObjectPath:  objectPath,
+		ContentType: contentType,
+	}, nil
+}
+
 // PublicURL オブジェクトパスから公開URLを生成
 func (u *GCSUploader) PublicURL(objectPath string) string {
 	base := strings.TrimRight(u.config.BaseURL, "/")

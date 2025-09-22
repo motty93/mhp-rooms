@@ -67,8 +67,12 @@ func (fh *FollowHandler) FollowUser(w http.ResponseWriter, r *http.Request) {
 	existingFollow, err := fh.repo.UserFollow.GetFollow(followerUserID, followingUserID)
 	if err == nil && existingFollow != nil {
 		// 既にフォローしている場合でもプロフィールカードのHTMLを返す
+		fh.logger.Printf("既存のフォロー関係が見つかりました: follower=%s, following=%s", followerUserID, followingUserID)
 		fh.returnProfileCardHTML(w, r, followingUser, dbUser)
 		return
+	}
+	if err != nil {
+		fh.logger.Printf("GetFollow エラー: %v", err)
 	}
 
 	// フォロー関係を作成
@@ -96,14 +100,18 @@ func (fh *FollowHandler) FollowUser(w http.ResponseWriter, r *http.Request) {
 
 // UnfollowUser ユーザーのフォローを解除する
 func (fh *FollowHandler) UnfollowUser(w http.ResponseWriter, r *http.Request) {
+	fh.logger.Printf("UnfollowUser ハンドラーが呼び出されました")
+
 	// 認証チェック
 	dbUser, exists := middleware.GetDBUserFromContext(r.Context())
 	if !exists || dbUser == nil {
+		fh.logger.Printf("認証エラー: ユーザーが見つかりません")
 		http.Error(w, "認証されていません", http.StatusUnauthorized)
 		return
 	}
 
 	followerUserID := dbUser.ID
+	fh.logger.Printf("認証ユーザーID: %s", followerUserID)
 
 	// フォロー解除対象のユーザーIDを取得
 	followingUserIDStr := chi.URLParam(r, "userID")
@@ -113,9 +121,18 @@ func (fh *FollowHandler) UnfollowUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// デバッグログ
+	fh.logger.Printf("フォロー解除: followerUserID=%s, followingUserID=%s", followerUserID, followingUserID)
+
 	// フォロー関係の存在チェック
 	existingFollow, err := fh.repo.UserFollow.GetFollow(followerUserID, followingUserID)
-	if err != nil || existingFollow == nil {
+	if err != nil {
+		fh.logger.Printf("フォロー関係の取得エラー: %v", err)
+		http.Error(w, "フォロー解除処理に失敗しました", http.StatusInternalServerError)
+		return
+	}
+	if existingFollow == nil {
+		fh.logger.Printf("フォロー関係が見つかりません: follower=%s, following=%s", followerUserID, followingUserID)
 		http.Error(w, "フォロー関係が見つかりません", http.StatusNotFound)
 		return
 	}

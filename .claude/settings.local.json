@@ -139,7 +139,23 @@
       "Bash(turso db shell:*)",
       "Read(//home/motty93/**)",
       "Bash(~/.turso/turso db list)",
-      "Bash(~/.turso/turso:*)"
+      "Bash(~/.turso/turso:*)",
+      "WebSearch",
+      "Bash(PORT=8083 ENV=development make run)",
+      "Bash(SQLITE_DB_PATH=\"./data/mhp_rooms.db\" DB_TYPE=sqlite sqlite3 ./data/mhp_rooms.db \"SELECT rooms.name, COUNT(rm.id) as member_count FROM rooms LEFT JOIN room_members rm ON rooms.id = rm.room_id AND rm.status = ''active'' GROUP BY rooms.id, rooms.name ORDER BY rooms.name;\")",
+      "Bash(ENV=development DB_TYPE=turso go run cmd/seed/main.go)",
+      "Bash(ENV=development DB_TYPE=turso timeout 10s make run)",
+      "Bash(PORT=8084 ENV=development DB_TYPE=turso timeout 10s make run)",
+      "Bash(PORT=8085 ENV=development DB_TYPE=turso make run)",
+      "Bash(ENV=development DB_TYPE=turso timeout 10s go run cmd/server/main.go)",
+      "Bash(PORT=8086 ENV=development DB_TYPE=turso timeout 10s make run)",
+      "Bash(PORT=8087 ENV=development DB_TYPE=turso make run)",
+      "Bash(PORT=8088 ENV=development DB_TYPE=turso timeout 10s make run)",
+      "Bash(PORT=8089 ENV=development DB_TYPE=turso make run)",
+      "Bash(PORT=8089 ENV=development DB_TYPE=turso timeout 15s make run)",
+      "Bash(PORT=8089 ENV=development DB_TYPE=turso timeout 10s make run)",
+      "Bash(PORT=8090 ENV=development DB_TYPE=turso timeout 15s make run)",
+      "Bash(PORT=8090 ENV=development DB_TYPE=turso make run)"
     ],
     "deny": []
   }
