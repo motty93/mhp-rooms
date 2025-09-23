@@ -214,8 +214,8 @@ func renderPartialTemplate(w http.ResponseWriter, templateName string, data inte
 	}
 
 	w.Header().Set("Content-Type", "text/html")
-	// テンプレート名でテンプレートを実行
-	err = tmpl.ExecuteTemplate(w, templateName, data)
+	// テンプレート名でテンプレートを実行（.tmpl拡張子付き）
+	err = tmpl.ExecuteTemplate(w, templateFileName, data)
 	if err != nil {
 		return fmt.Errorf("template execution error: %w", err)
 	}

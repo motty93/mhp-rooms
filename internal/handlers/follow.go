@@ -77,6 +77,7 @@ func (fh *FollowHandler) FollowUser(w http.ResponseWriter, r *http.Request) {
 
 	// フォロー関係を作成
 	userFollow := &models.UserFollow{
+		BaseModel:       models.BaseModel{ID: uuid.New()},
 		FollowerUserID:  followerUserID,
 		FollowingUserID: followingUserID,
 		Status:          "accepted", // 現在の実装では自動承認
