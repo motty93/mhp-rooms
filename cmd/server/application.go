@@ -9,6 +9,7 @@ import (
 	"mhp-rooms/internal/config"
 	"mhp-rooms/internal/handlers"
 	"mhp-rooms/internal/infrastructure/persistence"
+	redisinfra "mhp-rooms/internal/infrastructure/redis"
 	"mhp-rooms/internal/middleware"
 	"mhp-rooms/internal/repository"
 	"mhp-rooms/internal/sse"
@@ -18,6 +19,7 @@ import (
 type Application struct {
 	config             *config.Config
 	db                 persistence.DBAdapter
+	redisClient        redisinfra.RedisClient
 	repo               *repository.Repository
 	authHandler        *handlers.AuthHandler
 	roomHandler        *handlers.RoomHandler
@@ -37,6 +39,7 @@ type Application struct {
 	generalLimiter     *middleware.RateLimiter
 	authLimiter        *middleware.RateLimiter
 	sseHub             *sse.Hub
+	eventBus           sse.EventBus
 }
 
 func NewApplication(cfg *config.Config) (*Application, error) {
@@ -73,6 +76,49 @@ func (app *Application) initDatabase() error {
 	} else {
 		log.Println("マイグレーションはスキップされました（RUN_MIGRATION=trueで有効化）")
 	}
+
+	return nil
+}
+
+func (app *Application) initRedis() error {
+	if !app.config.Redis.Enabled {
+		log.Println("Redis無効: インメモリモードで動作します")
+		return nil
+	}
+
+	upstashToken := app.config.GetEnv("UPSTASH_TOKEN", "")
+
+	client, err := redisinfra.NewUpstashClient(app.config.Redis.URL, upstashToken)
+	if err != nil {
+		return fmt.Errorf("Redis接続に失敗しました: %w", err)
+	}
+
+	app.redisClient = client
+	log.Printf("Redis接続成功: %s", app.config.Redis.Host)
+
+	return nil
+}
+
+func (app *Application) initSSE() error {
+	// SSE Hubを初期化
+	app.sseHub = sse.NewHub()
+	go app.sseHub.Run()
+
+	// トークンマネージャーの初期化
+	if app.config.Redis.Enabled && app.redisClient != nil {
+		sse.InitializeTokenManagerWithClient(app.redisClient, app.config.SSE.TokenTTL)
+	} else {
+		sse.InitializeTokenManagerWithClient(nil, app.config.SSE.TokenTTL)
+	}
+
+	// イベントバスの初期化
+	if app.config.Redis.Enabled && app.redisClient != nil {
+		sse.InitializeEventBusWithClient(app.redisClient, app.sseHub)
+	} else {
+		sse.InitializeEventBusWithClient(nil, app.sseHub)
+	}
+
+	app.eventBus = sse.GetEventBus()
 
 	return nil
 }

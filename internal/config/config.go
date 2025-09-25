@@ -2,20 +2,24 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Config struct {
 	Database    DatabaseConfig
 	Server      ServerConfig
 	Environment string
-	ServiceMode string // "main" または "sse"
+	ServiceMode string // "main" | "sse" | "both"
 	Migration   MigrationConfig
 	Debug       DebugConfig
 	GCS         GCSConfig
+	Redis       RedisConfig
+	SSE         SSEConfig
 }
 
 type DebugConfig struct {
@@ -55,29 +59,50 @@ type GCSConfig struct {
 	AssetPrefix    string
 }
 
+type RedisConfig struct {
+	URL            string
+	Enabled        bool
+	Host           string
+	Port           string
+	Password       string
+	DB             int
+	MaxRetries     int
+	RetryInterval  time.Duration
+	ConnectTimeout time.Duration
+	ReadTimeout    time.Duration
+	WriteTimeout   time.Duration
+}
+
+type SSEConfig struct {
+	TokenTTL          time.Duration
+	Host              string // SSEコンテナの公開URL
+	PingInterval      time.Duration
+	ConnectionTimeout time.Duration
+}
+
 var AppConfig *Config
 
 func Init() {
 	AppConfig = &Config{
 		Database: DatabaseConfig{
-			Type:           getEnv("DB_TYPE", "turso"),
-			URL:            getEnv("DATABASE_URL", ""),
-			Host:           getEnv("DB_HOST", "localhost"),
-			Port:           getEnv("DB_PORT", "5432"),
-			User:           getEnv("DB_USER", "postgres"),
-			Password:       getEnv("DB_PASSWORD", "postgres"),
-			Name:           getEnv("DB_NAME", "mhp_rooms"),
-			SSLMode:        getEnv("DB_SSLMODE", getDefaultSSLMode()),
-			TursoURL:       getEnv("TURSO_DATABASE_URL", ""),
-			TursoAuthToken: getEnv("TURSO_AUTH_TOKEN", ""),
+			Type:           GetEnv("DB_TYPE", "turso"),
+			URL:            GetEnv("DATABASE_URL", ""),
+			Host:           GetEnv("DB_HOST", "localhost"),
+			Port:           GetEnv("DB_PORT", "5432"),
+			User:           GetEnv("DB_USER", "postgres"),
+			Password:       GetEnv("DB_PASSWORD", "postgres"),
+			Name:           GetEnv("DB_NAME", "mhp_rooms"),
+			SSLMode:        GetEnv("DB_SSLMODE", getDefaultSSLMode()),
+			TursoURL:       GetEnv("TURSO_DATABASE_URL", ""),
+			TursoAuthToken: GetEnv("TURSO_AUTH_TOKEN", ""),
 		},
 		Server: ServerConfig{
-			Port:    getEnv("PORT", "8080"),
-			Host:    getEnv("HOST", "0.0.0.0"),
-			SSEHost: getEnv("SSE_HOST", ""), // 空の場合は同一サーバー
+			Port:    GetEnv("PORT", "8080"),
+			Host:    GetEnv("HOST", "0.0.0.0"),
+			SSEHost: GetEnv("SSE_HOST", ""), // 空の場合は同一サーバー
 		},
-		Environment: getEnv("ENV", "development"),
-		ServiceMode: getEnv("SERVICE_MODE", "main"), // "main" または "sse"
+		Environment: GetEnv("ENV", "development"),
+		ServiceMode: GetEnv("SERVICE_MODE", "main"), // "main" または "sse"
 		Migration: MigrationConfig{
 			AutoRun: getEnvBool("RUN_MIGRATION", false),
 		},
@@ -90,8 +115,28 @@ func Init() {
 			BaseURL:        MustGetEnv("BASE_PUBLIC_ASSET_URL"),
 			PrivateBucket:  MustGetEnv("GCS_PRIVATE_BUCKET"),        // 通報用プライベートバケット
 			MaxUploadBytes: GetEnvInt64("MAX_UPLOAD_BYTES", 10<<20), // デフォルト10MB
-			AllowedMIMEs:   parseAllowedMIMEs(getEnv("ALLOW_CONTENT_TYPES", ""), []string{"image/jpeg", "image/png", "image/webp"}),
-			AssetPrefix:    cleanAssetPrefix(getEnv("ASSET_PREFIX", "")),
+			AllowedMIMEs:   parseAllowedMIMEs(GetEnv("ALLOW_CONTENT_TYPES", ""), []string{"image/jpeg", "image/png", "image/webp"}),
+			AssetPrefix:    cleanAssetPrefix(GetEnv("ASSET_PREFIX", "")),
+		},
+		Redis: RedisConfig{
+			URL:            os.Getenv("REDIS_URL"),
+			Enabled:        getEnvBool("REDIS_ENABLED", false),
+			Host:           GetEnv("REDIS_HOST", "localhost"),
+			Port:           GetEnv("REDIS_PORT", "6379"),
+			Password:       os.Getenv("REDIS_PASSWORD"),
+			DB:             getEnvInt("REDIS_DB", 0),
+			MaxRetries:     getEnvInt("REDIS_MAX_RETRIES", 3),
+			RetryInterval:  getEnvDuration("REDIS_RETRY_INTERVAL", 1*time.Second),
+			ConnectTimeout: getEnvDuration("REDIS_CONNECT_TIMEOUT", 5*time.Second),
+			ReadTimeout:    getEnvDuration("REDIS_READ_TIMEOUT", 3*time.Second),
+			WriteTimeout:   getEnvDuration("REDIS_WRITE_TIMEOUT", 3*time.Second),
+		},
+
+		SSE: SSEConfig{
+			TokenTTL:          getEnvDuration("SSE_TOKEN_TTL", 5*time.Minute),
+			Host:              os.Getenv("SSE_HOST"),
+			PingInterval:      getEnvDuration("SSE_PING_INTERVAL", 30*time.Second),
+			ConnectionTimeout: getEnvDuration("SSE_CONNECTION_TIMEOUT", 30*time.Minute),
 		},
 	}
 }
@@ -125,7 +170,7 @@ func (c *Config) GetServerAddr() string {
 	return c.Server.Host + ":" + c.Server.Port
 }
 
-func getEnv(key, defaultValue string) string {
+func GetEnv(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
 	}
@@ -151,7 +196,7 @@ func getEnvBool(key string, defaultValue bool) bool {
 }
 
 func getDefaultSSLMode() string {
-	env := getEnv("ENV", "development")
+	env := GetEnv("ENV", "development")
 	if env == "production" {
 		return "require"
 	}
@@ -178,6 +223,21 @@ func GetEnvInt64(key string, defaultValue int64) int64 {
 		panic(fmt.Sprintf("環境変数 %s が無効な数値です: %v", key, err))
 	}
 	return v
+}
+
+func getEnvDuration(key string, defaultValue time.Duration) time.Duration {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+
+	result, err := time.ParseDuration(value)
+	if err != nil {
+		log.Printf("Warning: invalid duration value for %s: %s", key, value)
+		return defaultValue
+	}
+
+	return result
 }
 
 // parseAllowedMIMEs 許可されたMIMEタイプをパース
