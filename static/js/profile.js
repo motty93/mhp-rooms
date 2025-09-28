@@ -335,6 +335,280 @@ window.profileEditForm = (userData = {}) => ({
   },
 })
 
+// ユーザープロフィール画面の部屋参加処理
+window.userProfileRoomsHandler = {
+  currentRoomId: null,
+  currentRoomName: '',
+  currentRoomDescription: '',
+  currentRoomGameVersion: '',
+  currentRoomPlayerCount: '',
+  currentRoomStatus: '',
+  isJoining: false,
+  hostRoomInfo: null,
+
+  // 部屋モーダルを開く
+  async openRoomModal(roomId, name, description, gameVersion, playerCount, status) {
+    this.currentRoomId = roomId
+    this.currentRoomName = name
+    this.currentRoomDescription = description
+    this.currentRoomGameVersion = gameVersion
+    this.currentRoomPlayerCount = playerCount
+    this.currentRoomStatus = status
+
+    // 認証状態をチェック
+    const authStore = Alpine.store('auth')
+    if (!authStore || !authStore.isAuthenticated) {
+      window.location.href = '/auth/login'
+      return
+    }
+
+    // ホスト状態をチェック
+    try {
+      const response = await fetch('/api/user/current/room-status', {
+        headers: {
+          Authorization: `Bearer ${authStore.session.access_token}`,
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.status === 'HOST') {
+          // ホスト中の場合は制限モーダルを表示
+          this.hostRoomInfo = data.room
+          this.showHostRestrictionModal()
+          return
+        }
+      }
+    } catch (error) {
+      console.error('部屋状態チェックエラー:', error)
+    }
+
+    // モーダルに情報を設定
+    document.getElementById('user-profile-modal-title').textContent = name
+    document.getElementById('user-profile-modal-description').textContent = description || ''
+    document.getElementById('user-profile-modal-game-version').textContent = gameVersion
+    document.getElementById('user-profile-modal-player-count').textContent = playerCount
+    document.getElementById('user-profile-modal-status').textContent = status
+
+    // モーダルを表示（アニメーション付き）
+    const modal = document.getElementById('user-profile-join-modal')
+    modal.style.display = 'flex'
+    // 次のフレームで透明度を変更してアニメーション
+    requestAnimationFrame(() => {
+      modal.style.opacity = '1'
+      const content = modal.querySelector('.bg-white')
+      if (content) {
+        content.style.transform = 'scale(1)'
+        content.style.opacity = '1'
+      }
+    })
+  },
+
+  // モーダルを閉じる（アニメーション付き）
+  closeModal() {
+    const modal = document.getElementById('user-profile-join-modal')
+    modal.style.opacity = '0'
+    const content = modal.querySelector('.bg-white')
+    if (content) {
+      content.style.transform = 'scale(0.95)'
+      content.style.opacity = '0'
+    }
+    // アニメーション完了後に非表示
+    setTimeout(() => {
+      modal.style.display = 'none'
+    }, 200)
+    this.currentRoomId = null
+    this.isJoining = false
+  },
+
+  // 部屋に参加する
+  async joinRoom() {
+    if (this.isJoining || !this.currentRoomId) return
+
+    const authStore = Alpine.store('auth')
+    if (!authStore || !authStore.isAuthenticated) {
+      this.closeModal()
+      window.location.href = '/auth/login'
+      return
+    }
+
+    this.isJoining = true
+
+    try {
+      const headers = {
+        'Content-Type': 'application/json',
+      }
+
+      if (authStore.session?.access_token) {
+        headers['Authorization'] = `Bearer ${authStore.session.access_token}`
+      }
+
+      const response = await fetch(`/rooms/${this.currentRoomId}/join`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({}),
+      })
+
+      if (!response.ok) {
+        if (response.status === 409) {
+          const errorData = await response.json()
+
+          // ホスト中の制限
+          if (errorData.error === 'HOST_CANNOT_JOIN') {
+            this.closeModal()
+            this.hostRoomInfo = errorData.room
+            this.showHostRestrictionModal()
+            this.isJoining = false
+            return
+          }
+
+          // 他の部屋に参加している場合の確認ダイアログ
+          if (errorData.error === 'OTHER_ROOM_ACTIVE') {
+            this.closeModal()
+            this.showConfirmDialog()
+            this.isJoining = false
+            return
+          }
+
+          // 既に同じ部屋に参加している場合
+          if (errorData.redirect) {
+            window.location.href = errorData.redirect
+            this.isJoining = false
+            return
+          }
+
+          throw new Error(errorData.message || '参加に失敗しました')
+        }
+
+        throw new Error('参加に失敗しました')
+      }
+
+      const result = await response.json()
+
+      // 成功時は部屋詳細画面に遷移
+      if (result.redirect) {
+        window.location.href = result.redirect
+      } else {
+        window.location.reload()
+      }
+    } catch (error) {
+      showNotification(error.message || '参加に失敗しました', 'error')
+      this.isJoining = false
+    }
+  },
+
+  // ホスト制限モーダルを表示
+  showHostRestrictionModal() {
+    if (this.hostRoomInfo) {
+      document.getElementById('user-profile-host-room-link').href = `/rooms/${this.hostRoomInfo.id}`
+    }
+    const modal = document.getElementById('user-profile-host-restriction-modal')
+    modal.style.display = 'flex'
+    requestAnimationFrame(() => {
+      modal.style.opacity = '1'
+      const content = modal.querySelector('.bg-white')
+      if (content) {
+        content.style.transform = 'scale(1)'
+        content.style.opacity = '1'
+      }
+    })
+  },
+
+  // ホスト制限モーダルを閉じる
+  closeHostRestrictionModal() {
+    const modal = document.getElementById('user-profile-host-restriction-modal')
+    modal.style.opacity = '0'
+    const content = modal.querySelector('.bg-white')
+    if (content) {
+      content.style.transform = 'scale(0.95)'
+      content.style.opacity = '0'
+    }
+    setTimeout(() => {
+      modal.style.display = 'none'
+    }, 200)
+    this.hostRoomInfo = null
+  },
+
+  // 確認ダイアログを表示
+  showConfirmDialog() {
+    const modal = document.getElementById('user-profile-confirm-dialog')
+    modal.style.display = 'flex'
+    requestAnimationFrame(() => {
+      modal.style.opacity = '1'
+      const content = modal.querySelector('.bg-white')
+      if (content) {
+        content.style.transform = 'scale(1)'
+        content.style.opacity = '1'
+      }
+    })
+  },
+
+  // 確認ダイアログを閉じる
+  closeConfirmDialog() {
+    const modal = document.getElementById('user-profile-confirm-dialog')
+    modal.style.opacity = '0'
+    const content = modal.querySelector('.bg-white')
+    if (content) {
+      content.style.transform = 'scale(0.95)'
+      content.style.opacity = '0'
+    }
+    setTimeout(() => {
+      modal.style.display = 'none'
+    }, 200)
+    this.isJoining = false
+  },
+
+  // 確認後に部屋に参加する
+  async confirmJoinRoom() {
+    if (this.isJoining || !this.currentRoomId) return
+
+    const authStore = Alpine.store('auth')
+    if (!authStore || !authStore.isAuthenticated) {
+      this.closeConfirmDialog()
+      window.location.href = '/auth/login'
+      return
+    }
+
+    this.isJoining = true
+
+    try {
+      const requestData = {
+        forceJoin: true,
+      }
+
+      const response = await fetch(`/rooms/${this.currentRoomId}/join`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authStore.session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(errorText || '参加に失敗しました')
+      }
+
+      const result = await response.json()
+
+      // モーダルを閉じて部屋詳細に遷移
+      this.closeConfirmDialog()
+      this.closeModal()
+
+      if (result.redirect) {
+        window.location.href = result.redirect
+      } else {
+        window.location.reload()
+      }
+    } catch (error) {
+      console.error('処理エラー:', error)
+      showNotification(error.message || '参加に失敗しました', 'error')
+      this.isJoining = false
+    }
+  },
+}
+
 // DOMContentLoaded時の初期化
 document.addEventListener('DOMContentLoaded', () => {
   // プロフィール関連のイベントリスナーを設定

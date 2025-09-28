@@ -1,42 +1,44 @@
-{{ if and .IsAuthenticated (not .IsOwnProfile) }}
-  <div class="w-full mt-4" x-data="{ dropdownOpen: false }">
-    <div class="relative">
-      <button
-        @click="dropdownOpen = !dropdownOpen"
-        class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center"
-      >
-        <span>その他</span>
-      </button>
-
-      <div
-        x-show="dropdownOpen"
-        @click.away="dropdownOpen = false"
-        x-transition:enter="transition ease-out duration-100"
-        x-transition:enter-start="transform opacity-0 scale-95"
-        x-transition:enter-end="transform opacity-100 scale-100"
-        x-transition:leave="transition ease-in duration-75"
-        x-transition:leave-start="transform opacity-100 scale-100"
-        x-transition:leave-end="transform opacity-0 scale-95"
-        class="absolute z-10 mt-2 w-full bg-white rounded-lg shadow-lg border border-gray-200"
-        style="display: none;"
-      >
-        <div class="py-1">
-          <!-- ブロック機能は詳細が決まっていないため一時的にコメントアウト
+{{ define "block_report_buttons" }}
+  {{ if and .IsAuthenticated (not .IsOwnProfile) }}
+    <div class="w-full mt-4" x-data="{ dropdownOpen: false }">
+      <div class="relative">
         <button
-          class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2">
-          <i class="fa-solid fa-ban text-red-500"></i>
-          <span>ブロック</span>
+          @click="dropdownOpen = !dropdownOpen"
+          class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center"
+        >
+          <span>その他</span>
         </button>
-        -->
+
+        <div
+          x-show="dropdownOpen"
+          @click.away="dropdownOpen = false"
+          x-transition:enter="transition ease-out duration-100"
+          x-transition:enter-start="transform opacity-0 scale-95"
+          x-transition:enter-end="transform opacity-100 scale-100"
+          x-transition:leave="transition ease-in duration-75"
+          x-transition:leave-start="transform opacity-100 scale-100"
+          x-transition:leave-end="transform opacity-0 scale-95"
+          class="absolute z-10 mt-2 w-full bg-white rounded-lg shadow-lg border border-gray-200"
+          style="display: none;"
+        >
+          <div class="py-1">
+            <!-- ブロック機能は詳細が決まっていないため一時的にコメントアウト
           <button
-            @click="$dispatch('open-report-modal', { userId: '{{ .User.ID }}', userName: '{{ .User.DisplayName }}' })"
-            class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-          >
-            <i class="fa-solid fa-flag text-yellow-500"></i>
-            <span>通報</span>
+            class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2">
+            <i class="fa-solid fa-ban text-red-500"></i>
+            <span>ブロック</span>
           </button>
+          -->
+            <button
+              @click="$dispatch('open-report-modal', { userId: '{{ .User.ID }}', userName: '{{ .User.DisplayName }}' })"
+              class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+            >
+              <i class="fa-solid fa-flag text-yellow-500"></i>
+              <span>通報</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
+  {{ end }}
 {{ end }}
