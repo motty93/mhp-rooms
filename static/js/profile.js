@@ -390,13 +390,33 @@ window.userProfileRoomsHandler = {
     document.getElementById('user-profile-modal-player-count').textContent = playerCount
     document.getElementById('user-profile-modal-status').textContent = status
 
-    // モーダルを表示
-    document.getElementById('user-profile-join-modal').style.display = 'flex'
+    // モーダルを表示（アニメーション付き）
+    const modal = document.getElementById('user-profile-join-modal')
+    modal.style.display = 'flex'
+    // 次のフレームで透明度を変更してアニメーション
+    requestAnimationFrame(() => {
+      modal.style.opacity = '1'
+      const content = modal.querySelector('.bg-white')
+      if (content) {
+        content.style.transform = 'scale(1)'
+        content.style.opacity = '1'
+      }
+    })
   },
 
-  // モーダルを閉じる
+  // モーダルを閉じる（アニメーション付き）
   closeModal() {
-    document.getElementById('user-profile-join-modal').style.display = 'none'
+    const modal = document.getElementById('user-profile-join-modal')
+    modal.style.opacity = '0'
+    const content = modal.querySelector('.bg-white')
+    if (content) {
+      content.style.transform = 'scale(0.95)'
+      content.style.opacity = '0'
+    }
+    // アニメーション完了後に非表示
+    setTimeout(() => {
+      modal.style.display = 'none'
+    }, 200)
     this.currentRoomId = null
     this.isJoining = false
   },
@@ -482,23 +502,59 @@ window.userProfileRoomsHandler = {
     if (this.hostRoomInfo) {
       document.getElementById('user-profile-host-room-link').href = `/rooms/${this.hostRoomInfo.id}`
     }
-    document.getElementById('user-profile-host-restriction-modal').style.display = 'flex'
+    const modal = document.getElementById('user-profile-host-restriction-modal')
+    modal.style.display = 'flex'
+    requestAnimationFrame(() => {
+      modal.style.opacity = '1'
+      const content = modal.querySelector('.bg-white')
+      if (content) {
+        content.style.transform = 'scale(1)'
+        content.style.opacity = '1'
+      }
+    })
   },
 
   // ホスト制限モーダルを閉じる
   closeHostRestrictionModal() {
-    document.getElementById('user-profile-host-restriction-modal').style.display = 'none'
+    const modal = document.getElementById('user-profile-host-restriction-modal')
+    modal.style.opacity = '0'
+    const content = modal.querySelector('.bg-white')
+    if (content) {
+      content.style.transform = 'scale(0.95)'
+      content.style.opacity = '0'
+    }
+    setTimeout(() => {
+      modal.style.display = 'none'
+    }, 200)
     this.hostRoomInfo = null
   },
 
   // 確認ダイアログを表示
   showConfirmDialog() {
-    document.getElementById('user-profile-confirm-dialog').style.display = 'flex'
+    const modal = document.getElementById('user-profile-confirm-dialog')
+    modal.style.display = 'flex'
+    requestAnimationFrame(() => {
+      modal.style.opacity = '1'
+      const content = modal.querySelector('.bg-white')
+      if (content) {
+        content.style.transform = 'scale(1)'
+        content.style.opacity = '1'
+      }
+    })
   },
 
   // 確認ダイアログを閉じる
   closeConfirmDialog() {
-    document.getElementById('user-profile-confirm-dialog').style.display = 'none'
+    const modal = document.getElementById('user-profile-confirm-dialog')
+    modal.style.opacity = '0'
+    const content = modal.querySelector('.bg-white')
+    if (content) {
+      content.style.transform = 'scale(0.95)'
+      content.style.opacity = '0'
+    }
+    setTimeout(() => {
+      modal.style.display = 'none'
+    }, 200)
     this.isJoining = false
   },
 

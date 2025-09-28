@@ -1,26 +1,28 @@
-<div class="flex flex-col items-center">
-  <div class="relative">
-    <img
-      class="w-32 h-32 rounded-full mb-4 border-4 border-white object-cover shadow-sm"
-      src="{{ .AvatarURL }}"
-      alt="{{ .User.DisplayName }} のアバター"
-    />
-    <span
-      class="absolute bottom-4 right-2 bg-green-500 w-5 h-5 rounded-full border-2 border-white"
-      title="オンライン"
-    ></span>
+{{ define "profile_card_content" }}
+  <div class="flex flex-col items-center">
+    <div class="relative">
+      <img
+        class="w-32 h-32 rounded-full mb-4 border-4 border-white object-cover shadow-sm"
+        src="{{ .AvatarURL }}"
+        alt="{{ .User.DisplayName }} のアバター"
+      />
+      <span
+        class="absolute bottom-4 right-2 bg-green-500 w-5 h-5 rounded-full border-2 border-white"
+        title="オンライン"
+      ></span>
+    </div>
+    <h2 class="text-2xl font-bold text-gray-800">{{ .User.DisplayName }}</h2>
+
+    {{ if .User.Bio }}
+      <p class="text-center text-gray-600 mb-6 text-sm">{{ .User.Bio }}</p>
+    {{ end }}
+
+
+    <!-- フォローボタン -->
+    {{ template "follow_buttons" . }}
+
+
+    <!-- ブロック・通報ボタン -->
+    {{ template "block_report_buttons" . }}
   </div>
-  <h2 class="text-2xl font-bold text-gray-800">{{ .User.DisplayName }}</h2>
-
-  {{ if .User.Bio }}
-    <p class="text-center text-gray-600 mb-6 text-sm">{{ .User.Bio }}</p>
-  {{ end }}
-
-
-  <!-- フォローボタン -->
-  {{ template "follow_buttons.tmpl" . }}
-
-
-  <!-- ブロック・通報ボタン -->
-  {{ template "block_report_buttons.tmpl" . }}
-</div>
+{{ end }}
