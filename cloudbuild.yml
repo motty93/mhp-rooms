@@ -5,7 +5,7 @@ substitutions:
   _ARTIFACT_REPOSITORY: monhub-registry
   _IMAGE_NAME: monhub-app
   _GO_VERSION: "1.24"
-  _DEPLOY_SSE: "true"  # true に設定するとSSEサービスもデプロイ
+  _DEPLOY_SSE: "false"  # true に設定するとSSEサービスもデプロイ
 
 options:
   logging: CLOUD_LOGGING_ONLY
