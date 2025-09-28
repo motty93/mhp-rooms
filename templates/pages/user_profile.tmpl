@@ -233,18 +233,7 @@
                 {{ if $profileData.Rooms }}
                   <div class="space-y-4">
                     {{ range $profileData.Rooms }}
-                      <div
-                        class="bg-gray-50 p-4 rounded-lg border border-gray-200 {{ if .IsClickable }}
-                          hover:bg-gray-100 transition-colors
-                        {{ end }}"
-                        {{ if .IsClickable }}
-                          style="cursor: pointer !important;"
-                          onclick="window.location.href='/rooms/{{ .ID }}'"
-                          data-room-id="{{ .ID }}" data-clickable="true"
-                        {{ else }}
-                          style="cursor: default;" data-clickable="false"
-                        {{ end }}
-                      >
+                      <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
                         <div class="flex justify-between items-start mb-2">
                           <h4 class="font-semibold text-gray-800">
                             {{ .Name }}
@@ -258,12 +247,22 @@
                             {{ .Description }}
                           </p>
                         {{ end }}
-                        <div
-                          class="flex items-center space-x-4 text-xs text-gray-500"
-                        >
-                          <span>{{ .GameVersion }}</span>
-                          <span>{{ .PlayerCount }}</span>
-                          <span class="{{ .StatusColor }}">{{ .Status }}</span>
+                        <div class="flex items-center justify-between">
+                          <div class="flex items-center space-x-4 text-xs text-gray-500">
+                            <span>{{ .GameVersion }}</span>
+                            <span>{{ .PlayerCount }}</span>
+                            <span class="{{ .StatusColor }}">{{ .Status }}</span>
+                          </div>
+                          {{ if .IsClickable }}
+                            <button
+                              onclick="if (window.userProfileRoomsHandler) { window.userProfileRoomsHandler.openRoomModal('{{ .ID }}', '{{ .Name }}', '{{ .Description }}', '{{ .GameVersion }}', '{{ .PlayerCount }}', '{{ .Status }}'); }"
+                              class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded text-sm transition-colors"
+                            >
+                              参加する
+                            </button>
+                          {{ else }}
+                            <span class="text-xs text-gray-500 italic">参加不可</span>
+                          {{ end }}
                         </div>
                       </div>
                     {{ end }}
@@ -274,9 +273,6 @@
                       class="fa-solid fa-door-open text-gray-300 text-4xl mb-3"
                     ></i>
                     <p class="text-gray-500">まだ部屋を作成していません</p>
-                    <p class="text-sm text-gray-400 mt-1">
-                      部屋を作成して他のハンターと狩りに出かけましょう！
-                    </p>
                   </div>
                 {{ end }}
               </div>
@@ -318,6 +314,198 @@
 
   <!-- 通報モーダル -->
   {{ template "report-modal" }}
+
+  <!-- 部屋参加モーダル -->
+  <div
+    id="user-profile-join-modal"
+    style="display: none;"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    onclick="if (window.userProfileRoomsHandler) { window.userProfileRoomsHandler.closeModal(); }"
+  >
+    <div
+      onclick="event.stopPropagation()"
+      class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4"
+    >
+      <!-- ヘッダー -->
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h3 id="user-profile-modal-title" class="text-xl font-bold text-gray-800"></h3>
+        <p id="user-profile-modal-description" class="text-gray-600 mt-2 text-sm"></p>
+        <span id="user-profile-modal-game-version" class="inline-block px-3 py-1 text-xs font-medium rounded-full mt-2 bg-gray-100 text-gray-700"></span>
+      </div>
+
+      <!-- 部屋情報 -->
+      <div class="px-6 py-4">
+        <div class="space-y-3 text-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-gray-500">参加人数</span>
+            <span id="user-profile-modal-player-count" class="font-medium text-gray-800"></span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-gray-500">ステータス</span>
+            <span id="user-profile-modal-status" class="font-medium text-gray-800"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- アクションボタン -->
+      <div class="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-end space-x-3">
+        <button
+          onclick="if (window.userProfileRoomsHandler) { window.userProfileRoomsHandler.closeModal(); }"
+          class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+        >
+          キャンセル
+        </button>
+        <button
+          id="user-profile-modal-join-btn"
+          onclick="if (window.userProfileRoomsHandler) { window.userProfileRoomsHandler.joinRoom(); }"
+          class="px-6 py-2 bg-gray-800 hover:bg-gray-900 text-white font-medium rounded-lg transition-colors"
+        >
+          参加する
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ホスト中制限モーダル -->
+  <div
+    id="user-profile-host-restriction-modal"
+    style="display: none;"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+    onclick="if (window.userProfileRoomsHandler) { window.userProfileRoomsHandler.closeHostRestrictionModal(); }"
+  >
+    <div
+      onclick="event.stopPropagation()"
+      class="bg-white rounded-lg shadow-xl max-w-md w-full"
+    >
+      <!-- ヘッダー -->
+      <div class="p-6 border-b border-gray-200">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold text-gray-900">
+            他の部屋に参加できません
+          </h3>
+          <button
+            onclick="if (window.userProfileRoomsHandler) { window.userProfileRoomsHandler.closeHostRestrictionModal(); }"
+            class="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              ></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- コンテンツ -->
+      <div class="p-6">
+        <div class="text-gray-600 mb-4">
+          <p>ホスト中は他の部屋に参加できません。</p>
+        </div>
+
+        <div class="mb-4">
+          <svg
+            class="mx-auto h-12 w-12 text-orange-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+        </div>
+      </div>
+
+      <!-- アクションボタン -->
+      <div class="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-end space-x-3">
+        <button
+          onclick="if (window.userProfileRoomsHandler) { window.userProfileRoomsHandler.closeHostRestrictionModal(); }"
+          class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+        >
+          閉じる
+        </button>
+        <a
+          id="user-profile-host-room-link"
+          href="#"
+          class="px-6 py-2 bg-gray-800 hover:bg-gray-900 text-white font-medium rounded-lg transition-colors"
+        >
+          ホスト中の部屋へ移動
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 参加確認ダイアログ -->
+  <div
+    id="user-profile-confirm-dialog"
+    style="display: none;"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    onclick="if (window.userProfileRoomsHandler) { window.userProfileRoomsHandler.closeConfirmDialog(); }"
+  >
+    <div
+      onclick="event.stopPropagation()"
+      class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4"
+    >
+      <!-- ヘッダー -->
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-800">
+          他の部屋に参加中です
+        </h3>
+      </div>
+
+      <!-- コンテンツ -->
+      <div class="p-6">
+        <div class="text-gray-600 mb-4">
+          既に別の部屋に参加しています。<br />
+          新しい部屋に参加すると、現在の部屋から退出します。続行しますか？
+        </div>
+
+        <div class="mb-4">
+          <svg
+            class="mx-auto h-12 w-12 text-yellow-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"
+            />
+          </svg>
+        </div>
+      </div>
+
+      <!-- アクションボタン -->
+      <div class="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-end space-x-3">
+        <button
+          onclick="if (window.userProfileRoomsHandler) { window.userProfileRoomsHandler.closeConfirmDialog(); }"
+          class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+        >
+          キャンセル
+        </button>
+        <button
+          id="user-profile-confirm-join-btn"
+          onclick="if (window.userProfileRoomsHandler) { window.userProfileRoomsHandler.confirmJoinRoom(); }"
+          class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors"
+        >
+          退出して参加
+        </button>
+      </div>
+    </div>
+  </div>
 
 
   <script>

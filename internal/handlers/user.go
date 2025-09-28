@@ -314,3 +314,44 @@ func (uh *UserHandler) getMockFollowers() []Follower {
 		},
 	}
 }
+
+// Rooms 他のユーザーの作成した部屋タブコンテンツを返す（htmx用）
+func (uh *UserHandler) Rooms(w http.ResponseWriter, r *http.Request) {
+	userIDStr := chi.URLParam(r, "uuid")
+	if userIDStr == "" {
+		http.Error(w, "ユーザーIDが指定されていません", http.StatusBadRequest)
+		return
+	}
+
+	targetUserID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		http.Error(w, "無効なユーザーIDです", http.StatusBadRequest)
+		return
+	}
+
+	// ユーザーが作成した部屋を取得
+	rooms, err := uh.repo.Room.GetRoomsByHostUser(targetUserID, 50, 0)
+	if err != nil {
+		http.Error(w, "部屋データの取得に失敗しました", http.StatusInternalServerError)
+		return
+	}
+
+	// models.RoomをRoomSummaryに変換
+	var roomSummaries []RoomSummary
+	for _, room := range rooms {
+		roomSummaries = append(roomSummaries, roomToSummary(room))
+	}
+
+	// テンプレートデータを準備
+	data := struct {
+		Rooms []RoomSummary
+	}{
+		Rooms: roomSummaries,
+	}
+
+	// 他のユーザー用の部分テンプレートを使用してレンダリング
+	if err := renderPartialTemplate(w, "user_profile_rooms", data); err != nil {
+		http.Error(w, "テンプレートの描画に失敗しました", http.StatusInternalServerError)
+		return
+	}
+}
