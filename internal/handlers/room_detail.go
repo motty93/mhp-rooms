@@ -58,21 +58,16 @@ func (h *RoomDetailHandler) RoomDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ホスト情報を取得
-	host, err := h.repo.User.FindUserByID(room.HostUserID)
-	if err != nil {
+	// プリロードで取得できなかった場合は異常と判断
+	if room.Host.ID == uuid.Nil {
 		http.Error(w, "ホスト情報の取得に失敗しました", http.StatusInternalServerError)
 		return
 	}
-	room.Host = *host
 
-	// ゲームバージョン情報を取得
-	gameVersion, err := h.repo.GameVersion.FindGameVersionByID(room.GameVersionID)
-	if err != nil {
+	if room.GameVersion.ID == uuid.Nil {
 		http.Error(w, "ゲームバージョン情報の取得に失敗しました", http.StatusInternalServerError)
 		return
 	}
-	room.GameVersion = *gameVersion
 
 	// 部屋のメンバーを取得
 	members, err := h.repo.Room.GetRoomMembers(roomID)

@@ -509,14 +509,6 @@ func (r *roomRepository) GetRoomMembers(roomID uuid.UUID) ([]models.RoomMember, 
 		return nil, err
 	}
 
-	// ホストユーザーの確認と設定
-	var room models.Room
-	if err := r.db.GetConn().Where("id = ?", roomID).First(&room).Error; err == nil {
-		for i := range members {
-			members[i].IsHost = members[i].UserID == room.HostUserID
-		}
-	}
-
 	return members, nil
 }
 
