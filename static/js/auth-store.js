@@ -241,7 +241,7 @@ document.addEventListener('alpine:init', () => {
     },
 
     get avatarUrl() {
-      return this.dbUser?.avatar_url || '/static/images/default-avatar.png'
+      return this.dbUser?.avatar_url || '/static/images/default-avatar.webp'
     },
 
     get needsPSNId() {

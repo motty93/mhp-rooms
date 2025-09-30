@@ -161,7 +161,8 @@
       "Bash(PORT=8091 ENV=development DB_TYPE=turso make run)",
       "Bash(PORT=8092 ENV=development DB_TYPE=turso timeout 15s make run)",
       "Bash(pgrep:*)",
-      "Bash(PORT=8093 ENV=development DB_TYPE=turso timeout 15s make run)"
+      "Bash(PORT=8093 ENV=development DB_TYPE=turso timeout 15s make run)",
+      "Bash(convert:*)"
     ],
     "deny": []
   }

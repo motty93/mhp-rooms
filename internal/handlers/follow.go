@@ -267,5 +267,5 @@ func (fh *FollowHandler) getAvatarURL(user *models.User) string {
 	if user.AvatarURL != nil && *user.AvatarURL != "" {
 		return *user.AvatarURL
 	}
-	return "/static/images/default-avatar.png"
+	return "/static/images/default-avatar.webp"
 }

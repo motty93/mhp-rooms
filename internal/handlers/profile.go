@@ -452,14 +452,14 @@ func (ph *ProfileHandler) getMockFollowers() []Follower {
 		{
 			ID:             uuid.New(),
 			Username:       "ハンター太郎",
-			AvatarURL:      "/static/images/default-avatar.png",
+			AvatarURL:      "/static/images/default-avatar.webp",
 			IsOnline:       true,
 			FollowingSince: "2日前",
 		},
 		{
 			ID:             uuid.New(),
 			Username:       "素材コレクター",
-			AvatarURL:      "/static/images/default-avatar.png",
+			AvatarURL:      "/static/images/default-avatar.webp",
 			IsOnline:       false,
 			FollowingSince: "5日前",
 		},

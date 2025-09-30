@@ -92,7 +92,7 @@
           <div class="flex-1 min-w-0">
             <div class="flex items-center space-x-3 mb-2">
               <img
-                src="/static/images/icon.png"
+                src="/static/images/icon.webp"
                 alt="MonHub"
                 class="w-8 h-8 flex-shrink-0"
               />
@@ -353,7 +353,7 @@
                 src="{{ if and $member.User.AvatarURL (ne (stringPtr $member.User.AvatarURL) "") }}
                   {{ stringPtr $member.User.AvatarURL }}
                 {{ else }}
-                  /static/images/default-avatar.png
+                  /static/images/default-avatar.webp
                 {{ end }}"
                 class="w-8 h-8 rounded-full object-cover"
                 alt="ユーザーアバター"
@@ -494,7 +494,7 @@
                   <!-- 他人のメッセージ -->
                   <template x-if="!message.isOwn">
                     <img
-                      :src="message.userAvatar || '/static/images/default-avatar.png'"
+                      :src="message.userAvatar || '/static/images/default-avatar.webp'"
                       class="w-8 h-8 rounded-full object-cover flex-shrink-0"
                       :alt="message.userName + 'のアバター'"
                     />
@@ -749,7 +749,7 @@ function roomDetail() {
                 type: 'user',
                 content: msg.message,
                 userName: msg.user.display_name || msg.user.username,
-                userAvatar: msg.user.avatar_url || '/static/images/default-avatar.png',
+                userAvatar: msg.user.avatar_url || '/static/images/default-avatar.webp',
                 isOwn: isOwn,
                 timestamp: new Date(msg.created_at)
               });
@@ -882,7 +882,7 @@ function roomDetail() {
         type: 'user',
         content: message.message,
         userName: message.user.display_name || message.user.username,
-        userAvatar: message.user.avatar_url || '/static/images/default-avatar.png',
+        userAvatar: message.user.avatar_url || '/static/images/default-avatar.webp',
         isOwn: false,
         timestamp: new Date(message.created_at)
       });
@@ -915,7 +915,7 @@ function roomDetail() {
         type: 'user',
         content: messageText,
         userName: Alpine.store('auth').user?.displayName || 'ゲスト',
-        userAvatar: Alpine.store('auth').user?.avatarUrl || '/static/images/default-avatar.png',
+        userAvatar: Alpine.store('auth').user?.avatarUrl || '/static/images/default-avatar.webp',
         isOwn: true,
         timestamp: new Date()
       };
