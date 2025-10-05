@@ -26,6 +26,7 @@ type Repository struct {
 	UserFollow    UserFollowRepository
 	UserActivity  UserActivityRepository
 	Report        ReportRepository
+	Contact       ContactRepository
 }
 
 func NewRepository(db DBInterface) *Repository {
@@ -42,6 +43,7 @@ func NewRepository(db DBInterface) *Repository {
 		UserFollow:    NewUserFollowRepository(db),
 		UserActivity:  NewUserActivityRepository(db),
 		Report:        NewReportRepository(db),
+		Contact:       NewContactRepository(db),
 	}
 }
 
