@@ -16,6 +16,7 @@ type Config struct {
 	Migration   MigrationConfig
 	Debug       DebugConfig
 	GCS         GCSConfig
+	Discord     DiscordConfig
 }
 
 type DebugConfig struct {
@@ -55,6 +56,10 @@ type GCSConfig struct {
 	AssetPrefix    string
 }
 
+type DiscordConfig struct {
+	WebhookURL string // Discord Webhook URL
+}
+
 var AppConfig *Config
 
 func Init() {
@@ -92,6 +97,9 @@ func Init() {
 			MaxUploadBytes: GetEnvInt64("MAX_UPLOAD_BYTES", 10<<20), // デフォルト10MB
 			AllowedMIMEs:   parseAllowedMIMEs(getEnv("ALLOW_CONTENT_TYPES", ""), []string{"image/jpeg", "image/png", "image/webp"}),
 			AssetPrefix:    cleanAssetPrefix(getEnv("ASSET_PREFIX", "")),
+		},
+		Discord: DiscordConfig{
+			WebhookURL: getEnv("DISCORD_WEBHOOK_URL", ""),
 		},
 	}
 }
