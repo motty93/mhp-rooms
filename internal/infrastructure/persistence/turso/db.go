@@ -224,5 +224,6 @@ func (db *DB) commonMigrate() error {
 		&models.PasswordReset{},
 		&models.UserReport{},
 		&models.ReportAttachment{},
+		&models.Contact{},
 	)
 }
