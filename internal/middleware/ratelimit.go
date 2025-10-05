@@ -112,6 +112,7 @@ func (rl *RateLimiter) cleanupVisitors() {
 type RateLimitConfig struct {
 	General int // 一般的なエンドポイントのレート制限（分間）
 	Auth    int // 認証関連エンドポイントのレート制限（分間）
+	Contact int // お問合せエンドポイントのレート制限（分間）
 }
 
 // DefaultRateLimitConfig 環境変数からレート制限設定を取得
@@ -119,6 +120,7 @@ func DefaultRateLimitConfig() *RateLimitConfig {
 	config := &RateLimitConfig{
 		General: 120, // デフォルト: 120req/min
 		Auth:    20,  // デフォルト: 20req/min
+		Contact: 3,   // デフォルト: 3req/min（お問合せは厳しめ）
 	}
 
 	// 環境変数から設定を取得
@@ -131,6 +133,12 @@ func DefaultRateLimitConfig() *RateLimitConfig {
 	if authStr := os.Getenv("RATE_LIMIT_AUTH"); authStr != "" {
 		if auth, err := strconv.Atoi(authStr); err == nil && auth > 0 {
 			config.Auth = auth
+		}
+	}
+
+	if contactStr := os.Getenv("RATE_LIMIT_CONTACT"); contactStr != "" {
+		if contact, err := strconv.Atoi(contactStr); err == nil && contact > 0 {
+			config.Contact = contact
 		}
 	}
 
@@ -167,6 +175,25 @@ func AuthRateLimitMiddleware(limiter *RateLimiter) func(http.Handler) http.Handl
 				w.Header().Set("Retry-After", "300")
 				w.WriteHeader(http.StatusTooManyRequests)
 				w.Write([]byte(`{"error":"認証試行回数が上限に達しました。しばらく待ってから再試行してください。"}`))
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// ContactRateLimitMiddleware お問合せエンドポイント用のレート制限ミドルウェア
+func ContactRateLimitMiddleware(limiter *RateLimiter) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ip := getClientIP(r)
+
+			if !limiter.Allow(ip) {
+				w.Header().Set("Content-Type", "application/json")
+				w.Header().Set("Retry-After", "300")
+				w.WriteHeader(http.StatusTooManyRequests)
+				w.Write([]byte(`{"error":"お問い合わせの送信回数が上限に達しました。しばらく待ってから再試行してください。"}`))
 				return
 			}
 

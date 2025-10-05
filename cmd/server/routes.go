@@ -83,7 +83,7 @@ func (app *Application) setupPageRoutes(r chi.Router) {
 	r.Get("/terms", app.withOptionalAuth(ph.Terms))
 	r.Get("/privacy", app.withOptionalAuth(ph.Privacy))
 	r.Get("/contact", app.withOptionalAuth(ph.Contact))
-	r.Post("/contact", app.withOptionalAuth(ph.Contact))
+	r.With(middleware.ContactRateLimitMiddleware(app.contactLimiter)).Post("/contact", app.withOptionalAuth(ph.Contact))
 	r.Get("/faq", app.withOptionalAuth(ph.FAQ))
 	r.Get("/guide", app.withOptionalAuth(ph.Guide))
 	r.Get("/hello", app.withOptionalAuth(ph.Hello))

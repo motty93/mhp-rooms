@@ -36,6 +36,7 @@ type Application struct {
 	securityConfig     *middleware.SecurityConfig
 	generalLimiter     *middleware.RateLimiter
 	authLimiter        *middleware.RateLimiter
+	contactLimiter     *middleware.RateLimiter
 	sseHub             *sse.Hub
 }
 
@@ -123,6 +124,7 @@ func (app *Application) initHandlers() error {
 	rateLimitConfig := middleware.DefaultRateLimitConfig()
 	app.generalLimiter = middleware.NewRateLimiter(rateLimitConfig.General)
 	app.authLimiter = middleware.NewRateLimiter(rateLimitConfig.Auth)
+	app.contactLimiter = middleware.NewRateLimiter(rateLimitConfig.Contact)
 
 	app.authHandler.SetAuthMiddleware(authMiddleware)
 
