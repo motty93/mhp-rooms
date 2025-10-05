@@ -6,7 +6,13 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"time"
+
+	"mhp-rooms/internal/config"
+	"mhp-rooms/internal/middleware"
+	"mhp-rooms/internal/models"
+	"mhp-rooms/internal/utils"
+
+	"github.com/google/uuid"
 )
 
 func (h *PageHandler) Contact(w http.ResponseWriter, r *http.Request) {
@@ -45,12 +51,71 @@ func (h *PageHandler) handleContactSubmission(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	log.Printf("お問い合わせを受信しました: [%s] %s <%s> - %s",
-		formData.InquiryType, formData.Name, formData.Email, formData.Subject)
+	// テストデータかどうかを判定
+	isTestData := isTestData(formData.Name, formData.Subject, formData.Message)
 
-	log.Printf("お問い合わせ詳細:\n種類: %s\n名前: %s\nメール: %s\n件名: %s\n内容: %s\n時刻: %s",
-		formData.InquiryType, formData.Name, formData.Email, formData.Subject,
-		formData.Message, time.Now().Format("2006-01-02 15:04:05"))
+	// IPアドレスを取得
+	ipAddress := getClientIP(r)
+
+	// User Agentを取得
+	userAgent := r.UserAgent()
+
+	// 認証情報を取得
+	var supabaseUserID *uuid.UUID
+	isAuthenticated := false
+	if dbUser, ok := middleware.GetDBUserFromContext(r.Context()); ok {
+		isAuthenticated = true
+		supabaseUserID = &dbUser.SupabaseUserID
+	}
+
+	// Contactモデルを作成
+	contact := &models.Contact{
+		InquiryType:     formData.InquiryType,
+		Name:            strings.TrimSpace(formData.Name),
+		Email:           strings.TrimSpace(formData.Email),
+		Subject:         strings.TrimSpace(formData.Subject),
+		Message:         formData.Message,
+		IPAddress:       ipAddress,
+		UserAgent:       userAgent,
+		IsAuthenticated: isAuthenticated,
+		SupabaseUserID:  supabaseUserID,
+	}
+
+	// テストデータでない場合のみDBに保存
+	if !isTestData {
+		if err := h.repo.Contact.CreateContact(contact); err != nil {
+			log.Printf("お問い合わせのDB保存に失敗しました: %v", err)
+			// DB保存失敗してもユーザーにはエラーを返さない（Discord通知は試行）
+		} else {
+			log.Printf("お問い合わせをDBに保存しました: ID=%s", contact.ID)
+		}
+	} else {
+		log.Printf("テストデータのためDB保存をスキップしました")
+	}
+
+	// Discord通知を送信（テストデータも通知）
+	contactInfo := &utils.ContactInfo{
+		InquiryType:     contact.InquiryType,
+		Name:            contact.Name,
+		Email:           contact.Email,
+		Subject:         contact.Subject,
+		Message:         contact.Message,
+		IPAddress:       contact.IPAddress,
+		UserAgent:       contact.UserAgent,
+		IsAuthenticated: contact.IsAuthenticated,
+		SupabaseUserID:  contact.SupabaseUserID,
+	}
+	if err := utils.SendContactNotificationToDiscord(
+		config.AppConfig.Discord.WebhookURL,
+		contactInfo,
+		isTestData,
+	); err != nil {
+		log.Printf("Discord通知に失敗しました: %v", err)
+		// Discord通知失敗してもユーザーにはエラーを返さない
+	}
+
+	log.Printf("お問い合わせを受信しました: [%s] %s <%s> - %s (テストデータ: %v)",
+		formData.InquiryType, formData.Name, formData.Email, formData.Subject, isTestData)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -105,4 +170,42 @@ func (h *PageHandler) validateContactForm(data ContactFormData) error {
 	}
 
 	return nil
+}
+
+// isTestData テストデータかどうかを判定
+func isTestData(name, subject, message string) bool {
+	testKeywords := []string{"test", "テスト", "てすと", "TEST"}
+
+	// お名前、件名、お問い合わせ内容のいずれかに含まれていればテストデータとみなす
+	for _, keyword := range testKeywords {
+		if strings.Contains(strings.ToLower(name), strings.ToLower(keyword)) ||
+			strings.Contains(strings.ToLower(subject), strings.ToLower(keyword)) ||
+			strings.Contains(strings.ToLower(message), strings.ToLower(keyword)) {
+			return true
+		}
+	}
+	return false
+}
+
+// getClientIP クライアントのIPアドレスを取得
+func getClientIP(r *http.Request) string {
+	// X-Forwarded-Forヘッダーを優先（プロキシ経由の場合）
+	if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
+		// 複数のIPがある場合は最初のものを使用
+		ips := strings.Split(forwarded, ",")
+		return strings.TrimSpace(ips[0])
+	}
+
+	// X-Real-IPヘッダーをチェック
+	if realIP := r.Header.Get("X-Real-IP"); realIP != "" {
+		return realIP
+	}
+
+	// それ以外の場合はRemoteAddrを使用
+	ip := r.RemoteAddr
+	// ポート番号を削除
+	if colonIndex := strings.LastIndex(ip, ":"); colonIndex != -1 {
+		ip = ip[:colonIndex]
+	}
+	return ip
 }

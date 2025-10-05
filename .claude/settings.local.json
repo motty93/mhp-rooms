@@ -162,7 +162,8 @@
       "Bash(PORT=8092 ENV=development DB_TYPE=turso timeout 15s make run)",
       "Bash(pgrep:*)",
       "Bash(PORT=8093 ENV=development DB_TYPE=turso timeout 15s make run)",
-      "Bash(convert:*)"
+      "Bash(convert:*)",
+      "Bash(mcp__serena__initial_instructions)"
     ],
     "deny": []
   }
