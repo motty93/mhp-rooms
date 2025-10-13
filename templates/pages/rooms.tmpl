@@ -87,6 +87,11 @@
         >
           <span x-text="filteredRooms.length"></span>件の部屋が見つかりました
         </div>
+
+        <!-- ページネーション情報表示 -->
+        <div class="mt-4 text-sm text-gray-600">
+          全{{ .PageData.Total }}件中 {{ if gt .PageData.Total 0 }}{{ add (mul (sub .PageData.CurrentPage 1) .PageData.PerPage) 1 }}〜{{ min (mul .PageData.CurrentPage .PageData.PerPage) .PageData.Total }}件{{ else }}0件{{ end }}を表示
+        </div>
       </div>
     </section>
 
@@ -291,6 +296,144 @@
             部屋を作る
           </button>
         </div>
+
+        <!-- ページネーション -->
+        {{ if gt .PageData.TotalPages 1 }}
+          <div class="mt-8 flex justify-center items-center gap-2">
+            {{ $currentPage := .PageData.CurrentPage }}
+            {{ $totalPages := .PageData.TotalPages }}
+            {{ $filter := .PageData.Filter }}
+
+            <!-- 前のページボタン -->
+            {{ if gt .PageData.CurrentPage 1 }}
+              <a
+                href="?page={{ sub .PageData.CurrentPage 1 }}{{ if .PageData.Filter }}&game_version={{ .PageData.Filter }}{{ end }}"
+                class="inline-flex items-center justify-center w-10 h-10 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                aria-label="前のページ"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </a>
+            {{ else }}
+              <span
+                class="inline-flex items-center justify-center w-10 h-10 text-gray-400 bg-gray-100 border border-gray-300 rounded-md cursor-not-allowed"
+                aria-label="前のページ（無効）"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </span>
+            {{ end }}
+
+            <!-- ページ番号（モバイル：現在ページのみ、デスクトップ：複数ページ） -->
+            <div class="flex items-center gap-1">
+              <!-- モバイル表示（768px未満） -->
+              <div class="flex md:hidden items-center gap-1">
+                {{ range $page := sequence 1 $totalPages }}
+                  {{ if eq $page $currentPage }}
+                    <span
+                      class="px-3 py-2 text-sm font-medium text-white bg-gray-800 border border-gray-800 rounded-md"
+                    >
+                      {{ $page }}
+                    </span>
+                  {{ else if or (eq $page (sub $currentPage 1)) (eq $page (add $currentPage 1)) }}
+                    <a
+                      href="?page={{ $page }}{{ if $filter }}&game_version={{ $filter }}{{ end }}"
+                      class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                    >
+                      {{ $page }}
+                    </a>
+                  {{ end }}
+                {{ end }}
+              </div>
+
+              <!-- デスクトップ表示（768px以上） -->
+              <div class="hidden md:flex items-center gap-1">
+                {{ range $page := sequence 1 $totalPages }}
+                  {{ if eq $page $currentPage }}
+                    <span
+                      class="px-4 py-2 text-sm font-medium text-white bg-gray-800 border border-gray-800 rounded-md"
+                    >
+                      {{ $page }}
+                    </span>
+                  {{ else if or (le $page 3) (ge $page (sub $totalPages 2)) (and (ge $page (sub $currentPage 1)) (le $page (add $currentPage 1))) }}
+                    <a
+                      href="?page={{ $page }}{{ if $filter }}&game_version={{ $filter }}{{ end }}"
+                      class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                    >
+                      {{ $page }}
+                    </a>
+                  {{ else if or (eq $page 4) (eq $page (sub $totalPages 3)) }}
+                    <span class="px-2 text-gray-500">...</span>
+                  {{ end }}
+                {{ end }}
+              </div>
+            </div>
+
+            <!-- 次のページボタン -->
+            {{ if lt .PageData.CurrentPage .PageData.TotalPages }}
+              <a
+                href="?page={{ add .PageData.CurrentPage 1 }}{{ if .PageData.Filter }}&game_version={{ .PageData.Filter }}{{ end }}"
+                class="inline-flex items-center justify-center w-10 h-10 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                aria-label="次のページ"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </a>
+            {{ else }}
+              <span
+                class="inline-flex items-center justify-center w-10 h-10 text-gray-400 bg-gray-100 border border-gray-300 rounded-md cursor-not-allowed"
+                aria-label="次のページ（無効）"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </span>
+            {{ end }}
+          </div>
+        {{ end }}
       </div>
     </section>
 
@@ -908,8 +1051,8 @@
           const urlParams = new URLSearchParams(window.location.search);
           const gameVersionFilter = urlParams.get('game_version') || '';
           this.activeFilter = gameVersionFilter;
-          // 初期フィルタリング
-          this.filterRooms(gameVersionFilter);
+          // サーバー側でフィルタリング済みのため、そのまま表示
+          this.filteredRooms = this.allRooms;
 
           // セレクトボックスの値を設定
           this.$nextTick(() => {
@@ -1011,8 +1154,8 @@
               isJoined: room.is_joined || false
             }));
 
-            // フィルタを再適用
-            this.filterRooms(this.activeFilter);
+            // サーバー側でフィルタリング済みのため、そのまま表示
+            this.filteredRooms = this.allRooms;
 
             console.log('部屋データ再取得完了');
 
@@ -1026,22 +1169,19 @@
             console.error('部屋データ再取得エラー:', error);
           }
         },
-        // フィルタリング機能
+        // フィルタリング機能（ページネーション対応）
         filterRooms(gameVersion) {
           this.activeFilter = gameVersion;
-          if (gameVersion === '') {
-            this.filteredRooms = this.allRooms;
-          } else {
-            this.filteredRooms = this.allRooms.filter(room => room.gameVersion.code === gameVersion);
-          }
-          // URLを更新（履歴を追加せずに）
+          // フィルタ変更時はサーバー側でフィルタリングを行うため、ページをリロード
           const url = new URL(window.location);
           if (gameVersion) {
             url.searchParams.set('game_version', gameVersion);
           } else {
             url.searchParams.delete('game_version');
           }
-          window.history.replaceState({}, '', url);
+          // ページ番号をリセット
+          url.searchParams.delete('page');
+          window.location.href = url.toString();
         },
         // 参加ボタンの有効/無効判定
         get isJoinDisabled() {

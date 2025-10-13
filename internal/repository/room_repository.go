@@ -278,6 +278,22 @@ func (r *roomRepository) GetActiveRoomsWithJoinStatus(userID *uuid.UUID, gameVer
 	return roomsWithStatus, nil
 }
 
+// CountActiveRooms アクティブな部屋の総数を取得
+func (r *roomRepository) CountActiveRooms(gameVersionID *uuid.UUID) (int64, error) {
+	var count int64
+	query := r.db.GetConn().Model(&models.Room{}).Where("is_active = true")
+
+	if gameVersionID != nil {
+		query = query.Where("game_version_id = ?", *gameVersionID)
+	}
+
+	if err := query.Count(&count).Error; err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
 func (r *roomRepository) ToggleRoomClosed(id uuid.UUID, isClosed bool) error {
 	return r.db.GetConn().
 		Model(&models.Room{}).
