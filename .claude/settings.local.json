@@ -163,7 +163,12 @@
       "Bash(pgrep:*)",
       "Bash(PORT=8093 ENV=development DB_TYPE=turso timeout 15s make run)",
       "Bash(convert:*)",
-      "Bash(mcp__serena__initial_instructions)"
+      "Bash(mcp__serena__initial_instructions)",
+      "Bash(ENV=development DB_TYPE=turso PORT=8091 timeout 15s go run cmd/server/main.go)",
+      "Bash(export PORT=8092 ENV=development DB_TYPE=turso)",
+      "Bash(timeout:*)",
+      "Bash(xargs -r kill)",
+      "Bash(ENV=development DB_TYPE=turso timeout 15s make run)"
     ],
     "deny": []
   }

@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -39,15 +41,45 @@ type RoomsPageData struct {
 	GameVersions []models.GameVersion `json:"game_versions"`
 	Filter       string               `json:"filter"`
 	Total        int64                `json:"total"`
+	CurrentPage  int                  `json:"current_page"`
+	TotalPages   int                  `json:"total_pages"`
+	PerPage      int                  `json:"per_page"`
 }
 
 func (h *RoomHandler) Rooms(w http.ResponseWriter, r *http.Request) {
 	filter := r.URL.Query().Get("game_version")
+	page := 1
+	perPage := 20
+
+	// ページ番号のパース
+	if pageStr := r.URL.Query().Get("page"); pageStr != "" {
+		if parsedPage, err := strconv.Atoi(pageStr); err == nil && parsedPage > 0 {
+			page = parsedPage
+		}
+	}
+
+	// 1ページあたりの表示件数のパース
+	if perPageStr := r.URL.Query().Get("per_page"); perPageStr != "" {
+		if parsedPerPage, err := strconv.Atoi(perPageStr); err == nil && parsedPerPage > 0 && parsedPerPage <= 100 {
+			perPage = parsedPerPage
+		}
+	}
+
+	offset := (page - 1) * perPage
 
 	gameVersions, err := h.repo.GetActiveGameVersions()
 	if err != nil {
 		http.Error(w, "ゲームバージョンの取得に失敗しました", http.StatusInternalServerError)
 		return
+	}
+
+	// ゲームバージョンフィルタの処理
+	var gameVersionID *uuid.UUID
+	if filter != "" {
+		gv, err := h.repo.GameVersion.FindGameVersionByCode(filter)
+		if err == nil {
+			gameVersionID = &gv.ID
+		}
 	}
 
 	// 認証されたユーザーの場合、最適化されたメソッドを使用
@@ -63,7 +95,7 @@ func (h *RoomHandler) Rooms(w http.ResponseWriter, r *http.Request) {
 
 	if isAuthenticated && dbUser != nil {
 		// パフォーマンス最適化: 1つのクエリで参加状態を取得
-		roomsWithJoinStatus, err := h.repo.Room.GetActiveRoomsWithJoinStatus(&dbUser.ID, nil, 100, 0)
+		roomsWithJoinStatus, err := h.repo.Room.GetActiveRoomsWithJoinStatus(&dbUser.ID, gameVersionID, perPage, offset)
 		if err != nil {
 			http.Error(w, "ルーム一覧の取得に失敗しました", http.StatusInternalServerError)
 			return
@@ -94,7 +126,7 @@ func (h *RoomHandler) Rooms(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		// 未認証ユーザーの場合は従来の方法
-		rooms, err := h.repo.GetActiveRooms(nil, 100, 0)
+		rooms, err := h.repo.Room.GetActiveRooms(gameVersionID, perPage, offset)
 		if err != nil {
 			http.Error(w, "ルーム一覧の取得に失敗しました", http.StatusInternalServerError)
 			return
@@ -125,13 +157,27 @@ func (h *RoomHandler) Rooms(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	total := int64(len(enhancedRooms))
+	// 総件数を取得
+	total, err := h.repo.Room.CountActiveRooms(gameVersionID)
+	if err != nil {
+		http.Error(w, "部屋数の取得に失敗しました", http.StatusInternalServerError)
+		return
+	}
+
+	// 総ページ数を計算
+	totalPages := int(math.Ceil(float64(total) / float64(perPage)))
+	if totalPages == 0 {
+		totalPages = 1
+	}
 
 	pageData := RoomsPageData{
 		Rooms:        enhancedRooms,
 		GameVersions: gameVersions,
 		Filter:       filter,
 		Total:        total,
+		CurrentPage:  page,
+		TotalPages:   totalPages,
+		PerPage:      perPage,
 	}
 
 	data := TemplateData{

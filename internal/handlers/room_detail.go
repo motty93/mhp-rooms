@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"mhp-rooms/internal/config"
+	"mhp-rooms/internal/helpers"
 	"mhp-rooms/internal/middleware"
 	"mhp-rooms/internal/models"
 	"mhp-rooms/internal/repository"
@@ -132,7 +133,7 @@ func (h *RoomDetailHandler) RoomDetail(w http.ResponseWriter, r *http.Request) {
 
 // renderRoomDetailTemplate は部屋詳細専用のテンプレートレンダリング関数
 func renderRoomDetailTemplate(w http.ResponseWriter, templateName string, data interface{}) {
-	funcMap := getCommonFuncMap()
+	funcMap := helpers.TemplateFuncs()
 	// room_detail専用の関数を追加
 	funcMap["gameVersionIcon"] = func(code string) template.HTML {
 		return template.HTML(utils.GetGameVersionIcon(code))
