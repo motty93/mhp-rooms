@@ -1,4 +1,4 @@
-.PHONY: build run dev test lint fmt clean migrate migrate-dev container-up container-down setup
+.PHONY: build run dev test lint fmt clean migrate migrate-dev container-up container-down setup generate-ogp
 
 # バイナリ名
 BINARY_NAME=mhp-rooms
@@ -67,6 +67,19 @@ seeds:
 	@echo "シードデータを挿入中..."
 	@go run $(SEED_PATH)/main.go -seed
 
+# OGP画像生成
+generate-ogp:
+	@if [ -z "$(ROOM_ID)" ]; then \
+		echo "エラー: ROOM_ID を指定してください"; \
+		echo "使用例: make generate-ogp ROOM_ID=<uuid>"; \
+		exit 1; \
+	fi
+	@echo "OGP画像を生成中: ROOM_ID=$(ROOM_ID)"
+	@ROOM_ID=$(ROOM_ID) \
+	OG_PREFIX=dev \
+	go run cmd/ogp-renderer/main.go
+	@echo "✅ OGP画像生成完了: tmp/images/og/dev/rooms/$(ROOM_ID).png"
+
 # 依存関係を取得
 deps:
 	@echo "依存関係を取得中..."
@@ -114,6 +127,7 @@ help:
 	@echo "  migrate       - マイグレーションを実行"
 	@echo "  migrate-dev   - 開発モードでマイグレーションを実行"
 	@echo "  seeds         - シードデータを挿入"
+	@echo "  generate-ogp  - OGP画像を生成（ROOM_ID=<uuid>を指定）"
 	@echo "  test          - テストを実行"
 	@echo "  lint          - リンターを実行"
 	@echo "  fmt           - コードをフォーマット"
