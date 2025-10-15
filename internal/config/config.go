@@ -65,24 +65,24 @@ var AppConfig *Config
 func Init() {
 	AppConfig = &Config{
 		Database: DatabaseConfig{
-			Type:           getEnv("DB_TYPE", "turso"),
-			URL:            getEnv("DATABASE_URL", ""),
-			Host:           getEnv("DB_HOST", "localhost"),
-			Port:           getEnv("DB_PORT", "5432"),
-			User:           getEnv("DB_USER", "postgres"),
-			Password:       getEnv("DB_PASSWORD", "postgres"),
-			Name:           getEnv("DB_NAME", "mhp_rooms"),
-			SSLMode:        getEnv("DB_SSLMODE", getDefaultSSLMode()),
-			TursoURL:       getEnv("TURSO_DATABASE_URL", ""),
-			TursoAuthToken: getEnv("TURSO_AUTH_TOKEN", ""),
+			Type:           GetEnv("DB_TYPE", "turso"),
+			URL:            GetEnv("DATABASE_URL", ""),
+			Host:           GetEnv("DB_HOST", "localhost"),
+			Port:           GetEnv("DB_PORT", "5432"),
+			User:           GetEnv("DB_USER", "postgres"),
+			Password:       GetEnv("DB_PASSWORD", "postgres"),
+			Name:           GetEnv("DB_NAME", "mhp_rooms"),
+			SSLMode:        GetEnv("DB_SSLMODE", getDefaultSSLMode()),
+			TursoURL:       GetEnv("TURSO_DATABASE_URL", ""),
+			TursoAuthToken: GetEnv("TURSO_AUTH_TOKEN", ""),
 		},
 		Server: ServerConfig{
-			Port:    getEnv("PORT", "8080"),
-			Host:    getEnv("HOST", "0.0.0.0"),
-			SSEHost: getEnv("SSE_HOST", ""), // 空の場合は同一サーバー
+			Port:    GetEnv("PORT", "8080"),
+			Host:    GetEnv("HOST", "0.0.0.0"),
+			SSEHost: GetEnv("SSE_HOST", ""), // 空の場合は同一サーバー
 		},
-		Environment: getEnv("ENV", "development"),
-		ServiceMode: getEnv("SERVICE_MODE", "main"), // "main" または "sse"
+		Environment: GetEnv("ENV", "development"),
+		ServiceMode: GetEnv("SERVICE_MODE", "main"), // "main" または "sse"
 		Migration: MigrationConfig{
 			AutoRun: getEnvBool("RUN_MIGRATION", false),
 		},
@@ -95,11 +95,11 @@ func Init() {
 			BaseURL:        MustGetEnv("BASE_PUBLIC_ASSET_URL"),
 			PrivateBucket:  MustGetEnv("GCS_PRIVATE_BUCKET"),        // 通報用プライベートバケット
 			MaxUploadBytes: GetEnvInt64("MAX_UPLOAD_BYTES", 10<<20), // デフォルト10MB
-			AllowedMIMEs:   parseAllowedMIMEs(getEnv("ALLOW_CONTENT_TYPES", ""), []string{"image/jpeg", "image/png", "image/webp"}),
-			AssetPrefix:    cleanAssetPrefix(getEnv("ASSET_PREFIX", "")),
+			AllowedMIMEs:   parseAllowedMIMEs(GetEnv("ALLOW_CONTENT_TYPES", ""), []string{"image/jpeg", "image/png", "image/webp"}),
+			AssetPrefix:    cleanAssetPrefix(GetEnv("ASSET_PREFIX", "")),
 		},
 		Discord: DiscordConfig{
-			WebhookURL: getEnv("DISCORD_WEBHOOK_URL", ""),
+			WebhookURL: GetEnv("DISCORD_WEBHOOK_URL", ""),
 		},
 	}
 }
@@ -133,7 +133,8 @@ func (c *Config) GetServerAddr() string {
 	return c.Server.Host + ":" + c.Server.Port
 }
 
-func getEnv(key, defaultValue string) string {
+// GetEnv 環境変数を取得し、存在しない場合はデフォルト値を返す
+func GetEnv(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
 	}
@@ -159,7 +160,7 @@ func getEnvBool(key string, defaultValue bool) bool {
 }
 
 func getDefaultSSLMode() string {
-	env := getEnv("ENV", "development")
+	env := GetEnv("ENV", "development")
 	if env == "production" {
 		return "require"
 	}

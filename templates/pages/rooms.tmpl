@@ -90,7 +90,12 @@
 
         <!-- ページネーション情報表示 -->
         <div class="mt-4 text-sm text-gray-600">
-          全{{ .PageData.Total }}件中 {{ if gt .PageData.Total 0 }}{{ add (mul (sub .PageData.CurrentPage 1) .PageData.PerPage) 1 }}〜{{ min (mul .PageData.CurrentPage .PageData.PerPage) .PageData.Total }}件{{ else }}0件{{ end }}を表示
+          全{{ .PageData.Total }}件中
+          {{ if gt .PageData.Total 0 }}
+            {{ add (mul (sub .PageData.CurrentPage 1) .PageData.PerPage) 1 }}〜{{ min (mul .PageData.CurrentPage .PageData.PerPage) .PageData.Total }}件
+          {{ else }}
+            0件
+          {{ end }}を表示
         </div>
       </div>
     </section>
@@ -304,10 +309,13 @@
             {{ $totalPages := .PageData.TotalPages }}
             {{ $filter := .PageData.Filter }}
 
+
             <!-- 前のページボタン -->
             {{ if gt .PageData.CurrentPage 1 }}
               <a
-                href="?page={{ sub .PageData.CurrentPage 1 }}{{ if .PageData.Filter }}&game_version={{ .PageData.Filter }}{{ end }}"
+                href="?page={{ sub .PageData.CurrentPage 1 }}{{ if .PageData.Filter }}
+                  &game_version={{ .PageData.Filter }}
+                {{ end }}"
                 class="inline-flex items-center justify-center w-10 h-10 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                 aria-label="前のページ"
               >
@@ -346,6 +354,7 @@
               </span>
             {{ end }}
 
+
             <!-- ページ番号（モバイル：現在ページのみ、デスクトップ：複数ページ） -->
             <div class="flex items-center gap-1">
               <!-- モバイル表示（768px未満） -->
@@ -359,7 +368,9 @@
                     </span>
                   {{ else if or (eq $page (sub $currentPage 1)) (eq $page (add $currentPage 1)) }}
                     <a
-                      href="?page={{ $page }}{{ if $filter }}&game_version={{ $filter }}{{ end }}"
+                      href="?page={{ $page }}{{ if $filter }}
+                        &game_version={{ $filter }}
+                      {{ end }}"
                       class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                     >
                       {{ $page }}
@@ -379,7 +390,9 @@
                     </span>
                   {{ else if or (le $page 3) (ge $page (sub $totalPages 2)) (and (ge $page (sub $currentPage 1)) (le $page (add $currentPage 1))) }}
                     <a
-                      href="?page={{ $page }}{{ if $filter }}&game_version={{ $filter }}{{ end }}"
+                      href="?page={{ $page }}{{ if $filter }}
+                        &game_version={{ $filter }}
+                      {{ end }}"
                       class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                     >
                       {{ $page }}
@@ -394,7 +407,9 @@
             <!-- 次のページボタン -->
             {{ if lt .PageData.CurrentPage .PageData.TotalPages }}
               <a
-                href="?page={{ add .PageData.CurrentPage 1 }}{{ if .PageData.Filter }}&game_version={{ .PageData.Filter }}{{ end }}"
+                href="?page={{ add .PageData.CurrentPage 1 }}{{ if .PageData.Filter }}
+                  &game_version={{ .PageData.Filter }}
+                {{ end }}"
                 class="inline-flex items-center justify-center w-10 h-10 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                 aria-label="次のページ"
               >

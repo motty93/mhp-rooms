@@ -23,6 +23,7 @@ type Room struct {
 	IsActive        bool       `gorm:"not null;default:true" json:"is_active"`
 	IsClosed        bool       `gorm:"not null;default:false" json:"is_closed"`
 	ClosedAt        *time.Time `json:"closed_at"`
+	OGVersion       int        `gorm:"not null;default:0" json:"og_version"`
 
 	// リレーション
 	GameVersion GameVersion   `gorm:"foreignKey:GameVersionID" json:"game_version"`

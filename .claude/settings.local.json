@@ -168,7 +168,8 @@
       "Bash(export PORT=8092 ENV=development DB_TYPE=turso)",
       "Bash(timeout:*)",
       "Bash(xargs -r kill)",
-      "Bash(ENV=development DB_TYPE=turso timeout 15s make run)"
+      "Bash(ENV=development DB_TYPE=turso timeout 15s make run)",
+      "Bash(chmod:*)"
     ],
     "deny": []
   }
