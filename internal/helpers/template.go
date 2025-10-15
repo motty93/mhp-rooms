@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"strings"
 
+	"mhp-rooms/internal/config"
 	"mhp-rooms/internal/utils"
 )
 
@@ -136,5 +137,6 @@ func TemplateFuncs() template.FuncMap {
 		"mul":              mul,
 		"min":              min,
 		"sequence":         sequence,
+		"getEnv":           config.GetEnv,
 	}
 }
