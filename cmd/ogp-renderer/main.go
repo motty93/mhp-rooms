@@ -40,7 +40,7 @@ const (
 	Padding        = 50.0
 	BorderWidth    = 12.0 // 枠の太さ（太く）
 	ContentPadding = 40.0 // 枠内の余白
-	LogoIconSize   = 90.0 // MonHubアイコンサイズ
+	LogoIconSize   = 95.0 // MonHubアイコンサイズ
 	MaxTitleLines  = 3    // タイトル最大行数
 
 	// フォント設定
@@ -353,18 +353,15 @@ func drawMonHubLogoBottomRight(dc *gg.Context, s float64) error {
 	// しかし、アイコンを少し下げてテキストと視覚的に揃える
 	iconY := baselineY - float64(iconSize)*0.65
 
-	// アイコンとテキストの間隔
-	spacing := 3.0 * s // この値を調整して余白を変更
-
 	// 右端から配置
-	totalWidth := float64(iconSize) + spacing + textWidth
+	totalWidth := float64(iconSize) + textWidth
 	baseX := float64(dc.Width()) - (Padding+BorderWidth+ContentPadding)*s - totalWidth
 
 	// アイコンを描画
 	dc.DrawImage(resizedIcon, int(baseX), int(iconY))
 
 	// MonHubテキストを描画
-	textX := baseX + float64(iconSize) + spacing
+	textX := baseX + float64(iconSize)
 	dc.SetColor(color.RGBA{R: 0, G: 0, B: 0, A: 255})
 	dc.DrawString(text, textX, textY)
 
