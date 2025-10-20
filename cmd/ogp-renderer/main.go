@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	_ "image/jpeg"
 	"image/png"
 	"log"
 	"os"
@@ -14,9 +15,12 @@ import (
 	"cloud.google.com/go/storage"
 	"github.com/fogleman/gg"
 	"github.com/google/uuid"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
+	"github.com/joho/godotenv"
+	"github.com/nfnt/resize"
+	_ "golang.org/x/image/webp"
 
+	"mhp-rooms/internal/config"
+	"mhp-rooms/internal/infrastructure/persistence"
 	"mhp-rooms/internal/models"
 	"mhp-rooms/internal/palette"
 )
@@ -28,37 +32,45 @@ const (
 
 	// レイアウト設定
 	Padding       = 60.0
-	LogoIconSize  = 48.0   // MonHubアイコンサイズ
-	LogoY         = 60.0   // ロゴY位置
+	LogoIconSize  = 120.0  // MonHubアイコンサイズ（かなり大きく）
+	LogoY         = 40.0   // ロゴY位置（上部に配置）
 	TitleY        = 315.0  // 中央（630/2 = 315）
-	SubtitleY     = 380.0  // タイトル下
+	SubtitleY     = 390.0  // タイトル下（調整）
 	GameVersionX  = 1080.0 // 右下X位置（1200 - 60 - 60 = 1080）
 	GameVersionY  = 540.0  // 右下Y位置（630 - 90 = 540）
 	MaxTitleLines = 2
 
-	// フォント設定
-	TitleFontSize       = 72.0
-	SubtitleFontSize    = 32.0
-	LogoFontSize        = 36.0
-	GameVersionFontSize = 48.0
-	FontPathBold        = "./assets/fonts/NotoSansJP-Bold.ttf"
-	FontPathRegular     = "./assets/fonts/NotoSansJP-Regular.ttf"
+	// フォント設定（太字表示のためサイズを大きく、ストローク追加）
+	TitleFontSize       = 88.0 // 大きく
+	SubtitleFontSize    = 40.0 // 標準
+	LogoFontSize        = 48.0 // 標準
+	GameVersionFontSize = 60.0 // 大きく
+	FontPath            = "cmd/ogp-renderer/assets/fonts/NotoSansJP.ttf"
+	StrokeWidth         = 8.0 // 文字の輪郭線の太さ（太字効果・非常に太く）
 
 	// アセット設定
-	IconImagePath = "./assets/images/icon.webp"
+	IconImagePath = "cmd/ogp-renderer/assets/images/icon.webp"
 )
 
 func main() {
 	startTime := time.Now()
 
+	// .envファイルのロード
+	if err := godotenv.Load(); err != nil {
+		log.Println(".envファイルが見つかりません。環境変数を使用します。")
+	}
+
+	// Configの初期化
+	config.Init()
+	cfg := config.AppConfig
+
 	// 環境変数の取得
 	roomIDStr := os.Getenv("ROOM_ID")
 	ogBucket := os.Getenv("OG_BUCKET")
 	ogPrefix := os.Getenv("OG_PREFIX")
-	databaseURL := os.Getenv("DATABASE_URL")
 
-	if roomIDStr == "" || databaseURL == "" {
-		log.Fatal("必須の環境変数が設定されていません: ROOM_ID, DATABASE_URL")
+	if roomIDStr == "" {
+		log.Fatal("必須の環境変数が設定されていません: ROOM_ID")
 	}
 
 	if ogPrefix == "" {
@@ -80,14 +92,14 @@ func main() {
 	log.Printf("OGP画像生成開始: room_id=%s, bucket=%s, prefix=%s", roomID, ogBucket, ogPrefix)
 
 	// データベース接続
-	db, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
+	dbAdapter, err := persistence.NewDBAdapter(cfg)
 	if err != nil {
 		log.Fatalf("データベース接続失敗: %v", err)
 	}
 
 	// 部屋情報の取得
 	var room models.Room
-	if err := db.Preload("GameVersion").Preload("Host").First(&room, roomID).Error; err != nil {
+	if err := dbAdapter.GetConn().Preload("GameVersion").Preload("Host").First(&room, roomID).Error; err != nil {
 		log.Fatalf("部屋情報の取得失敗: %v", err)
 	}
 
@@ -235,24 +247,44 @@ func drawMonHubLogo(dc *gg.Context) error {
 		dc.DrawCircle(x+LogoIconSize/2, y+LogoIconSize/2, LogoIconSize/2)
 		dc.Fill()
 	} else {
-		// アイコン画像を描画（リサイズして配置）
-		dc.DrawImageAnchored(iconImg, int(x+LogoIconSize/2), int(y+LogoIconSize/2), 0.5, 0.5)
+		// アイコン画像をリサイズして描画
+		iconSize := uint(LogoIconSize)
+		resizedIcon := resize.Resize(iconSize, iconSize, iconImg, resize.Lanczos3)
+		dc.DrawImage(resizedIcon, int(x), int(y))
 	}
 
-	// MonHubテキストを右に配置
-	if err := dc.LoadFontFace(FontPathBold, LogoFontSize); err != nil {
+	// MonHubテキストを右に配置（複数回描画で太字効果）
+	if err := dc.LoadFontFace(FontPath, LogoFontSize); err != nil {
 		return fmt.Errorf("フォント読み込み失敗: %w", err)
 	}
+	textX := x + LogoIconSize + 20
+	// アイコンの中央にテキストの中央を合わせる（vertical-align: middle）
+	// テキストの実際の高さを測定して中央揃え
+	_, textHeight := dc.MeasureString("MonHub")
+	textY := y + LogoIconSize/2 + textHeight/2
+
+	// 黒い縁取り（太め）
+	dc.SetColor(color.RGBA{R: 0, G: 0, B: 0, A: 255})
+	for dx := -5.0; dx <= 5.0; dx++ {
+		for dy := -5.0; dy <= 5.0; dy++ {
+			dc.DrawString("MonHub", textX+dx, textY+dy)
+		}
+	}
+	
+	// 白い文字本体
 	dc.SetColor(color.RGBA{R: 255, G: 255, B: 255, A: 255})
-	_, logoHeight := dc.MeasureString("MonHub")
-	dc.DrawString("MonHub", x+LogoIconSize+20, y+LogoIconSize/2+logoHeight/2-8)
+	for dx := -2.0; dx <= 2.0; dx++ {
+		for dy := -2.0; dy <= 2.0; dy++ {
+			dc.DrawString("MonHub", textX+dx, textY+dy)
+		}
+	}
 
 	return nil
 }
 
 // drawTitle タイトル（部屋名）を中央に描画
 func drawTitle(dc *gg.Context, title string) error {
-	if err := dc.LoadFontFace(FontPathBold, TitleFontSize); err != nil {
+	if err := dc.LoadFontFace(FontPath, TitleFontSize); err != nil {
 		return fmt.Errorf("フォント読み込み失敗: %w", err)
 	}
 
@@ -272,7 +304,22 @@ func drawTitle(dc *gg.Context, title string) error {
 	for _, line := range lines {
 		textWidth, _ := dc.MeasureString(line)
 		x := (OGPWidth - textWidth) / 2 // 中央揃え
-		dc.DrawString(line, x, y)
+
+		// 黒い縁取り（太め）
+		dc.SetColor(color.RGBA{R: 0, G: 0, B: 0, A: 255})
+		for dx := -5.0; dx <= 5.0; dx++ {
+			for dy := -5.0; dy <= 5.0; dy++ {
+				dc.DrawString(line, x+dx, y+dy)
+			}
+		}
+		
+		// 白い文字本体
+		dc.SetColor(color.RGBA{R: 255, G: 255, B: 255, A: 255})
+		for dx := -2.0; dx <= 2.0; dx++ {
+			for dy := -2.0; dy <= 2.0; dy++ {
+				dc.DrawString(line, x+dx, y+dy)
+			}
+		}
 		y += TitleFontSize + 10
 	}
 
@@ -281,34 +328,60 @@ func drawTitle(dc *gg.Context, title string) error {
 
 // drawSubtitle サブタイトルを中央に描画
 func drawSubtitle(dc *gg.Context) error {
-	if err := dc.LoadFontFace(FontPathRegular, SubtitleFontSize); err != nil {
+	if err := dc.LoadFontFace(FontPath, SubtitleFontSize); err != nil {
 		return fmt.Errorf("フォント読み込み失敗: %w", err)
 	}
 
 	subtitle := "モンハンパーティ募集"
-	dc.SetColor(color.RGBA{R: 255, G: 255, B: 255, A: 200})
 
 	textWidth, _ := dc.MeasureString(subtitle)
 	x := (OGPWidth - textWidth) / 2 // 中央揃え
-	dc.DrawString(subtitle, x, SubtitleY)
+
+	// 黒い縁取り（太め）
+	dc.SetColor(color.RGBA{R: 0, G: 0, B: 0, A: 255})
+	for dx := -4.0; dx <= 4.0; dx++ {
+		for dy := -4.0; dy <= 4.0; dy++ {
+			dc.DrawString(subtitle, x+dx, SubtitleY+dy)
+		}
+	}
+	
+	// 白い文字本体（軽い太字効果）
+	dc.SetColor(color.RGBA{R: 255, G: 255, B: 255, A: 200})
+	for dx := -0.8; dx <= 0.8; dx += 0.4 {
+		for dy := -0.8; dy <= 0.8; dy += 0.4 {
+			dc.DrawString(subtitle, x+dx, SubtitleY+dy)
+		}
+	}
 
 	return nil
 }
 
 // drawGameVersion ゲームバージョンを右下に描画
 func drawGameVersion(dc *gg.Context, gameCode, gameName string) error {
-	if err := dc.LoadFontFace(FontPathBold, GameVersionFontSize); err != nil {
+	if err := dc.LoadFontFace(FontPath, GameVersionFontSize); err != nil {
 		return fmt.Errorf("フォント読み込み失敗: %w", err)
 	}
-
-	dc.SetColor(color.RGBA{R: 255, G: 255, B: 255, A: 255})
 
 	// ゲームバージョンコードを右下に配置
 	textWidth, textHeight := dc.MeasureString(gameCode)
 	x := OGPWidth - Padding - textWidth
 	y := OGPHeight - Padding - textHeight + textHeight // ベースライン調整
 
-	dc.DrawString(gameCode, x, y)
+	// 黒い縁取り（太め）
+	dc.SetColor(color.RGBA{R: 0, G: 0, B: 0, A: 255})
+	for dx := -5.0; dx <= 5.0; dx++ {
+		for dy := -5.0; dy <= 5.0; dy++ {
+			dc.DrawString(gameCode, x+dx, y+dy)
+		}
+	}
+	
+	// 白い文字本体
+	dc.SetColor(color.RGBA{R: 255, G: 255, B: 255, A: 255})
+	for dx := -2.0; dx <= 2.0; dx++ {
+		for dy := -2.0; dy <= 2.0; dy++ {
+			dc.DrawString(gameCode, x+dx, y+dy)
+		}
+	}
 
 	return nil
 }

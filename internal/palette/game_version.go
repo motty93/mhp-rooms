@@ -10,24 +10,24 @@ type GameVersionPalette struct {
 
 var GameVersionPalettes = map[string]GameVersionPalette{
 	"MHP": {
-		TopColor:    color.RGBA{R: 139, G: 69, B: 19, A: 255},
-		BottomColor: color.RGBA{R: 101, G: 50, B: 14, A: 255},
-		AccentColor: color.RGBA{R: 180, G: 120, B: 80, A: 255},
+		TopColor:    color.RGBA{R: 190, G: 140, B: 110, A: 255}, // 明るめの茶色（少し濃く）
+		BottomColor: color.RGBA{R: 165, G: 120, B: 95, A: 255},  // やや濃い茶色
+		AccentColor: color.RGBA{R: 210, G: 170, B: 145, A: 255},
 	},
 	"MHP2": {
-		TopColor:    color.RGBA{R: 70, G: 130, B: 180, A: 255},
-		BottomColor: color.RGBA{R: 50, G: 90, B: 140, A: 255},
-		AccentColor: color.RGBA{R: 135, G: 206, B: 250, A: 255},
+		TopColor:    color.RGBA{R: 145, G: 190, B: 225, A: 255}, // 明るめの青（少し濃く）
+		BottomColor: color.RGBA{R: 120, G: 165, B: 205, A: 255}, // やや濃い青
+		AccentColor: color.RGBA{R: 175, G: 210, B: 240, A: 255},
 	},
 	"MHP2G": {
-		TopColor:    color.RGBA{R: 34, G: 139, B: 34, A: 255},
-		BottomColor: color.RGBA{R: 24, G: 100, B: 24, A: 255},
-		AccentColor: color.RGBA{R: 144, G: 238, B: 144, A: 255},
+		TopColor:    color.RGBA{R: 145, G: 205, B: 165, A: 255}, // 明るめの緑（少し濃く）
+		BottomColor: color.RGBA{R: 120, G: 180, B: 140, A: 255}, // やや濃い緑
+		AccentColor: color.RGBA{R: 175, G: 225, B: 195, A: 255},
 	},
 	"MHP3": {
-		TopColor:    color.RGBA{R: 218, G: 165, B: 32, A: 255},
-		BottomColor: color.RGBA{R: 184, G: 134, B: 11, A: 255},
-		AccentColor: color.RGBA{R: 255, G: 215, B: 100, A: 255},
+		TopColor:    color.RGBA{R: 230, G: 195, B: 135, A: 255}, // 明るめのゴールド（少し濃く）
+		BottomColor: color.RGBA{R: 210, G: 175, B: 115, A: 255}, // やや濃いゴールド
+		AccentColor: color.RGBA{R: 245, G: 215, B: 165, A: 255},
 	},
 }
 

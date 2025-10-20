@@ -5,8 +5,8 @@
 set -e
 
 FONT_DIR="cmd/ogp-renderer/assets/fonts"
-BOLD_URL="https://github.com/google/fonts/raw/main/ofl/notosansjp/NotoSansJP-Bold.ttf"
-REGULAR_URL="https://github.com/google/fonts/raw/main/ofl/notosansjp/NotoSansJP-Regular.ttf"
+BOLD_URL="https://github.com/google/fonts/raw/main/ofl/notosansjp/static/NotoSansJP-Bold.ttf"
+REGULAR_URL="https://github.com/google/fonts/raw/main/ofl/notosansjp/static/NotoSansJP-Regular.ttf"
 
 echo "フォントファイルをダウンロードします..."
 
