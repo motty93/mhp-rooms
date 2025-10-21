@@ -38,7 +38,8 @@ const (
 
 	// レイアウト設定（Zenn風）
 	Padding        = 50.0
-	BorderWidth    = 12.0 // 枠の太さ（太く）
+	BorderWidth    = 16.0 // 枠の太さ（さらに太く）
+	BorderRadius   = 20.0 // 枠の角丸
 	ContentPadding = 40.0 // 枠内の余白
 	LogoIconSize   = 95.0 // MonHubアイコンサイズ
 	MaxTitleLines  = 3    // タイトル最大行数
@@ -262,24 +263,26 @@ func generateOGPImage(room *models.Room, pal palette.GameVersionPalette) (image.
 func drawGradientBorder(dc *gg.Context, pal palette.GameVersionPalette, s float64) error {
 	p := Padding * s
 	bw := BorderWidth * s
+	br := BorderRadius * s
 
 	// 左上から右下へのグラデーション
 	gradient := gg.NewLinearGradient(0, 0, float64(dc.Width()), float64(dc.Height()))
 	gradient.AddColorStop(0, pal.TopColor)
 	gradient.AddColorStop(1, pal.BottomColor)
 
-	// 外側の枠を描画
+	// 外側の枠を描画（角丸）
 	dc.SetFillStyle(gradient)
-	dc.DrawRectangle(p, p, float64(dc.Width())-p*2, float64(dc.Height())-p*2)
+	dc.DrawRoundedRectangle(p, p, float64(dc.Width())-p*2, float64(dc.Height())-p*2, br)
 	dc.Fill()
 
-	// 内側を白で塗りつぶし（枠だけ残す）
+	// 内側を白で塗りつぶし（枠だけ残す・角丸）
 	dc.SetColor(color.RGBA{R: 255, G: 255, B: 255, A: 255})
-	dc.DrawRectangle(
+	dc.DrawRoundedRectangle(
 		p+bw,
 		p+bw,
 		float64(dc.Width())-p*2-bw*2,
 		float64(dc.Height())-p*2-bw*2,
+		br,
 	)
 	dc.Fill()
 
