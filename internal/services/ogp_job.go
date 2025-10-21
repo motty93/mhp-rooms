@@ -3,9 +3,12 @@ package services
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 
 	run "cloud.google.com/go/run/apiv2"
 	"cloud.google.com/go/run/apiv2/runpb"
@@ -24,16 +27,27 @@ type OGPJobService struct {
 func NewOGPJobService() *OGPJobService {
 	mode := os.Getenv("OGP_GENERATION_MODE")
 	if mode == "" {
-		if os.Getenv("PROJECT_ID") != "" {
+		if os.Getenv("PROJECT_ID") != "" || getGCPProjectID() != "" {
 			mode = "cloud"
 		} else {
 			mode = "local"
 		}
 	}
 
+	// PROJECT_IDとLOCATIONはメタデータサーバーから取得（環境変数があれば優先）
+	projectID := os.Getenv("PROJECT_ID")
+	if projectID == "" {
+		projectID = getGCPProjectID()
+	}
+
+	location := os.Getenv("LOCATION")
+	if location == "" {
+		location = getGCPRegion()
+	}
+
 	return &OGPJobService{
-		projectID: os.Getenv("PROJECT_ID"),
-		location:  os.Getenv("LOCATION"),
+		projectID: projectID,
+		location:  location,
 		jobName:   os.Getenv("OGP_JOB_NAME"),
 		ogBucket:  os.Getenv("OG_BUCKET"),
 		ogPrefix:  os.Getenv("OG_PREFIX"),
@@ -128,4 +142,51 @@ func (s *OGPJobService) generateOGPLocally(ctx context.Context, roomID uuid.UUID
 
 	log.Printf("OGP生成完了: %s", output)
 	return nil
+}
+
+// getGCPProjectID GCPメタデータサーバーからプロジェクトIDを取得
+func getGCPProjectID() string {
+	return getGCPMetadata("project/project-id")
+}
+
+// getGCPRegion GCPメタデータサーバーからリージョンを取得
+func getGCPRegion() string {
+	region := getGCPMetadata("instance/region")
+	if region == "" {
+		return ""
+	}
+	// "projects/123456/regions/asia-northeast1" → "asia-northeast1"
+	parts := strings.Split(region, "/")
+	if len(parts) > 0 {
+		return parts[len(parts)-1]
+	}
+	return region
+}
+
+// getGCPMetadata GCPメタデータサーバーから情報を取得
+func getGCPMetadata(path string) string {
+	url := fmt.Sprintf("http://metadata.google.internal/computeMetadata/v1/%s", path)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return ""
+	}
+	req.Header.Set("Metadata-Flavor", "Google")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return ""
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return ""
+	}
+
+	return strings.TrimSpace(string(body))
 }

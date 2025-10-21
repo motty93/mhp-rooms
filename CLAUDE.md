@@ -24,7 +24,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - Alpine.js (UIの状態管理)
   - Tailwind CSS (スタイリング)
 - **コンテナ**: Docker + Docker Compose
-- **デプロイ**: Fly.io
+- **デプロイ**: Google Cloud Run
 
 ## プロジェクト構造
 
@@ -122,18 +122,22 @@ Neonデータベースを使用します。以下の2つの方法で設定でき
 #### 方法1: DATABASE_URL（推奨・最も簡単）
 ```bash
 # NeonコンソールからConnection Stringをコピーして設定
-fly secrets set DATABASE_URL="postgresql://username:password@ep-xxx.region.neon.tech/database?sslmode=require"
-fly secrets set ENV="production"
+gcloud run services update mhp-rooms \
+  --region=asia-northeast1 \
+  --set-env-vars=DATABASE_URL="postgresql://username:password@ep-xxx.region.neon.tech/database?sslmode=require" \
+  --set-env-vars=ENV="production"
 ```
 
 #### 方法2: 個別の環境変数
 ```bash
-fly secrets set DB_HOST="ep-xxx.region.neon.tech"
-fly secrets set DB_USER="your-username"
-fly secrets set DB_PASSWORD="your-password"
-fly secrets set DB_NAME="your-database"
-fly secrets set DB_SSLMODE="require"
-fly secrets set ENV="production"
+gcloud run services update mhp-rooms \
+  --region=asia-northeast1 \
+  --set-env-vars=DB_HOST="ep-xxx.region.neon.tech" \
+  --set-env-vars=DB_USER="your-username" \
+  --set-env-vars=DB_PASSWORD="your-password" \
+  --set-env-vars=DB_NAME="your-database" \
+  --set-env-vars=DB_SSLMODE="require" \
+  --set-env-vars=ENV="production"
 ```
 
 **注意**: DATABASE_URLが設定されている場合は、個別の環境変数より優先して使用されます。

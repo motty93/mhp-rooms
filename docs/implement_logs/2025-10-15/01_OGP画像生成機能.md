@@ -125,10 +125,15 @@ go func() {
 
 3. **環境変数設定**（本番環境）:
    ```bash
-   fly secrets set OGP_JOB_NAME="ogp-renderer"
-   fly secrets set OG_BUCKET="myapp-og-images"
-   fly secrets set OG_PREFIX="prod"
-   fly secrets set SITE_URL="https://monhub.app"
+   # Cloud Runサービスに環境変数を設定
+   # 注: PROJECT_IDとLOCATIONは同じGCPプロジェクト内では自動取得されるため不要
+   gcloud run services update mhp-rooms \
+     --region=asia-northeast1 \
+     --set-env-vars=OGP_GENERATION_MODE=cloud \
+     --set-env-vars=OGP_JOB_NAME=ogp-renderer \
+     --set-env-vars=OG_BUCKET=myapp-og-images \
+     --set-env-vars=OG_PREFIX=prod \
+     --set-env-vars=SITE_URL=https://monhub.app
    ```
 
 4. **GCSバケットの作成と権限設定**:

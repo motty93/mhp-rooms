@@ -72,13 +72,15 @@ func main() {
 ### 開発環境
 `.env`ファイルから環境変数を読み込み
 
-### 本番環境（Fly.io）
+### 本番環境（Cloud Run）
 ```bash
-fly secrets set DB_HOST=your-fly-postgres-host
-fly secrets set DB_USER=your-username
-fly secrets set DB_PASSWORD=your-secure-password
-fly secrets set DB_NAME=your-database
-fly secrets set DB_SSLMODE=require
+gcloud run services update mhp-rooms \
+  --region=asia-northeast1 \
+  --set-env-vars=DB_HOST=your-postgres-host \
+  --set-env-vars=DB_USER=your-username \
+  --set-env-vars=DB_PASSWORD=your-secure-password \
+  --set-env-vars=DB_NAME=your-database \
+  --set-env-vars=DB_SSLMODE=require
 ```
 
 ## 設計の利点

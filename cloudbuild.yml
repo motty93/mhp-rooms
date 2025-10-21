@@ -57,7 +57,7 @@ steps:
       - "cmd/ogp-renderer/Dockerfile"
       - "--build-arg"
       - "GO_VERSION=${_GO_VERSION}"
-      - "cmd/ogp-renderer"
+      - "."
     waitFor: ["build-image"]
 
   # 4) Push Job
@@ -102,7 +102,7 @@ steps:
       - "--set-secrets"
       - "DATABASE_URL=${_SECRET_DATABASE_URL}:latest"
       - "--update-env-vars"
-      - "PROJECT_ID=$PROJECT_ID,LOCATION=${_REGION},SERVICE_MODE=main,OG_BUCKET=${_OG_BUCKET},OG_PREFIX=${_OG_PREFIX}"
+      - "SERVICE_MODE=main,OG_BUCKET=${_OG_BUCKET},OG_PREFIX=${_OG_PREFIX},OGP_JOB_NAME=${_JOB_NAME},OGP_GENERATION_MODE=cloud"
     waitFor: ["push-image"]
 
   # 6) Deploy SSE (optional)
@@ -128,7 +128,7 @@ steps:
             --min-instances 0 \
             --concurrency 100 \
             --set-secrets DATABASE_URL=${_SECRET_DATABASE_URL}:latest \
-            --update-env-vars "PROJECT_ID=$PROJECT_ID,LOCATION=${_REGION},SERVICE_MODE=sse,OG_BUCKET=${_OG_BUCKET},OG_PREFIX=${_OG_PREFIX}"
+            --update-env-vars "SERVICE_MODE=sse,OG_BUCKET=${_OG_BUCKET},OG_PREFIX=${_OG_PREFIX},OGP_JOB_NAME=${_JOB_NAME},OGP_GENERATION_MODE=cloud"
         else
           echo "SSEサービスのデプロイはスキップされました (_DEPLOY_SSE=${_DEPLOY_SSE})"
         fi

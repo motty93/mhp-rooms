@@ -20,7 +20,7 @@
 - Gorilla Mux (Webフレームワーク)
 - PostgreSQL + GORM v2 (データベース)
 - Docker + Docker Compose (コンテナ化)
-- Fly.io (デプロイ先)
+- Google Cloud Run (デプロイ先)
 
 #### プロジェクト構造の明確化
 ```
