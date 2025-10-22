@@ -9,7 +9,7 @@ substitutions:
   _GO_VERSION: "1.24"
   _DEPLOY_SSE: "false"                   # true に設定するとSSEサービスもデプロイ
   _DEPLOY_JOB: "true"                    # ← 追加: Job をデプロイするか
-  _OG_BUCKET: myapp-og-images            # ← 追加: OGP保存先バケット
+  _OG_BUCKET: monhub-master  # ← 追加: OGP保存先バケット
   _OG_PREFIX: prod                       # ← 追加: OGP保存先の環境プレフィックス (dev/stg/prod)
   # Secret Manager 上のシークレット名（環境ごとに合わせて変更）
   _SECRET_DATABASE_URL: DATABASE_URL__prod
