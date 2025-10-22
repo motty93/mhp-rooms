@@ -39,18 +39,22 @@
 
 ### 最も簡単な方法（推奨）
 ```bash
-fly secrets set DATABASE_URL="postgresql://username:password@ep-xxx.region.neon.tech/database?sslmode=require"
-fly secrets set ENV="production"
+gcloud run services update mhp-rooms \
+  --region=asia-northeast1 \
+  --set-env-vars=DATABASE_URL="postgresql://username:password@ep-xxx.region.neon.tech/database?sslmode=require" \
+  --set-env-vars=ENV="production"
 ```
 
 ### 従来の方法（フォールバック）
 ```bash
-fly secrets set DB_HOST="ep-xxx.region.neon.tech"
-fly secrets set DB_USER="your-username"
-fly secrets set DB_PASSWORD="your-password"
-fly secrets set DB_NAME="your-database"
-fly secrets set DB_SSLMODE="require"
-fly secrets set ENV="production"
+gcloud run services update mhp-rooms \
+  --region=asia-northeast1 \
+  --set-env-vars=DB_HOST="ep-xxx.region.neon.tech" \
+  --set-env-vars=DB_USER="your-username" \
+  --set-env-vars=DB_PASSWORD="your-password" \
+  --set-env-vars=DB_NAME="your-database" \
+  --set-env-vars=DB_SSLMODE="require" \
+  --set-env-vars=ENV="production"
 ```
 
 ## 利点
@@ -66,4 +70,4 @@ fly secrets set ENV="production"
 
 ## テスト方法
 1. 開発環境: `make migrate` で動作確認
-2. 本番環境: DATABASE_URL設定後にFly.ioデプロイで確認
+2. 本番環境: DATABASE_URL設定後にCloud Runへデプロイで確認

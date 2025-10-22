@@ -168,7 +168,17 @@
       "Bash(export PORT=8092 ENV=development DB_TYPE=turso)",
       "Bash(timeout:*)",
       "Bash(xargs -r kill)",
-      "Bash(ENV=development DB_TYPE=turso timeout 15s make run)"
+      "Bash(ENV=development DB_TYPE=turso timeout 15s make run)",
+      "Bash(chmod:*)",
+      "Bash(ROOM_ID=\"123e4567-e89b-12d3-a456-426614174000\" ENV=development DB_TYPE=turso timeout 10s go run:*)",
+      "Bash(export ROOM_ID=\"123e4567-e89b-12d3-a456-426614174000\")",
+      "Bash(export ENV=development)",
+      "Bash(export DB_TYPE=turso)",
+      "Bash(export ROOM_ID=\"65aa2271-e79a-47ad-8d69-ed343a2d4ce2\")",
+      "Bash(bash:*)",
+      "Bash(unzip:*)",
+      "Read(//tmp/**)",
+      "Bash(ROOM_ID=\"65aa2271-e79a-47ad-8d69-ed343a2d4ce2\" ENV=development DB_TYPE=turso go run:*)"
     ],
     "deny": []
   }

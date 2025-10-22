@@ -9,10 +9,10 @@ import (
 	"mhp-rooms/internal/config"
 	"mhp-rooms/internal/handlers"
 	"mhp-rooms/internal/infrastructure/persistence"
+	"mhp-rooms/internal/infrastructure/sse"
+	"mhp-rooms/internal/infrastructure/storage"
 	"mhp-rooms/internal/middleware"
 	"mhp-rooms/internal/repository"
-	"mhp-rooms/internal/sse"
-	"mhp-rooms/internal/storage"
 )
 
 type Application struct {

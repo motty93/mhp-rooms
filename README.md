@@ -20,9 +20,7 @@
 - **言語**: Go 1.22.2
 - **Webフレームワーク**: Chi
 - **ORM**: GORM v2
-- **データベース**:
-  - **開発環境**: PostgreSQL (Docker Compose)
-  - **本番環境**: Turso (libSQL) - SQLiteベースのクラウドデータベース
+- **データベース**: Turso (libSQL) - SQLiteベースのクラウドデータベース
 
 ### フロントエンド
 - **テンプレートエンジン**: Go HTML/Template
@@ -31,7 +29,6 @@
 - **スタイリング**: Tailwind CSS (CDN)
 
 ### インフラ・ツール
-- **コンテナ**: Docker & Docker Compose
 - **デプロイ**: Google Cloud Run
 - **ビルドツール**: Make
 
@@ -44,19 +41,21 @@
 │   ├── migrate/             # DBマイグレーション実行
 │   ├── seed/                # 基本シード投入
 │   ├── seed_rooms/          # ルーム初期データ投入
+│   ├── ogp-renderer/        # OGP画像生成サービス
 │   ├── check_db/            # DB接続診断ユーティリティ
 │   └── test_password/       # パスワード検証ハーネス
 ├── internal/                # ドメインロジックパッケージ
 │   ├── config/              # 設定ロード
+│   ├── database/            # データベース接続・マイグレーション
 │   ├── handlers/            # HTTPハンドラー
-│   ├── infrastructure/      # 外部サービス連携
+│   ├── infrastructure/      # 外部サービス接続（persistence/sse/storage 等）
+│   ├── integration/         # 外部API連携（例: Discord Webhook）
 │   ├── middleware/          # 共通ミドルウェア
 │   ├── models/              # GORMエンティティ
 │   ├── repository/          # 永続化レイヤー
 │   ├── services/            # ビジネスロジック
-│   ├── sse/                 # サーバー送信イベント処理
-│   ├── storage/             # ストレージ連携
-│   └── utils/               # 共通ヘルパー
+│   ├── utils/               # 共通ヘルパー
+│   └── view/                # テンプレートレンダリングとUI補助
 ├── templates/               # HTMLテンプレート
 │   ├── layouts/             # レイアウトテンプレート
 │   ├── pages/               # ページテンプレート
@@ -64,15 +63,17 @@
 ├── static/                  # 静的アセット
 │   ├── css/                 # スタイルシート
 │   ├── js/                  # JavaScript
+│   │   └── vendor/          # サードパーティライブラリ
 │   ├── images/              # 画像ファイル
+│   │   └── icons/           # アイコン画像
 │   └── robots.txt           # クローラ設定
 ├── docs/                    # ドキュメント
 │   ├── implement_logs/      # 実装ログ
 │   └── ...                  # 設計・運用資料
 ├── scripts/                 # メンテナンススクリプト
-├── terraform/               # インフラ定義
 ├── bin/                     # ビルド成果物
 └── tmp/                     # 開発用一時ファイル
+    └── images/og/           # OGP画像一時保存
 ```
 
 ## 開発環境のセットアップ

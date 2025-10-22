@@ -1,0 +1,121 @@
+substitutions:
+  _SERVICE_NAME: monhub-stg
+  _SSE_SERVICE_NAME: monhub-sse-stg
+  _REGION: asia-northeast1
+  _ARTIFACT_REPOSITORY: monhub-registry
+  _IMAGE_NAME: monhub-app
+  _JOB_NAME: ogp-renderer-stg
+  _JOB_IMAGE_NAME: ogp-renderer
+  _GO_VERSION: "1.24"
+  _DEPLOY_SSE: "false"                   # ステージング環境ではSSEをデプロイしない
+  _DEPLOY_JOB: "true"                    # ステージング環境でJobをデプロイ
+  _OG_BUCKET: monhub-master              # ステージングと本番でバケットを共有
+  _OG_PREFIX: stg                        # ステージング環境用のプレフィックス
+
+  # Supabase設定（非機密）
+  _SUPABASE_URL: "https://pfkqrwtgfpbxduxtecby.supabase.co"
+  _SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBma3Fyd3RnZnBieGR1eHRlY2J5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4NjE1NjIsImV4cCI6MjA2NjQzNzU2Mn0.DVuKTsjR5OXZlILQuh7qlabF6E5-WM_cKPVC4mkp5bw"
+
+  # GCS設定（非機密）
+  _GCS_BUCKET: monhub-master
+  _GCS_PRIVATE_BUCKET: monhub-private
+  _BASE_PUBLIC_ASSET_URL: "https://storage.googleapis.com/monhub-master"
+  _ASSET_PREFIX: stg
+
+  # Secret Manager上のシークレット名（ステージング環境用）
+  _SECRET_TURSO_DATABASE_URL: TURSO_DATABASE_URL__stg
+  _SECRET_TURSO_AUTH_TOKEN: TURSO_AUTH_TOKEN__stg
+  _SECRET_SUPABASE_JWT_SECRET: SUPABASE_JWT_SECRET__stg
+  _SECRET_DISCORD_WEBHOOK_URL: DISCORD_WEBHOOK_URL__stg
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: UNSPECIFIED
+
+steps:
+  # 1) Deploy Main (Cloud Run) - ステージング環境
+  #    既存のビルド済みイメージ（latest タグ）を使用してデプロイ
+  - name: "gcr.io/cloud-builders/gcloud"
+    id: "deploy-main"
+    args:
+      - "run"
+      - "deploy"
+      - "${_SERVICE_NAME}"
+      - "--image"
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_IMAGE_NAME}:latest'
+      - "--region"
+      - "${_REGION}"
+      - "--platform"
+      - "managed"
+      - "--allow-unauthenticated"
+      - "--ingress"
+      - "all"
+      - "--port"
+      - "8080"
+      - "--timeout"
+      - "3600"
+      - "--memory"
+      - "512Mi"
+      - "--cpu"
+      - "1"
+      - "--max-instances"
+      - "10"
+      - "--min-instances"
+      - "0"
+      - "--concurrency"
+      - "10"
+      - "--set-secrets"
+      - "TURSO_DATABASE_URL=${_SECRET_TURSO_DATABASE_URL}:latest,TURSO_AUTH_TOKEN=${_SECRET_TURSO_AUTH_TOKEN}:latest,SUPABASE_JWT_SECRET=${_SECRET_SUPABASE_JWT_SECRET}:latest,DISCORD_WEBHOOK_URL=${_SECRET_DISCORD_WEBHOOK_URL}:latest"
+      - "--update-env-vars"
+      - "ENV=staging,DB_TYPE=turso,SERVICE_MODE=main,SUPABASE_URL=${_SUPABASE_URL},SUPABASE_ANON_KEY=${_SUPABASE_ANON_KEY},GCS_BUCKET=${_GCS_BUCKET},BASE_PUBLIC_ASSET_URL=${_BASE_PUBLIC_ASSET_URL},ASSET_PREFIX=${_ASSET_PREFIX},GCS_PRIVATE_BUCKET=${_GCS_PRIVATE_BUCKET},OG_BUCKET=${_OG_BUCKET},OG_PREFIX=${_OG_PREFIX},OGP_JOB_NAME=${_JOB_NAME},OGP_GENERATION_MODE=cloud"
+
+  # 2) Deploy SSE (optional) - ステージング環境ではスキップ
+  - name: "gcr.io/cloud-builders/gcloud"
+    id: "deploy-sse"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        if [ "${_DEPLOY_SSE}" = "true" ]; then
+          echo "SSEサービスをデプロイしています..."
+          gcloud run deploy ${_SSE_SERVICE_NAME} \
+            --image ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_IMAGE_NAME}:latest \
+            --region ${_REGION} \
+            --platform managed \
+            --allow-unauthenticated \
+            --ingress all \
+            --port 8080 \
+            --timeout 3600 \
+            --memory 256Mi \
+            --cpu 1 \
+            --max-instances 5 \
+            --min-instances 0 \
+            --concurrency 100 \
+            --set-secrets TURSO_DATABASE_URL=${_SECRET_TURSO_DATABASE_URL}:latest,TURSO_AUTH_TOKEN=${_SECRET_TURSO_AUTH_TOKEN}:latest,SUPABASE_JWT_SECRET=${_SECRET_SUPABASE_JWT_SECRET}:latest,DISCORD_WEBHOOK_URL=${_SECRET_DISCORD_WEBHOOK_URL}:latest \
+            --update-env-vars "ENV=staging,DB_TYPE=turso,SERVICE_MODE=sse,SUPABASE_URL=${_SUPABASE_URL},SUPABASE_ANON_KEY=${_SUPABASE_ANON_KEY},GCS_BUCKET=${_GCS_BUCKET},BASE_PUBLIC_ASSET_URL=${_BASE_PUBLIC_ASSET_URL},ASSET_PREFIX=${_ASSET_PREFIX},GCS_PRIVATE_BUCKET=${_GCS_PRIVATE_BUCKET},OG_BUCKET=${_OG_BUCKET},OG_PREFIX=${_OG_PREFIX},OGP_JOB_NAME=${_JOB_NAME},OGP_GENERATION_MODE=cloud"
+        else
+          echo "SSEサービスのデプロイはスキップされました (_DEPLOY_SSE=${_DEPLOY_SSE})"
+        fi
+
+  # 3) Deploy Job (Cloud Run Jobs) - ステージング環境
+  #    既存のビルド済みイメージ（latest タグ）を使用してデプロイ
+  - name: "gcr.io/cloud-builders/gcloud"
+    id: "deploy-job"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        if [ "${_DEPLOY_JOB}" = "true" ]; then
+          echo "Cloud Run Job をデプロイしています..."
+          gcloud run jobs deploy ${_JOB_NAME} \
+            --image ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_JOB_IMAGE_NAME}:latest \
+            --region ${_REGION} \
+            --tasks 1 \
+            --max-retries 2 \
+            --set-secrets TURSO_DATABASE_URL=${_SECRET_TURSO_DATABASE_URL}:latest,TURSO_AUTH_TOKEN=${_SECRET_TURSO_AUTH_TOKEN}:latest \
+            --set-env-vars DB_TYPE=turso,OG_BUCKET=${_OG_BUCKET},OG_PREFIX=${_OG_PREFIX}
+        else
+          echo "Job のデプロイはスキップされました (_DEPLOY_JOB=${_DEPLOY_JOB})"
+        fi
+
+timeout: "1800s"

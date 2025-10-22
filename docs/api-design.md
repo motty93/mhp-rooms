@@ -6,7 +6,7 @@
 
 ## 基本情報
 
-- **ベースURL**: `https://mhp-rooms.fly.dev`（本番環境）
+- **ベースURL**: `https://your-service-name.a.run.app`（本番環境 - Cloud Run）
 - **認証方式**: JWT（Bearer Token）
 - **データ形式**: JSON, HTML
 - **文字エンコーディング**: UTF-8

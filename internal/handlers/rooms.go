@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -12,11 +13,11 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
+	"mhp-rooms/internal/infrastructure/sse"
 	"mhp-rooms/internal/middleware"
 	"mhp-rooms/internal/models"
 	"mhp-rooms/internal/repository"
 	"mhp-rooms/internal/services"
-	"mhp-rooms/internal/sse"
 	"mhp-rooms/internal/utils"
 )
 
@@ -51,7 +52,6 @@ func (h *RoomHandler) Rooms(w http.ResponseWriter, r *http.Request) {
 	page := 1
 	perPage := 20
 
-	// ページ番号のパース
 	if pageStr := r.URL.Query().Get("page"); pageStr != "" {
 		if parsedPage, err := strconv.Atoi(pageStr); err == nil && parsedPage > 0 {
 			page = parsedPage
@@ -291,6 +291,7 @@ func (h *RoomHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		MaxPlayers:     req.MaxPlayers,
 		IsActive:       true,
 		CurrentPlayers: 0, // 初期人数（メンバー追加処理で更新される）
+		OGVersion:      1, // OGP画像のバージョン初期値
 	}
 
 	if req.Description != "" {
@@ -318,6 +319,14 @@ func (h *RoomHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		log.Printf("部屋作成アクティビティの記録に失敗: %v", err)
 		// アクティビティ記録失敗はメイン処理に影響させない
 	}
+
+	// OGP画像生成ジョブを非同期実行（失敗してもメイン処理は続行）
+	go func() {
+		ogpService := services.NewOGPJobService()
+		if err := ogpService.TriggerOGPGeneration(context.Background(), room.ID); err != nil {
+			log.Printf("OGP画像生成ジョブのトリガーに失敗: %v", err)
+		}
+	}()
 
 	// 作成成功時には部屋詳細URLを返す
 	response := map[string]interface{}{
@@ -752,12 +761,10 @@ func (h *RoomHandler) GetCurrentRoom(w http.ResponseWriter, r *http.Request) {
 	// 現在参加しているアクティブな部屋を検索
 	activeRoom, err := h.repo.Room.FindActiveRoomByUserID(userID)
 	if err != nil {
-		// データベースエラーの場合
 		http.Error(w, "参加中の部屋の取得に失敗しました", http.StatusInternalServerError)
 		return
 	}
 
-	// 参加中の部屋がない場合
 	if activeRoom == nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -765,7 +772,6 @@ func (h *RoomHandler) GetCurrentRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 部屋情報をレスポンス用に整形
 	roomData := map[string]interface{}{
 		"id":               activeRoom.ID,
 		"room_code":        activeRoom.RoomCode,
@@ -809,7 +815,6 @@ func (h *RoomHandler) UpdateRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 入力値の検証
 	var req UpdateRoomRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "リクエストの解析に失敗しました", http.StatusBadRequest)
@@ -861,6 +866,7 @@ func (h *RoomHandler) UpdateRoom(w http.ResponseWriter, r *http.Request) {
 	room.Name = req.Name
 	room.GameVersionID = gameVersionID
 	room.MaxPlayers = req.MaxPlayers
+	room.OGVersion++ // OGP画像バージョンをインクリメント
 
 	if req.Description != "" {
 		room.Description = &req.Description
@@ -888,7 +894,14 @@ func (h *RoomHandler) UpdateRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 更新成功のレスポンス
+	// OGP画像生成ジョブを非同期実行（失敗してもメイン処理は続行）
+	go func() {
+		ogpService := services.NewOGPJobService()
+		if err := ogpService.TriggerOGPGeneration(context.Background(), room.ID); err != nil {
+			log.Printf("OGP画像生成ジョブのトリガーに失敗: %v", err)
+		}
+	}()
+
 	response := map[string]interface{}{
 		"message": "ルーム設定を更新しました",
 		"room":    room,
@@ -906,7 +919,6 @@ func (h *RoomHandler) DismissRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 認証情報からユーザーIDを取得
 	dbUser, exists := middleware.GetDBUserFromContext(r.Context())
 	if !exists || dbUser == nil {
 		http.Error(w, "認証されていないか、ユーザー情報が見つかりません", http.StatusUnauthorized)
@@ -960,7 +972,6 @@ func (h *RoomHandler) DismissRoom(w http.ResponseWriter, r *http.Request) {
 		// アクティビティ記録失敗はメイン処理に影響させない
 	}
 
-	// 解散成功のレスポンス
 	response := map[string]interface{}{
 		"message":  "ルームを解散しました",
 		"redirect": "/rooms",
@@ -990,7 +1001,6 @@ func (h *RoomHandler) GetUserRoomStatus(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// レスポンスを構築
 	response := map[string]interface{}{
 		"status": status,
 		"room":   nil,

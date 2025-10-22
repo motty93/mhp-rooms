@@ -240,6 +240,12 @@ func (app *Application) setupAPIRoutes(r chi.Router) {
 func (app *Application) setupStaticRoutes(r chi.Router) {
 	fileServer := http.FileServer(http.Dir("static"))
 	r.Handle("/static/*", http.StripPrefix("/static/", fileServer))
+
+	// ローカル環境のOGP画像配信（OG_BUCKETが空の場合のみ）
+	if os.Getenv("OG_BUCKET") == "" {
+		tmpFileServer := http.FileServer(http.Dir("tmp"))
+		r.Handle("/tmp/*", http.StripPrefix("/tmp/", tmpFileServer))
+	}
 }
 
 func (app *Application) setupSSEOnlyRoutes(r chi.Router) {
