@@ -9,10 +9,24 @@ substitutions:
   _GO_VERSION: "1.24"
   _DEPLOY_SSE: "false"                   # true に設定するとSSEサービスもデプロイ
   _DEPLOY_JOB: "true"                    # ← 追加: Job をデプロイするか
-  _OG_BUCKET: monhub-master  # ← 追加: OGP保存先バケット
+  _OG_BUCKET: monhub-master              # ← 追加: OGP保存先バケット
   _OG_PREFIX: prod                       # ← 追加: OGP保存先の環境プレフィックス (dev/stg/prod)
-  # Secret Manager 上のシークレット名（環境ごとに合わせて変更）
-  _SECRET_DATABASE_URL: DATABASE_URL__prod
+
+  # Supabase設定（非機密）
+  _SUPABASE_URL: "https://pfkqrwtgfpbxduxtecby.supabase.co"
+  _SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBma3Fyd3RnZnBieGR1eHRlY2J5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4NjE1NjIsImV4cCI6MjA2NjQzNzU2Mn0.DVuKTsjR5OXZlILQuh7qlabF6E5-WM_cKPVC4mkp5bw"
+
+  # GCS設定（非機密）
+  _GCS_BUCKET: monhub-master
+  _GCS_PRIVATE_BUCKET: monhub-private
+  _BASE_PUBLIC_ASSET_URL: "https://storage.googleapis.com/monhub-master"
+  _ASSET_PREFIX: prod
+
+  # Secret Manager上のシークレット名（本番環境用）
+  _SECRET_TURSO_DATABASE_URL: TURSO_DATABASE_URL__prod
+  _SECRET_TURSO_AUTH_TOKEN: TURSO_AUTH_TOKEN__prod
+  _SECRET_SUPABASE_JWT_SECRET: SUPABASE_JWT_SECRET__prod
+  _SECRET_DISCORD_WEBHOOK_URL: DISCORD_WEBHOOK_URL__prod
 
 options:
   logging: CLOUD_LOGGING_ONLY
@@ -100,9 +114,9 @@ steps:
       - "--concurrency"
       - "10"
       - "--set-secrets"
-      - "DATABASE_URL=${_SECRET_DATABASE_URL}:latest"
+      - "TURSO_DATABASE_URL=${_SECRET_TURSO_DATABASE_URL}:latest,TURSO_AUTH_TOKEN=${_SECRET_TURSO_AUTH_TOKEN}:latest,SUPABASE_JWT_SECRET=${_SECRET_SUPABASE_JWT_SECRET}:latest,DISCORD_WEBHOOK_URL=${_SECRET_DISCORD_WEBHOOK_URL}:latest"
       - "--update-env-vars"
-      - "SERVICE_MODE=main,OG_BUCKET=${_OG_BUCKET},OG_PREFIX=${_OG_PREFIX},OGP_JOB_NAME=${_JOB_NAME},OGP_GENERATION_MODE=cloud"
+      - "ENV=production,DB_TYPE=turso,SERVICE_MODE=main,SUPABASE_URL=${_SUPABASE_URL},SUPABASE_ANON_KEY=${_SUPABASE_ANON_KEY},GCS_BUCKET=${_GCS_BUCKET},BASE_PUBLIC_ASSET_URL=${_BASE_PUBLIC_ASSET_URL},ASSET_PREFIX=${_ASSET_PREFIX},GCS_PRIVATE_BUCKET=${_GCS_PRIVATE_BUCKET},OG_BUCKET=${_OG_BUCKET},OG_PREFIX=${_OG_PREFIX},OGP_JOB_NAME=${_JOB_NAME},OGP_GENERATION_MODE=cloud"
     waitFor: ["push-image"]
 
   # 6) Deploy SSE (optional)
@@ -127,8 +141,8 @@ steps:
             --max-instances 5 \
             --min-instances 0 \
             --concurrency 100 \
-            --set-secrets DATABASE_URL=${_SECRET_DATABASE_URL}:latest \
-            --update-env-vars "SERVICE_MODE=sse,OG_BUCKET=${_OG_BUCKET},OG_PREFIX=${_OG_PREFIX},OGP_JOB_NAME=${_JOB_NAME},OGP_GENERATION_MODE=cloud"
+            --set-secrets TURSO_DATABASE_URL=${_SECRET_TURSO_DATABASE_URL}:latest,TURSO_AUTH_TOKEN=${_SECRET_TURSO_AUTH_TOKEN}:latest,SUPABASE_JWT_SECRET=${_SECRET_SUPABASE_JWT_SECRET}:latest,DISCORD_WEBHOOK_URL=${_SECRET_DISCORD_WEBHOOK_URL}:latest \
+            --update-env-vars "ENV=production,DB_TYPE=turso,SERVICE_MODE=sse,SUPABASE_URL=${_SUPABASE_URL},SUPABASE_ANON_KEY=${_SUPABASE_ANON_KEY},GCS_BUCKET=${_GCS_BUCKET},BASE_PUBLIC_ASSET_URL=${_BASE_PUBLIC_ASSET_URL},ASSET_PREFIX=${_ASSET_PREFIX},GCS_PRIVATE_BUCKET=${_GCS_PRIVATE_BUCKET},OG_BUCKET=${_OG_BUCKET},OG_PREFIX=${_OG_PREFIX},OGP_JOB_NAME=${_JOB_NAME},OGP_GENERATION_MODE=cloud"
         else
           echo "SSEサービスのデプロイはスキップされました (_DEPLOY_SSE=${_DEPLOY_SSE})"
         fi
@@ -148,8 +162,8 @@ steps:
             --region ${_REGION} \
             --tasks 1 \
             --max-retries 2 \
-            --set-secrets DATABASE_URL=${_SECRET_DATABASE_URL}:latest \
-            --set-env-vars OG_BUCKET=${_OG_BUCKET},OG_PREFIX=${_OG_PREFIX}
+            --set-secrets TURSO_DATABASE_URL=${_SECRET_TURSO_DATABASE_URL}:latest,TURSO_AUTH_TOKEN=${_SECRET_TURSO_AUTH_TOKEN}:latest \
+            --set-env-vars DB_TYPE=turso,OG_BUCKET=${_OG_BUCKET},OG_PREFIX=${_OG_PREFIX}
         else
           echo "Job のデプロイはスキップされました (_DEPLOY_JOB=${_DEPLOY_JOB})"
         fi
