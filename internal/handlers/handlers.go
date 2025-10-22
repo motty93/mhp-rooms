@@ -5,18 +5,18 @@ import (
 	"regexp"
 	"strings"
 
-	"mhp-rooms/internal/render"
 	"mhp-rooms/internal/repository"
+	"mhp-rooms/internal/view"
 )
 
 type BaseHandler struct {
 	repo *repository.Repository
 }
 
-type TemplateData = render.Data
+type TemplateData = view.Data
 
 func renderTemplate(w http.ResponseWriter, templateName string, data TemplateData) {
-	render.Template(w, templateName, data)
+	view.Template(w, templateName, data)
 }
 
 func isValidEmail(email string) bool {
@@ -62,5 +62,5 @@ func isValidEmail(email string) bool {
 }
 
 func renderPartialTemplate(w http.ResponseWriter, templateName string, data interface{}) error {
-	return render.Partial(w, templateName, data)
+	return view.Partial(w, templateName, data)
 }

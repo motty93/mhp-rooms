@@ -1,4 +1,4 @@
-package utils
+package view
 
 // GetGameVersionColor はゲームバージョンに応じた色を返す
 func GetGameVersionColor(code string) string {

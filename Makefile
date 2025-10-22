@@ -78,7 +78,7 @@ generate-ogp:
 	@ROOM_ID=$(ROOM_ID) \
 	OG_PREFIX=dev \
 	go run cmd/ogp-renderer/main.go
-	@echo "✅ OGP画像生成完了: tmp/images/og/dev/rooms/$(ROOM_ID).png"
+	@echo "✅ OGP画像生成完了: tmp/images/dev/ogp/rooms/$(ROOM_ID).png"
 
 # 依存関係を取得
 deps:

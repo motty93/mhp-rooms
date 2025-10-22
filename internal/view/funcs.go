@@ -1,4 +1,4 @@
-package helpers
+package view
 
 import (
 	"encoding/json"
@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"mhp-rooms/internal/config"
-	"mhp-rooms/internal/utils"
 )
 
 func toLower(s string) string {
@@ -39,7 +38,7 @@ func makeMap(values ...interface{}) (map[string]interface{}, error) {
 }
 
 func gameVersionIconHTML(code string) template.HTML {
-	return template.HTML(utils.GetGameVersionIcon(code))
+	return template.HTML(GetGameVersionIcon(code))
 }
 
 // safeString nil安全な文字列変換
@@ -124,9 +123,9 @@ func TemplateFuncs() template.FuncMap {
 		"lower":            toLower,
 		"json":             toJSON,
 		"map":              makeMap,
-		"gameVersionColor": utils.GetGameVersionColor,
+		"gameVersionColor": GetGameVersionColor,
 		"gameVersionIcon":  gameVersionIconHTML,
-		"gameVersionAbbr":  utils.GetGameVersionAbbreviation,
+		"gameVersionAbbr":  GetGameVersionAbbreviation,
 		"stringPtr":        safeString,
 		"safeString":       safeString,
 		"hasStringValue":   hasStringValue,

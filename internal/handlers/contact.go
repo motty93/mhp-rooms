@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"mhp-rooms/internal/config"
+	"mhp-rooms/internal/integration/discord"
 	"mhp-rooms/internal/middleware"
 	"mhp-rooms/internal/models"
-	"mhp-rooms/internal/utils"
 
 	"github.com/google/uuid"
 )
@@ -94,7 +94,7 @@ func (h *PageHandler) handleContactSubmission(w http.ResponseWriter, r *http.Req
 	}
 
 	// Discord通知を送信（テストデータも通知）
-	contactInfo := &utils.ContactInfo{
+	contactInfo := &discord.ContactInfo{
 		InquiryType:     contact.InquiryType,
 		Name:            contact.Name,
 		Email:           contact.Email,
@@ -105,7 +105,7 @@ func (h *PageHandler) handleContactSubmission(w http.ResponseWriter, r *http.Req
 		IsAuthenticated: contact.IsAuthenticated,
 		SupabaseUserID:  contact.SupabaseUserID,
 	}
-	if err := utils.SendContactNotificationToDiscord(
+	if err := discord.SendContactNotificationToDiscord(
 		config.AppConfig.Discord.WebhookURL,
 		contactInfo,
 		isTestData,

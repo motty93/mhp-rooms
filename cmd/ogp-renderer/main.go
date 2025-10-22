@@ -25,7 +25,7 @@ import (
 	"mhp-rooms/internal/config"
 	"mhp-rooms/internal/infrastructure/persistence"
 	"mhp-rooms/internal/models"
-	"mhp-rooms/internal/palette"
+	"mhp-rooms/internal/view"
 )
 
 const (
@@ -109,7 +109,7 @@ func main() {
 	log.Printf("部屋情報取得完了: name=%s, game_version=%s", room.Name, room.GameVersion.Code)
 
 	// 配色の決定
-	pal := palette.GetPalette(room.GameVersion.Code)
+	pal := view.GetPalette(room.GameVersion.Code)
 	log.Printf("配色決定: game_version=%s", room.GameVersion.Code)
 
 	// OGP画像の生成
@@ -165,8 +165,8 @@ func mustLoadFaceTTF(path string, size float64) font.Face {
 
 // saveToLocal ローカルファイルシステムに画像を保存
 func saveToLocal(img image.Image, ogPrefix string, roomID uuid.UUID) error {
-	// パス: tmp/images/og/{env}/rooms/{id}.png
-	dirPath := filepath.Join("tmp", "images", "og", ogPrefix, "rooms")
+	// パス: tmp/images/{env}/ogp/rooms/{id}.png
+	dirPath := filepath.Join("tmp", "images", ogPrefix, "ogp", "rooms")
 	filePath := filepath.Join(dirPath, fmt.Sprintf("%s.png", roomID))
 
 	// ディレクトリを作成
@@ -198,8 +198,8 @@ func uploadToGCS(ctx context.Context, img image.Image, ogBucket, ogPrefix string
 	}
 	defer client.Close()
 
-	// オブジェクトパス: og/%s/rooms/%s.png
-	objectPath := fmt.Sprintf("og/%s/rooms/%s.png", ogPrefix, roomID)
+	// オブジェクトパス: %s/ogp/rooms/%s.png
+	objectPath := fmt.Sprintf("%s/ogp/rooms/%s.png", ogPrefix, roomID)
 	bucket := client.Bucket(ogBucket)
 	obj := bucket.Object(objectPath)
 
@@ -222,7 +222,7 @@ func uploadToGCS(ctx context.Context, img image.Image, ogBucket, ogPrefix string
 
 // generateOGPImage OGP画像を生成（Zenn風デザイン）
 // 内部では RenderScale 倍のキャンバスに描画し、最後に等倍へ縮小します。
-func generateOGPImage(room *models.Room, pal palette.GameVersionPalette) (image.Image, error) {
+func generateOGPImage(room *models.Room, pal view.GameVersionPalette) (image.Image, error) {
 	scale := float64(RenderScale)
 	W := int(float64(OGPWidth) * scale)
 	H := int(float64(OGPHeight) * scale)
@@ -260,7 +260,7 @@ func generateOGPImage(room *models.Room, pal palette.GameVersionPalette) (image.
 }
 
 // drawGradientBorder グラデーション枠を描画（Zenn風）
-func drawGradientBorder(dc *gg.Context, pal palette.GameVersionPalette, s float64) error {
+func drawGradientBorder(dc *gg.Context, pal view.GameVersionPalette, s float64) error {
 	p := Padding * s
 	bw := BorderWidth * s
 	br := BorderRadius * s

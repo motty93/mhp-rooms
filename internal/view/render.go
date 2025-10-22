@@ -1,12 +1,10 @@
-package render
+package view
 
 import (
 	"fmt"
 	"html/template"
 	"net/http"
 	"path/filepath"
-
-	"mhp-rooms/internal/helpers"
 )
 
 type Data struct {
@@ -18,7 +16,7 @@ type Data struct {
 }
 
 func Template(w http.ResponseWriter, templateName string, data Data) {
-	funcMap := helpers.TemplateFuncs()
+	funcMap := TemplateFuncs()
 
 	tmpl, err := template.New("").Funcs(funcMap).ParseFiles(
 		filepath.Join("templates", "layouts", "base.tmpl"),
@@ -51,7 +49,7 @@ func Template(w http.ResponseWriter, templateName string, data Data) {
 }
 
 func Partial(w http.ResponseWriter, templateName string, data interface{}) error {
-	funcMap := helpers.TemplateFuncs()
+	funcMap := TemplateFuncs()
 
 	templateFileName := templateName + ".tmpl"
 	templateFiles := []string{filepath.Join("templates", "components", templateFileName)}

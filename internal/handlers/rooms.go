@@ -13,11 +13,11 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
+	"mhp-rooms/internal/infrastructure/sse"
 	"mhp-rooms/internal/middleware"
 	"mhp-rooms/internal/models"
 	"mhp-rooms/internal/repository"
 	"mhp-rooms/internal/services"
-	"mhp-rooms/internal/sse"
 	"mhp-rooms/internal/utils"
 )
 

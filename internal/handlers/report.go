@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"time"
 
+	"mhp-rooms/internal/infrastructure/storage"
 	"mhp-rooms/internal/middleware"
 	"mhp-rooms/internal/models"
 	"mhp-rooms/internal/repository"
-	"mhp-rooms/internal/storage"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"

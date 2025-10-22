@@ -45,9 +45,9 @@
         {{ $siteURL := getEnv "SITE_URL" "http://localhost:8080" }}
         {{ $ogImageURL := "" }}
         {{ if $ogBucket }}
-          {{ $ogImageURL = printf "https://storage.googleapis.com/%s/og/%s/rooms/%s.png?v=%d" $ogBucket $ogPrefix .PageData.Room.ID .PageData.Room.OGVersion }}
+          {{ $ogImageURL = printf "https://storage.googleapis.com/%s/%s/ogp/rooms/%s.png?v=%d" $ogBucket $ogPrefix .PageData.Room.ID .PageData.Room.OGVersion }}
         {{ else }}
-          {{ $ogImageURL = printf "%s/tmp/images/og/%s/rooms/%s.png?v=%d" $siteURL $ogPrefix .PageData.Room.ID .PageData.Room.OGVersion }}
+          {{ $ogImageURL = printf "%s/tmp/images/%s/ogp/rooms/%s.png?v=%d" $siteURL $ogPrefix .PageData.Room.ID .PageData.Room.OGVersion }}
         {{ end }}
 
 
