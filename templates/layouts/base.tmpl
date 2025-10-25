@@ -21,6 +21,18 @@
       />
       <meta property="og:type" content="website" />
       <meta property="og:site_name" content="MonHub" />
+      {{ $ogBucket := getEnv "OG_BUCKET" "" }}
+      {{ $ogPrefix := getEnv "OG_PREFIX" "dev" }}
+      {{ $siteURL := getEnv "SITE_URL" "http://localhost:8080" }}
+      {{ $defaultOGImage := "" }}
+      {{ if $ogBucket }}
+        {{ $defaultOGImage = printf "https://storage.googleapis.com/%s/%s/ogp/og_image.png" $ogBucket $ogPrefix }}
+      {{ else }}
+        {{ $defaultOGImage = printf "%s/tmp/images/%s/ogp/og_image.png" $siteURL $ogPrefix }}
+      {{ end }}
+      <meta property="og:image" content="{{ $defaultOGImage }}" />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:image" content="{{ $defaultOGImage }}" />
 
       <!-- 構造化データ：サイトナビゲーション -->
       <script type="application/ld+json">
