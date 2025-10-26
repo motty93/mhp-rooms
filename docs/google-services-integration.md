@@ -13,7 +13,7 @@
 ## 概要
 
 ### 目的
-MonHubにGoogle AdSenseとGoogle Analytics 4を導入し、以下を実現する：
+HuntersHubにGoogle AdSenseとGoogle Analytics 4を導入し、以下を実現する：
 - **AdSense**: 広告収益化
 - **Analytics**: ユーザー行動分析、コンバージョン追跡
 
@@ -33,7 +33,7 @@ MonHubにGoogle AdSenseとGoogle Analytics 4を導入し、以下を実現する
 1. [Google AdSense](https://www.google.com/adsense/)にアクセス
 2. Googleアカウントでログイン
 3. サイト情報を入力
-   - URL: `https://monhub.com`（本番URL）
+   - URL: `https://huntershub.com`（本番URL）
    - サイトの言語: 日本語
 4. 利用規約に同意
 
@@ -302,13 +302,13 @@ func NewBaseData(title string) BaseData {
 1. [Google Analytics](https://analytics.google.com/)にアクセス
 2. 「管理」→「プロパティを作成」
 3. プロパティ情報を入力
-   - プロパティ名: MonHub
+   - プロパティ名: HuntersHub
    - タイムゾーン: 日本
    - 通貨: 日本円 (JPY)
 4. データストリーム作成
    - プラットフォーム: ウェブ
-   - ウェブサイトURL: `https://monhub.com`
-   - ストリーム名: MonHub Web
+   - ウェブサイトURL: `https://huntershub.com`
+   - ストリーム名: HuntersHub Web
 5. 測定IDをコピー（`G-XXXXXXXXXX`）
 
 ### 2. GA4コード実装

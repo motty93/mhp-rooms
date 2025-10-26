@@ -41,12 +41,12 @@ const (
 	BorderWidth    = 16.0 // 枠の太さ（さらに太く）
 	BorderRadius   = 20.0 // 枠の角丸
 	ContentPadding = 40.0 // 枠内の余白
-	LogoIconSize   = 95.0 // MonHubアイコンサイズ
+	LogoIconSize   = 95.0 // HuntersHubアイコンサイズ
 	MaxTitleLines  = 3    // タイトル最大行数
 
 	// フォント設定
 	TitleFontSize       = 64.0 // タイトル
-	LogoFontSize        = 36.0 // MonHub
+	LogoFontSize        = 36.0 // HuntersHub
 	GameVersionFontSize = 36.0 // ゲームバージョン
 	FontPath            = "cmd/ogp-renderer/assets/fonts/NotoSansCJKjp-Bold.otf"
 
@@ -248,8 +248,8 @@ func generateOGPImage(room *models.Room, pal view.GameVersionPalette) (image.Ima
 		return nil, fmt.Errorf("ゲームバージョン描画失敗: %w", err)
 	}
 
-	// 右下: MonHubロゴ
-	if err := drawMonHubLogoBottomRight(dc, scale); err != nil {
+	// 右下: HuntersHubロゴ
+	if err := drawHuntersHubLogoBottomRight(dc, scale); err != nil {
 		return nil, fmt.Errorf("ロゴ描画失敗: %w", err)
 	}
 
@@ -325,8 +325,8 @@ func drawGameVersionBottomLeft(dc *gg.Context, gameCode string, s float64) error
 	return nil
 }
 
-// drawMonHubLogoBottomRight MonHubロゴを右下に描画
-func drawMonHubLogoBottomRight(dc *gg.Context, s float64) error {
+// drawHuntersHubLogoBottomRight HuntersHubロゴを右下に描画
+func drawHuntersHubLogoBottomRight(dc *gg.Context, s float64) error {
 	// アイコン画像を読み込み
 	iconImg, err := gg.LoadImage(IconImagePath)
 	if err != nil {
@@ -342,7 +342,7 @@ func drawMonHubLogoBottomRight(dc *gg.Context, s float64) error {
 	dc.SetFontFace(mustLoadFaceTTF(FontPath, LogoFontSize*s))
 
 	// テキスト幅を取得
-	text := "MonHub"
+	text := "HuntersHub"
 	textWidth, _ := dc.MeasureString(text)
 
 	// game_versionと同じベースラインに揃える
@@ -363,7 +363,7 @@ func drawMonHubLogoBottomRight(dc *gg.Context, s float64) error {
 	// アイコンを描画
 	dc.DrawImage(resizedIcon, int(baseX), int(iconY))
 
-	// MonHubテキストを描画
+	// HuntersHubテキストを描画
 	textX := baseX + float64(iconSize)
 	dc.SetColor(color.RGBA{R: 0, G: 0, B: 0, A: 255})
 	dc.DrawString(text, textX, textY)

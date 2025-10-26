@@ -1,15 +1,15 @@
 substitutions:
-  _SERVICE_NAME: monhub
-  _SSE_SERVICE_NAME: monhub-sse
+  _SERVICE_NAME: huntershub
+  _SSE_SERVICE_NAME: huntershub-sse
   _REGION: asia-northeast1
-  _ARTIFACT_REPOSITORY: monhub-registry
-  _IMAGE_NAME: monhub-app
+  _ARTIFACT_REPOSITORY: huntershub-registry
+  _IMAGE_NAME: huntershub-app
   _JOB_NAME: ogp-renderer                # ← 追加: Cloud Run Job 名
   _JOB_IMAGE_NAME: ogp-renderer          # ← 追加: Job 用イメージ名
   _GO_VERSION: "1.24"
   _DEPLOY_SSE: "false"                   # true に設定するとSSEサービスもデプロイ
   _DEPLOY_JOB: "true"                    # ← 追加: Job をデプロイするか
-  _OG_BUCKET: monhub-master              # ← 追加: OGP保存先バケット
+  _OG_BUCKET: huntershub-master          # ← 追加: OGP保存先バケット
   _OG_PREFIX: prod                       # ← 追加: OGP保存先の環境プレフィックス (dev/stg/prod)
 
   # Supabase設定（非機密）
@@ -17,9 +17,9 @@ substitutions:
   _SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBma3Fyd3RnZnBieGR1eHRlY2J5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4NjE1NjIsImV4cCI6MjA2NjQzNzU2Mn0.DVuKTsjR5OXZlILQuh7qlabF6E5-WM_cKPVC4mkp5bw"
 
   # GCS設定（非機密）
-  _GCS_BUCKET: monhub-master
-  _GCS_PRIVATE_BUCKET: monhub-private
-  _BASE_PUBLIC_ASSET_URL: "https://storage.googleapis.com/monhub-master"
+  _GCS_BUCKET: huntershub-master
+  _GCS_PRIVATE_BUCKET: huntershub-private
+  _BASE_PUBLIC_ASSET_URL: "https://storage.googleapis.com/huntershub-master"
   _ASSET_PREFIX: prod
 
   # Secret Manager上のシークレット名（本番環境用）
