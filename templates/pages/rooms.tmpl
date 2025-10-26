@@ -1187,6 +1187,9 @@
         // フィルタリング機能（ページネーション対応）
         filterRooms(gameVersion) {
           this.activeFilter = gameVersion;
+          if (window.Analytics && window.Analytics.isEnabled()) {
+            window.Analytics.trackGameFilter(gameVersion || 'all');
+          }
           // フィルタ変更時はサーバー側でフィルタリングを行うため、ページをリロード
           const url = new URL(window.location);
           if (gameVersion) {
@@ -1363,6 +1366,12 @@
 
             const result = await response.json()
 
+            if (window.Analytics && window.Analytics.isEnabled()) {
+              const roomId = result.roomId || (this.currentRoom && this.currentRoom.id) || null;
+              const gameVersion = this.currentRoom && this.currentRoom.gameVersionCode;
+              window.Analytics.trackRoomJoin(roomId, gameVersion);
+            }
+
             // ブロック警告の場合
             if (result.warning === 'USER_BLOCKING_HOST' && result.requiresConfirmation) {
               this.showBlockWarningDialog = true
@@ -1463,6 +1472,12 @@
 
             const result = await joinResponse.json()
 
+            if (window.Analytics && window.Analytics.isEnabled()) {
+              const roomId = result.roomId || (this.currentRoom && this.currentRoom.id) || this.confirmRoomId || null;
+              const gameVersion = this.currentRoom && this.currentRoom.gameVersionCode;
+              window.Analytics.trackRoomJoin(roomId, gameVersion);
+            }
+
             // モーダルを閉じて部屋詳細に遷移
             this.closeConfirmDialog()
             this.closeModal()
@@ -1537,6 +1552,12 @@
             }
 
             const result = await response.json()
+
+            if (window.Analytics && window.Analytics.isEnabled()) {
+              const roomId = result.roomId || (this.currentRoom && this.currentRoom.id) || null;
+              const gameVersion = this.currentRoom && this.currentRoom.gameVersionCode;
+              window.Analytics.trackRoomJoin(roomId, gameVersion);
+            }
 
             // ダイアログを閉じて部屋詳細に遷移
             this.closeBlockWarningDialog()
