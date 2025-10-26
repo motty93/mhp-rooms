@@ -16,6 +16,7 @@ type Config struct {
 	Migration   MigrationConfig
 	Debug       DebugConfig
 	GCS         GCSConfig
+	Analytics   AnalyticsConfig
 	Discord     DiscordConfig
 }
 
@@ -56,6 +57,11 @@ type GCSConfig struct {
 	AssetPrefix    string
 }
 
+type AnalyticsConfig struct {
+	MeasurementID string
+	Enabled       bool
+}
+
 type DiscordConfig struct {
 	WebhookURL string // Discord Webhook URL
 }
@@ -63,6 +69,8 @@ type DiscordConfig struct {
 var AppConfig *Config
 
 func Init() {
+	env := GetEnv("ENV", "development")
+
 	AppConfig = &Config{
 		Database: DatabaseConfig{
 			Type:           GetEnv("DB_TYPE", "turso"),
@@ -81,7 +89,7 @@ func Init() {
 			Host:    GetEnv("HOST", "0.0.0.0"),
 			SSEHost: GetEnv("SSE_HOST", ""), // 空の場合は同一サーバー
 		},
-		Environment: GetEnv("ENV", "development"),
+		Environment: env,
 		ServiceMode: GetEnv("SERVICE_MODE", "main"), // "main" または "sse"
 		Migration: MigrationConfig{
 			AutoRun: getEnvBool("RUN_MIGRATION", false),
@@ -97,6 +105,10 @@ func Init() {
 			MaxUploadBytes: GetEnvInt64("MAX_UPLOAD_BYTES", 10<<20), // デフォルト10MB
 			AllowedMIMEs:   parseAllowedMIMEs(GetEnv("ALLOW_CONTENT_TYPES", ""), []string{"image/jpeg", "image/png", "image/webp"}),
 			AssetPrefix:    cleanAssetPrefix(GetEnv("ASSET_PREFIX", "")),
+		},
+		Analytics: AnalyticsConfig{
+			MeasurementID: GetEnv("GA_MEASUREMENT_ID", ""),
+			Enabled:       getEnvBool("GA_ENABLED", env == "production"),
 		},
 		Discord: DiscordConfig{
 			WebhookURL: GetEnv("DISCORD_WEBHOOK_URL", ""),

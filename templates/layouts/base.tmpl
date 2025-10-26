@@ -73,6 +73,27 @@
         }
       </script>
 
+      {{ $gaMeasurementID := .AnalyticsMeasurementID }}
+      {{ if and .AnalyticsEnabled $gaMeasurementID }}
+        <!-- Google Analytics 4 -->
+        <script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id={{ $gaMeasurementID }}"
+        ></script>
+        <script>
+          window.dataLayer = window.dataLayer || []
+          function gtag(){dataLayer.push(arguments)}
+          gtag('js', new Date())
+          gtag('config', '{{ $gaMeasurementID }}', {
+            cookie_flags: 'SameSite=None;Secure',
+            anonymize_ip: true,
+          })
+          window.monhubAnalytics = window.monhubAnalytics || {}
+          window.monhubAnalytics.measurementId = '{{ $gaMeasurementID }}'
+        </script>
+      {{ end }}
+
+
       <!-- ローカルライブラリ -->
       <script src="/static/js/vendor/htmx.min.js"></script>
       <script src="/static/js/vendor/alpine.min.js" defer></script>
@@ -83,6 +104,11 @@
       <script src="/static/js/auth-store.js"></script>
       <script src="/static/js/room-create-store.js"></script>
       <script src="/static/js/htmx-auth.js"></script>
+      {{ if and .AnalyticsEnabled $gaMeasurementID }}
+        <script src="/static/js/analytics.js" defer></script>
+        <script src="/static/js/htmx-analytics.js" defer></script>
+      {{ end }}
+
 
       <script>
         document.addEventListener('DOMContentLoaded', async () => {

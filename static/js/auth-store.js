@@ -258,6 +258,9 @@ document.addEventListener('alpine:init', () => {
 
       try {
         const data = await window.supabaseAuth.signIn(email, password)
+        if (window.Analytics && window.Analytics.isEnabled()) {
+          window.Analytics.trackLogin('email')
+        }
         return data
       } catch (error) {
         this.error = error.message
@@ -277,6 +280,9 @@ document.addEventListener('alpine:init', () => {
 
       try {
         const data = await window.supabaseAuth.signUp(email, password, metadata)
+        if (window.Analytics && window.Analytics.isEnabled()) {
+          window.Analytics.trackSignup('email')
+        }
         return data
       } catch (error) {
         this.error = error.message
@@ -420,12 +426,16 @@ document.addEventListener('alpine:init', () => {
       }
 
       try {
+        const previousRoomId = this.currentRoom?.id
         const response = await fetch('/api/leave-current-room', {
           method: 'POST',
           credentials: 'same-origin',
         })
 
         if (response.ok) {
+          if (previousRoomId && window.Analytics && window.Analytics.isEnabled()) {
+            window.Analytics.trackRoomLeave(previousRoomId)
+          }
           this.currentRoom = null
           return true
         }

@@ -314,6 +314,9 @@ window.profileEditForm = (userData = {}) => ({
 
         // 通知を表示
         showNotification('プロフィールを更新しました', 'success')
+        if (window.Analytics && window.Analytics.isEnabled()) {
+          window.Analytics.trackProfileEdit()
+        }
 
         // Alpine.jsのauth storeを更新（DBから最新情報を取得）
         if (window.Alpine && Alpine.store('auth')) {
@@ -485,6 +488,11 @@ window.userProfileRoomsHandler = {
 
       const result = await response.json()
 
+      if (window.Analytics && window.Analytics.isEnabled()) {
+        const roomId = result.roomId || this.currentRoomId || null
+        window.Analytics.trackRoomJoin(roomId, this.currentRoomGameVersion)
+      }
+
       // 成功時は部屋詳細画面に遷移
       if (result.redirect) {
         window.location.href = result.redirect
@@ -591,6 +599,11 @@ window.userProfileRoomsHandler = {
       }
 
       const result = await response.json()
+
+      if (window.Analytics && window.Analytics.isEnabled()) {
+        const roomId = result.roomId || this.currentRoomId || null
+        window.Analytics.trackRoomJoin(roomId, this.currentRoomGameVersion)
+      }
 
       // モーダルを閉じて部屋詳細に遷移
       this.closeConfirmDialog()

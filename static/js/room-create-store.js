@@ -205,6 +205,15 @@ document.addEventListener('alpine:init', () => {
 
         const result = await response.json()
 
+        if (window.Analytics && window.Analytics.isEnabled()) {
+          const roomId = result.room_id || result.room?.id || null
+          window.Analytics.trackRoomCreate(
+            roomId,
+            this.formData.gameVersionId,
+            this.formData.maxPlayers,
+          )
+        }
+
         // 成功時は部屋詳細画面に遷移
         this.close()
 
