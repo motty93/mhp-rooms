@@ -90,7 +90,7 @@
 
 #### 2025-06-26 - サービス拡張・UX改善
 - [サービス拡張戦略文書作成](./implement_logs/2025-06-26/01_サービス拡張戦略文書作成.md)
-- [アドパHubからMonHubへの変更](./implement_logs/2025-06-26/02_アドパHubからMonHubへの変更.md)
+- [アドパHubからHuntersHubへの変更](./implement_logs/2025-06-26/02_アドパHubからHuntersHubへの変更.md)
 - [PSP固有内容の汎用化](./implement_logs/2025-06-26/03_PSP固有内容の汎用化.md)
 - [使い方ガイドページ作成](./implement_logs/2025-06-26/04_使い方ガイドページ作成.md)
 - [部屋一覧ハイブリッドフィルタリング](./implement_logs/2025-06-26/05_部屋一覧ハイブリッドフィルタリング.md)

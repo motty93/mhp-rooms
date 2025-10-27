@@ -4,23 +4,23 @@
     <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>{{ .Title }} - MonHub</title>
+      <title>{{ .Title }} - HuntersHub</title>
       <meta
         name="description"
         content="PSPゲームのアドホックパーティを簡単に作成・参加できるサービス。モンハンポータブルシリーズでオンライン対戦を楽しもう。"
       />
       <meta
         name="keywords"
-        content="MonHub,モンハブ,PSP,アドホック,パーティ,モンハン,モンスターハンター,ポータブル,オンライン,対戦,協力プレイ"
+        content="HuntersHub,ハンターズハブ,PSP,アドホック,パーティ,モンハン,モンスターハンター,ポータブル,オンライン,対戦,協力プレイ"
       />
-      <meta name="author" content="MonHub" />
-      <meta property="og:title" content="{{ .Title }} - MonHub" />
+      <meta name="author" content="HuntersHub" />
+      <meta property="og:title" content="{{ .Title }} - HuntersHub" />
       <meta
         property="og:description"
         content="PSPゲームのアドホックパーティを簡単に作成・参加できるサービス"
       />
       <meta property="og:type" content="website" />
-      <meta property="og:site_name" content="MonHub" />
+      <meta property="og:site_name" content="HuntersHub" />
       {{ $ogBucket := getEnv "OG_BUCKET" "" }}
       {{ $ogPrefix := getEnv "OG_PREFIX" "dev" }}
       {{ $siteURL := getEnv "SITE_URL" "http://localhost:8080" }}
@@ -41,15 +41,15 @@
           "@graph": [
             {
               "@type": "WebSite",
-              "@id": "https://monhub.com/#website",
-              "url": "https://monhub.com/",
-              "name": "MonHub",
+              "@id": "https://huntershub.com/#website",
+              "url": "https://huntershub.com/",
+              "name": "HuntersHub",
               "description": "PSPゲームのアドホックパーティを簡単に作成・参加できるサービス",
               "inLanguage": "ja"
             },
             {
               "@type": "SiteNavigationElement",
-              "@id": "https://monhub.com/#navigation",
+              "@id": "https://huntershub.com/#navigation",
               "name": [
                 "ホーム",
                 "部屋一覧",
@@ -60,13 +60,13 @@
                 "プライバシーポリシー"
               ],
               "url": [
-                "https://monhub.com/",
-                "https://monhub.com/rooms",
-                "https://monhub.com/auth/login",
-                "https://monhub.com/auth/register",
-                "https://monhub.com/contact",
-                "https://monhub.com/terms",
-                "https://monhub.com/privacy"
+                "https://huntershub.com/",
+                "https://huntershub.com/rooms",
+                "https://huntershub.com/auth/login",
+                "https://huntershub.com/auth/register",
+                "https://huntershub.com/contact",
+                "https://huntershub.com/terms",
+                "https://huntershub.com/privacy"
               ]
             }
           ]
@@ -88,8 +88,8 @@
             cookie_flags: 'SameSite=None;Secure',
             anonymize_ip: true,
           })
-          window.monhubAnalytics = window.monhubAnalytics || {}
-          window.monhubAnalytics.measurementId = '{{ $gaMeasurementID }}'
+          window.huntershubAnalytics = window.huntershubAnalytics || {}
+          window.huntershubAnalytics.measurementId = '{{ $gaMeasurementID }}'
         </script>
       {{ end }}
 
@@ -216,10 +216,10 @@
             <div class="flex items-center space-x-3">
               <img
                 src="/static/images/icon.webp"
-                alt="MonHub"
+                alt="HuntersHub"
                 class="w-8 h-8"
               />
-              <h2 class="text-xl font-bold text-gray-800">MonHub</h2>
+              <h2 class="text-xl font-bold text-gray-800">HuntersHub</h2>
             </div>
             <button
               @click="$store.mobileMenu.close()"

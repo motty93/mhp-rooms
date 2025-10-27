@@ -1,6 +1,6 @@
 # Cloud Storage セットアップガイド
 
-このドキュメントは、MonHub プロジェクトで使用する Google Cloud Storage (GCS) バケットのセットアップ手順をまとめたものです。
+このドキュメントは、HuntersHub プロジェクトで使用する Google Cloud Storage (GCS) バケットのセットアップ手順をまとめたものです。
 
 ## 目次
 
@@ -14,18 +14,18 @@
 
 ## 概要
 
-MonHub では以下の3つのバケットを使用します：
+HuntersHub では以下の3つのバケットを使用します：
 
 | バケット名 | 用途 | 公開設定 | 環境変数 |
 |-----------|------|---------|---------|
-| `monhub-master` | OGP画像 | 公開 | `OG_BUCKET` |
+| `huntershub-master` | OGP画像 | 公開 | `OG_BUCKET` |
 | 任意の名前 | プロフィール画像 | 公開 | `GCS_BUCKET` |
 | 任意の名前 | 通報添付ファイル | プライベート | `GCS_PRIVATE_BUCKET` |
 
 ### ディレクトリ構成
 
 ```
-monhub-master/
+huntershub-master/
 ├── prod/
 │   ├── avatars/          # プロフィール画像
 │   │   └── {userID}/
@@ -47,7 +47,7 @@ monhub-master/
 
 ## バケット構成
 
-### 1. OGP画像用バケット（`monhub-master`）
+### 1. OGP画像用バケット（`huntershub-master`）
 
 - **用途**: 部屋詳細ページのOGP画像
 - **公開設定**: 公開読み取り可能
@@ -92,29 +92,29 @@ gcloud auth list
 
 ```bash
 # バケットの存在確認
-gsutil ls gs://monhub-master 2>/dev/null && echo "バケットは既に存在します" || echo "バケットを作成する必要があります"
+gsutil ls gs://huntershub-master 2>/dev/null && echo "バケットは既に存在します" || echo "バケットを作成する必要があります"
 
 # バケットの作成（存在しない場合）
-gsutil mb -l asia-northeast1 gs://monhub-master
+gsutil mb -l asia-northeast1 gs://huntershub-master
 
 # 作成確認
-gsutil ls -L -b gs://monhub-master
+gsutil ls -L -b gs://huntershub-master
 ```
 
 #### 1-2. プロフィール画像用バケット（オプション）
 
-OGP画像と同じバケット（`monhub-master`）を使用する場合はスキップ可能です。
+OGP画像と同じバケット（`huntershub-master`）を使用する場合はスキップ可能です。
 
 ```bash
 # 別バケットを使用する場合
-gsutil mb -l asia-northeast1 gs://monhub-avatars
+gsutil mb -l asia-northeast1 gs://huntershub-avatars
 ```
 
 #### 1-3. 通報添付ファイル用バケット（プライベート）
 
 ```bash
 # プライベートバケットの作成
-gsutil mb -l asia-northeast1 gs://monhub-reports-private
+gsutil mb -l asia-northeast1 gs://huntershub-reports-private
 ```
 
 ---
@@ -124,11 +124,11 @@ gsutil mb -l asia-northeast1 gs://monhub-reports-private
 OGP画像とプロフィール画像は公開アクセスが必要です。
 
 ```bash
-# monhub-master を公開読み取り可能に設定
-gsutil iam ch allUsers:objectViewer gs://monhub-master
+# huntershub-master を公開読み取り可能に設定
+gsutil iam ch allUsers:objectViewer gs://huntershub-master
 
 # 確認
-gsutil iam get gs://monhub-master | grep allUsers
+gsutil iam get gs://huntershub-master | grep allUsers
 ```
 
 **⚠️ 注意**: 通報用のプライベートバケットは公開しないでください！
@@ -174,8 +174,8 @@ gsutil iam get gs://monhub-master | grep allUsers
 
 **適用コマンド:**
 ```bash
-gsutil cors set cors.json gs://monhub-master
-gsutil cors get gs://monhub-master
+gsutil cors set cors.json gs://huntershub-master
+gsutil cors get gs://huntershub-master
 ```
 
 </details>
@@ -190,20 +190,20 @@ gsutil cors get gs://monhub-master
 
 ```bash
 # 古いパス（og/{env}/rooms/）の画像を確認
-gsutil ls -r gs://monhub-master/og/
+gsutil ls -r gs://huntershub-master/og/
 ```
 
 #### 4-2. パスの移行
 
 ```bash
 # 本番環境の画像を移行
-gsutil -m mv gs://monhub-master/og/prod/rooms/* gs://monhub-master/prod/ogp/rooms/
+gsutil -m mv gs://huntershub-master/og/prod/rooms/* gs://huntershub-master/prod/ogp/rooms/
 
 # ステージング環境の画像を移行
-gsutil -m mv gs://monhub-master/og/stg/rooms/* gs://monhub-master/stg/ogp/rooms/
+gsutil -m mv gs://huntershub-master/og/stg/rooms/* gs://huntershub-master/stg/ogp/rooms/
 
 # 空のディレクトリを削除（オプション）
-gsutil rm -r gs://monhub-master/og/
+gsutil rm -r gs://huntershub-master/og/
 ```
 
 **⚠️ 注意**:
@@ -212,11 +212,11 @@ gsutil rm -r gs://monhub-master/og/
 
 ```bash
 # より安全な移行方法（コピー → 確認 → 削除）
-gsutil -m cp -r gs://monhub-master/og/prod/rooms/* gs://monhub-master/prod/ogp/rooms/
-gsutil -m cp -r gs://monhub-master/og/stg/rooms/* gs://monhub-master/stg/ogp/rooms/
+gsutil -m cp -r gs://huntershub-master/og/prod/rooms/* gs://huntershub-master/prod/ogp/rooms/
+gsutil -m cp -r gs://huntershub-master/og/stg/rooms/* gs://huntershub-master/stg/ogp/rooms/
 
 # 確認後、古いパスを削除
-gsutil -m rm -r gs://monhub-master/og/
+gsutil -m rm -r gs://huntershub-master/og/
 ```
 
 ---
@@ -236,10 +236,10 @@ PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format="value(projectNum
 CLOUDBUILD_SA="${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com"
 
 # Storage Object Admin 権限を付与
-gsutil iam ch serviceAccount:${CLOUDBUILD_SA}:objectAdmin gs://monhub-master
+gsutil iam ch serviceAccount:${CLOUDBUILD_SA}:objectAdmin gs://huntershub-master
 
 # 確認
-gsutil iam get gs://monhub-master | grep cloudbuild
+gsutil iam get gs://huntershub-master | grep cloudbuild
 ```
 
 #### 5-2. Cloud Run サービスアカウント
@@ -249,10 +249,10 @@ gsutil iam get gs://monhub-master | grep cloudbuild
 COMPUTE_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
 
 # 権限を付与
-gsutil iam ch serviceAccount:${COMPUTE_SA}:objectAdmin gs://monhub-master
+gsutil iam ch serviceAccount:${COMPUTE_SA}:objectAdmin gs://huntershub-master
 
 # 通報用プライベートバケットにも権限を付与
-gsutil iam ch serviceAccount:${COMPUTE_SA}:objectAdmin gs://monhub-reports-private
+gsutil iam ch serviceAccount:${COMPUTE_SA}:objectAdmin gs://huntershub-reports-private
 ```
 
 ---
@@ -287,10 +287,10 @@ gsutil iam ch serviceAccount:${COMPUTE_SA}:objectAdmin gs://monhub-reports-priva
 
 ```bash
 # ライフサイクルポリシーを設定
-gsutil lifecycle set lifecycle.json gs://monhub-master
+gsutil lifecycle set lifecycle.json gs://huntershub-master
 
 # 確認
-gsutil lifecycle get gs://monhub-master
+gsutil lifecycle get gs://huntershub-master
 ```
 
 **💡 ヒント**: OGP画像は部屋が更新されたり削除されたりすると再生成されるため、古い画像は自動削除しても問題ありません。
@@ -306,15 +306,15 @@ Cloud Run に必要な環境変数を設定します。
 ```bash
 gcloud run services update monhub \
   --region=asia-northeast1 \
-  --set-env-vars="OG_BUCKET=monhub-master,OG_PREFIX=prod,GCS_BUCKET=monhub-master,BASE_PUBLIC_ASSET_URL=https://storage.googleapis.com/monhub-master,GCS_PRIVATE_BUCKET=monhub-reports-private,ASSET_PREFIX=prod"
+  --set-env-vars="OG_BUCKET=huntershub-master,OG_PREFIX=prod,GCS_BUCKET=huntershub-master,BASE_PUBLIC_ASSET_URL=https://storage.googleapis.com/huntershub-master,GCS_PRIVATE_BUCKET=huntershub-reports-private,ASSET_PREFIX=prod"
 ```
 
 #### 7-2. ステージング環境
 
 ```bash
-gcloud run services update monhub-stg \
+gcloud run services update huntershub-stg \
   --region=asia-northeast1 \
-  --set-env-vars="OG_BUCKET=monhub-master,OG_PREFIX=stg,GCS_BUCKET=monhub-master,BASE_PUBLIC_ASSET_URL=https://storage.googleapis.com/monhub-master,GCS_PRIVATE_BUCKET=monhub-reports-private,ASSET_PREFIX=stg"
+  --set-env-vars="OG_BUCKET=huntershub-master,OG_PREFIX=stg,GCS_BUCKET=huntershub-master,BASE_PUBLIC_ASSET_URL=https://storage.googleapis.com/huntershub-master,GCS_PRIVATE_BUCKET=huntershub-reports-private,ASSET_PREFIX=stg"
 ```
 
 ---
@@ -332,37 +332,37 @@ gsutil ls
 ### バケット内のファイル確認
 
 ```bash
-# monhub-master の中身
-gsutil ls -r gs://monhub-master/
+# huntershub-master の中身
+gsutil ls -r gs://huntershub-master/
 
 # 本番環境のOGP画像
-gsutil ls gs://monhub-master/prod/ogp/rooms/
+gsutil ls gs://huntershub-master/prod/ogp/rooms/
 
 # ステージング環境のOGP画像
-gsutil ls gs://monhub-master/stg/ogp/rooms/
+gsutil ls gs://huntershub-master/stg/ogp/rooms/
 ```
 
 ### IAM設定の確認
 
 ```bash
 # バケットのIAM設定
-gsutil iam get gs://monhub-master
+gsutil iam get gs://huntershub-master
 
 # 特定のサービスアカウントの権限確認
-gsutil iam get gs://monhub-master | grep -A5 "cloudbuild"
+gsutil iam get gs://huntershub-master | grep -A5 "cloudbuild"
 ```
 
 ### ライフサイクルポリシーの確認
 
 ```bash
-gsutil lifecycle get gs://monhub-master
+gsutil lifecycle get gs://huntershub-master
 ```
 
 ### 公開URLのテスト
 
 ```bash
 # 例: OGP画像にアクセス可能か確認
-curl -I https://storage.googleapis.com/monhub-master/prod/ogp/rooms/YOUR_ROOM_ID.png
+curl -I https://storage.googleapis.com/huntershub-master/prod/ogp/rooms/YOUR_ROOM_ID.png
 ```
 
 ---
@@ -376,10 +376,10 @@ curl -I https://storage.googleapis.com/monhub-master/prod/ogp/rooms/YOUR_ROOM_ID
 **解決策**:
 ```bash
 # 公開設定を確認
-gsutil iam get gs://monhub-master | grep allUsers
+gsutil iam get gs://huntershub-master | grep allUsers
 
 # 公開設定がない場合は追加
-gsutil iam ch allUsers:objectViewer gs://monhub-master
+gsutil iam ch allUsers:objectViewer gs://huntershub-master
 ```
 
 ### 問題 2: Cloud Run からアップロードできない
@@ -393,7 +393,7 @@ PROJECT_NUMBER=$(gcloud projects describe $(gcloud config get-value project) --f
 COMPUTE_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
 
 # 権限を付与
-gsutil iam ch serviceAccount:${COMPUTE_SA}:objectAdmin gs://monhub-master
+gsutil iam ch serviceAccount:${COMPUTE_SA}:objectAdmin gs://huntershub-master
 ```
 
 ### 問題 3: 古いパスの画像が残っている
@@ -403,7 +403,7 @@ gsutil iam ch serviceAccount:${COMPUTE_SA}:objectAdmin gs://monhub-master
 **解決策**:
 ```bash
 # 古いパスの画像を削除
-gsutil -m rm -r gs://monhub-master/og/
+gsutil -m rm -r gs://huntershub-master/og/
 ```
 
 ---
@@ -421,7 +421,7 @@ gsutil -m rm -r gs://monhub-master/og/
 
 セットアップが完了したら、以下のチェックリストで確認してください：
 
-- [ ] `monhub-master` バケットが作成されている
+- [ ] `huntershub-master` バケットが作成されている
 - [ ] バケットが公開読み取り可能になっている
 - [ ] Cloud Build サービスアカウントに権限が付与されている
 - [ ] Cloud Run サービスアカウントに権限が付与されている

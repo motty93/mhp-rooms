@@ -1,5 +1,5 @@
 (() => {
-  const getMeasurementId = () => window.monhubAnalytics?.measurementId || ''
+  const getMeasurementId = () => window.huntershubAnalytics?.measurementId || ''
   const hasMeasurement = () => getMeasurementId() !== ''
   const hasGtag = () => typeof window.gtag === 'function'
 
