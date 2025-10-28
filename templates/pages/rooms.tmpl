@@ -1052,7 +1052,7 @@
             currentPlayers: room.current_players || 0,
             maxPlayers: room.max_players || 4,
             isClosed: room.is_closed || false,
-            hasPassword: room.password_hash ? true : false,
+            hasPassword: room.has_password || false,
             targetMonster: room.target_monster === '<nil>' || !room.target_monster ? '' : room.target_monster,
             rankRequirement: room.rank_requirement === '<nil>' || !room.rank_requirement ? '' : room.rank_requirement,
             isJoined: room.is_joined || false
