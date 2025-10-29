@@ -98,15 +98,20 @@ func (app *Application) setupRoomRoutes(r chi.Router) {
 	r.Route("/rooms", func(rr chi.Router) {
 		rh := app.roomHandler
 		rdh := app.roomDetailHandler
+		rjh := app.roomJoinHandler
 		rmh := app.roomMessageHandler
 
 		// 部屋一覧・詳細（本番環境では認証情報をオプションで取得、開発環境では認証なし）
 		if app.hasAuthMiddleware() {
 			rr.Get("/", app.withOptionalAuth(rh.Rooms))
 			rr.Get("/{id}", app.withOptionalAuth(rdh.RoomDetail))
+			// 部屋参加ページ（スケルトン、認証必須）
+			rr.Get("/{id}/join", app.withAuth(rjh.RoomJoinPage))
 		} else {
 			rr.Get("/", rh.Rooms)
 			rr.Get("/{id}", rdh.RoomDetail)
+			// 部屋参加ページ（開発環境では認証なし）
+			rr.Get("/{id}/join", rjh.RoomJoinPage)
 		}
 
 		// 部屋操作・メッセージ機能（本番環境では認証必須、開発環境では認証なし）

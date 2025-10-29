@@ -30,6 +30,26 @@
             参加者 {{ .PageData.MemberCount }}/4
           </div>
         </button>
+        <!-- シェアボタン（モバイル） -->
+        <button
+          @click="openShare()"
+          class="text-gray-600 hover:text-gray-800 p-2"
+          title="共有"
+        >
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+            />
+          </svg>
+        </button>
         <!-- ハンバーガーメニューボタン -->
         <div class="md:hidden">
           <button
@@ -269,13 +289,34 @@
                 🔑
               {{ end }}{{ .PageData.Room.Name }}
             </div>
-            <!-- PC版のみ：ホストの場合に設定アイコンを表示 -->
-            <button
-              x-show="isHost && $store.auth.initialized && $store.auth.isAuthenticated"
-              @click="openSettingsModal()"
-              class="hidden md:block text-gray-600 hover:text-gray-800 p-1 rounded hover:bg-gray-100 transition-colors"
-              title="部屋設定を変更"
-            >
+            <div class="flex items-center space-x-1 ml-2">
+              <!-- シェアボタン（PC） -->
+              <button
+                @click="openShare()"
+                class="hidden md:block text-gray-600 hover:text-gray-800 p-1 rounded hover:bg-gray-100 transition-colors"
+                title="共有"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                  />
+                </svg>
+              </button>
+              <!-- PC版のみ：ホストの場合に設定アイコンを表示 -->
+              <button
+                x-show="isHost && $store.auth.initialized && $store.auth.isAuthenticated"
+                @click="openSettingsModal()"
+                class="hidden md:block text-gray-600 hover:text-gray-800 p-1 rounded hover:bg-gray-100 transition-colors"
+                title="部屋設定を変更"
+              >
               <svg
                 class="w-5 h-5"
                 fill="none"
@@ -296,6 +337,7 @@
                 />
               </svg>
             </button>
+            </div>
           </div>
         </div>
         <div class="text-gray-600 text-sm leading-relaxed">
@@ -561,6 +603,8 @@
     </div>
     <!-- 部屋設定モーダル -->
     {{ template "room_settings_modal.tmpl" }}
+    <!-- SNS共有モーダル -->
+    {{ template "share_modal.tmpl" }}
   </div>
 
 <script>
@@ -606,6 +650,35 @@ function roomDetail() {
     gameVersions: [],
     errors: {},
     isSubmitting: false,
+    // シェア機能関連
+    showShareModal: false,
+    shareMessages: [
+      'ハンター募集中！一緒にモンスターを狩ろう！',
+      '仲間を募集中！一緒に狩りに出発しよう！',
+      'パーティメンバー募集！モンハンで盛り上がろう！',
+      '狩り仲間募集中！みんなで協力プレイしよう！',
+      'ハンターズ集合！一緒に強敵を倒そう！',
+      '部屋主が待ってます！今すぐ狩りに参加しよう！',
+      '協力プレイで楽しもう！ハンター大募集！',
+      '今すぐ合流しよう！一緒にクエストに挑戦！'
+    ],
+    shareData: {
+      title: '【{{ .PageData.Room.GameVersion.Code }}】{{ .PageData.Room.Name }} - HuntersHub',
+      text: '',
+      url: window.location.href
+    },
+    get shareLinks() {
+      const encodedUrl = encodeURIComponent(this.shareData.url);
+      const encodedTitle = encodeURIComponent(this.shareData.title);
+      const encodedText = encodeURIComponent(this.shareData.text);
+      const shareMessage = `${this.shareData.title}\n${this.shareData.text}\n\n${this.shareData.url}`;
+      const encodedMessage = encodeURIComponent(shareMessage);
+      return {
+        x: `https://twitter.com/intent/tweet?text=${encodedMessage}`,
+        facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
+        bluesky: `https://bsky.app/intent/compose?text=${encodedMessage}`
+      };
+    },
 
     async init() {
 
@@ -1179,6 +1252,83 @@ function roomDetail() {
       } catch (error) {
         alert('解散処理に失敗しました。もう一度お試しください。');
         this.isDismissing = false;
+      }
+    },
+
+    // モバイル判定
+    isMobileDevice() {
+      const ua = navigator.userAgent.toLowerCase();
+      return /iphone|ipod|ipad|android/.test(ua);
+    },
+
+    getRandomShareMessage() {
+      const randomIndex = Math.floor(Math.random() * this.shareMessages.length);
+      return this.shareMessages[randomIndex];
+    },
+
+    async openShare() {
+      const hasPassword = {{ .PageData.Room.HasPassword }};
+      const roomId = '{{ .PageData.Room.ID }}';
+      const joinUrl = window.location.origin + '/rooms/' + roomId + '/join';
+
+      if (hasPassword) {
+        const confirmMessage =
+          'この部屋はパスワードで保護されています。\n\n' +
+          '共有URLから参加する際、パスワードの入力が必要です。\n' +
+          '参加者にはパスワードを別途お伝えください。\n\n' +
+          '共有を続けますか？';
+
+        if (!confirm(confirmMessage)) {
+          return;
+        }
+
+        this.shareData.url = joinUrl;
+        this.shareData.text = this.getRandomShareMessage() + '\n※パスワード保護されています';
+      } else {
+        // 統一されたUX: パスワードなしでも/joinを使用
+        this.shareData.url = joinUrl;
+        this.shareData.text = this.getRandomShareMessage();
+      }
+
+      if (this.isMobileDevice() && navigator.share) {
+        try {
+          await navigator.share({
+            title: this.shareData.title,
+            text: `${this.shareData.text}\n\n${this.shareData.url}`
+          });
+        } catch (err) {
+          if (err.name !== 'AbortError') {
+            console.warn('共有に失敗しました:', err);
+          }
+        }
+      } else {
+        this.showShareModal = true;
+      }
+    },
+
+    closeShareModal() {
+      this.showShareModal = false;
+    },
+
+    async copyUrl() {
+      try {
+        await navigator.clipboard.writeText(this.shareData.url);
+        alert('URLをコピーしました！');
+      } catch (err) {
+        console.error('コピー失敗:', err);
+        alert('コピーに失敗しました。');
+      }
+    },
+
+    // Discord用にコピー
+    async copyForDiscord() {
+      const textToCopy = `${this.shareData.title}\n${this.shareData.text}\n\n${this.shareData.url}`;
+      try {
+        await navigator.clipboard.writeText(textToCopy);
+        alert('Discord用にコピーしました！');
+      } catch (err) {
+        console.error('コピー失敗:', err);
+        alert('コピーに失敗しました。');
       }
     }
   };

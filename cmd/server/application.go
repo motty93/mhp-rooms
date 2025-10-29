@@ -22,6 +22,7 @@ type Application struct {
 	authHandler        *handlers.AuthHandler
 	roomHandler        *handlers.RoomHandler
 	roomDetailHandler  *handlers.RoomDetailHandler
+	roomJoinHandler    *handlers.RoomJoinHandler
 	roomMessageHandler *handlers.RoomMessageHandler
 	sseTokenHandler    *handlers.SSETokenHandler
 	pageHandler        *handlers.PageHandler
@@ -100,6 +101,7 @@ func (app *Application) initHandlers() error {
 	app.authHandler = handlers.NewAuthHandler(app.repo)
 	app.roomHandler = handlers.NewRoomHandler(app.repo, app.sseHub)
 	app.roomDetailHandler = handlers.NewRoomDetailHandler(app.repo)
+	app.roomJoinHandler = handlers.NewRoomJoinHandler(app.repo)
 	app.roomMessageHandler = handlers.NewRoomMessageHandler(app.repo, app.sseHub)
 	app.sseTokenHandler = handlers.NewSSETokenHandler(app.repo)
 	app.pageHandler = handlers.NewPageHandler(app.repo)
