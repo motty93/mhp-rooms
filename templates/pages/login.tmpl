@@ -249,6 +249,7 @@
         },
         errorMessage: '',
         isLoading: false,
+        redirectUrl: '{{ if .PageData }}{{ index .PageData "RedirectURL" }}{{ else }}/rooms{{ end }}',
 
         async checkAuthAndRedirect() {
           try {
@@ -256,7 +257,7 @@
             await authStore.checkAuth()
 
             if (authStore.isAuthenticated) {
-              window.location.href = '/rooms'
+              window.location.href = this.redirectUrl
             }
           } catch (error) {
             console.error('認証状態確認エラー:', error)
@@ -298,7 +299,6 @@
         async handleLogin() {
           this.errorMessage = ''
 
-          // 全フィールドをバリデーション
           this.validateField('email')
           this.validateField('password')
 
@@ -309,18 +309,15 @@
           this.isLoading = true
 
           try {
-            // Supabaseでログイン
             await Alpine.store('auth').signIn(
               this.form.email,
               this.form.password,
             )
 
-            // ログイン成功後、リダイレクト
-            window.location.href = '/rooms'
+            window.location.href = this.redirectUrl
           } catch (error) {
             console.error('ログインエラー:', error)
 
-            // エラーメッセージの設定
             if (error.message.includes('Invalid login credentials')) {
               this.errorMessage =
                 'メールアドレスまたはパスワードが正しくありません'

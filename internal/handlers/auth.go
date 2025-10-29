@@ -32,8 +32,16 @@ func (h *AuthHandler) SetAuthMiddleware(auth *middleware.JWTAuth) {
 }
 
 func (h *AuthHandler) LoginPage(w http.ResponseWriter, r *http.Request) {
+	redirectURL := r.URL.Query().Get("redirect")
+	if redirectURL == "" {
+		redirectURL = "/rooms"
+	}
+
 	data := TemplateData{
 		Title: "ログイン",
+		PageData: map[string]interface{}{
+			"RedirectURL": redirectURL,
+		},
 	}
 	renderTemplate(w, "login.tmpl", data)
 }

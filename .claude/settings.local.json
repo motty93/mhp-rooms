@@ -181,7 +181,8 @@
       "Bash(ROOM_ID=\"65aa2271-e79a-47ad-8d69-ed343a2d4ce2\" ENV=development DB_TYPE=turso go run:*)",
       "Bash(gcloud projects add-iam-policy-binding:*)",
       "Bash(PORT=8094 ENV=development DB_TYPE=turso timeout 15s make:*)",
-      "Bash(PORT=8095 ENV=development DB_TYPE=turso timeout 15s make:*)"
+      "Bash(PORT=8095 ENV=development DB_TYPE=turso timeout 15s make:*)",
+      "Bash(PORT=8096 ENV=development DB_TYPE=turso timeout 15s make:*)"
     ],
     "deny": []
   }

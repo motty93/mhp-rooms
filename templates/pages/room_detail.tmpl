@@ -1261,18 +1261,35 @@ function roomDetail() {
       return /iphone|ipod|ipad|android/.test(ua);
     },
 
-    // ランダムな共有メッセージを取得
     getRandomShareMessage() {
       const randomIndex = Math.floor(Math.random() * this.shareMessages.length);
       return this.shareMessages[randomIndex];
     },
 
-    // シェアを開始
     async openShare() {
-      // ランダムに文言を選択
-      this.shareData.text = this.getRandomShareMessage();
+      const hasPassword = {{ .PageData.Room.HasPassword }};
+      const roomId = '{{ .PageData.Room.ID }}';
+      const joinUrl = window.location.origin + '/rooms/' + roomId + '/join';
 
-      // モバイルでWeb Share APIが使える場合
+      if (hasPassword) {
+        const confirmMessage =
+          'この部屋はパスワードで保護されています。\n\n' +
+          '共有URLから参加する際、パスワードの入力が必要です。\n' +
+          '参加者にはパスワードを別途お伝えください。\n\n' +
+          '共有を続けますか？';
+
+        if (!confirm(confirmMessage)) {
+          return;
+        }
+
+        this.shareData.url = joinUrl;
+        this.shareData.text = this.getRandomShareMessage() + '\n※パスワード保護されています';
+      } else {
+        // 統一されたUX: パスワードなしでも/joinを使用
+        this.shareData.url = joinUrl;
+        this.shareData.text = this.getRandomShareMessage();
+      }
+
       if (this.isMobileDevice() && navigator.share) {
         try {
           await navigator.share({
@@ -1280,23 +1297,19 @@ function roomDetail() {
             text: `${this.shareData.text}\n\n${this.shareData.url}`
           });
         } catch (err) {
-          // キャンセルまたは失敗した場合は何もしない
           if (err.name !== 'AbortError') {
             console.warn('共有に失敗しました:', err);
           }
         }
       } else {
-        // PCまたは非対応ブラウザの場合はモーダルを表示
         this.showShareModal = true;
       }
     },
 
-    // モーダルを閉じる
     closeShareModal() {
       this.showShareModal = false;
     },
 
-    // URLをコピー
     async copyUrl() {
       try {
         await navigator.clipboard.writeText(this.shareData.url);
