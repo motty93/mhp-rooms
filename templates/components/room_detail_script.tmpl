@@ -1,0 +1,923 @@
+<script>
+// mobileMenuストアの初期化
+document.addEventListener('alpine:init', () => {
+  if (!Alpine.store('mobileMenu')) {
+    Alpine.store('mobileMenu', {
+      open: false,
+      toggle() {
+        this.open = !this.open
+      },
+      close() {
+        this.open = false
+      },
+    })
+  }
+})
+
+function roomDetail() {
+  return {
+    descriptionExpanded: false,
+    needsExpansion: false,
+    messages: [],
+    messageInput: '',
+    isAuthenticated: false,
+    currentUserId: null,
+    roomId: '{{ .PageData.Room.ID }}',
+    eventSource: null,
+    isLeaving: false,
+    isDismissing: false,
+    isHost: false,
+    hostUserId: '{{ .PageData.Room.Host.SupabaseUserID }}',
+    showSettingsModal: false,
+    settingsData: {
+      name: '',
+      description: '',
+      game_version_id: '',
+      max_players: 4,
+      target_monster: '',
+      rank_requirement: '',
+      password: ''
+    },
+    gameVersions: [],
+    errors: {},
+    isSubmitting: false,
+    // ルームメンバー
+    roomMembers: [
+      {{ range $index, $member := .PageData.Members }}
+        {{ if $index }},{{ end }}
+        {
+          id: '{{ if $member }}{{ $member.User.SupabaseUserID }}{{ end }}',
+          display_name: '{{ if $member }}{{ jsEscape $member.DisplayName }}{{ end }}',
+          avatar_url: '{{ if $member }}{{ jsEscapePtr $member.User.AvatarURL }}{{ end }}'
+        }
+      {{ end }}
+    ],
+    // メンション機能関連
+    showMentionSuggestions: false,
+    filteredMentionMembers: [],
+    selectedMentionIndex: 0,
+    mentionQuery: '',
+    // 送信方法切り替え（PC版のみ）
+    useCtrlEnterToSend: false,
+    // シェア機能関連
+    showShareModal: false,
+    shareMessages: [
+      'ハンター募集中！一緒にモンスターを狩ろう！',
+      '仲間を募集中！一緒に狩りに出発しよう！',
+      'パーティメンバー募集！モンハンで盛り上がろう！',
+      '狩り仲間募集中！みんなで協力プレイしよう！',
+      'ハンターズ集合！一緒に強敵を倒そう！',
+      '部屋主が待ってます！今すぐ狩りに参加しよう！',
+      '協力プレイで楽しもう！ハンター大募集！',
+      '今すぐ合流しよう！一緒にクエストに挑戦！'
+    ],
+    shareData: {
+      title: '【{{ .PageData.Room.GameVersion.Code }}】{{ .PageData.Room.Name }} - HuntersHub',
+      text: '',
+      url: window.location.href
+    },
+    get shareLinks() {
+      const encodedUrl = encodeURIComponent(this.shareData.url);
+      const encodedTitle = encodeURIComponent(this.shareData.title);
+      const encodedText = encodeURIComponent(this.shareData.text);
+      const shareMessage = `${this.shareData.title}\n${this.shareData.text}\n\n${this.shareData.url}`;
+      const encodedMessage = encodeURIComponent(shareMessage);
+      return {
+        x: `https://twitter.com/intent/tweet?text=${encodedMessage}`,
+        facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
+        bluesky: `https://bsky.app/intent/compose?text=${encodedMessage}`
+      };
+    },
+
+    async init() {
+
+
+      // グローバルインスタンスとして登録
+      window.roomDetailInstance = this;
+
+      // 説明文の展開が必要かチェック
+      this.checkDescriptionLength();
+
+      // Alpine.jsの初期化を確実に待つ
+      await this.waitForAlpineAuth();
+
+      // ホスト判定を更新
+      this.updateHostStatus();
+
+      // ゲームバージョン一覧を取得
+      await this.loadGameVersions();
+
+      // 初期メッセージのロード
+      await this.loadInitialMessages();
+
+      // SSE接続を確立
+      await this.connectSSE();
+
+      // チャットの最下部にスクロール
+      this.$nextTick(() => this.scrollToBottom());
+
+      // ページを離れる時にSSE接続を閉じる
+      window.addEventListener('beforeunload', () => {
+        if (this.eventSource) {
+          this.eventSource.close();
+        }
+      });
+    },
+
+    async waitForAlpineAuth() {
+      // Alpine.jsの認証ストアが確実に初期化されるまで待つ
+      let retries = 0;
+      const maxRetries = 50; // 最大5秒待つ
+
+      while (retries < maxRetries) {
+        if (window.Alpine && window.Alpine.store('auth')) {
+          await window.Alpine.store('auth').checkAuth();
+          const isAuth = window.Alpine.store('auth').isAuthenticated;
+          const user = window.Alpine.store('auth').user;
+
+          if (isAuth && user) {
+            this.isAuthenticated = true;
+            this.currentUserId = user.id;
+            return;
+          }
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 100));
+        retries++;
+      }
+
+    },
+
+    checkDescriptionLength() {
+      // 説明文が長い場合は展開ボタンを表示
+      const description = '{{ .PageData.Room.GetDescription }}';
+      this.needsExpansion = description.length > 100;
+    },
+
+    async checkAuth() {
+      // 認証状態の確認
+      if (window.Alpine && Alpine.store('auth')) {
+        await Alpine.store('auth').checkAuth();
+        this.isAuthenticated = Alpine.store('auth').isAuthenticated;
+        this.currentUserId = Alpine.store('auth').user?.id;
+
+        // Alpine.jsが反応するように強制的に更新を通知
+        this.$nextTick(() => {
+          this.isAuthenticated = Alpine.store('auth').isAuthenticated;
+          // ホスト判定を更新
+          this.updateHostStatus();
+          // 強制的にDOMを更新
+          this.$dispatch('host-status-updated', { isHost: this.isHost });
+        });
+      } else {
+        // Alpine.jsまたはauthストアが利用できない場合は少し待ってリトライ
+        await new Promise(resolve => setTimeout(resolve, 100));
+        return await this.checkAuth();
+      }
+    },
+
+    async loadInitialMessages() {
+      // ログからシステムメッセージを生成
+      this.messages = [];
+
+      {{ range .PageData.Logs }}
+        {{ if eq .Action "create" }}
+          this.messages.push({
+            id: '{{ .ID }}',
+            type: 'system',
+            subtype: 'create',
+            content: '{{ if .User }}{{ if .User.Username }}{{ .User.Username }}{{ else }}{{ .User.DisplayName }}{{ end }}{{ else }}ユーザー{{ end }}さんが部屋を作成しました',
+            timestamp: new Date('{{ .CreatedAt.Format "2006-01-02T15:04:05Z07:00" }}')
+          });
+        {{ else if eq .Action "join" }}
+          this.messages.push({
+            id: '{{ .ID }}',
+            type: 'system',
+            subtype: 'join',
+            content: '{{ index .Details.Data "user_name" }}さんが入室しました',
+            timestamp: new Date('{{ .CreatedAt.Format "2006-01-02T15:04:05Z07:00" }}')
+          });
+        {{ else if eq .Action "leave" }}
+          this.messages.push({
+            id: '{{ .ID }}',
+            type: 'system',
+            subtype: 'leave',
+            content: '{{ index .Details.Data "user_name" }}さんが退室しました',
+            timestamp: new Date('{{ .CreatedAt.Format "2006-01-02T15:04:05Z07:00" }}')
+          });
+        {{ end }}
+      {{ end }}
+
+      // 既存のメッセージを取得
+      if (this.isAuthenticated) {
+        try {
+          // 認証ヘッダーを取得
+          const token = Alpine.store('auth').session?.access_token;
+          const headers = {};
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+          }
+
+          const response = await fetch(`/rooms/${this.roomId}/messages?limit=20`, {
+            headers: headers
+          });
+          if (response.ok) {
+            const messages = await response.json();
+            messages.forEach(msg => {
+              // SupabaseユーザーIDで比較（APIレスポンスにuser.supabase_user_idが含まれている場合）
+              const isOwn = msg.user.supabase_user_id === this.currentUserId;
+              this.messages.push({
+                id: msg.id,
+                type: 'user',
+                content: msg.message,
+                userName: msg.user.display_name || msg.user.username,
+                userAvatar: msg.user.avatar_url || '/static/images/default-avatar.webp',
+                isOwn: isOwn,
+                timestamp: new Date(msg.created_at)
+              });
+            });
+          }
+        } catch (err) {
+        }
+      }
+    },
+
+    sendMessage() {
+      if (!this.messageInput.trim() || !this.isAuthenticated) return;
+
+      // メッセージを送信（仮実装）
+      const newMessage = {
+        id: Date.now(),
+        type: 'user',
+        content: this.messageInput,
+        userName: Alpine.store('auth').user?.displayName || 'ゲスト',
+        isOwn: true,
+        timestamp: new Date()
+      };
+
+      this.messages.push(newMessage);
+      this.messageInput = '';
+
+      this.$nextTick(() => this.scrollToBottom());
+    },
+
+    formatTime(timestamp) {
+      const date = new Date(timestamp);
+      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    },
+
+    scrollToBottom() {
+      const container = document.getElementById('chat-container');
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
+    },
+
+    async connectSSE() {
+      if (!this.isAuthenticated) return;
+
+      // 既存の接続があれば閉じる
+      if (this.eventSource) {
+        this.eventSource.close();
+        this.eventSource = null;
+      }
+
+      try {
+        // 一時的なSSEトークンを取得
+        const authToken = Alpine.store('auth').session?.access_token;
+        if (!authToken) {
+          return;
+        }
+
+        const response = await fetch(`/rooms/${this.roomId}/sse-token`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`SSEトークン取得失敗: ${response.status}`);
+        }
+
+        const tokenData = await response.json();
+        const sseToken = tokenData.token;
+
+        // SSEサーバーのホストを取得（環境変数で設定可能）
+        const sseHost = '{{ .SSEHost }}' || window.location.origin;
+        const basePath = sseHost.endsWith('/') ? sseHost.slice(0, -1) : sseHost;
+        const url = `${basePath}/rooms/${this.roomId}/messages/stream?token=${encodeURIComponent(sseToken)}`;
+
+        this.eventSource = new EventSource(url);
+      } catch (error) {
+        return;
+      }
+      this.sseReconnectCount = (this.sseReconnectCount || 0);
+
+      this.eventSource.addEventListener('open', (event) => {
+        this.sseReconnectCount = 0; // 接続成功時にリセット
+      });
+
+      // 接続確認メッセージ
+      this.eventSource.addEventListener('connected', (event) => {
+        this.sseReconnectCount = 0; // 接続成功確認時にリセット
+      });
+
+      this.eventSource.addEventListener('message', (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'message') {
+            this.handleNewMessage(data.data);
+          } else if (data.type === 'system_message') {
+            this.handleSystemMessage(data.data);
+          }
+        } catch (err) {
+        }
+      });
+
+      this.eventSource.addEventListener('error', (event) => {
+
+        // 再接続の制限（最大5回まで）
+        if (this.sseReconnectCount < 5) {
+          this.sseReconnectCount++;
+          const delay = Math.min(1000 * Math.pow(2, this.sseReconnectCount - 1), 30000); // 指数バックオフ（最大30秒）
+
+          setTimeout(async () => {
+            if (this.isAuthenticated && Alpine.store('auth').session?.access_token) {
+              await this.connectSSE();
+            }
+          }, delay);
+        } else {
+        }
+      });
+    },
+
+    handleNewMessage(message) {
+      // 自分のメッセージの場合はスキップ（すでに送信時に追加されている）
+      // SupabaseユーザーIDで比較
+      if (message.user.supabase_user_id === this.currentUserId) return;
+
+      // メッセージを追加
+      this.messages.push({
+        id: message.id,
+        type: 'user',
+        content: message.message,
+        userName: message.user.display_name || message.user.username,
+        userAvatar: message.user.avatar_url || '/static/images/default-avatar.webp',
+        isOwn: false,
+        timestamp: new Date(message.created_at)
+      });
+
+      this.$nextTick(() => this.scrollToBottom());
+    },
+
+    handleSystemMessage(message) {
+      // システムメッセージを追加
+      this.messages.push({
+        id: message.id,
+        type: 'system',
+        subtype: 'join', // 入室メッセージとして扱う
+        content: message.message,
+        timestamp: new Date()
+      });
+
+      this.$nextTick(() => this.scrollToBottom());
+    },
+
+    addOptimisticMessage() {
+      const messageInput = document.getElementById('message-input');
+      const messageText = messageInput.value.trim();
+
+      if (!messageText || !Alpine.store('auth').isAuthenticated) return;
+
+      // メッセージを即座に表示（楽観的更新）
+      const newMessage = {
+        id: Date.now(),
+        type: 'user',
+        content: messageText,
+        userName: Alpine.store('auth').user?.displayName || 'ゲスト',
+        userAvatar: Alpine.store('auth').user?.avatarUrl || '/static/images/default-avatar.webp',
+        isOwn: true,
+        timestamp: new Date()
+      };
+
+      this.messages.push(newMessage);
+      this.$nextTick(() => this.scrollToBottom());
+    },
+
+    async leaveRoom() {
+      if (this.isLeaving) return;
+
+      // 確認ダイアログを表示
+      if (!confirm('本当に部屋を退出しますか？')) {
+        return;
+      }
+
+      this.isLeaving = true;
+
+      try {
+        const authToken = Alpine.store('auth').session?.access_token;
+        if (!authToken) {
+          throw new Error('認証が必要です');
+        }
+
+        const response = await fetch(`/rooms/${this.roomId}/leave`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('退出処理に失敗しました');
+        }
+
+        if (window.Analytics && window.Analytics.isEnabled()) {
+          window.Analytics.trackRoomLeave(this.roomId);
+        }
+
+        // SSE接続を閉じる
+        if (this.eventSource) {
+          this.eventSource.close();
+        }
+
+        // 部屋一覧へリダイレクト
+        window.location.href = '/rooms';
+      } catch (error) {
+        alert('退出処理に失敗しました。もう一度お試しください。');
+        this.isLeaving = false;
+      }
+    },
+
+    updateHostStatus() {
+      if (this.isAuthenticated && this.currentUserId) {
+        this.isHost = this.currentUserId === this.hostUserId;
+      } else {
+        this.isHost = false;
+      }
+
+      // 強制的にAlpine.jsの反応を促す
+      this.$nextTick(() => {
+        this.$el.dispatchEvent(new CustomEvent('host-status-changed'));
+      });
+    },
+
+    async loadGameVersions() {
+      try {
+        const response = await fetch('/api/game-versions/active');
+        if (response.ok) {
+          const data = await response.json();
+          this.gameVersions = data.game_versions || [];
+        }
+      } catch (error) {
+      }
+    },
+
+    openSettingsModal() {
+
+      // 現在の部屋データで設定フォームを初期化
+      const room = {
+        name: '{{ .PageData.Room.Name }}',
+        description: '{{ .PageData.Room.GetDescription }}',
+        game_version_id: '{{ .PageData.Room.GameVersionID }}',
+        max_players: {{ .PageData.Room.MaxPlayers }},
+        target_monster: '{{ .PageData.Room.GetTargetMonster }}',
+        rank_requirement: '{{ .PageData.Room.GetRankRequirement }}'
+      };
+
+
+      this.settingsData = {
+        name: room.name || '',
+        description: room.description || '',
+        game_version_id: room.game_version_id || '',
+        max_players: room.max_players || 4,
+        target_monster: (room.target_monster && room.target_monster !== '<nil>') ? room.target_monster : '',
+        rank_requirement: (room.rank_requirement && room.rank_requirement !== '<nil>') ? room.rank_requirement : '',
+        password: '' // パスワードは常に空で初期化
+      };
+
+      this.errors = {};
+      this.showSettingsModal = true;
+
+    },
+
+    closeSettingsModal() {
+      this.showSettingsModal = false;
+      this.errors = {};
+      this.isSubmitting = false;
+    },
+
+    get isFormValid() {
+      return this.settingsData.name.trim() !== '' &&
+             this.settingsData.game_version_id !== '' &&
+             this.settingsData.max_players >= 2 &&
+             this.settingsData.max_players <= 4 &&
+             Object.keys(this.errors).length === 0;
+    },
+
+    validateField(field) {
+      // エラーをクリア
+      delete this.errors[field];
+
+      switch (field) {
+        case 'name':
+          if (!this.settingsData.name.trim()) {
+            this.errors.name = '部屋名は必須です。';
+          } else if (this.settingsData.name.length > 100) {
+            this.errors.name = '部屋名は100文字以内で入力してください。';
+          }
+          break;
+
+        case 'description':
+          if (this.settingsData.description.length > 500) {
+            this.errors.description = '説明文は500文字以内で入力してください。';
+          }
+          break;
+
+        case 'game_version_id':
+          if (!this.settingsData.game_version_id) {
+            this.errors.game_version_id = 'ゲームバージョンを選択してください。';
+          }
+          break;
+
+        case 'max_players':
+          if (this.settingsData.max_players < 2 || this.settingsData.max_players > 4) {
+            this.errors.max_players = '最大プレイヤー数は2〜4人の間で設定してください。';
+          }
+          break;
+
+        case 'target_monster':
+          if (this.settingsData.target_monster.length > 50) {
+            this.errors.target_monster = 'ターゲットモンスターは50文字以内で入力してください。';
+          }
+          break;
+
+        case 'rank_requirement':
+          if (this.settingsData.rank_requirement.length > 20) {
+            this.errors.rank_requirement = 'ランク要求は20文字以内で入力してください。';
+          }
+          break;
+
+        case 'password':
+          if (this.settingsData.password.length > 20) {
+            this.errors.password = 'パスワードは20文字以内で入力してください。';
+          }
+          break;
+      }
+
+      // リアクティブな更新を促す
+      this.$nextTick();
+    },
+
+    async updateRoom() {
+      if (this.isSubmitting || !this.isFormValid) return;
+
+      // 全フィールドのバリデーション
+      Object.keys(this.settingsData).forEach(field => {
+        this.validateField(field);
+      });
+
+      if (Object.keys(this.errors).length > 0) {
+        return;
+      }
+
+      this.isSubmitting = true;
+
+      try {
+        const authToken = Alpine.store('auth').session?.access_token;
+        if (!authToken) {
+          throw new Error('認証が必要です');
+        }
+
+        const response = await fetch(`/rooms/${this.roomId}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(this.settingsData)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.text();
+          throw new Error(errorData || '部屋設定の更新に失敗しました');
+        }
+
+        const result = await response.json();
+
+        // 成功メッセージを表示
+        alert('部屋設定を更新しました');
+
+        // モーダルを閉じる
+        this.closeSettingsModal();
+
+        // ページをリロードして最新の情報を表示
+        window.location.reload();
+      } catch (error) {
+        alert('部屋設定の更新に失敗しました: ' + error.message);
+        this.isSubmitting = false;
+      }
+    },
+
+    async dismissRoom() {
+      if (this.isDismissing) return;
+
+      // 確認ダイアログを表示
+      if (!confirm('本当に部屋を解散しますか？\n解散すると、すべてのメンバーが退出し、部屋は削除されます。')) {
+        return;
+      }
+
+      this.isDismissing = true;
+
+      try {
+        const authToken = Alpine.store('auth').session?.access_token;
+        if (!authToken) {
+          throw new Error('認証が必要です');
+        }
+
+        const response = await fetch(`/rooms/${this.roomId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('解散処理に失敗しました');
+        }
+
+        const result = await response.json();
+
+        // SSE接続を閉じる
+        if (this.eventSource) {
+          this.eventSource.close();
+        }
+
+        // リダイレクト先が指定されている場合はそちらへ、そうでなければ部屋一覧へ
+        window.location.href = result.redirect || '/rooms';
+      } catch (error) {
+        alert('解散処理に失敗しました。もう一度お試しください。');
+        this.isDismissing = false;
+      }
+    },
+
+    // モバイル判定
+    isMobileDevice() {
+      const ua = navigator.userAgent.toLowerCase();
+      return /iphone|ipod|ipad|android/.test(ua);
+    },
+
+    getRandomShareMessage() {
+      const randomIndex = Math.floor(Math.random() * this.shareMessages.length);
+      return this.shareMessages[randomIndex];
+    },
+
+    async openShare() {
+      const hasPassword = {{ .PageData.Room.HasPassword }};
+      const roomId = '{{ .PageData.Room.ID }}';
+      const joinUrl = window.location.origin + '/rooms/' + roomId + '/join';
+
+      if (hasPassword) {
+        const confirmMessage =
+          'この部屋はパスワードで保護されています。\n\n' +
+          '共有URLから参加する際、パスワードの入力が必要です。\n' +
+          '参加者にはパスワードを別途お伝えください。\n\n' +
+          '共有を続けますか？';
+
+        if (!confirm(confirmMessage)) {
+          return;
+        }
+
+        this.shareData.url = joinUrl;
+        this.shareData.text = this.getRandomShareMessage() + '\n※パスワード保護されています';
+      } else {
+        // 統一されたUX: パスワードなしでも/joinを使用
+        this.shareData.url = joinUrl;
+        this.shareData.text = this.getRandomShareMessage();
+      }
+
+      if (this.isMobileDevice() && navigator.share) {
+        try {
+          await navigator.share({
+            title: this.shareData.title,
+            text: `${this.shareData.text}\n\n${this.shareData.url}`
+          });
+        } catch (err) {
+          if (err.name !== 'AbortError') {
+            console.warn('共有に失敗しました:', err);
+          }
+        }
+      } else {
+        this.showShareModal = true;
+      }
+    },
+
+    closeShareModal() {
+      this.showShareModal = false;
+    },
+
+    async copyUrl() {
+      try {
+        await navigator.clipboard.writeText(this.shareData.url);
+        alert('URLをコピーしました！');
+      } catch (err) {
+        console.error('コピー失敗:', err);
+        alert('コピーに失敗しました。');
+      }
+    },
+
+    // Discord用にコピー
+    async copyForDiscord() {
+      const textToCopy = `${this.shareData.title}\n${this.shareData.text}\n\n${this.shareData.url}`;
+      try {
+        await navigator.clipboard.writeText(textToCopy);
+        alert('Discord用にコピーしました！');
+      } catch (err) {
+        console.error('コピー失敗:', err);
+        alert('コピーに失敗しました。');
+      }
+    },
+
+    // === 改行機能関連 ===
+
+    // textareaの自動リサイズ
+    autoResizeTextarea(textarea) {
+      if (!textarea) return;
+      textarea.style.height = 'auto';
+      const newHeight = Math.min(textarea.scrollHeight, 120);
+      textarea.style.height = newHeight + 'px';
+    },
+
+    // textarea高さのリセット
+    resetTextareaHeight() {
+      const textarea = document.getElementById('message-input');
+      if (textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = '42px';
+      }
+    },
+
+    // メッセージ入力のキーボードイベント処理
+    handleMessageKeydown(event) {
+      const textarea = event.target;
+
+      // メンション候補が表示されている場合
+      if (this.showMentionSuggestions) {
+        if (event.key === 'ArrowDown') {
+          event.preventDefault();
+          this.selectedMentionIndex = Math.min(
+            this.selectedMentionIndex + 1,
+            this.filteredMentionMembers.length - 1
+          );
+          return;
+        } else if (event.key === 'ArrowUp') {
+          event.preventDefault();
+          this.selectedMentionIndex = Math.max(this.selectedMentionIndex - 1, 0);
+          return;
+        } else if (event.key === 'Tab' || event.key === 'Enter') {
+          if (!event.shiftKey && !event.ctrlKey) {
+            event.preventDefault();
+            const selectedMember = this.filteredMentionMembers[this.selectedMentionIndex];
+            if (selectedMember) {
+              this.insertMention(selectedMember);
+            }
+            return;
+          }
+        } else if (event.key === 'Escape') {
+          event.preventDefault();
+          this.showMentionSuggestions = false;
+          return;
+        }
+      }
+
+      // Enterキーの処理（メンション候補が表示されていない場合）
+      if (event.key === 'Enter') {
+        // Shift+Enterは常に改行
+        if (event.shiftKey) {
+          return; // デフォルト動作（改行）
+        }
+
+        // Ctrl+Enter送信モードの場合
+        if (this.useCtrlEnterToSend) {
+          if (event.ctrlKey || event.metaKey) {
+            // Ctrl+Enterで送信
+            event.preventDefault();
+            const form = textarea.closest('form');
+            if (form) {
+              form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+            }
+          }
+          // Enterのみの場合は改行（デフォルト動作）
+        } else {
+          // デフォルトモード：Enterで送信
+          if (!event.ctrlKey && !event.metaKey) {
+            event.preventDefault();
+            const form = textarea.closest('form');
+            if (form) {
+              form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+            }
+          }
+        }
+      }
+    },
+
+    // === メンション機能関連 ===
+
+    // メンション入力の検出
+    handleMentionInput(textarea) {
+      const text = textarea.value;
+      const cursorPos = textarea.selectionStart;
+      const textBeforeCursor = text.substring(0, cursorPos);
+
+      // カーソル位置の直前の@を探す
+      const atMatch = textBeforeCursor.match(/@(\w*)$/);
+
+      if (atMatch) {
+        this.mentionQuery = atMatch[1].toLowerCase();
+        this.filterMentionMembers();
+        this.showMentionSuggestions = this.filteredMentionMembers.length > 0;
+        this.selectedMentionIndex = 0;
+      } else {
+        this.showMentionSuggestions = false;
+      }
+    },
+
+    // メンション候補のフィルタリング
+    filterMentionMembers() {
+      const query = this.mentionQuery;
+
+      // 現在のルームメンバーから検索（自分以外）
+      this.filteredMentionMembers = this.roomMembers.filter(member => {
+        if (!member || !member.display_name) return false;
+        if (member.id === this.currentUserId) return false; // 自分は除外
+
+        const displayName = member.display_name.toLowerCase();
+        return query === '' || displayName.includes(query);
+      }).slice(0, 8); // 最大8件まで表示
+    },
+
+    // メンションの挿入
+    insertMention(member) {
+      const textarea = document.getElementById('message-input');
+      if (!textarea || !member) return;
+
+      const text = textarea.value;
+      const cursorPos = textarea.selectionStart;
+      const textBeforeCursor = text.substring(0, cursorPos);
+
+      // @の位置を探す
+      const atPos = textBeforeCursor.lastIndexOf('@');
+      if (atPos === -1) return;
+
+      // @usernameに置換
+      const newText =
+        text.substring(0, atPos) +
+        '@' + member.display_name + ' ' +
+        text.substring(cursorPos);
+
+      textarea.value = newText;
+
+      // カーソル位置を調整
+      const newCursorPos = atPos + member.display_name.length + 2;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+
+      // メンション候補を非表示
+      this.showMentionSuggestions = false;
+
+      // textareaの高さを調整
+      this.autoResizeTextarea(textarea);
+
+      // フォーカスを戻す
+      textarea.focus();
+    },
+
+    // メッセージ内容のフォーマット（HTMLエスケープ + メンションハイライト）
+    formatMessageContent(content, isOwn) {
+      if (!content) return '';
+
+      // HTMLエスケープ
+      const escaped = content
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+
+      // メンションのハイライト（@usernameを色付け）
+      const mentionColor = isOwn ? 'text-blue-300' : 'text-blue-600';
+      const mentionPattern = /@([^\s]+)/g;
+      const highlighted = escaped.replace(mentionPattern, (match) => {
+        return `<span class="${mentionColor} font-semibold">${match}</span>`;
+      });
+
+      return highlighted;
+    }
+  };
+}
+
+// グローバルスコープに公開
+window.roomDetail = roomDetail;
+</script>
