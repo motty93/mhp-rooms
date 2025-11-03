@@ -138,6 +138,7 @@ func renderRoomDetailTemplate(w http.ResponseWriter, templateName string, data i
 		filepath.Join("templates", "layouts", "room_detail.tmpl"),
 		filepath.Join("templates", "pages", templateName),
 		filepath.Join("templates", "components", "room_settings_modal.tmpl"),
+		filepath.Join("templates", "components", "room_detail_script.tmpl"),
 		filepath.Join("templates", "components", "share_modal.tmpl"),
 	)
 	if err != nil {
