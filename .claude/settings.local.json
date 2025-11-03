@@ -182,7 +182,11 @@
       "Bash(gcloud projects add-iam-policy-binding:*)",
       "Bash(PORT=8094 ENV=development DB_TYPE=turso timeout 15s make:*)",
       "Bash(PORT=8095 ENV=development DB_TYPE=turso timeout 15s make:*)",
-      "Bash(PORT=8096 ENV=development DB_TYPE=turso timeout 15s make:*)"
+      "Bash(PORT=8096 ENV=development DB_TYPE=turso timeout 15s make:*)",
+      "Bash(gh issue list:*)",
+      "Bash(PORT=8097 ENV=development DB_TYPE=turso timeout 15s make:*)",
+      "Bash(npx html-beautify:*)",
+      "Bash(PORT=8098 ENV=development DB_TYPE=turso timeout 15s make:*)"
     ],
     "deny": []
   }

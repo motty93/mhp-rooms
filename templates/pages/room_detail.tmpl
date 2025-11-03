@@ -559,9 +559,9 @@
                       ></span>
                     </div>
                     <div
-                      class="rounded-lg p-3 text-sm"
+                      class="rounded-lg p-3 text-sm whitespace-pre-wrap break-words"
                       :class="message.isOwn ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-800'"
-                      x-text="message.content"
+                      x-html="formatMessageContent(message.content, message.isOwn)"
                     ></div>
                   </div>
                 </div>
@@ -573,28 +573,67 @@
 
       <!-- メッセージフォーム -->
       <div class="bg-white border-t border-gray-200 p-4 flex-shrink-0">
+        <!-- PC版のみ：送信方法切り替え -->
+        <div class="hidden md:flex items-center justify-end mb-2">
+          <label class="flex items-center text-sm text-gray-600 cursor-pointer">
+            <input
+              type="checkbox"
+              x-model="useCtrlEnterToSend"
+              class="mr-2 rounded"
+            />
+            <span>Enterで改行、Ctrl+Enterで送信</span>
+          </label>
+        </div>
+
         <form
           method="post"
           hx-post="/rooms/{{ .PageData.Room.ID }}/messages"
           hx-trigger="submit"
           hx-swap="none"
           hx-on::before-request="window.roomDetailInstance?.addOptimisticMessage()"
-          hx-on::after-request="this.reset(); document.getElementById('message-input').focus()"
+          hx-on::after-request="this.reset(); document.getElementById('message-input').focus(); window.roomDetailInstance?.resetTextareaHeight()"
           class="flex space-x-3"
         >
-          <input
-            id="message-input"
-            type="text"
-            name="message"
-            placeholder="メッセージを入力..."
-            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent"
-            :disabled="!$store.auth.initialized || !$store.auth.isAuthenticated"
-            required
-          />
+          <div class="flex-1 relative">
+            <textarea
+              id="message-input"
+              name="message"
+              placeholder="メッセージを入力（Shift+Enterで改行）..."
+              autocomplete="off"
+              rows="1"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent resize-none overflow-hidden"
+              style="min-height: 42px; max-height: 120px;"
+              :disabled="!$store.auth.initialized || !$store.auth.isAuthenticated"
+              @input="autoResizeTextarea($event.target); handleMentionInput($event.target)"
+              @keydown="handleMessageKeydown($event)"
+              required
+            ></textarea>
+
+            <!-- メンション候補ドロップダウン -->
+            <div
+              x-show="showMentionSuggestions"
+              x-cloak
+              class="absolute bottom-full left-0 mb-2 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto z-50 w-full"
+            >
+              <template x-for="(member, index) in filteredMentionMembers" :key="member.id">
+                <button
+                  type="button"
+                  @click="insertMention(member)"
+                  @mouseenter="selectedMentionIndex = index"
+                  class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center space-x-2"
+                  :class="{ 'bg-gray-100': selectedMentionIndex === index }"
+                >
+                  <img :src="member.avatar_url || '/static/images/default-avatar.webp'" class="w-6 h-6 rounded-full" />
+                  <span x-text="member.display_name"></span>
+                </button>
+              </template>
+            </div>
+          </div>
+
           <button
             type="submit"
             :disabled="!$store.auth.initialized || !$store.auth.isAuthenticated"
-            class="bg-gray-800 hover:bg-gray-900 text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            class="bg-gray-800 hover:bg-gray-900 text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed self-end"
           >
             送信
           </button>
@@ -650,6 +689,24 @@ function roomDetail() {
     gameVersions: [],
     errors: {},
     isSubmitting: false,
+    // ルームメンバー
+    roomMembers: [
+      {{ range $index, $member := .PageData.Members }}
+        {{ if $index }},{{ end }}
+        {
+          id: '{{ if $member }}{{ $member.User.SupabaseUserID }}{{ end }}',
+          display_name: '{{ if $member }}{{ jsEscape $member.DisplayName }}{{ end }}',
+          avatar_url: '{{ if $member }}{{ jsEscapePtr $member.User.AvatarURL }}{{ end }}'
+        }
+      {{ end }}
+    ],
+    // メンション機能関連
+    showMentionSuggestions: false,
+    filteredMentionMembers: [],
+    selectedMentionIndex: 0,
+    mentionQuery: '',
+    // 送信方法切り替え（PC版のみ）
+    useCtrlEnterToSend: false,
     // シェア機能関連
     showShareModal: false,
     shareMessages: [
@@ -1330,6 +1387,181 @@ function roomDetail() {
         console.error('コピー失敗:', err);
         alert('コピーに失敗しました。');
       }
+    },
+
+    // === 改行機能関連 ===
+
+    // textareaの自動リサイズ
+    autoResizeTextarea(textarea) {
+      if (!textarea) return;
+      textarea.style.height = 'auto';
+      const newHeight = Math.min(textarea.scrollHeight, 120);
+      textarea.style.height = newHeight + 'px';
+    },
+
+    // textarea高さのリセット
+    resetTextareaHeight() {
+      const textarea = document.getElementById('message-input');
+      if (textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = '42px';
+      }
+    },
+
+    // メッセージ入力のキーボードイベント処理
+    handleMessageKeydown(event) {
+      const textarea = event.target;
+
+      // メンション候補が表示されている場合
+      if (this.showMentionSuggestions) {
+        if (event.key === 'ArrowDown') {
+          event.preventDefault();
+          this.selectedMentionIndex = Math.min(
+            this.selectedMentionIndex + 1,
+            this.filteredMentionMembers.length - 1
+          );
+          return;
+        } else if (event.key === 'ArrowUp') {
+          event.preventDefault();
+          this.selectedMentionIndex = Math.max(this.selectedMentionIndex - 1, 0);
+          return;
+        } else if (event.key === 'Tab' || event.key === 'Enter') {
+          if (!event.shiftKey && !event.ctrlKey) {
+            event.preventDefault();
+            const selectedMember = this.filteredMentionMembers[this.selectedMentionIndex];
+            if (selectedMember) {
+              this.insertMention(selectedMember);
+            }
+            return;
+          }
+        } else if (event.key === 'Escape') {
+          event.preventDefault();
+          this.showMentionSuggestions = false;
+          return;
+        }
+      }
+
+      // Enterキーの処理（メンション候補が表示されていない場合）
+      if (event.key === 'Enter') {
+        // Shift+Enterは常に改行
+        if (event.shiftKey) {
+          return; // デフォルト動作（改行）
+        }
+
+        // Ctrl+Enter送信モードの場合
+        if (this.useCtrlEnterToSend) {
+          if (event.ctrlKey || event.metaKey) {
+            // Ctrl+Enterで送信
+            event.preventDefault();
+            const form = textarea.closest('form');
+            if (form) {
+              form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+            }
+          }
+          // Enterのみの場合は改行（デフォルト動作）
+        } else {
+          // デフォルトモード：Enterで送信
+          if (!event.ctrlKey && !event.metaKey) {
+            event.preventDefault();
+            const form = textarea.closest('form');
+            if (form) {
+              form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+            }
+          }
+        }
+      }
+    },
+
+    // === メンション機能関連 ===
+
+    // メンション入力の検出
+    handleMentionInput(textarea) {
+      const text = textarea.value;
+      const cursorPos = textarea.selectionStart;
+      const textBeforeCursor = text.substring(0, cursorPos);
+
+      // カーソル位置の直前の@を探す
+      const atMatch = textBeforeCursor.match(/@(\w*)$/);
+
+      if (atMatch) {
+        this.mentionQuery = atMatch[1].toLowerCase();
+        this.filterMentionMembers();
+        this.showMentionSuggestions = this.filteredMentionMembers.length > 0;
+        this.selectedMentionIndex = 0;
+      } else {
+        this.showMentionSuggestions = false;
+      }
+    },
+
+    // メンション候補のフィルタリング
+    filterMentionMembers() {
+      const query = this.mentionQuery;
+
+      // 現在のルームメンバーから検索（自分以外）
+      this.filteredMentionMembers = this.roomMembers.filter(member => {
+        if (!member || !member.display_name) return false;
+        if (member.id === this.currentUserId) return false; // 自分は除外
+
+        const displayName = member.display_name.toLowerCase();
+        return query === '' || displayName.includes(query);
+      }).slice(0, 8); // 最大8件まで表示
+    },
+
+    // メンションの挿入
+    insertMention(member) {
+      const textarea = document.getElementById('message-input');
+      if (!textarea || !member) return;
+
+      const text = textarea.value;
+      const cursorPos = textarea.selectionStart;
+      const textBeforeCursor = text.substring(0, cursorPos);
+
+      // @の位置を探す
+      const atPos = textBeforeCursor.lastIndexOf('@');
+      if (atPos === -1) return;
+
+      // @usernameに置換
+      const newText =
+        text.substring(0, atPos) +
+        '@' + member.display_name + ' ' +
+        text.substring(cursorPos);
+
+      textarea.value = newText;
+
+      // カーソル位置を調整
+      const newCursorPos = atPos + member.display_name.length + 2;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+
+      // メンション候補を非表示
+      this.showMentionSuggestions = false;
+
+      // textareaの高さを調整
+      this.autoResizeTextarea(textarea);
+
+      // フォーカスを戻す
+      textarea.focus();
+    },
+
+    // メッセージ内容のフォーマット（HTMLエスケープ + メンションハイライト）
+    formatMessageContent(content, isOwn) {
+      if (!content) return '';
+
+      // HTMLエスケープ
+      const escaped = content
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+
+      // メンションのハイライト（@usernameを色付け）
+      const mentionColor = isOwn ? 'text-blue-300' : 'text-blue-600';
+      const mentionPattern = /@([^\s]+)/g;
+      const highlighted = escaped.replace(mentionPattern, (match) => {
+        return `<span class="${mentionColor} font-semibold">${match}</span>`;
+      });
+
+      return highlighted;
     }
   };
 }
