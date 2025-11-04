@@ -1,129 +1,197 @@
-{{define "title"}}{{.Title}}{{end}}
+{{ define "title" }}{{ .Title }}{{ end }}
 
-{{define "head"}}
-<meta name="description" content="{{.PageData.Room.Name}} - 部屋に参加 | HuntersHub" />
-<meta property="og:title" content="{{.PageData.Room.Name}} - 部屋に参加" />
-<meta property="og:description" content="{{.PageData.Room.GameVersion.Name}}の部屋に参加しましょう" />
-{{end}}
+{{ define "head" }}
+  <meta
+    name="description"
+    content="{{ .PageData.Room.Name }} - 部屋に参加 | HuntersHub"
+  />
+  <meta property="og:title" content="{{ .PageData.Room.Name }} - 部屋に参加" />
+  <meta
+    property="og:description"
+    content="{{ .PageData.Room.GameVersion.Name }}の部屋に参加しましょう"
+  />
+{{ end }}
 
-{{define "page"}}
-<div class="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
-  <div class="max-w-md w-full">
-    <!-- 部屋情報カード -->
-    <div class="bg-white rounded-lg shadow-lg p-8 border border-gray-200">
-      <!-- ヘッダー -->
-      <div class="text-center mb-8">
-        {{if .PageData.HasPassword}}
-        <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
-          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-          </svg>
+{{ define "page" }}
+  <div
+    class="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12"
+  >
+    <div class="max-w-md w-full">
+      <!-- 部屋情報カード -->
+      <div class="bg-white rounded-lg shadow-lg p-8 border border-gray-200">
+        <!-- ヘッダー -->
+        <div class="text-center mb-8">
+          {{ if .PageData.HasPassword }}
+            <div
+              class="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4"
+            >
+              <svg
+                class="w-8 h-8 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                ></path>
+              </svg>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">部屋に参加</h1>
+            <p class="text-gray-600">パスワードで保護された部屋です</p>
+          {{ else }}
+            <div
+              class="inline-flex items-center justify-center w-16 h-16 bg-green-600 rounded-full mb-4"
+            >
+              <svg
+                class="w-8 h-8 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+                ></path>
+              </svg>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">部屋に参加</h1>
+            <p class="text-gray-600">この部屋に参加しますか？</p>
+          {{ end }}
         </div>
-        <h1 class="text-2xl font-bold text-gray-900 mb-2">部屋に参加</h1>
-        <p class="text-gray-600">パスワードで保護された部屋です</p>
-        {{else}}
-        <div class="inline-flex items-center justify-center w-16 h-16 bg-green-600 rounded-full mb-4">
-          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
-          </svg>
-        </div>
-        <h1 class="text-2xl font-bold text-gray-900 mb-2">部屋に参加</h1>
-        <p class="text-gray-600">この部屋に参加しますか？</p>
-        {{end}}
-      </div>
 
-      <!-- 部屋情報 -->
-      <div class="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200">
-        <div class="flex items-center justify-between mb-3">
-          <span class="text-gray-600 text-sm">部屋名</span>
-          <div class="flex items-center">
-            {{if .PageData.HasPassword}}
-            <svg class="w-4 h-4 text-yellow-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path>
-            </svg>
-            {{end}}
-            <span class="text-gray-900 font-semibold">{{.PageData.Room.Name}}</span>
+        <!-- 部屋情報 -->
+        <div class="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-gray-600 text-sm">部屋名</span>
+            <div class="flex items-center">
+              {{ if .PageData.HasPassword }}
+                <svg
+                  class="w-4 h-4 text-yellow-500 mr-2"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                    clip-rule="evenodd"
+                  ></path>
+                </svg>
+              {{ end }}
+              <span class="text-gray-900 font-semibold"
+                >{{ .PageData.Room.Name }}</span
+              >
+            </div>
+          </div>
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-gray-600 text-sm">ゲーム</span>
+            <span class="text-gray-900"
+              >{{ .PageData.Room.GameVersion.Name }}</span
+            >
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-gray-600 text-sm">ホスト</span>
+            <span class="text-gray-900">
+              {{ if .PageData.Room.Host.DisplayName }}
+                {{ .PageData.Room.Host.DisplayName }}
+              {{ else if .PageData.Room.Host.Username }}
+                {{ .PageData.Room.Host.Username }}
+              {{ else }}
+                ゲスト
+              {{ end }}
+            </span>
           </div>
         </div>
-        <div class="flex items-center justify-between mb-3">
-          <span class="text-gray-600 text-sm">ゲーム</span>
-          <span class="text-gray-900">{{.PageData.Room.GameVersion.Name}}</span>
-        </div>
-        <div class="flex items-center justify-between">
-          <span class="text-gray-600 text-sm">ホスト</span>
-          <span class="text-gray-900">
-            {{if .PageData.Room.Host.DisplayName}}
-              {{.PageData.Room.Host.DisplayName}}
-            {{else if .PageData.Room.Host.Username}}
-              {{.PageData.Room.Host.Username}}
-            {{else}}
-              ゲスト
-            {{end}}
-          </span>
+
+        <!-- パスワード入力フォーム -->
+        <div id="joinForm">
+          {{ if .PageData.HasPassword }}
+            <div class="mb-6">
+              <label
+                for="password"
+                class="block text-sm font-medium text-gray-700 mb-2"
+              >
+                パスワード
+              </label>
+              <input
+                type="password"
+                id="password"
+                class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                placeholder="パスワードを入力してください"
+                autocomplete="off"
+              />
+              <p id="errorMessage" class="mt-2 text-sm text-red-500 hidden"></p>
+            </div>
+          {{ end }}
+
+
+          <!-- ボタン -->
+          <div class="space-y-3">
+            <button
+              id="joinButton"
+              onclick="joinRoom()"
+              class="w-full bg-gray-800 hover:bg-gray-900 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            >
+              <svg
+                class="w-5 h-5 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+                ></path>
+              </svg>
+              部屋に参加する
+            </button>
+
+            <a
+              href="/rooms"
+              class="w-full bg-white hover:bg-gray-50 text-gray-700 font-semibold py-3 px-4 rounded-lg border border-gray-300 transition duration-200 flex items-center justify-center"
+            >
+              <svg
+                class="w-5 h-5 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                ></path>
+              </svg>
+              部屋一覧に戻る
+            </a>
+          </div>
         </div>
       </div>
 
-      <!-- パスワード入力フォーム -->
-      <div id="joinForm">
-        {{if .PageData.HasPassword}}
-        <div class="mb-6">
-          <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
-            パスワード
-          </label>
-          <input
-            type="password"
-            id="password"
-            class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-            placeholder="パスワードを入力してください"
-            autocomplete="off"
-          />
-          <p id="errorMessage" class="mt-2 text-sm text-red-500 hidden"></p>
+      <!-- 注意事項 -->
+      {{ if .PageData.HasPassword }}
+        <div class="mt-6 text-center">
+          <p class="text-gray-600 text-sm">
+            パスワードは部屋のホストから共有されています。<br />
+            分からない場合はホストに確認してください。
+          </p>
         </div>
-        {{end}}
-
-        <!-- ボタン -->
-        <div class="space-y-3">
-          <button
-            id="joinButton"
-            onclick="joinRoom()"
-            class="w-full bg-gray-800 hover:bg-gray-900 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-          >
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
-            </svg>
-            部屋に参加する
-          </button>
-
-          <a
-            href="/rooms"
-            class="w-full bg-white hover:bg-gray-50 text-gray-700 font-semibold py-3 px-4 rounded-lg border border-gray-300 transition duration-200 flex items-center justify-center"
-          >
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-            </svg>
-            部屋一覧に戻る
-          </a>
+      {{ else }}
+        <div class="mt-6 text-center">
+          <p class="text-gray-600 text-sm">
+            参加ボタンをクリックすると、この部屋に参加できます。
+          </p>
         </div>
-      </div>
+      {{ end }}
     </div>
-
-    <!-- 注意事項 -->
-    {{if .PageData.HasPassword}}
-    <div class="mt-6 text-center">
-      <p class="text-gray-600 text-sm">
-        パスワードは部屋のホストから共有されています。<br>
-        分からない場合はホストに確認してください。
-      </p>
-    </div>
-    {{else}}
-    <div class="mt-6 text-center">
-      <p class="text-gray-600 text-sm">
-        参加ボタンをクリックすると、この部屋に参加できます。
-      </p>
-    </div>
-    {{end}}
   </div>
-</div>
 
 <script>
 const roomId = '{{.PageData.Room.ID}}';
@@ -249,4 +317,4 @@ if (hasPassword) {
   });
 }
 </script>
-{{end}}
+{{ end }}
