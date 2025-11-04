@@ -187,8 +187,9 @@
               <div class="p-6 pt-0">
                 <div class="flex items-center justify-between min-h-[40px]">
                   <span
-                    class="text-sm text-gray-500"
+                    class="text-sm text-gray-500 truncate max-w-[150px]"
                     x-text="'ホスト: ' + (room.host.displayName || room.host.username)"
+                    :title="'ホスト: ' + (room.host.displayName || room.host.username)"
                   ></span>
 
                   <!-- ボタン領域 - 固定高さを確保 -->
