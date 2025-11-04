@@ -669,8 +669,6 @@ func (h *RoomHandler) ToggleRoomClosed(w http.ResponseWriter, r *http.Request) {
 // GetAllRoomsAPIHandler APIエンドポイント：常に全データを返す
 func (h *RoomHandler) GetAllRoomsAPI(w http.ResponseWriter, r *http.Request) {
 	// Note: GameVersionsはHTMLレンダリング時に既に取得済み
-	// APIエンドポイントでは部屋データのみを返す
-
 	// 認証されたユーザーの場合、最適化されたメソッドを使用
 	var enhancedRooms []interface{}
 	dbUser, isAuthenticated := middleware.GetDBUserFromContext(r.Context())
