@@ -574,6 +574,27 @@ func (h *RoomHandler) LeaveRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 退室メッセージをSSEで通知
+	if h.hub != nil {
+		leaveMessage := models.RoomMessage{
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
+			RoomID:      roomID,
+			UserID:      userID,
+			Message:     fmt.Sprintf("%sさんが退室しました", dbUser.DisplayName),
+			MessageType: "system",
+		}
+		leaveMessage.User = *dbUser
+
+		event := sse.Event{
+			ID:   leaveMessage.ID.String(),
+			Type: "system_message",
+			Data: leaveMessage,
+		}
+		h.hub.BroadcastToRoom(roomID, event)
+	}
+
 	// アクティビティを記録（失敗してもメイン処理は続行）
 	if room != nil {
 		if err := h.activityService.RecordRoomLeave(userID, room); err != nil {
@@ -607,6 +628,27 @@ func (h *RoomHandler) LeaveCurrentRoom(w http.ResponseWriter, r *http.Request) {
 	if err := h.repo.Room.LeaveRoom(activeRoom.ID, userID); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
+	}
+
+	// 退室メッセージをSSEで通知
+	if h.hub != nil {
+		leaveMessage := models.RoomMessage{
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
+			RoomID:      activeRoom.ID,
+			UserID:      userID,
+			Message:     fmt.Sprintf("%sさんが退室しました", dbUser.DisplayName),
+			MessageType: "system",
+		}
+		leaveMessage.User = *dbUser
+
+		event := sse.Event{
+			ID:   leaveMessage.ID.String(),
+			Type: "system_message",
+			Data: leaveMessage,
+		}
+		h.hub.BroadcastToRoom(activeRoom.ID, event)
 	}
 
 	w.WriteHeader(http.StatusOK)

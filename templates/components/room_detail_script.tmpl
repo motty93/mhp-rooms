@@ -194,7 +194,7 @@ function roomDetail() {
             id: '{{ .ID }}',
             type: 'system',
             subtype: 'join',
-            content: '{{ index .Details.Data "user_name" }}さんが入室しました',
+            content: '{{ if .User }}{{ if .User.Username }}{{ .User.Username }}{{ else }}{{ .User.DisplayName }}{{ end }}{{ else }}ユーザー{{ end }}さんが入室しました',
             timestamp: new Date('{{ .CreatedAt.Format "2006-01-02T15:04:05Z07:00" }}')
           });
         {{ else if eq .Action "leave" }}
@@ -202,7 +202,7 @@ function roomDetail() {
             id: '{{ .ID }}',
             type: 'system',
             subtype: 'leave',
-            content: '{{ index .Details.Data "user_name" }}さんが退室しました',
+            content: '{{ if .User }}{{ if .User.Username }}{{ .User.Username }}{{ else }}{{ .User.DisplayName }}{{ end }}{{ else }}ユーザー{{ end }}さんが退室しました',
             timestamp: new Date('{{ .CreatedAt.Format "2006-01-02T15:04:05Z07:00" }}')
           });
         {{ end }}
@@ -326,11 +326,12 @@ function roomDetail() {
 
       this.eventSource.addEventListener('message', (event) => {
         try {
-          const data = JSON.parse(event.data);
-          if (data.type === 'message') {
-            this.handleNewMessage(data.data);
-          } else if (data.type === 'system_message') {
-            this.handleSystemMessage(data.data);
+          const json = JSON.parse(event.data);
+          const type = json.type;
+          if (type === 'message') {
+            this.handleNewMessage(json.data);
+          } else if (type === 'system_message') {
+            this.handleSystemMessage(json.data);
           }
         } catch (err) {
         }
@@ -372,13 +373,17 @@ function roomDetail() {
       this.$nextTick(() => this.scrollToBottom());
     },
 
-    handleSystemMessage(message) {
+    handleSystemMessage(data) {
+      // メッセージ内容から入室/退室を判定
+      const isLeave = data.message && data.message.includes('退室しました');
+      const subtype = isLeave ? 'leave' : 'join';
+
       // システムメッセージを追加
       this.messages.push({
-        id: message.id,
+        id: data.id,
         type: 'system',
-        subtype: 'join', // 入室メッセージとして扱う
-        content: message.message,
+        subtype: subtype,
+        content: data.message,
         timestamp: new Date()
       });
 
