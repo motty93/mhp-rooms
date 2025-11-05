@@ -41,7 +41,7 @@ function roomDetail() {
     gameVersions: [],
     errors: {},
     isSubmitting: false,
-    // ルームメンバー
+    // ルームメンバー（メンション機能用）
     roomMembers: [
       {{ range $index, $member := .PageData.Members }}
         {{ if $index }},{{ end }}
@@ -52,6 +52,9 @@ function roomDetail() {
         }
       {{ end }}
     ],
+    // ユーザーパネル用メンバー配列（4人分のスロット）
+    members: [],
+    memberCount: {{ .PageData.MemberCount }},
     // メンション機能関連
     showMentionSuggestions: false,
     filteredMentionMembers: [],
@@ -103,6 +106,9 @@ function roomDetail() {
 
       // ホスト判定を更新
       this.updateHostStatus();
+
+      // 初期メンバー情報をロード
+      this.loadInitialMembers();
 
       // ゲームバージョン一覧を取得
       await this.loadGameVersions();
@@ -332,6 +338,8 @@ function roomDetail() {
             this.handleNewMessage(json.data);
           } else if (type === 'system_message') {
             this.handleSystemMessage(json.data);
+          } else if (type === 'member_update') {
+            this.handleMemberUpdate(json.data);
           }
         } catch (err) {
         }
@@ -919,6 +927,60 @@ function roomDetail() {
       });
 
       return highlighted;
+    },
+
+    // 初期メンバー情報をロード（4人分のスロット）
+    loadInitialMembers() {
+      const memberSlots = [null, null, null, null];
+      let count = 0;
+
+      {{ range $member := .PageData.Members }}
+      {{ if $member }}
+      const playerNum = {{ $member.PlayerNumber }};
+      if (playerNum >= 1 && playerNum <= 4) {
+        memberSlots[playerNum - 1] = {
+          id: '{{ $member.User.ID }}',
+          supabase_user_id: '{{ $member.User.SupabaseUserID }}',
+          display_name: '{{ jsEscape $member.DisplayName }}',
+          avatar_url: '{{ jsEscapePtr $member.User.AvatarURL }}' || '/static/images/default-avatar.webp',
+          is_host: {{ $member.IsHost }},
+          player_number: {{ $member.PlayerNumber }}
+        };
+        count++;
+      }
+      {{ end }}
+      {{ end }}
+
+      this.members = memberSlots;
+      this.memberCount = count;
+    },
+
+    // メンバー更新イベントハンドラー
+    handleMemberUpdate(data) {
+      const memberSlots = [null, null, null, null];
+      let count = 0;
+
+      if (data.members && Array.isArray(data.members)) {
+        data.members.forEach(member => {
+          if (member.player_number >= 1 && member.player_number <= 4) {
+            memberSlots[member.player_number - 1] = {
+              id: member.user.id,
+              supabase_user_id: member.user.supabase_user_id,
+              display_name: member.display_name,
+              avatar_url: member.user.avatar_url || '/static/images/default-avatar.webp',
+              is_host: member.is_host,
+              player_number: member.player_number
+            };
+            count++;
+          }
+        });
+      }
+
+      this.members = memberSlots;
+      this.memberCount = count;
+
+      // Alpine.jsの反応を促す
+      this.$nextTick();
     }
   };
 }

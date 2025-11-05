@@ -522,6 +522,24 @@ func (h *RoomHandler) JoinRoom(w http.ResponseWriter, r *http.Request) {
 			Data: joinMessage,
 		}
 		h.hub.BroadcastToRoom(roomID, event)
+
+		// メンバー更新イベント（ユーザーパネル用）
+		members, err := h.repo.Room.GetRoomMembers(roomID)
+		if err != nil {
+			log.Printf("メンバー情報取得エラー: %v", err)
+			members = []models.RoomMember{} // エラー時は空配列
+		}
+
+		memberUpdateEvent := sse.Event{
+			ID:   uuid.New().String(),
+			Type: "member_update",
+			Data: map[string]interface{}{
+				"action":  "join",
+				"members": members,
+				"count":   len(members),
+			},
+		}
+		h.hub.BroadcastToRoom(roomID, memberUpdateEvent)
 	}
 
 	// アクティビティを記録（失敗してもメイン処理は続行）
@@ -593,6 +611,24 @@ func (h *RoomHandler) LeaveRoom(w http.ResponseWriter, r *http.Request) {
 			Data: leaveMessage,
 		}
 		h.hub.BroadcastToRoom(roomID, event)
+
+		// メンバー更新イベント（ユーザーパネル用）
+		members, err := h.repo.Room.GetRoomMembers(roomID)
+		if err != nil {
+			log.Printf("メンバー情報取得エラー: %v", err)
+			members = []models.RoomMember{} // エラー時は空配列
+		}
+
+		memberUpdateEvent := sse.Event{
+			ID:   uuid.New().String(),
+			Type: "member_update",
+			Data: map[string]interface{}{
+				"action":  "leave",
+				"members": members,
+				"count":   len(members),
+			},
+		}
+		h.hub.BroadcastToRoom(roomID, memberUpdateEvent)
 	}
 
 	// アクティビティを記録（失敗してもメイン処理は続行）
