@@ -111,35 +111,6 @@
           ></p>
         </div>
 
-        <!-- PSN ID -->
-        <div>
-          <label
-            for="psnId"
-            class="block text-sm font-medium text-gray-700 mb-2"
-          >
-            Sony PSN ID <span class="text-red-500">*</span>
-          </label>
-          <input
-            id="psnId"
-            type="text"
-            x-model="form.psnId"
-            @blur="validateField('psnId')"
-            required
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-colors"
-            :class="{'border-red-300 focus:ring-red-500': fieldErrors.psnId}"
-            placeholder="あなたのPSN ID"
-          />
-          <p
-            x-show="fieldErrors.psnId"
-            x-text="fieldErrorMessages.psnId"
-            class="mt-1 text-sm text-red-600"
-            style="display: none;"
-          ></p>
-          <p class="mt-1 text-xs text-gray-500">
-            PlayStation NetworkのIDを入力してください
-          </p>
-        </div>
-
         <!-- 利用規約 -->
         <div class="flex items-start">
           <input
@@ -268,29 +239,24 @@
         form: {
           email: '',
           password: '',
-          psnId: '',
           agreeTerms: false,
         },
         fieldErrors: {
           email: false,
           password: false,
-          psnId: false,
           agreeTerms: false,
         },
         fieldErrorMessages: {
           email: '',
           password: '',
-          psnId: '',
           agreeTerms: '',
         },
         errorMessage: '',
         isLoading: false,
-
         async checkAuthAndRedirect() {
           try {
             const authStore = Alpine.store('auth')
             await authStore.checkAuth()
-
             if (authStore.isAuthenticated) {
               window.location.href = '/rooms'
             }
@@ -298,11 +264,9 @@
             console.error('認証状態確認エラー:', error)
           }
         },
-
         validateField(fieldName) {
           this.fieldErrors[fieldName] = false
           this.fieldErrorMessages[fieldName] = ''
-
           if (fieldName === 'email') {
             if (!this.form.email) {
               this.fieldErrors.email = true
@@ -313,7 +277,6 @@
                 '有効なメールアドレスを入力してください'
             }
           }
-
           if (fieldName === 'password') {
             if (!this.form.password) {
               this.fieldErrors.password = true
@@ -324,18 +287,6 @@
                 'パスワードは6文字以上で入力してください'
             }
           }
-
-          if (fieldName === 'psnId') {
-            if (!this.form.psnId) {
-              this.fieldErrors.psnId = true
-              this.fieldErrorMessages.psnId = 'PSN IDを入力してください'
-            } else if (this.form.psnId.length < 3) {
-              this.fieldErrors.psnId = true
-              this.fieldErrorMessages.psnId =
-                'PSN IDは3文字以上で入力してください'
-            }
-          }
-
           if (fieldName === 'agreeTerms') {
             if (!this.form.agreeTerms) {
               this.fieldErrors.agreeTerms = true
@@ -344,38 +295,26 @@
             }
           }
         },
-
         isValidEmail(email) {
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
           return emailRegex.test(email)
         },
-
         async handleRegister() {
           this.errorMessage = ''
-
           // 全フィールドをバリデーション
           Object.keys(this.form).forEach((fieldName) => {
             this.validateField(fieldName)
           })
-
           if (Object.values(this.fieldErrors).some((error) => error)) {
             return
           }
-
           this.isLoading = true
-
           try {
             // Supabaseでサインアップ
-            const metadata = {
-              psn_id: this.form.psnId,
-            }
-
             const data = await Alpine.store('auth').signUp(
               this.form.email,
               this.form.password,
-              metadata,
             )
-
             // 登録成功
             if (data.user && !data.session) {
               // メール確認が必要な場合
@@ -389,7 +328,6 @@
             }
           } catch (error) {
             console.error('登録エラー:', error)
-
             // エラーメッセージの設定
             if (error.message.includes('already registered')) {
               this.errorMessage = 'このメールアドレスは既に登録されています'
@@ -403,7 +341,6 @@
             this.isLoading = false
           }
         },
-
         async handleGoogleRegister() {
           try {
             await Alpine.store('auth').signInWithGoogle()
