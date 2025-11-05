@@ -1,7 +1,7 @@
 # 部屋詳細画面 - 入退室時のユーザーパネル更新（SSE実装）
 
 **実装日**: 2025-11-05
-**実装時間**: 約60分
+**実装時間**: 約180分（初期実装60分 + バグ修正・改善120分）
 **対応Issue**: #78
 
 ## 概要
@@ -278,8 +278,205 @@ Go テンプレートと Alpine.js テンプレートを混在させる際の注
 
 メンバー追加・削除時にアニメーションを追加すると、UXが向上します。
 
+## バグ修正と追加改善
+
+### Issue 1: SSEイベント形式のミスマッチ
+
+**問題**: ユーザーパネルが更新されない根本原因を発見。
+
+**原因**:
+- SSE Hub が `event: member_update` ヘッダーで送信
+- フロントエンドは `event: message` のみをリスニング
+
+**修正**: `internal/infrastructure/sse/hub.go` の `SerializeEvent` 関数 (117-120行目)
+
+```go
+// すべてのイベントを "message" イベントとして送信し、
+// データ内の type フィールドで区別する
+return fmt.Sprintf("id: %s\nevent: message\ndata: %s\n\n",
+    event.ID, string(data)), nil
+```
+
+SSEの仕様上、`event:` ヘッダーで分けるのではなく、全て `message` イベントとして送信し、JSONの `type` フィールドで区別するように統一しました。
+
+### Issue 2: DisplayNameが表示されない
+
+**問題**: 退出後、残ったユーザーの `display_name` が空になる
+
+**原因**: `GetRoomMembers` 関数で DisplayName の設定処理が抜けていた
+
+**修正**: `internal/repository/room_repository.go` (534-542行目)
+
+```go
+// DisplayNameを設定（display_name > username の優先順位）
+for i := range members {
+    displayName := members[i].User.DisplayName
+    // display_nameが空の場合はusernameを使用
+    if displayName == "" && members[i].User.Username != nil && *members[i].User.Username != "" {
+        displayName = *members[i].User.Username
+    }
+    members[i].DisplayName = displayName
+}
+```
+
+### Issue 3: システムメッセージの永続化
+
+**問題**: 入退室時のシステムメッセージがページ更新で消える
+
+**背景**:
+- `room_messages` テーブルは元々ユーザーチャット専用（2025-07-28実装）
+- システムメッセージはSSE経由のみで、`room_logs` に統計用として保存（2025-11-05, Issue #72）
+
+**修正**: システムメッセージも `room_messages` テーブルに保存
+
+`internal/handlers/rooms.go` の JoinRoom/LeaveRoom/LeaveCurrentRoom ハンドラーに追加:
+
+```go
+joinMessage := models.RoomMessage{
+    BaseModel: models.BaseModel{
+        ID: uuid.New(),
+    },
+    RoomID:      roomID,
+    UserID:      userID,
+    Message:     fmt.Sprintf("%sさんが入室しました", displayName),
+    MessageType: "system",  // ← 重要: system/chat で区別
+}
+joinMessage.User = *dbUser
+
+// DBに保存
+if err := h.repo.RoomMessage.CreateMessage(&joinMessage); err != nil {
+    log.Printf("入室メッセージの保存に失敗: %v", err)
+}
+```
+
+### Issue 4: システムメッセージのスタイル崩れ
+
+**問題**: ページ更新後、システムメッセージがユーザーの吹き出しとして表示される
+
+**原因**: `loadInitialMessages` が全メッセージを `type: 'user'` として扱っていた
+
+**修正**: `templates/components/room_detail_script.tmpl` (230-259行目)
+
+```javascript
+messages.forEach(msg => {
+    // message_typeをチェックしてシステムメッセージとユーザーメッセージを区別
+    if (msg.message_type === 'system') {
+        // システムメッセージ（入退室など）
+        const isLeave = msg.message && msg.message.includes('退室しました');
+        const subtype = isLeave ? 'leave' : 'join';
+        this.messages.push({
+            id: msg.id,
+            type: 'system',
+            subtype: subtype,
+            content: msg.message,
+            timestamp: new Date(msg.created_at)
+        });
+    } else {
+        // ユーザーメッセージ（チャット）
+        this.messages.push({
+            id: msg.id,
+            type: 'user',
+            content: msg.message,
+            userName: msg.user.display_name || msg.user.username,
+            userAvatar: msg.user.avatar_url || '/static/images/default-avatar.webp',
+            isOwn: isOwn,
+            timestamp: new Date(msg.created_at)
+        });
+    }
+});
+```
+
+### Issue 5: モバイルでメッセージ入力フォームが消える
+
+**問題**: モバイル表示でメッセージ入力フォームが一瞬表示されてすぐ消える
+
+**原因**: `.mobile-chat-area` に固定高さ `calc(100vh - 200px)` が設定され、flexboxの自動調整が上書きされていた
+
+**修正**: `static/css/style.css` (281-299行目)
+
+```css
+/* モバイル版のメッセージフォームを画面下部に固定 */
+.mobile-message-form {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    background-color: white;
+}
+```
+
+`templates/pages/room_detail.tmpl` (572行目)
+
+```html
+<div class="bg-white border-t border-gray-200 p-4 flex-shrink-0 md:relative mobile-message-form">
+```
+
+- モバイル: `position: sticky` で画面下部に固定
+- デスクトップ: `md:relative` で通常のフロー配置
+
+### Issue 6: モバイルのplaceholder
+
+**問題**: モバイルでも「Shift+Enterで改行」という不要な説明が表示される
+
+**修正**: `templates/pages/room_detail.tmpl` (598行目)
+
+```html
+<textarea
+    id="message-input"
+    name="message"
+    :placeholder="window.innerWidth >= 768 ? 'メッセージを入力（Shift+Enterで改行）...' : 'メッセージを入力...'"
+    ...
+></textarea>
+```
+
+Alpine.js の `:placeholder` バインディングで画面幅に応じて動的に切り替え。
+
+### Issue 7: ユーザーパネルのスロット詰め問題
+
+**問題**: 2番目のユーザーが退出 → 3番目が2番目に移動 → 再入室時に上書きされる
+
+**試行錯誤の過程**:
+
+1. **初回実装**: `GetRoomMembers` でメモリ上で詰める
+2. **問題発覚**: 再入室時の上書き問題なし、しかし更新後にスロットが空く
+3. **誤った修正**: `LeaveRoom` でDBの `player_number` を更新
+4. **新たな問題**: 再入室時にDBレベルで上書きが発生
+
+**最終解決策**:
+
+- **DB**: 実際のスロット番号（1〜4）を保持（空きスロットあり）
+- **表示**: `GetRoomMembers` でメモリ上で詰める（空きスロットなし）
+
+`internal/repository/room_repository.go` (567-571行目)
+
+```go
+// player_numberを再割り当て（空いたスロットを詰める）
+// 注意: DBは更新せず、表示用にメモリ上でのみ詰める
+for i := range members {
+    members[i].PlayerNumber = i + 1
+}
+```
+
+**重要ポイント**:
+- `LeaveRoom` ではDBの `player_number` を更新しない
+- `GetRoomMembers` の呼び出し時にのみメモリ上で詰める
+- SSEでもAPI応答でも一貫した表示になる
+
+### デバッグログの削除
+
+Cloud Logging の負荷を軽減するため、全てのデバッグログを削除:
+
+- `internal/handlers/rooms.go` の全デバッグログ
+- `templates/components/room_detail_script.tmpl` の全 `console.log('[DEBUG] ...')`
+
 ## まとめ
 
 SSEを活用して、部屋詳細画面のユーザーパネルをリアルタイム更新する機能を実装しました。イベントを適切に分離することで、無駄なリクエストを防ぎつつ、必要な箇所のみを効率的に更新できるようになりました。
 
-この実装により、ユーザーは入退室状況を即座に把握でき、より良いユーザー体験を提供できるようになりました。
+実装後に発見された複数のバグを修正し、特に以下の点を改善しました：
+
+1. **SSEイベント形式の統一**: `event: message` に統一し、JSONの `type` フィールドで区別
+2. **システムメッセージの永続化**: `room_messages` テーブルに `message_type='system'` として保存
+3. **モバイルUI**: `position: sticky` による入力フォームの固定表示
+4. **スロット管理**: DBは実際のスロット番号を保持し、表示時のみ詰める
+
+この実装により、ユーザーは入退室状況を即座に把握でき、デスクトップ・モバイル共に快適なユーザー体験を提供できるようになりました。
