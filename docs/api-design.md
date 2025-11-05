@@ -51,7 +51,7 @@ Authorization: Bearer <jwt_token>
 | `/auth/register` | GET | 新規登録ページ |
 | `/auth/password-reset` | GET | パスワードリセット申請ページ |
 | `/auth/password-reset/confirm` | GET | パスワードリセット確認ページ |
-| `/auth/complete-profile` | GET | プロフィール補完ページ |
+| `/auth/callback` | GET | 認証コールバックページ |
 
 #### 2.2 認証アクション
 
@@ -64,8 +64,6 @@ Authorization: Bearer <jwt_token>
 | `/auth/password-reset/confirm` | POST | パスワードリセット実行 |
 | `/auth/google` | GET | Google認証開始 |
 | `/auth/google/callback` | GET | Google認証コールバック |
-| `/auth/callback` | GET | 汎用認証コールバック |
-| `/auth/complete-profile` | POST | プロフィール補完処理 |
 
 #### 2.3 認証API
 

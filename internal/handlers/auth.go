@@ -138,21 +138,6 @@ func (h *AuthHandler) CurrentUser(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (h *AuthHandler) CompleteProfilePage(w http.ResponseWriter, r *http.Request) {
-	data := TemplateData{
-		Title: "プロフィール設定",
-	}
-	renderTemplate(w, "complete-profile.tmpl", data)
-}
-
-func (h *AuthHandler) CompleteProfile(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusNotImplemented)
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "このエンドポイントは使用されません。フロントエンド認証をご利用ください。",
-	})
-}
-
 // SyncUser はSupabase認証後にアプリケーションDBにユーザーを同期する
 func (h *AuthHandler) SyncUser(w http.ResponseWriter, r *http.Request) {
 	user, ok := middleware.GetUserFromContext(r.Context())

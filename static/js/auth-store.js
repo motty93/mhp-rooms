@@ -244,10 +244,6 @@ document.addEventListener('alpine:init', () => {
       return this.dbUser?.avatar_url || '/static/images/default-avatar.webp'
     },
 
-    get needsPSNId() {
-      return this.isAuthenticated && !this.user?.user_metadata?.psn_id
-    },
-
     async signIn(email, password) {
       if (!window.supabaseAuth) {
         throw new Error('認証システムが初期化されていません。Supabase設定を確認してください。')
