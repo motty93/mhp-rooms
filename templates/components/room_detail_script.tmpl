@@ -230,17 +230,31 @@ function roomDetail() {
           if (response.ok) {
             const messages = await response.json();
             messages.forEach(msg => {
-              // SupabaseユーザーIDで比較（APIレスポンスにuser.supabase_user_idが含まれている場合）
-              const isOwn = msg.user.supabase_user_id === this.currentUserId;
-              this.messages.push({
-                id: msg.id,
-                type: 'user',
-                content: msg.message,
-                userName: msg.user.display_name || msg.user.username,
-                userAvatar: msg.user.avatar_url || '/static/images/default-avatar.webp',
-                isOwn: isOwn,
-                timestamp: new Date(msg.created_at)
-              });
+              // message_typeをチェックしてシステムメッセージとユーザーメッセージを区別
+              if (msg.message_type === 'system') {
+                // システムメッセージ（入退室など）
+                const isLeave = msg.message && msg.message.includes('退室しました');
+                const subtype = isLeave ? 'leave' : 'join';
+                this.messages.push({
+                  id: msg.id,
+                  type: 'system',
+                  subtype: subtype,
+                  content: msg.message,
+                  timestamp: new Date(msg.created_at)
+                });
+              } else {
+                // ユーザーメッセージ（チャット）
+                const isOwn = msg.user.supabase_user_id === this.currentUserId;
+                this.messages.push({
+                  id: msg.id,
+                  type: 'user',
+                  content: msg.message,
+                  userName: msg.user.display_name || msg.user.username,
+                  userAvatar: msg.user.avatar_url || '/static/images/default-avatar.webp',
+                  isOwn: isOwn,
+                  timestamp: new Date(msg.created_at)
+                });
+              }
             });
           }
         } catch (err) {
@@ -342,6 +356,7 @@ function roomDetail() {
             this.handleMemberUpdate(json.data);
           }
         } catch (err) {
+          console.error('SSE parse error:', err);
         }
       });
 
@@ -936,17 +951,19 @@ function roomDetail() {
 
       {{ range $member := .PageData.Members }}
       {{ if $member }}
-      const playerNum = {{ $member.PlayerNumber }};
-      if (playerNum >= 1 && playerNum <= 4) {
-        memberSlots[playerNum - 1] = {
-          id: '{{ $member.User.ID }}',
-          supabase_user_id: '{{ $member.User.SupabaseUserID }}',
-          display_name: '{{ jsEscape $member.DisplayName }}',
-          avatar_url: '{{ jsEscapePtr $member.User.AvatarURL }}' || '/static/images/default-avatar.webp',
-          is_host: {{ $member.IsHost }},
-          player_number: {{ $member.PlayerNumber }}
-        };
-        count++;
+      {
+        const playerNum = {{ $member.PlayerNumber }};
+        if (playerNum >= 1 && playerNum <= 4) {
+          memberSlots[playerNum - 1] = {
+            id: '{{ $member.User.ID }}',
+            supabase_user_id: '{{ $member.User.SupabaseUserID }}',
+            display_name: '{{ jsEscape $member.DisplayName }}',
+            avatar_url: '{{ jsEscapePtr $member.User.AvatarURL }}' || '/static/images/default-avatar.webp',
+            is_host: {{ $member.IsHost }},
+            player_number: {{ $member.PlayerNumber }}
+          };
+          count++;
+        }
       }
       {{ end }}
       {{ end }}

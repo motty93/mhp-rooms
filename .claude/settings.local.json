@@ -186,7 +186,8 @@
       "Bash(gh issue list:*)",
       "Bash(PORT=8097 ENV=development DB_TYPE=turso timeout 15s make:*)",
       "Bash(npx html-beautify:*)",
-      "Bash(PORT=8098 ENV=development DB_TYPE=turso timeout 15s make:*)"
+      "Bash(PORT=8098 ENV=development DB_TYPE=turso timeout 15s make:*)",
+      "Bash(PORT=8098 ENV=development DB_TYPE=turso make:*)"
     ],
     "deny": []
   }
