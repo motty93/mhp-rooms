@@ -1,515 +1,653 @@
 {{ define "room_detail_page" }}
-<div class="flex h-full md:flex-row flex-col mobile-room-detail"
-     x-data="roomDetail()">
-  <!-- モバイル版ヘッダー（デスクトップでは非表示） -->
-  <div class="md:hidden bg-white border-b border-gray-200 px-4 py-3 flex-shrink-0">
-    <div class="flex items-center space-x-3">
-      <div
-           class="w-10 h-10 {{ gameVersionColor .PageData.Room.GameVersion.Code }} rounded flex items-center justify-center flex-shrink-0">
-        <div class="w-6 h-6 flex items-center justify-center text-white text-xs font-bold">
-          {{ .PageData.Room.GameVersion.Code }}
-        </div>
-      </div>
-      <button class="flex-1 text-left hover:bg-gray-50 py-1 px-2 rounded transition-colors"
-              @click="$store.mobileMenu.toggle()">
-        <div class="text-gray-800 font-bold text-base">
-          {{ if .PageData.Room.HasPassword }}
-          🔑
-          {{ end }}{{ .PageData.Room.Name }}
-        </div>
-        <div class="text-gray-500 text-sm">
-          参加者 {{ .PageData.MemberCount }}/4
-        </div>
-      </button>
-      <!-- シェアボタン（モバイル） -->
-      <button @click="openShare()"
-              class="text-gray-600 hover:text-gray-800 p-2"
-              title="共有">
-        <svg class="w-6 h-6"
-             fill="none"
-             stroke="currentColor"
-             viewBox="0 0 24 24">
-          <path stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-        </svg>
-      </button>
-      <!-- ハンバーガーメニューボタン -->
-      <div class="md:hidden">
-        <button @click="$store.mobileMenu.toggle()"
-                x-show="!$store.mobileMenu.open"
-                class="text-gray-600 hover:text-gray-800 p-2 relative z-[10000]">
-          <svg class="w-6 h-6"
-               fill="none"
-               stroke="currentColor"
-               viewBox="0 0 24 24">
-            <path stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 6h16M4 12h16M4 18h16"></path>
-          </svg>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- モバイルメニュー（部屋詳細ページ専用） -->
-  <div class="md:hidden">
-    <!-- オーバーレイ -->
-    <div x-show="$store.mobileMenu.open"
-         x-cloak
-         @click="$store.mobileMenu.close()"
-         class="fixed inset-0 bg-black bg-opacity-50 z-[9998]"
-         x-transition:enter="transition-opacity ease-out duration-300"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition-opacity ease-in duration-200"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         style="display: none"></div>
-
-    <!-- モバイルメニューパネル -->
-    <div x-show="$store.mobileMenu.open"
-         x-cloak
-         class="fixed top-0 right-0 h-full w-80 bg-white shadow-lg z-[9999] overflow-y-auto"
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="transform translate-x-full"
-         x-transition:enter-end="transform translate-x-0"
-         x-transition:leave="transition ease-in duration-200"
-         x-transition:leave-start="transform translate-x-0"
-         x-transition:leave-end="transform translate-x-full"
-         style="display: none">
-      <!-- メニューヘッダー -->
-      <div class="flex items-center justify-between p-6 border-b border-gray-200">
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center space-x-3 mb-2">
-            <img src="/static/images/icon.webp"
-                 alt="HuntersHub"
-                 class="w-8 h-8 flex-shrink-0" />
-            <h2 class="text-xl font-bold text-gray-800 truncate">
-              {{ if .PageData.Room.HasPassword }}
-              🔑
-              {{ end }}{{ .PageData.Room.Name }}
-            </h2>
-          </div>
-          <!-- 部屋詳細情報（モバイル版） -->
-          <div class="text-sm text-gray-500 space-y-1">
-            {{ if .PageData.Room.GetDescription }}
-            <div class="text-xs">{{ .PageData.Room.GetDescription }}</div>
-            {{ end }}
-            <div class="flex flex-wrap gap-3 text-xs">
-              {{ if .PageData.Room.GetTargetMonster }}
-              <span>🎯 {{ .PageData.Room.GetTargetMonster }}</span>
-              {{ end }}
-              {{ if .PageData.Room.GetRankRequirement }}
-              <span>🏆 {{ .PageData.Room.GetRankRequirement }}</span>
-              {{ end }}
-            </div>
-          </div>
-        </div>
-        <button @click="$store.mobileMenu.close()"
-                class="text-gray-500 hover:text-gray-700 flex-shrink-0 ml-3">
-          <svg class="w-6 h-6"
-               fill="none"
-               stroke="currentColor"
-               viewBox="0 0 24 24">
-            <path stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
-        </button>
-      </div>
-
-      <!-- メニュー内容 -->
-      <div class="p-6 space-y-4">
-        <!-- アクションボタン -->
-        <div class="space-y-3"
-             x-show="$store.auth.isAuthenticated">
-          <!-- ホスト限定：部屋を編集ボタン -->
-          <button x-show="isHost"
-                  @click="openSettingsModal(); $store.mobileMenu.close()"
-                  class="w-full flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded font-medium transition-colors">
-            <svg class="w-5 h-5"
-                 fill="none"
-                 stroke="currentColor"
-                 viewBox="0 0 24 24">
-              <path stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            <span>部屋を編集</span>
-          </button>
-
-          <!-- ホストの場合：部屋を解散ボタン -->
-          <button x-show="isHost"
-                  @click="dismissRoom(); $store.mobileMenu.close()"
-                  :disabled="isDismissing"
-                  class="w-full flex items-center justify-center space-x-2 bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            <svg class="w-5 h-5"
-                 fill="none"
-                 stroke="currentColor"
-                 viewBox="0 0 24 24">
-              <path stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-            <span x-text="isDismissing ? '解散中...' : '部屋を解散'"></span>
-          </button>
-
-          <!-- 一般メンバーの場合：部屋を退出ボタン -->
-          <button x-show="!isHost"
-                  @click="leaveRoom(); $store.mobileMenu.close()"
-                  :disabled="isLeaving"
-                  class="w-full flex items-center justify-center space-x-2 bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            <svg class="w-5 h-5"
-                 fill="none"
-                 stroke="currentColor"
-                 viewBox="0 0 24 24">
-              <path stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            <span x-text="isLeaving ? '退出中...' : '部屋を退出'"></span>
-          </button>
-
-          <!-- 部屋一覧に戻るボタン -->
-          <a href="/rooms"
-             @click="$store.mobileMenu.close()"
-             class="w-full flex items-center justify-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-4 rounded border border-gray-300 font-medium transition-colors">
-            <svg class="w-5 h-5"
-                 fill="none"
-                 stroke="currentColor"
-                 viewBox="0 0 24 24">
-              <path stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            <span>部屋一覧に戻る</span>
-          </a>
-        </div>
-
-        <!-- 未認証時のメッセージ -->
-        <div class="text-center py-4"
-             x-show="!$store.auth.isAuthenticated">
-          <p class="text-gray-500 text-sm">ログインしてください</p>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- 左側パネル（デスクトップのみ表示） -->
-  <div class="hidden md:flex w-96 h-full border-r border-gray-200 flex-col bg-white">
-    <!-- ヘッダー部分 -->
-    <div class="bg-white border-b border-gray-200 px-4 py-3 min-h-0 flex-shrink-0">
-      <div class="flex items-center space-x-3 mb-2">
+  <div
+    class="flex h-full md:flex-row flex-col mobile-room-detail"
+    x-data="roomDetail()"
+  >
+    <!-- モバイル版ヘッダー（デスクトップでは非表示） -->
+    <div
+      class="md:hidden bg-white border-b border-gray-200 px-4 py-3 flex-shrink-0"
+    >
+      <div class="flex items-center space-x-3">
         <div
-             class="w-12 h-12 {{ gameVersionColor .PageData.Room.GameVersion.Code }} rounded flex items-center justify-center flex-shrink-0">
-          <div class="w-8 h-8 flex items-center justify-center text-white text-sm font-bold">
+          class="w-10 h-10 {{ gameVersionColor .PageData.Room.GameVersion.Code }} rounded flex items-center justify-center flex-shrink-0"
+        >
+          <div
+            class="w-6 h-6 flex items-center justify-center text-white text-xs font-bold"
+          >
             {{ .PageData.Room.GameVersion.Code }}
           </div>
         </div>
-        <div class="flex items-center justify-between">
-          <div class="text-gray-800 font-bold text-lg">
+        <button
+          class="flex-1 text-left hover:bg-gray-50 py-1 px-2 rounded transition-colors"
+          @click="$store.mobileMenu.toggle()"
+        >
+          <div class="text-gray-800 font-bold text-base">
             {{ if .PageData.Room.HasPassword }}
-            🔑
+              🔑
             {{ end }}{{ .PageData.Room.Name }}
           </div>
-          <div class="flex items-center space-x-1 ml-2">
-            <!-- シェアボタン（PC） -->
-            <button @click="openShare()"
-                    class="hidden md:block text-gray-600 hover:text-gray-800 p-1 rounded hover:bg-gray-100 transition-colors"
-                    title="共有">
-              <svg class="w-5 h-5"
-                   fill="none"
-                   stroke="currentColor"
-                   viewBox="0 0 24 24">
-                <path stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-              </svg>
-            </button>
-            <!-- PC版のみ：ホストの場合に設定アイコンを表示 -->
-            <button x-show="isHost && $store.auth.initialized && $store.auth.isAuthenticated"
-                    @click="openSettingsModal()"
-                    class="hidden md:block text-gray-600 hover:text-gray-800 p-1 rounded hover:bg-gray-100 transition-colors"
-                    title="部屋設定を変更">
-              <svg class="w-5 h-5"
-                   fill="none"
-                   stroke="currentColor"
-                   viewBox="0 0 24 24">
-                <path stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </button>
+          <div class="text-gray-500 text-sm">
+            参加者 <span x-text="memberCount"></span>/4
           </div>
-        </div>
-      </div>
-      <div class="text-gray-600 text-sm leading-relaxed">
-        <div x-show="!descriptionExpanded"
-             class="overflow-hidden">
-          <div class="max-h-10 overflow-hidden">
-            {{ .PageData.Room.GetDescription }}
-          </div>
-          <button @click="descriptionExpanded = true"
-                  x-show="needsExpansion"
-                  class="text-gray-800 hover:text-gray-600 text-xs mt-1 underline">
-            続きを表示
-          </button>
-        </div>
-        <div x-show="descriptionExpanded"
-             x-cloak>
-          {{ .PageData.Room.GetDescription }}
-          <button @click="descriptionExpanded = false"
-                  class="text-gray-800 hover:text-gray-600 text-xs mt-1 underline block">
-            閉じる
+        </button>
+        <!-- シェアボタン（モバイル） -->
+        <button
+          @click="openShare()"
+          class="text-gray-600 hover:text-gray-800 p-2"
+          title="共有"
+        >
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+            />
+          </svg>
+        </button>
+        <!-- ハンバーガーメニューボタン -->
+        <div class="md:hidden">
+          <button
+            @click="$store.mobileMenu.toggle()"
+            x-show="!$store.mobileMenu.open"
+            class="text-gray-600 hover:text-gray-800 p-2 relative z-[10000]"
+          >
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              ></path>
+            </svg>
           </button>
         </div>
       </div>
-
-      <!-- 部屋の詳細情報 -->
-      <div class="mt-3 text-sm text-gray-500 space-y-1">
-        {{ $target := .PageData.Room.GetTargetMonster }}
-        {{ if and $target (ne $target "<nil>") }}
-        <div class="flex items-center">
-          <span class="text-gray-400 mr-2">🎯</span>
-          <span>ターゲット: {{ $target }}</span>
-        </div>
-        {{ end }}
-        {{ $rank := .PageData.Room.GetRankRequirement }}
-        {{ if and $rank (ne $rank "<nil>") }}
-        <div class="flex items-center">
-          <span class="text-gray-400 mr-2">🏆</span>
-          <span>ランク: {{ $rank }}</span>
-        </div>
-        {{ end }}
-      </div>
     </div>
 
-    <!-- ユーザーリスト -->
-    <div class="flex-1 px-4 pt-4 space-y-3 overflow-y-auto">
-      {{ range $index, $member := .PageData.Members }}
-      {{ if $member }}
-      <a href="/users/{{ $member.User.ID }}"
-         class="w-full flex items-center space-x-3 p-2 bg-gray-100 hover:bg-gray-200 rounded border-2 transition-colors cursor-pointer"
-         :class="{'border-blue-500': currentUserId === '{{ $member.User.SupabaseUserID }}', 'border-gray-200': currentUserId !== '{{ $member.User.SupabaseUserID }}'}">
-        <img src="{{ if and $member.User.AvatarURL (ne (stringPtr $member.User.AvatarURL) "") }}
-                  {{ stringPtr $member.User.AvatarURL }}
-                {{ else }}
-                  /static/images/default-avatar.webp
-                {{ end }}"
-             class="w-8 h-8 rounded-full object-cover"
-             alt="ユーザーアバター" />
-        <span class="text-gray-800 text-sm font-medium">
-          {{ if $member.User.DisplayName }}
-          {{ $member.User.DisplayName }}
-          {{ else if $member.User.Username }}
-          {{ $member.User.Username }}
-          {{ else }}
-          {{ $member.DisplayName }}
-          {{ end }}
-        </span>
-        {{ if $member.IsHost }}
-        <span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded">ホスト</span>
-        {{ end }}
-      </a>
-      {{ else }}
-      <div class="flex items-center space-x-3 p-2 bg-gray-50 rounded border border-gray-200 opacity-60">
-        <div class="w-6 h-8 bg-gray-300 rounded flex items-center justify-center">
-          <div class="w-4 h-6 bg-gray-500 rounded-sm"></div>
-        </div>
-        <span class="text-gray-400 text-sm">－</span>
-      </div>
-      {{ end }}
-      {{ end }}
-    </div>
+    <!-- モバイルメニュー（部屋詳細ページ専用） -->
+    <div class="md:hidden">
+      <!-- オーバーレイ -->
+      <div
+        x-show="$store.mobileMenu.open"
+        x-cloak
+        @click="$store.mobileMenu.close()"
+        class="fixed inset-0 bg-black bg-opacity-50 z-[9998]"
+        x-transition:enter="transition-opacity ease-out duration-300"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition-opacity ease-in duration-200"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        style="display: none"
+      ></div>
 
-    <!-- ボタンエリア（デスクトップのみ表示） -->
-    <div class="hidden md:block p-4 flex-shrink-0 space-y-2">
-      <!-- ホストの場合：部屋を解散ボタン -->
-      <button x-show="isHost"
-              @click="dismissRoom()"
-              :disabled="isDismissing"
-              class="w-full flex items-center justify-center space-x-2 bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-        <svg class="w-5 h-5"
-             fill="none"
-             stroke="currentColor"
-             viewBox="0 0 24 24">
-          <path stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-        </svg>
-        <span x-text="isDismissing ? '解散中...' : '部屋を解散'"></span>
-      </button>
-
-      <!-- 一般メンバーの場合：部屋を退出ボタン -->
-      <button x-show="!isHost"
-              @click="leaveRoom()"
-              :disabled="isLeaving"
-              class="w-full flex items-center justify-center space-x-2 bg-gray-600 hover:bg-gray-700 text-white py-3 px-4 rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-        <svg class="w-5 h-5"
-             fill="none"
-             stroke="currentColor"
-             viewBox="0 0 24 24">
-          <path stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-        </svg>
-        <span x-text="isLeaving ? '退出中...' : '部屋を退出'"></span>
-      </button>
-
-      <!-- 部屋一覧に戻るボタン -->
-      <a href="/rooms"
-         class="w-full flex items-center justify-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-4 rounded border border-gray-300 font-medium transition-colors">
-        <svg class="w-5 h-5"
-             fill="none"
-             stroke="currentColor"
-             viewBox="0 0 24 24">
-          <path stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-        <span>部屋一覧に戻る</span>
-      </a>
-    </div>
-  </div>
-
-  <!-- メインエリア（モバイルでは全幅、デスクトップでは右側） -->
-  <div class="flex-1 h-full flex flex-col">
-    <!-- チャットエリア -->
-    <div class="flex-1 relative bg-gray-100 overflow-y-auto mobile-chat-area"
-         id="chat-container">
-      <!-- メッセージリスト -->
-      <div class="p-4 space-y-4">
-        <template x-for="message in messages"
-                  :key="message.id">
-          <div>
-            <!-- システムメッセージ -->
-            <template x-if="message.type === 'system'">
-              <div class="text-center">
-                <span class="px-3 py-1 rounded-full text-sm"
-                      :class="{
-                    'bg-gray-200 text-gray-600': message.subtype === 'create',
-                    'bg-green-100 text-green-700': message.subtype === 'join',
-                    'bg-red-100 text-red-700': message.subtype === 'leave'
-                  }"
-                      x-text="message.content"></span>
+      <!-- モバイルメニューパネル -->
+      <div
+        x-show="$store.mobileMenu.open"
+        x-cloak
+        class="fixed top-0 right-0 h-full w-80 bg-white shadow-lg z-[9999] overflow-y-auto"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="transform translate-x-full"
+        x-transition:enter-end="transform translate-x-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="transform translate-x-0"
+        x-transition:leave-end="transform translate-x-full"
+        style="display: none"
+      >
+        <!-- メニューヘッダー -->
+        <div
+          class="flex items-center justify-between p-6 border-b border-gray-200"
+        >
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center space-x-3 mb-2">
+              <img
+                src="/static/images/icon.webp"
+                alt="HuntersHub"
+                class="w-8 h-8 flex-shrink-0"
+              />
+              <h2 class="text-xl font-bold text-gray-800 truncate">
+                {{ if .PageData.Room.HasPassword }}
+                  🔑
+                {{ end }}{{ .PageData.Room.Name }}
+              </h2>
+            </div>
+            <!-- 部屋詳細情報（モバイル版） -->
+            <div class="text-sm text-gray-500 space-y-1">
+              {{ if .PageData.Room.GetDescription }}
+                <div class="text-xs">{{ .PageData.Room.GetDescription }}</div>
+              {{ end }}
+              <div class="flex flex-wrap gap-3 text-xs">
+                {{ if .PageData.Room.GetTargetMonster }}
+                  <span>🎯 {{ .PageData.Room.GetTargetMonster }}</span>
+                {{ end }}
+                {{ if .PageData.Room.GetRankRequirement }}
+                  <span>🏆 {{ .PageData.Room.GetRankRequirement }}</span>
+                {{ end }}
               </div>
+            </div>
+          </div>
+          <button
+            @click="$store.mobileMenu.close()"
+            class="text-gray-500 hover:text-gray-700 flex-shrink-0 ml-3"
+          >
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              ></path>
+            </svg>
+          </button>
+        </div>
+
+        <!-- メニュー内容 -->
+        <div class="p-6 space-y-4">
+          <!-- アクションボタン -->
+          <div class="space-y-3" x-show="$store.auth.isAuthenticated">
+            <!-- ホスト限定：部屋を編集ボタン -->
+            <button
+              x-show="isHost"
+              @click="openSettingsModal(); $store.mobileMenu.close()"
+              class="w-full flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded font-medium transition-colors"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+              <span>部屋を編集</span>
+            </button>
+
+            <!-- ホストの場合：部屋を解散ボタン -->
+            <button
+              x-show="isHost"
+              @click="dismissRoom(); $store.mobileMenu.close()"
+              :disabled="isDismissing"
+              class="w-full flex items-center justify-center space-x-2 bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
+              </svg>
+              <span x-text="isDismissing ? '解散中...' : '部屋を解散'"></span>
+            </button>
+
+            <!-- 一般メンバーの場合：部屋を退出ボタン -->
+            <button
+              x-show="!isHost"
+              @click="leaveRoom(); $store.mobileMenu.close()"
+              :disabled="isLeaving"
+              class="w-full flex items-center justify-center space-x-2 bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                />
+              </svg>
+              <span x-text="isLeaving ? '退出中...' : '部屋を退出'"></span>
+            </button>
+
+            <!-- 部屋一覧に戻るボタン -->
+            <a
+              href="/rooms"
+              @click="$store.mobileMenu.close()"
+              class="w-full flex items-center justify-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-4 rounded border border-gray-300 font-medium transition-colors"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                />
+              </svg>
+              <span>部屋一覧に戻る</span>
+            </a>
+          </div>
+
+          <!-- 未認証時のメッセージ -->
+          <div class="text-center py-4" x-show="!$store.auth.isAuthenticated">
+            <p class="text-gray-500 text-sm">ログインしてください</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- 左側パネル（デスクトップのみ表示） -->
+    <div
+      class="hidden md:flex w-96 h-full border-r border-gray-200 flex-col bg-white"
+    >
+      <!-- ヘッダー部分 -->
+      <div
+        class="bg-white border-b border-gray-200 px-4 py-3 min-h-0 flex-shrink-0"
+      >
+        <div class="flex items-center space-x-3 mb-2">
+          <div
+            class="w-12 h-12 {{ gameVersionColor .PageData.Room.GameVersion.Code }} rounded flex items-center justify-center flex-shrink-0"
+          >
+            <div
+              class="w-8 h-8 flex items-center justify-center text-white text-sm font-bold"
+            >
+              {{ .PageData.Room.GameVersion.Code }}
+            </div>
+          </div>
+          <div class="flex items-center justify-between">
+            <div class="text-gray-800 font-bold text-lg">
+              {{ if .PageData.Room.HasPassword }}
+                🔑
+              {{ end }}{{ .PageData.Room.Name }}
+            </div>
+            <div class="flex items-center space-x-1 ml-2">
+              <!-- シェアボタン（PC） -->
+              <button
+                @click="openShare()"
+                class="hidden md:block text-gray-600 hover:text-gray-800 p-1 rounded hover:bg-gray-100 transition-colors"
+                title="共有"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                  />
+                </svg>
+              </button>
+              <!-- PC版のみ：ホストの場合に設定アイコンを表示 -->
+              <button
+                x-show="isHost && $store.auth.initialized && $store.auth.isAuthenticated"
+                @click="openSettingsModal()"
+                class="hidden md:block text-gray-600 hover:text-gray-800 p-1 rounded hover:bg-gray-100 transition-colors"
+                title="部屋設定を変更"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                  />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="text-gray-600 text-sm leading-relaxed">
+          <div x-show="!descriptionExpanded" class="overflow-hidden">
+            <div class="max-h-10 overflow-hidden">
+              {{ .PageData.Room.GetDescription }}
+            </div>
+            <button
+              @click="descriptionExpanded = true"
+              x-show="needsExpansion"
+              class="text-gray-800 hover:text-gray-600 text-xs mt-1 underline"
+            >
+              続きを表示
+            </button>
+          </div>
+          <div x-show="descriptionExpanded" x-cloak>
+            {{ .PageData.Room.GetDescription }}
+            <button
+              @click="descriptionExpanded = false"
+              class="text-gray-800 hover:text-gray-600 text-xs mt-1 underline block"
+            >
+              閉じる
+            </button>
+          </div>
+        </div>
+
+        <!-- 部屋の詳細情報 -->
+        <div class="mt-3 text-sm text-gray-500 space-y-1">
+          {{ $target := .PageData.Room.GetTargetMonster }}
+          {{ if and $target (ne $target "<nil>") }}
+            <div class="flex items-center">
+              <span class="text-gray-400 mr-2">🎯</span>
+              <span>ターゲット: {{ $target }}</span>
+            </div>
+          {{ end }}
+          {{ $rank := .PageData.Room.GetRankRequirement }}
+          {{ if and $rank (ne $rank "<nil>") }}
+            <div class="flex items-center">
+              <span class="text-gray-400 mr-2">🏆</span>
+              <span>ランク: {{ $rank }}</span>
+            </div>
+          {{ end }}
+        </div>
+      </div>
+
+      <!-- ユーザーリスト -->
+      <div class="flex-1 px-4 pt-4 space-y-3 overflow-y-auto">
+        <template x-for="(member, index) in members" :key="index">
+          <div>
+            <!-- メンバーが存在する場合 -->
+            <template x-if="member">
+              <a
+                :href="'/users/' + member.id"
+                class="w-full flex items-center space-x-3 p-2 bg-gray-100 hover:bg-gray-200 rounded border-2 transition-colors cursor-pointer"
+                :class="{'border-blue-500': currentUserId === member.supabase_user_id, 'border-gray-200': currentUserId !== member.supabase_user_id}"
+              >
+                <img
+                  :src="member.avatar_url || '/static/images/default-avatar.webp'"
+                  class="w-8 h-8 rounded-full object-cover"
+                  :alt="member.display_name + 'のアバター'"
+                />
+                <span
+                  class="text-gray-800 text-sm font-medium"
+                  x-text="member.display_name"
+                ></span>
+                <span
+                  x-show="member.is_host"
+                  class="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded"
+                  >ホスト</span
+                >
+              </a>
             </template>
 
-            <!-- ユーザーメッセージ -->
-            <template x-if="message.type === 'user'">
-              <div :class="message.isOwn ? 'flex justify-end' : 'flex items-start space-x-3'">
-                <!-- 他人のメッセージ -->
-                <template x-if="!message.isOwn">
-                  <img :src="message.userAvatar || '/static/images/default-avatar.webp'"
-                       class="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                       :alt="message.userName + 'のアバター'" />
-                </template>
-
-                <div :class="message.isOwn ? 'max-w-xs' : 'flex-1 max-w-xs'">
-                  <div class="flex items-center mb-1"
-                       :class="message.isOwn ? 'justify-end' : 'space-x-2'">
-                    <template x-if="!message.isOwn">
-                      <button class="font-medium text-gray-800 text-sm hover:text-gray-600 hover:underline transition-colors"
-                              x-text="message.userName"></button>
-                    </template>
-                    <span class="text-gray-500 text-xs"
-                          x-text="formatTime(message.timestamp)"></span>
-                  </div>
-                  <div class="rounded-lg p-3 text-sm whitespace-pre-wrap break-words"
-                       :class="message.isOwn ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-800'"
-                       x-html="formatMessageContent(message.content, message.isOwn)"></div>
+            <!-- 空きスロット -->
+            <template x-if="!member">
+              <div
+                class="flex items-center space-x-3 p-2 bg-gray-50 rounded border border-gray-200 opacity-60"
+              >
+                <div
+                  class="w-6 h-8 bg-gray-300 rounded flex items-center justify-center"
+                >
+                  <div class="w-4 h-6 bg-gray-500 rounded-sm"></div>
                 </div>
+                <span class="text-gray-400 text-sm">－</span>
               </div>
             </template>
           </div>
         </template>
       </div>
+
+      <!-- ボタンエリア（デスクトップのみ表示） -->
+      <div class="hidden md:block p-4 flex-shrink-0 space-y-2">
+        <!-- ホストの場合：部屋を解散ボタン -->
+        <button
+          x-show="isHost"
+          @click="dismissRoom()"
+          :disabled="isDismissing"
+          class="w-full flex items-center justify-center space-x-2 bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
+          </svg>
+          <span x-text="isDismissing ? '解散中...' : '部屋を解散'"></span>
+        </button>
+
+        <!-- 一般メンバーの場合：部屋を退出ボタン -->
+        <button
+          x-show="!isHost"
+          @click="leaveRoom()"
+          :disabled="isLeaving"
+          class="w-full flex items-center justify-center space-x-2 bg-gray-600 hover:bg-gray-700 text-white py-3 px-4 rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+            />
+          </svg>
+          <span x-text="isLeaving ? '退出中...' : '部屋を退出'"></span>
+        </button>
+
+        <!-- 部屋一覧に戻るボタン -->
+        <a
+          href="/rooms"
+          class="w-full flex items-center justify-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-4 rounded border border-gray-300 font-medium transition-colors"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            />
+          </svg>
+          <span>部屋一覧に戻る</span>
+        </a>
+      </div>
     </div>
 
-    <!-- メッセージフォーム -->
-    <div class="bg-white border-t border-gray-200 p-4 flex-shrink-0">
-      <!-- PC版のみ：送信方法切り替え -->
-      <div class="hidden md:flex items-center justify-end mb-2">
-        <label class="flex items-center text-sm text-gray-600 cursor-pointer">
-          <input type="checkbox"
-                 x-model="useCtrlEnterToSend"
-                 class="mr-2 rounded" />
-          <span>Enterで改行、Ctrl+Enterで送信</span>
-        </label>
+    <!-- メインエリア（モバイルでは全幅、デスクトップでは右側） -->
+    <div class="flex-1 h-full flex flex-col">
+      <!-- チャットエリア -->
+      <div
+        class="flex-1 relative bg-gray-100 overflow-y-auto mobile-chat-area"
+        id="chat-container"
+      >
+        <!-- メッセージリスト -->
+        <div class="p-4 space-y-4">
+          <template x-for="message in messages" :key="message.id">
+            <div>
+              <!-- システムメッセージ -->
+              <template x-if="message.type === 'system'">
+                <div class="text-center">
+                  <span
+                    class="px-3 py-1 rounded-full text-sm"
+                    :class="{
+                    'bg-gray-200 text-gray-600': message.subtype === 'create',
+                    'bg-green-100 text-green-700': message.subtype === 'join',
+                    'bg-red-100 text-red-700': message.subtype === 'leave'
+                  }"
+                    x-text="message.content"
+                  ></span>
+                </div>
+              </template>
+
+              <!-- ユーザーメッセージ -->
+              <template x-if="message.type === 'user'">
+                <div
+                  :class="message.isOwn ? 'flex justify-end' : 'flex items-start space-x-3'"
+                >
+                  <!-- 他人のメッセージ -->
+                  <template x-if="!message.isOwn">
+                    <img
+                      :src="message.userAvatar || '/static/images/default-avatar.webp'"
+                      class="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                      :alt="message.userName + 'のアバター'"
+                    />
+                  </template>
+
+                  <div :class="message.isOwn ? 'max-w-xs' : 'flex-1 max-w-xs'">
+                    <div
+                      class="flex items-center mb-1"
+                      :class="message.isOwn ? 'justify-end' : 'space-x-2'"
+                    >
+                      <template x-if="!message.isOwn">
+                        <button
+                          class="font-medium text-gray-800 text-sm hover:text-gray-600 hover:underline transition-colors"
+                          x-text="message.userName"
+                        ></button>
+                      </template>
+                      <span
+                        class="text-gray-500 text-xs"
+                        x-text="formatTime(message.timestamp)"
+                      ></span>
+                    </div>
+                    <div
+                      class="rounded-lg p-3 text-sm whitespace-pre-wrap break-words"
+                      :class="message.isOwn ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-800'"
+                      x-html="formatMessageContent(message.content, message.isOwn)"
+                    ></div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </template>
+        </div>
       </div>
 
-      <form method="post"
-            hx-post="/rooms/{{ .PageData.Room.ID }}/messages"
-            hx-trigger="submit"
-            hx-swap="none"
-            hx-on::before-request="window.roomDetailInstance?.addOptimisticMessage()"
-            hx-on::after-request="this.reset(); document.getElementById('message-input').focus(); window.roomDetailInstance?.resetTextareaHeight()"
-            class="flex space-x-3">
-        <div class="flex-1 relative">
-          <textarea id="message-input"
-                    name="message"
-                    placeholder="メッセージを入力（Shift+Enterで改行）..."
-                    autocomplete="off"
-                    rows="1"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent resize-none overflow-hidden"
-                    style="min-height: 42px; max-height: 120px;"
-                    :disabled="!$store.auth.initialized || !$store.auth.isAuthenticated"
-                    @input="autoResizeTextarea($event.target); handleMentionInput($event.target)"
-                    @keydown="handleMessageKeydown($event)"
-                    required></textarea>
-
-          <!-- メンション候補ドロップダウン -->
-          <div x-show="showMentionSuggestions"
-               x-cloak
-               class="absolute bottom-full left-0 mb-2 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto z-50 w-full">
-            <template x-for="(member, index) in filteredMentionMembers"
-                      :key="member.id">
-              <button type="button"
-                      @click="insertMention(member)"
-                      @mouseenter="selectedMentionIndex = index"
-                      class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center space-x-2"
-                      :class="{ 'bg-gray-100': selectedMentionIndex === index }">
-                <img :src="member.avatar_url || '/static/images/default-avatar.webp'"
-                     class="w-6 h-6 rounded-full" />
-                <span x-text="member.display_name"></span>
-              </button>
-            </template>
-          </div>
+      <!-- メッセージフォーム -->
+      <div class="bg-white border-t border-gray-200 p-4 flex-shrink-0 md:relative mobile-message-form">
+        <!-- PC版のみ：送信方法切り替え -->
+        <div class="hidden md:flex items-center justify-end mb-2">
+          <label class="flex items-center text-sm text-gray-600 cursor-pointer">
+            <input
+              type="checkbox"
+              x-model="useCtrlEnterToSend"
+              class="mr-2 rounded"
+            />
+            <span>Enterで改行、Ctrl+Enterで送信</span>
+          </label>
         </div>
 
-        <button type="submit"
-                :disabled="!$store.auth.initialized || !$store.auth.isAuthenticated"
-                class="bg-gray-800 hover:bg-gray-900 text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed self-end">
-          送信
-        </button>
-      </form>
-    </div>
-  </div>
-  <!-- 部屋設定モーダル -->
-  {{ template "room_settings_modal.tmpl" }}
-  <!-- SNS共有モーダル -->
-  {{ template "share_modal.tmpl" }}
-</div>
+        <form
+          method="post"
+          hx-post="/rooms/{{ .PageData.Room.ID }}/messages"
+          hx-trigger="submit"
+          hx-swap="none"
+          hx-on::before-request="window.roomDetailInstance?.addOptimisticMessage()"
+          hx-on::after-request="this.reset(); document.getElementById('message-input').focus(); window.roomDetailInstance?.resetTextareaHeight()"
+          class="flex space-x-3"
+        >
+          <div class="flex-1 relative">
+            <textarea
+              id="message-input"
+              name="message"
+              :placeholder="window.innerWidth >= 768 ? 'メッセージを入力（Shift+Enterで改行）...' : 'メッセージを入力...'"
+              autocomplete="off"
+              rows="1"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent resize-none overflow-hidden"
+              style="min-height: 42px; max-height: 120px;"
+              :disabled="!$store.auth.initialized || !$store.auth.isAuthenticated"
+              @input="autoResizeTextarea($event.target); handleMentionInput($event.target)"
+              @keydown="handleMessageKeydown($event)"
+              required
+            ></textarea>
 
-{{ template "room_detail_script.tmpl" . }}
+            <!-- メンション候補ドロップダウン -->
+            <div
+              x-show="showMentionSuggestions"
+              x-cloak
+              class="absolute bottom-full left-0 mb-2 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto z-50 w-full"
+            >
+              <template
+                x-for="(member, index) in filteredMentionMembers"
+                :key="member.id"
+              >
+                <button
+                  type="button"
+                  @click="insertMention(member)"
+                  @mouseenter="selectedMentionIndex = index"
+                  class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center space-x-2"
+                  :class="{ 'bg-gray-100': selectedMentionIndex === index }"
+                >
+                  <img
+                    :src="member.avatar_url || '/static/images/default-avatar.webp'"
+                    class="w-6 h-6 rounded-full"
+                  />
+                  <span x-text="member.display_name"></span>
+                </button>
+              </template>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            :disabled="!$store.auth.initialized || !$store.auth.isAuthenticated"
+            class="bg-gray-800 hover:bg-gray-900 text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed self-end"
+          >
+            送信
+          </button>
+        </form>
+      </div>
+    </div>
+    <!-- 部屋設定モーダル -->
+    {{ template "room_settings_modal.tmpl" }}
+    <!-- SNS共有モーダル -->
+    {{ template "share_modal.tmpl" }}
+  </div>
+
+  {{ template "room_detail_script.tmpl" . }}
 {{ end }}

@@ -531,6 +531,22 @@ func (r *roomRepository) GetRoomMembers(roomID uuid.UUID) ([]models.RoomMember, 
 		return nil, err
 	}
 
+	// DisplayNameを設定（display_name > username の優先順位）
+	for i := range members {
+		displayName := members[i].User.DisplayName
+		// display_nameが空の場合はusernameを使用
+		if displayName == "" && members[i].User.Username != nil && *members[i].User.Username != "" {
+			displayName = *members[i].User.Username
+		}
+		members[i].DisplayName = displayName
+	}
+
+	// player_numberを再割り当て（空いたスロットを詰める）
+	// 注意: DBは更新せず、表示用にメモリ上でのみ詰める
+	for i := range members {
+		members[i].PlayerNumber = i + 1
+	}
+
 	return members, nil
 }
 
