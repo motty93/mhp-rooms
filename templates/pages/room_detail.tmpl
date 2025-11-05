@@ -569,7 +569,7 @@
       </div>
 
       <!-- メッセージフォーム -->
-      <div class="bg-white border-t border-gray-200 p-4 flex-shrink-0">
+      <div class="bg-white border-t border-gray-200 p-4 flex-shrink-0 md:relative mobile-message-form">
         <!-- PC版のみ：送信方法切り替え -->
         <div class="hidden md:flex items-center justify-end mb-2">
           <label class="flex items-center text-sm text-gray-600 cursor-pointer">
@@ -595,7 +595,7 @@
             <textarea
               id="message-input"
               name="message"
-              placeholder="メッセージを入力（Shift+Enterで改行）..."
+              :placeholder="window.innerWidth >= 768 ? 'メッセージを入力（Shift+Enterで改行）...' : 'メッセージを入力...'"
               autocomplete="off"
               rows="1"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent resize-none overflow-hidden"
