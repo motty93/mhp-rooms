@@ -1,10 +1,8 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/go-chi/chi/v5"
 	"mhp-rooms/internal/info"
@@ -14,29 +12,29 @@ import (
 type InfoHandler struct {
 	BaseHandler
 	articlesPath string
+	feedPath     string
+	atomPath     string
+	generator    *info.Generator
 }
 
-func NewInfoHandler(repo *repository.Repository) *InfoHandler {
+func NewInfoHandler(repo *repository.Repository, generator *info.Generator) *InfoHandler {
 	return &InfoHandler{
 		BaseHandler: BaseHandler{
 			repo: repo,
 		},
 		articlesPath: "static/generated/info/articles.json",
+		feedPath:     "static/generated/info/feed.xml",
+		atomPath:     "static/generated/info/atom.xml",
+		generator:    generator,
 	}
 }
 
 // loadArticles はJSONファイルから記事を読み込む
 func (h *InfoHandler) loadArticles() (info.ArticleList, error) {
-	data, err := os.ReadFile(h.articlesPath)
+	articles, err := loadArticlesWithFallback(h.articlesPath, h.generator)
 	if err != nil {
-		return nil, fmt.Errorf("記事データの読み込みエラー: %w", err)
+		return nil, fmt.Errorf("記事データの読み込みに失敗しました: %w", err)
 	}
-
-	var articles info.ArticleList
-	if err := json.Unmarshal(data, &articles); err != nil {
-		return nil, fmt.Errorf("JSONパースエラー: %w", err)
-	}
-
 	return articles, nil
 }
 
@@ -69,7 +67,8 @@ func (h *InfoHandler) List(w http.ResponseWriter, r *http.Request) {
 	filteredArticles = filteredArticles.SortByDateDesc()
 
 	data := TemplateData{
-		Title: "更新情報",
+		Title:      "更新情報",
+		HideHeader: true,
 		PageData: map[string]interface{}{
 			"Articles":        filteredArticles,
 			"CurrentCategory": category,
@@ -108,7 +107,8 @@ func (h *InfoHandler) Detail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := TemplateData{
-		Title: foundArticle.Title,
+		Title:      foundArticle.Title,
+		HideHeader: true,
 		PageData: map[string]interface{}{
 			"Article": foundArticle,
 		},
@@ -119,13 +119,24 @@ func (h *InfoHandler) Detail(w http.ResponseWriter, r *http.Request) {
 
 // Feed はRSSフィードを返す
 func (h *InfoHandler) Feed(w http.ResponseWriter, r *http.Request) {
-	feedPath := "static/generated/info/feed.xml"
-	feedData, err := os.ReadFile(feedPath)
+	feedData, err := readGeneratedFile(h.feedPath, h.generator)
 	if err != nil {
 		http.Error(w, "フィードが見つかりません", http.StatusNotFound)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/rss+xml; charset=utf-8")
+	w.Write(feedData)
+}
+
+// AtomFeed はAtomフィードを返す
+func (h *InfoHandler) AtomFeed(w http.ResponseWriter, r *http.Request) {
+	feedData, err := readGeneratedFile(h.atomPath, h.generator)
+	if err != nil {
+		http.Error(w, "フィードが見つかりません", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/atom+xml; charset=utf-8")
 	w.Write(feedData)
 }

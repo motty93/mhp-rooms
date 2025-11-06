@@ -1,10 +1,8 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 
 	"mhp-rooms/internal/info"
 	"mhp-rooms/internal/repository"
@@ -13,29 +11,25 @@ import (
 type RoadmapHandler struct {
 	BaseHandler
 	articlesPath string
+	generator    *info.Generator
 }
 
-func NewRoadmapHandler(repo *repository.Repository) *RoadmapHandler {
+func NewRoadmapHandler(repo *repository.Repository, generator *info.Generator) *RoadmapHandler {
 	return &RoadmapHandler{
 		BaseHandler: BaseHandler{
 			repo: repo,
 		},
 		articlesPath: "static/generated/info/articles.json",
+		generator:    generator,
 	}
 }
 
 // loadArticles はJSONファイルから記事を読み込む
 func (h *RoadmapHandler) loadArticles() (info.ArticleList, error) {
-	data, err := os.ReadFile(h.articlesPath)
+	articles, err := loadArticlesWithFallback(h.articlesPath, h.generator)
 	if err != nil {
-		return nil, fmt.Errorf("記事データの読み込みエラー: %w", err)
+		return nil, fmt.Errorf("記事データの読み込みに失敗しました: %w", err)
 	}
-
-	var articles info.ArticleList
-	if err := json.Unmarshal(data, &articles); err != nil {
-		return nil, fmt.Errorf("JSONパースエラー: %w", err)
-	}
-
 	return articles, nil
 }
 
@@ -55,7 +49,8 @@ func (h *RoadmapHandler) Index(w http.ResponseWriter, r *http.Request) {
 	roadmaps = roadmaps.SortByDateDesc()
 
 	data := TemplateData{
-		Title: "開発ロードマップ",
+		Title:      "開発ロードマップ",
+		HideHeader: true,
 		PageData: map[string]interface{}{
 			"Roadmaps": roadmaps,
 		},

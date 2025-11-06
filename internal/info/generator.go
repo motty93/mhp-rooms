@@ -12,17 +12,19 @@ import (
 
 // Generator は静的ファイルを生成する
 type Generator struct {
-	parser      *Parser
-	outputDir   string
-	contentDirs map[ArticleType]string
+	parser         *Parser
+	outputDir      string
+	contentSources []ContentSource
 }
 
 // NewGenerator は新しいGeneratorを作成する
-func NewGenerator(outputDir string, contentDirs map[ArticleType]string) *Generator {
+func NewGenerator(outputDir string, sources []ContentSource) *Generator {
+	cloned := make([]ContentSource, len(sources))
+	copy(cloned, sources)
 	return &Generator{
-		parser:      NewParser(),
-		outputDir:   outputDir,
-		contentDirs: contentDirs,
+		parser:         NewParser(),
+		outputDir:      outputDir,
+		contentSources: cloned,
 	}
 }
 
@@ -36,16 +38,15 @@ func (g *Generator) Generate() error {
 	// 全記事を収集
 	allArticles := make(ArticleList, 0)
 
-	for category, dir := range g.contentDirs {
-		articles, err := g.parser.ParseDirectory(dir)
+	for _, source := range g.contentSources {
+		articles, err := g.parser.ParseDirectory(source.Dir)
 		if err != nil {
-			return fmt.Errorf("%s ディレクトリのパースエラー: %w", category, err)
+			return fmt.Errorf("%s ディレクトリのパースエラー: %w", source.Dir, err)
 		}
 
-		// カテゴリーが設定されていない場合はディレクトリ名から推測
 		for _, article := range articles {
-			if article.Category == "" {
-				article.Category = category
+			if article.Category == "" && source.DefaultCategory != "" {
+				article.Category = source.DefaultCategory
 			}
 		}
 

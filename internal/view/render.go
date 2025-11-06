@@ -12,6 +12,7 @@ import (
 type Data struct {
 	Title                  string
 	HasHero                bool
+	HideHeader             bool
 	User                   interface{}
 	PageData               interface{}
 	SSEHost                string

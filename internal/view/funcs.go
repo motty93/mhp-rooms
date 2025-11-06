@@ -41,6 +41,34 @@ func gameVersionIconHTML(code string) template.HTML {
 	return template.HTML(GetGameVersionIcon(code))
 }
 
+func safeHTMLString(s string) template.HTML {
+	return template.HTML(s)
+}
+
+func truncateHTML(value interface{}, limit int) template.HTML {
+	var str string
+	switch v := value.(type) {
+	case template.HTML:
+		str = string(v)
+	case string:
+		str = v
+	default:
+		str = fmt.Sprintf("%v", v)
+	}
+
+	if limit <= 0 {
+		return template.HTML(str)
+	}
+
+	runes := []rune(str)
+	if len(runes) <= limit {
+		return template.HTML(str)
+	}
+
+	truncated := string(runes[:limit]) + "..."
+	return template.HTML(truncated)
+}
+
 // safeString nil安全な文字列変換
 func safeString(s *string) string {
 	if s == nil {
@@ -137,5 +165,7 @@ func TemplateFuncs() template.FuncMap {
 		"min":              min,
 		"sequence":         sequence,
 		"getEnv":           config.GetEnv,
+		"safeHTML":         safeHTMLString,
+		"truncate":         truncateHTML,
 	}
 }

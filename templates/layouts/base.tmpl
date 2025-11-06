@@ -176,7 +176,8 @@
     </head>
 
     <body class="bg-gray-50 min-h-screen flex flex-col" x-data>
-      {{ template "header" . }}
+      {{ if not .HideHeader }}
+        {{ template "header" . }}
 
 
       <!-- モバイルメニュー -->
@@ -346,6 +347,7 @@
           </div>
         </div>
       </div>
+      {{ end }}
 
       <!-- メインコンテンツエリア -->
       <main class="{{ if .HasHero }}{{ else }}pt-16{{ end }} grow">

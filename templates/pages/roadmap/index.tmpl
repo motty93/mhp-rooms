@@ -103,7 +103,7 @@
                       x-show="!expanded"
                       class="line-clamp-3"
                     >
-                      {{ .Content | safeHTML | truncate 200 }}
+                      {{ truncate .Content 200 }}
                     </div>
                     <div x-show="expanded" x-cloak>
                       {{ .Content | safeHTML }}

@@ -95,11 +95,12 @@ func (app *Application) setupPageRoutes(r chi.Router) {
 	r.Get("/profile/view", app.withAuth(profileHandler.ViewProfile))
 	r.Get("/users/{uuid}", app.withOptionalAuth(app.userHandler.Show))
 
-	// 更新情報・ロードマップ
-	r.Get("/info", app.withOptionalAuth(infoHandler.List))
-	r.Get("/info/{slug}", app.withOptionalAuth(infoHandler.Detail))
+	// 更新情報・ロードマップ（完全静的のため認証ミドルウェアを適用しない）
+	r.Get("/info", infoHandler.List)
+	r.Get("/info/{slug}", infoHandler.Detail)
 	r.Get("/info-feed.xml", infoHandler.Feed)
-	r.Get("/roadmap", app.withOptionalAuth(roadmapHandler.Index))
+	r.Get("/info-atom.xml", infoHandler.AtomFeed)
+	r.Get("/roadmap", roadmapHandler.Index)
 }
 
 func (app *Application) setupRoomRoutes(r chi.Router) {
