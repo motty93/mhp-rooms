@@ -33,6 +33,8 @@ type Application struct {
 	userHandler        *handlers.UserHandler
 	followHandler      *handlers.FollowHandler
 	reportHandler      *handlers.ReportHandler
+	infoHandler        *handlers.InfoHandler
+	roadmapHandler     *handlers.RoadmapHandler
 	authMiddleware     *middleware.JWTAuth
 	securityConfig     *middleware.SecurityConfig
 	generalLimiter     *middleware.RateLimiter
@@ -111,6 +113,8 @@ func (app *Application) initHandlers() error {
 	app.profileHandler = handlers.NewProfileHandler(app.repo, app.authMiddleware)
 	app.userHandler = handlers.NewUserHandler(app.repo)
 	app.followHandler = handlers.NewFollowHandler(app.repo)
+	app.infoHandler = handlers.NewInfoHandler(app.repo)
+	app.roadmapHandler = handlers.NewRoadmapHandler(app.repo)
 	// GCSUploaderを初期化
 	gcsUploader, err := storage.NewGCSUploader(context.Background())
 	if err != nil {

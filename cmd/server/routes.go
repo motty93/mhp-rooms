@@ -78,6 +78,8 @@ func (app *Application) SetupRoutes() chi.Router {
 func (app *Application) setupPageRoutes(r chi.Router) {
 	ph := app.pageHandler
 	profileHandler := app.profileHandler
+	infoHandler := app.infoHandler
+	roadmapHandler := app.roadmapHandler
 
 	r.Get("/", app.withOptionalAuth(ph.Home))
 	r.Get("/terms", app.withOptionalAuth(ph.Terms))
@@ -92,6 +94,12 @@ func (app *Application) setupPageRoutes(r chi.Router) {
 	r.Get("/profile/edit", app.withAuth(profileHandler.EditForm))
 	r.Get("/profile/view", app.withAuth(profileHandler.ViewProfile))
 	r.Get("/users/{uuid}", app.withOptionalAuth(app.userHandler.Show))
+
+	// 更新情報・ロードマップ
+	r.Get("/info", app.withOptionalAuth(infoHandler.List))
+	r.Get("/info/{slug}", app.withOptionalAuth(infoHandler.Detail))
+	r.Get("/info-feed.xml", infoHandler.Feed)
+	r.Get("/roadmap", app.withOptionalAuth(roadmapHandler.Index))
 }
 
 func (app *Application) setupRoomRoutes(r chi.Router) {

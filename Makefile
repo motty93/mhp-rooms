@@ -1,4 +1,4 @@
-.PHONY: build run dev test lint fmt clean migrate migrate-dev container-up container-down setup generate-ogp
+.PHONY: build run dev test lint fmt clean migrate migrate-dev container-up container-down setup generate-ogp generate-info
 
 # バイナリ名
 BINARY_NAME=mhp-rooms
@@ -11,9 +11,10 @@ BUILD_DIR=bin
 MAIN_PATH=./cmd/server
 MIGRATE_PATH=./cmd/migrate
 SEED_PATH=./cmd/seed
+GENERATE_INFO_PATH=./cmd/generate_info
 
 # アプリケーションをビルド
-build:
+build: generate-info
 	@echo "ビルド中..."
 	@mkdir -p $(BUILD_DIR)
 	@go build -o $(BUILD_DIR)/$(BINARY_NAME) $(MAIN_PATH)
@@ -80,6 +81,12 @@ generate-ogp:
 	go run cmd/ogp-renderer/main.go
 	@echo "✅ OGP画像生成完了: tmp/images/dev/ogp/rooms/$(ROOM_ID).png"
 
+# 更新情報・ロードマップの静的ファイル生成
+generate-info:
+	@echo "更新情報・ロードマップの静的ファイルを生成中..."
+	@go run $(GENERATE_INFO_PATH)/main.go
+	@echo "✅ 静的ファイル生成完了"
+
 # 依存関係を取得
 deps:
 	@echo "依存関係を取得中..."
@@ -121,13 +128,14 @@ docker-down: container-down
 help:
 	@echo "利用可能なコマンド:"
 	@echo "  setup         - 🚀 初期設定（開発環境の完全セットアップ）"
-	@echo "  build         - アプリケーションをビルド"
+	@echo "  build         - アプリケーションをビルド（更新情報も自動生成）"
 	@echo "  run           - アプリケーションを実行"
 	@echo "  dev           - ホットリロード開発サーバーを起動（air使用）"
 	@echo "  migrate       - マイグレーションを実行"
 	@echo "  migrate-dev   - 開発モードでマイグレーションを実行"
 	@echo "  seeds         - シードデータを挿入"
 	@echo "  generate-ogp  - OGP画像を生成（ROOM_ID=<uuid>を指定）"
+	@echo "  generate-info - 更新情報・ロードマップの静的ファイルを生成"
 	@echo "  test          - テストを実行"
 	@echo "  lint          - リンターを実行"
 	@echo "  fmt           - コードをフォーマット"
