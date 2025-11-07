@@ -161,6 +161,12 @@ docker exec -it mhp-rooms-db-1 psql -U mhp_user -d mhp_rooms_dev
 - `SESSION_SECRET`: セッションシークレットキー
 - `JWT_SECRET`: JWT署名用シークレットキー
 
+## 更新情報・ロードマップの静的生成
+
+- `content/info/` と `content/roadmap/` のMarkdownは `make generate-info` で `static/generated/info/` 配下の JSON / RSS / Atom に変換されます。
+- `make build` の依存関係および Docker イメージのビルド（`Dockerfile` 内で `go run ./cmd/generate_info/main.go`）で自動的に生成されるため、Cloud Build でも追加の手作業は不要です。
+- 将来的には生成したファイルを GCS へアップロードし、CDN から配信する構成に移行する予定です。その際は「生成→GCS 反映→キャッシュ無効化」のパイプラインを追加し、アプリ本体は GCS/CDN を参照するだけに切り替えてください。
+
 ### Google OAuth設定
 - `GOOGLE_CLIENT_ID`: Google OAuth クライアントID
 - `GOOGLE_CLIENT_SECRET`: Google OAuth クライアントシークレット
