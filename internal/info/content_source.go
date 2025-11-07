@@ -11,5 +11,6 @@ func DefaultContentSources() []ContentSource {
 	return []ContentSource{
 		{Dir: "content/info"},
 		{Dir: "content/roadmap", DefaultCategory: ArticleTypeRoadmap},
+		{Dir: "content/operator", DefaultCategory: ArticleTypeOperator},
 	}
 }

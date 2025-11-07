@@ -9,6 +9,7 @@ const (
 	ArticleTypeMaintenance ArticleType = "maintenance"
 	ArticleTypeFeature     ArticleType = "feature"
 	ArticleTypeRoadmap     ArticleType = "roadmap"
+	ArticleTypeOperator    ArticleType = "operator"
 )
 
 type Article struct {
