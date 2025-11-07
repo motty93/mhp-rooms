@@ -69,6 +69,7 @@ func (h *InfoHandler) List(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
 		Title:      "更新情報",
 		HideHeader: true,
+		StaticPage: true,
 		PageData: map[string]interface{}{
 			"Articles":        filteredArticles,
 			"CurrentCategory": category,
@@ -109,6 +110,7 @@ func (h *InfoHandler) Detail(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
 		Title:      foundArticle.Title,
 		HideHeader: true,
+		StaticPage: true,
 		PageData: map[string]interface{}{
 			"Article": foundArticle,
 		},
