@@ -12,51 +12,45 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// Parser はマークダウンファイルをパースする
+// マークダウンファイルをパースする
 type Parser struct {
 	md goldmark.Markdown
 }
 
-// NewParser は新しいParserを作成する
 func NewParser() *Parser {
 	md := goldmark.New(
 		goldmark.WithExtensions(
 			meta.Meta,
 		),
 	)
+
 	return &Parser{md: md}
 }
 
-// ParseFile はマークダウンファイルをパースしてArticleを返す
+// マークダウンファイルをパースしてArticleを返す
 func (p *Parser) ParseFile(filePath string) (*Article, error) {
-	// ファイル読み込み
 	content, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("ファイル読み込みエラー: %w", err)
 	}
 
-	// パーサーコンテキスト作成
 	ctx := parser.NewContext()
 	var buf bytes.Buffer
 
-	// マークダウンをHTMLに変換
 	if err := p.md.Convert(content, &buf, parser.WithContext(ctx)); err != nil {
 		return nil, fmt.Errorf("マークダウン変換エラー: %w", err)
 	}
 
-	// メタデータ取得
 	metaData := meta.Get(ctx)
 	if metaData == nil {
 		return nil, fmt.Errorf("frontmatterが見つかりません: %s", filePath)
 	}
 
-	// Article構造体にマッピング
 	article := &Article{
 		Content:  buf.String(),
 		FilePath: filePath,
 	}
 
-	// YAMLデータをArticle構造体にマッピング
 	yamlData, err := yaml.Marshal(metaData)
 	if err != nil {
 		return nil, fmt.Errorf("メタデータのマーシャルエラー: %w", err)
@@ -69,7 +63,7 @@ func (p *Parser) ParseFile(filePath string) (*Article, error) {
 	return article, nil
 }
 
-// ParseDirectory はディレクトリ内の全マークダウンファイルをパースする
+// ディレクトリ内の全マークダウンファイルをパースする
 func (p *Parser) ParseDirectory(dirPath string) (ArticleList, error) {
 	var articles ArticleList
 
@@ -87,11 +81,12 @@ func (p *Parser) ParseDirectory(dirPath string) (ArticleList, error) {
 		// .mdファイルのみ処理
 		if !info.IsDir() && filepath.Ext(path) == ".md" {
 			article, parseErr := p.ParseFile(path)
+
 			if parseErr != nil {
-				// エラーはログに出すが処理は継続
 				fmt.Printf("警告: %sのパースに失敗: %v\n", path, parseErr)
 				return nil
 			}
+
 			articles = append(articles, article)
 		}
 

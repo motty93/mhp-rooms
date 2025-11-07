@@ -1,12 +1,12 @@
 package info
 
-// ContentSource はマークダウンコンテンツの取得元を表す
+// マークダウンコンテンツの取得元を表す
 type ContentSource struct {
 	Dir             string
 	DefaultCategory ArticleType
 }
 
-// DefaultContentSources はデフォルトのコンテンツソース設定を返す
+// デフォルトのコンテンツソース設定を返す
 func DefaultContentSources() []ContentSource {
 	return []ContentSource{
 		{Dir: "content/info"},

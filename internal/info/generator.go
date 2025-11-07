@@ -10,14 +10,12 @@ import (
 	"github.com/gorilla/feeds"
 )
 
-// Generator は静的ファイルを生成する
 type Generator struct {
 	parser         *Parser
 	outputDir      string
 	contentSources []ContentSource
 }
 
-// NewGenerator は新しいGeneratorを作成する
 func NewGenerator(outputDir string, sources []ContentSource) *Generator {
 	cloned := make([]ContentSource, len(sources))
 	copy(cloned, sources)
@@ -28,14 +26,12 @@ func NewGenerator(outputDir string, sources []ContentSource) *Generator {
 	}
 }
 
-// Generate は全ての静的ファイルを生成する
 func (g *Generator) Generate() error {
 	// 出力ディレクトリ作成
 	if err := os.MkdirAll(g.outputDir, 0755); err != nil {
 		return fmt.Errorf("出力ディレクトリ作成エラー: %w", err)
 	}
 
-	// 全記事を収集
 	allArticles := make(ArticleList, 0)
 
 	for _, source := range g.contentSources {
@@ -70,7 +66,7 @@ func (g *Generator) Generate() error {
 	return nil
 }
 
-// generateJSON は記事データをJSONとして保存する
+// 記事データをJSONとして保存する
 func (g *Generator) generateJSON(articles ArticleList) error {
 	jsonPath := filepath.Join(g.outputDir, "articles.json")
 
@@ -84,15 +80,16 @@ func (g *Generator) generateJSON(articles ArticleList) error {
 	}
 
 	fmt.Printf("✓ JSONファイルを生成しました: %s\n", jsonPath)
+
 	return nil
 }
 
-// generateFeed はRSS/Atomフィードを生成する
+// RSS/Atomフィードを生成する
 func (g *Generator) generateFeed(articles ArticleList) error {
 	now := time.Now()
 	feed := &feeds.Feed{
 		Title:       "HuntersHub 更新情報",
-		Link:        &feeds.Link{Href: "https://huntershub.example.com"},
+		Link:        &feeds.Link{Href: "https://huntershub.com"},
 		Description: "モンスターハンターポータブルシリーズのアドホックパーティ ルーム管理サービス",
 		Author:      &feeds.Author{Name: "HuntersHub Team"},
 		Created:     now,
@@ -112,16 +109,18 @@ func (g *Generator) generateFeed(articles ArticleList) error {
 		article := infoArticles[i]
 		item := &feeds.Item{
 			Title:       article.Title,
-			Link:        &feeds.Link{Href: fmt.Sprintf("https://huntershub.example.com/info/%s", article.Slug)},
+			Link:        &feeds.Link{Href: fmt.Sprintf("https://huntershub.com/info/%s", article.Slug)},
 			Description: article.Summary,
 			Content:     article.Content,
 			Created:     article.Date,
 		}
+
 		if article.Updated != nil {
 			item.Updated = *article.Updated
 		} else {
 			item.Updated = article.Date
 		}
+
 		feed.Items = append(feed.Items, item)
 	}
 
@@ -131,9 +130,11 @@ func (g *Generator) generateFeed(articles ArticleList) error {
 	if err != nil {
 		return err
 	}
+
 	if err := os.WriteFile(rssPath, []byte(rss), 0644); err != nil {
 		return err
 	}
+
 	fmt.Printf("✓ RSSフィードを生成しました: %s\n", rssPath)
 
 	// Atom
@@ -142,9 +143,11 @@ func (g *Generator) generateFeed(articles ArticleList) error {
 	if err != nil {
 		return err
 	}
+
 	if err := os.WriteFile(atomPath, []byte(atom), 0644); err != nil {
 		return err
 	}
+
 	fmt.Printf("✓ Atomフィードを生成しました: %s\n", atomPath)
 
 	return nil
