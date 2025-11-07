@@ -188,7 +188,9 @@
       "Bash(npx html-beautify:*)",
       "Bash(PORT=8098 ENV=development DB_TYPE=turso timeout 15s make:*)",
       "Bash(PORT=8098 ENV=development DB_TYPE=turso make:*)",
-      "Bash(PORT=8099 ENV=development DB_TYPE=turso timeout:*)"
+      "Bash(PORT=8099 ENV=development DB_TYPE=turso timeout:*)",
+      "Bash(PORT=8100 ENV=development DB_TYPE=turso timeout 15s make:*)",
+      "WebFetch(domain:gadgemotty.com)"
     ],
     "deny": []
   }

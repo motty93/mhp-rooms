@@ -142,6 +142,107 @@
 
       <!-- Tailwind CSSは開発用にCDNを維持 -->
       <script src="https://cdn.tailwindcss.com"></script>
+      <script>
+        tailwind.config = {
+          theme: {
+            extend: {
+              typography: {
+                DEFAULT: {
+                  css: {
+                    maxWidth: 'none',
+                  },
+                },
+              },
+            },
+          },
+          plugins: [
+            // Typography plugin inline
+            function({ addComponents }) {
+              addComponents({
+                '.prose': {
+                  color: '#374151',
+                  maxWidth: '65ch',
+                },
+                '.prose h2': {
+                  fontSize: '1.5em',
+                  fontWeight: '700',
+                  marginTop: '2em',
+                  marginBottom: '1em',
+                  lineHeight: '1.3333333',
+                },
+                '.prose h3': {
+                  fontSize: '1.25em',
+                  fontWeight: '600',
+                  marginTop: '1.6em',
+                  marginBottom: '0.6em',
+                  lineHeight: '1.6',
+                },
+                '.prose h4': {
+                  fontSize: '1.125em',
+                  fontWeight: '600',
+                  marginTop: '1.5em',
+                  marginBottom: '0.5em',
+                  lineHeight: '1.5555556',
+                },
+                '.prose p': {
+                  marginTop: '1.25em',
+                  marginBottom: '1.25em',
+                  lineHeight: '1.75',
+                },
+                '.prose strong': {
+                  fontWeight: '600',
+                },
+                '.prose ul, .prose ol': {
+                  marginTop: '1.25em',
+                  marginBottom: '1.25em',
+                  paddingLeft: '1.625em',
+                },
+                '.prose li': {
+                  marginTop: '0.5em',
+                  marginBottom: '0.5em',
+                },
+                '.prose hr': {
+                  marginTop: '3em',
+                  marginBottom: '3em',
+                  borderTopWidth: '1px',
+                  borderColor: '#e5e7eb',
+                },
+                '.prose a': {
+                  color: '#2563eb',
+                  textDecoration: 'underline',
+                  fontWeight: '500',
+                },
+                '.prose a:hover': {
+                  color: '#1d4ed8',
+                },
+                '.prose-lg': {
+                  fontSize: '1.125rem',
+                  lineHeight: '1.7777778',
+                },
+                '.prose-lg h2': {
+                  fontSize: '1.6666667em',
+                  marginTop: '1.8666667em',
+                  marginBottom: '1.0666667em',
+                },
+                '.prose-lg h3': {
+                  fontSize: '1.3333333em',
+                  marginTop: '1.6666667em',
+                  marginBottom: '0.6666667em',
+                },
+                '.prose-lg h4': {
+                  fontSize: '1.2222222em',
+                  marginTop: '1.7777778em',
+                  marginBottom: '0.4444444em',
+                },
+                '.prose-lg p': {
+                  marginTop: '1.3333333em',
+                  marginBottom: '1.3333333em',
+                },
+              })
+            }
+          ],
+        }
+      </script>
       <link
         rel="icon"
         type="image/x-icon"

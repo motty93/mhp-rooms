@@ -80,6 +80,7 @@ func (app *Application) setupPageRoutes(r chi.Router) {
 	profileHandler := app.profileHandler
 	infoHandler := app.infoHandler
 	roadmapHandler := app.roadmapHandler
+	operatorHandler := app.operatorHandler
 
 	r.Get("/", app.withOptionalAuth(ph.Home))
 	r.Get("/terms", app.withOptionalAuth(ph.Terms))
@@ -101,6 +102,7 @@ func (app *Application) setupPageRoutes(r chi.Router) {
 	r.Get("/info-feed.xml", infoHandler.Feed)
 	r.Get("/info-atom.xml", infoHandler.AtomFeed)
 	r.Get("/roadmap", roadmapHandler.Index)
+	r.Get("/operator", operatorHandler.Index)
 }
 
 func (app *Application) setupRoomRoutes(r chi.Router) {
