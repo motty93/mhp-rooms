@@ -5,7 +5,7 @@ date: 2025-11-10T18:00:00+09:00
 category: "maintenance"
 summary: "11/12(水) 02:00〜03:00にデータベースメンテナンスを実施します。一時的にサービスがご利用いただけなくなります。"
 tags: ["maintenance", "database"]
-draft: false
+draft: true
 ---
 
 ## 計画メンテナンスのお知らせ
