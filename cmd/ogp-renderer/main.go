@@ -93,11 +93,9 @@ func main() {
 	// OGP Renderer用の最小限のConfig設定
 	cfg := &config.Config{
 		Database: config.DatabaseConfig{
-			Type: os.Getenv("DB_TYPE"),
-			Turso: config.TursoConfig{
-				URL:       os.Getenv("TURSO_DATABASE_URL"),
-				AuthToken: os.Getenv("TURSO_AUTH_TOKEN"),
-			},
+			Type:           os.Getenv("DB_TYPE"),
+			TursoURL:       os.Getenv("TURSO_DATABASE_URL"),
+			TursoAuthToken: os.Getenv("TURSO_AUTH_TOKEN"),
 		},
 	}
 
