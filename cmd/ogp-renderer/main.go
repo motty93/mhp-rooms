@@ -63,10 +63,6 @@ func main() {
 		log.Println(".envファイルが見つかりません。環境変数を使用します。")
 	}
 
-	// Configの初期化
-	config.Init()
-	cfg := config.AppConfig
-
 	// 環境変数の取得
 	roomIDStr := os.Getenv("ROOM_ID")
 	ogBucket := os.Getenv("OG_BUCKET")
@@ -93,6 +89,17 @@ func main() {
 	}
 
 	log.Printf("OGP画像生成開始: room_id=%s, bucket=%s, prefix=%s", roomID, ogBucket, ogPrefix)
+
+	// OGP Renderer用の最小限のConfig設定
+	cfg := &config.Config{
+		Database: config.DatabaseConfig{
+			Type: os.Getenv("DB_TYPE"),
+			Turso: config.TursoConfig{
+				URL:       os.Getenv("TURSO_DATABASE_URL"),
+				AuthToken: os.Getenv("TURSO_AUTH_TOKEN"),
+			},
+		},
+	}
 
 	// データベース接続
 	dbAdapter, err := persistence.NewDBAdapter(cfg)
