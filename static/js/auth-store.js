@@ -244,50 +244,6 @@ document.addEventListener('alpine:init', () => {
       return this.dbUser?.avatar_url || '/static/images/default-avatar.webp'
     },
 
-    async signIn(email, password) {
-      if (!window.supabaseAuth) {
-        throw new Error('認証システムが初期化されていません。Supabase設定を確認してください。')
-      }
-
-      this.loading = true
-      this.error = null
-
-      try {
-        const data = await window.supabaseAuth.signIn(email, password)
-        if (window.Analytics && window.Analytics.isEnabled()) {
-          window.Analytics.trackLogin('email')
-        }
-        return data
-      } catch (error) {
-        this.error = error.message
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
-
-    async signUp(email, password, metadata = {}) {
-      if (!window.supabaseAuth) {
-        throw new Error('認証システムが初期化されていません。Supabase設定を確認してください。')
-      }
-
-      this.loading = true
-      this.error = null
-
-      try {
-        const data = await window.supabaseAuth.signUp(email, password, metadata)
-        if (window.Analytics && window.Analytics.isEnabled()) {
-          window.Analytics.trackSignup('email')
-        }
-        return data
-      } catch (error) {
-        this.error = error.message
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
-
     async signOut() {
       if (!window.supabaseAuth) {
         window.location.href = '/'
@@ -303,25 +259,6 @@ document.addEventListener('alpine:init', () => {
       } catch (error) {
         this.error = error.message
         window.location.href = '/'
-      } finally {
-        this.loading = false
-      }
-    },
-
-    async resetPassword(email) {
-      if (!window.supabaseAuth) {
-        throw new Error('認証システムが初期化されていません。Supabase設定を確認してください。')
-      }
-
-      this.loading = true
-      this.error = null
-
-      try {
-        const data = await window.supabaseAuth.resetPassword(email)
-        return data
-      } catch (error) {
-        this.error = error.message
-        throw error
       } finally {
         this.loading = false
       }
