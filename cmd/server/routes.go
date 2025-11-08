@@ -169,8 +169,6 @@ func (app *Application) setupAuthRoutes(r chi.Router) {
 		// 認証ページルート（レート制限は緩め）
 		ar.Get("/login", ah.LoginPage)
 		ar.Get("/register", ah.RegisterPage)
-		ar.Get("/password-reset", ah.PasswordResetPage)
-		ar.Get("/password-reset/confirm", ah.PasswordResetConfirmPage)
 		ar.Get("/callback", ah.AuthCallback)
 
 		// 認証アクションルート（厳しいレート制限）
@@ -180,8 +178,6 @@ func (app *Application) setupAuthRoutes(r chi.Router) {
 			arr.Post("/login", ah.Login)
 			arr.Post("/register", ah.Register)
 			arr.Post("/logout", ah.Logout)
-			arr.Post("/password-reset", ah.PasswordResetRequest)
-			arr.Post("/password-reset/confirm", ah.PasswordResetConfirm)
 			arr.Get("/google", ah.GoogleAuth)
 			arr.Get("/google/callback", ah.GoogleCallback)
 		})

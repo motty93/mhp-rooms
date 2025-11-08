@@ -77,36 +77,6 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (h *AuthHandler) PasswordResetPage(w http.ResponseWriter, r *http.Request) {
-	data := TemplateData{
-		Title: "パスワードリセット",
-	}
-	renderTemplate(w, "password_reset.tmpl", data)
-}
-
-func (h *AuthHandler) PasswordResetRequest(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusNotImplemented)
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "このエンドポイントは使用されません。フロントエンド認証をご利用ください。",
-	})
-}
-
-func (h *AuthHandler) PasswordResetConfirmPage(w http.ResponseWriter, r *http.Request) {
-	data := TemplateData{
-		Title: "パスワードリセット確認",
-	}
-	renderTemplate(w, "password_reset_confirm.tmpl", data)
-}
-
-func (h *AuthHandler) PasswordResetConfirm(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusNotImplemented)
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "このエンドポイントは使用されません。フロントエンド認証をご利用ください。",
-	})
-}
-
 func (h *AuthHandler) GoogleAuth(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNotImplemented)
