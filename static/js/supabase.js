@@ -88,12 +88,6 @@ async function initializeSupabase() {
 
 function createDummyAuth() {
   return {
-    signIn: async () => {
-      throw new Error('認証機能が無効です。Supabase設定を確認してください。')
-    },
-    signUp: async () => {
-      throw new Error('認証機能が無効です。Supabase設定を確認してください。')
-    },
     signOut: async () => {
       throw new Error('認証機能が無効です。Supabase設定を確認してください。')
     },
@@ -102,12 +96,6 @@ function createDummyAuth() {
     },
     getSession: async () => {
       return null
-    },
-    resetPassword: async () => {
-      throw new Error('認証機能が無効です。Supabase設定を確認してください。')
-    },
-    updatePassword: async () => {
-      throw new Error('認証機能が無効です。Supabase設定を確認してください。')
     },
     getAccessToken: async () => {
       return null
@@ -122,29 +110,6 @@ function createDummyAuth() {
 }
 
 const auth = {
-  async signIn(email, password) {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
-    if (error) throw error
-    return data
-  },
-
-  async signUp(email, password, metadata = {}) {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: metadata,
-      },
-    })
-
-    if (error) throw error
-    return data
-  },
-
   async signOut() {
     const { error } = await supabase.auth.signOut()
     if (error) throw error
@@ -166,24 +131,6 @@ const auth = {
     } = await supabase.auth.getSession()
     if (error) throw error
     return session
-  },
-
-  async resetPassword(email) {
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
-    })
-
-    if (error) throw error
-    return data
-  },
-
-  async updatePassword(newPassword) {
-    const { data, error } = await supabase.auth.updateUser({
-      password: newPassword,
-    })
-
-    if (error) throw error
-    return data
   },
 
   async getAccessToken() {

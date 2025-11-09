@@ -32,8 +32,16 @@ func (h *AuthHandler) SetAuthMiddleware(auth *middleware.JWTAuth) {
 }
 
 func (h *AuthHandler) LoginPage(w http.ResponseWriter, r *http.Request) {
+	redirectURL := r.URL.Query().Get("redirect")
+	if redirectURL == "" {
+		redirectURL = "/rooms"
+	}
+
 	data := TemplateData{
 		Title: "ログイン",
+		PageData: map[string]interface{}{
+			"RedirectURL": redirectURL,
+		},
 	}
 	renderTemplate(w, "login.tmpl", data)
 }
@@ -69,36 +77,6 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (h *AuthHandler) PasswordResetPage(w http.ResponseWriter, r *http.Request) {
-	data := TemplateData{
-		Title: "パスワードリセット",
-	}
-	renderTemplate(w, "password_reset.tmpl", data)
-}
-
-func (h *AuthHandler) PasswordResetRequest(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusNotImplemented)
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "このエンドポイントは使用されません。フロントエンド認証をご利用ください。",
-	})
-}
-
-func (h *AuthHandler) PasswordResetConfirmPage(w http.ResponseWriter, r *http.Request) {
-	data := TemplateData{
-		Title: "パスワードリセット確認",
-	}
-	renderTemplate(w, "password_reset_confirm.tmpl", data)
-}
-
-func (h *AuthHandler) PasswordResetConfirm(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusNotImplemented)
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "このエンドポイントは使用されません。フロントエンド認証をご利用ください。",
-	})
-}
-
 func (h *AuthHandler) GoogleAuth(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNotImplemented)
@@ -123,21 +101,6 @@ func (h *AuthHandler) AuthCallback(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) CurrentUser(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusNotImplemented)
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "このエンドポイントは使用されません。フロントエンド認証をご利用ください。",
-	})
-}
-
-func (h *AuthHandler) CompleteProfilePage(w http.ResponseWriter, r *http.Request) {
-	data := TemplateData{
-		Title: "プロフィール設定",
-	}
-	renderTemplate(w, "complete-profile.tmpl", data)
-}
-
-func (h *AuthHandler) CompleteProfile(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNotImplemented)
 	json.NewEncoder(w).Encode(map[string]string{

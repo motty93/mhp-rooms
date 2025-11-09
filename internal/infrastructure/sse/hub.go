@@ -114,6 +114,8 @@ func SerializeEvent(event Event) (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("id: %s\nevent: %s\ndata: %s\n\n",
-		event.ID, event.Type, string(data)), nil
+	// すべてのイベントを "message" イベントとして送信し、
+	// データ内の type フィールドで区別する
+	return fmt.Sprintf("id: %s\nevent: message\ndata: %s\n\n",
+		event.ID, string(data)), nil
 }

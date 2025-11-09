@@ -1,13 +1,13 @@
 {{ define "head" }}
   <meta
     name="description"
-    content="モンスターハンター部屋一覧 - MonHub（モンハブ）。モンハンポータブルシリーズの協力プレイルームを検索・参加できます。"
+    content="モンスターハンター部屋一覧 - HuntersHub（ハンターズハブ）。モンハンポータブルシリーズの協力プレイルームを検索・参加できます。"
   />
   <meta
     name="keywords"
-    content="モンハン,部屋一覧,モンスターハンター,協力プレイ,オンライン,MonHub,モンハブ"
+    content="モンハン,部屋一覧,モンスターハンター,協力プレイ,オンライン,HuntersHub,ハンターズハブ"
   />
-  <meta property="og:title" content="部屋一覧 - MonHub" />
+  <meta property="og:title" content="部屋一覧 - HuntersHub" />
   <meta
     property="og:description"
     content="モンスターハンターの部屋一覧。モンハンポータブルシリーズの協力プレイを楽しもう"
@@ -15,7 +15,7 @@
 {{ end }}
 
 {{ define "page" }}
-  <div x-data="rooms()" x-init="checkPSNIdRequired()">
+  <div x-data="rooms()">
     <section class="bg-white py-8 border-b border-gray-200">
       <div class="container mx-auto px-4">
         <div class="hidden md:flex items-center justify-between">
@@ -69,7 +69,7 @@
           <select
             id="game-version-select"
             name="game_version"
-            class="w-full sm:w-48 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm text-gray-900 dark:text-gray-100"
+            class="w-full sm:w-48 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 text-sm text-gray-900 dark:text-gray-100"
             @change="filterRooms($event.target.value)"
           >
             <option value="">すべてのゲーム</option>
@@ -187,8 +187,9 @@
               <div class="p-6 pt-0">
                 <div class="flex items-center justify-between min-h-[40px]">
                   <span
-                    class="text-sm text-gray-500"
+                    class="text-sm text-gray-500 truncate max-w-[150px]"
                     x-text="'ホスト: ' + (room.host.displayName || room.host.username)"
+                    :title="'ホスト: ' + (room.host.displayName || room.host.username)"
                   ></span>
 
                   <!-- ボタン領域 - 固定高さを確保 -->
@@ -1018,21 +1019,6 @@
         blockWarningMessage: '',
         showHostRestrictionModal: false,
         hostRoomInfo: null,
-        async checkPSNIdRequired() {
-          try {
-            const authStore = Alpine.store('auth');
-            // 既に初期化済みの場合は、再度checkAuth()を呼ばない
-            if (!authStore.initialized) {
-              return; // まだ初期化されていない場合は何もしない
-            }
-            if (authStore.needsPSNId) {
-              console.log('PSN IDが未設定です。プロフィール設定画面へリダイレクトします。');
-              window.location.href = '/auth/complete-profile';
-            }
-          } catch (error) {
-            console.error('PSN IDチェックエラー:', error);
-          }
-        },
         // 初期化処理
         init() {
           // サーバーサイドレンダリングのデータを使用
@@ -1052,7 +1038,7 @@
             currentPlayers: room.current_players || 0,
             maxPlayers: room.max_players || 4,
             isClosed: room.is_closed || false,
-            hasPassword: room.password_hash ? true : false,
+            hasPassword: room.has_password || false,
             targetMonster: room.target_monster === '<nil>' || !room.target_monster ? '' : room.target_monster,
             rankRequirement: room.rank_requirement === '<nil>' || !room.rank_requirement ? '' : room.rank_requirement,
             isJoined: room.is_joined || false
@@ -1187,6 +1173,9 @@
         // フィルタリング機能（ページネーション対応）
         filterRooms(gameVersion) {
           this.activeFilter = gameVersion;
+          if (window.Analytics && window.Analytics.isEnabled()) {
+            window.Analytics.trackGameFilter(gameVersion || 'all');
+          }
           // フィルタ変更時はサーバー側でフィルタリングを行うため、ページをリロード
           const url = new URL(window.location);
           if (gameVersion) {
@@ -1363,6 +1352,12 @@
 
             const result = await response.json()
 
+            if (window.Analytics && window.Analytics.isEnabled()) {
+              const roomId = result.roomId || (this.currentRoom && this.currentRoom.id) || null;
+              const gameVersion = this.currentRoom && this.currentRoom.gameVersionCode;
+              window.Analytics.trackRoomJoin(roomId, gameVersion);
+            }
+
             // ブロック警告の場合
             if (result.warning === 'USER_BLOCKING_HOST' && result.requiresConfirmation) {
               this.showBlockWarningDialog = true
@@ -1463,6 +1458,12 @@
 
             const result = await joinResponse.json()
 
+            if (window.Analytics && window.Analytics.isEnabled()) {
+              const roomId = result.roomId || (this.currentRoom && this.currentRoom.id) || this.confirmRoomId || null;
+              const gameVersion = this.currentRoom && this.currentRoom.gameVersionCode;
+              window.Analytics.trackRoomJoin(roomId, gameVersion);
+            }
+
             // モーダルを閉じて部屋詳細に遷移
             this.closeConfirmDialog()
             this.closeModal()
@@ -1537,6 +1538,12 @@
             }
 
             const result = await response.json()
+
+            if (window.Analytics && window.Analytics.isEnabled()) {
+              const roomId = result.roomId || (this.currentRoom && this.currentRoom.id) || null;
+              const gameVersion = this.currentRoom && this.currentRoom.gameVersionCode;
+              window.Analytics.trackRoomJoin(roomId, gameVersion);
+            }
 
             // ダイアログを閉じて部屋詳細に遷移
             this.closeBlockWarningDialog()

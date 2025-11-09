@@ -26,8 +26,9 @@ body {
 
 .hero-bg {
   position: relative;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.85) 0%, rgba(118, 75, 162, 0.85) 100%);
+  background: linear-gradient(135deg, rgba(75, 85, 99, 0.85) 0%, rgba(55, 65, 81, 0.85) 100%);
   overflow: hidden;
+  transition: background 0.3s ease;
 }
 
 .hero-bg::before {
@@ -278,14 +279,23 @@ body {
   
   /* 部屋詳細ページのSlackライクレイアウト */
   .mobile-chat-area {
-    height: calc(100vh - 200px); /* ヘッダー（約100px）とフォーム（約100px）を除く */
-    min-height: 300px; /* 最小高さを保証 */
+    /* flexboxの自然な動作に任せる（flex-1で自動調整） */
+    min-height: 0; /* flexアイテムのデフォルト最小サイズをリセット */
+    padding-bottom: 120px; /* フォームの高さ分の余白を確保 */
   }
-  
+
   /* モバイル版のメインコンテナ高さ調整 */
   .mobile-room-detail {
     height: 100vh;
     overflow: hidden;
+  }
+
+  /* モバイル版のメッセージフォームを画面下部に固定 */
+  .mobile-message-form {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    background-color: white;
   }
 }
 

@@ -1,15 +1,15 @@
 substitutions:
-  _SERVICE_NAME: monhub
-  _SSE_SERVICE_NAME: monhub-sse
+  _SERVICE_NAME: huntershub
+  _SSE_SERVICE_NAME: huntershub-sse
   _REGION: asia-northeast1
-  _ARTIFACT_REPOSITORY: monhub-registry
-  _IMAGE_NAME: monhub-app
+  _ARTIFACT_REPOSITORY: huntershub-registry
+  _IMAGE_NAME: huntershub-app
   _JOB_NAME: ogp-renderer                # ← 追加: Cloud Run Job 名
   _JOB_IMAGE_NAME: ogp-renderer          # ← 追加: Job 用イメージ名
   _GO_VERSION: "1.24"
   _DEPLOY_SSE: "false"                   # true に設定するとSSEサービスもデプロイ
   _DEPLOY_JOB: "true"                    # ← 追加: Job をデプロイするか
-  _OG_BUCKET: monhub-master              # ← 追加: OGP保存先バケット
+  _OG_BUCKET: huntershub-master          # ← 追加: OGP保存先バケット
   _OG_PREFIX: prod                       # ← 追加: OGP保存先の環境プレフィックス (dev/stg/prod)
 
   # Supabase設定（非機密）
@@ -17,9 +17,9 @@ substitutions:
   _SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBma3Fyd3RnZnBieGR1eHRlY2J5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4NjE1NjIsImV4cCI6MjA2NjQzNzU2Mn0.DVuKTsjR5OXZlILQuh7qlabF6E5-WM_cKPVC4mkp5bw"
 
   # GCS設定（非機密）
-  _GCS_BUCKET: monhub-master
-  _GCS_PRIVATE_BUCKET: monhub-private
-  _BASE_PUBLIC_ASSET_URL: "https://storage.googleapis.com/monhub-master"
+  _GCS_BUCKET: huntershub-master
+  _GCS_PRIVATE_BUCKET: huntershub-private
+  _BASE_PUBLIC_ASSET_URL: "https://storage.googleapis.com/huntershub-master"
   _ASSET_PREFIX: prod
 
   # Secret Manager上のシークレット名（本番環境用）
@@ -27,6 +27,8 @@ substitutions:
   _SECRET_TURSO_AUTH_TOKEN: TURSO_AUTH_TOKEN__prod
   _SECRET_SUPABASE_JWT_SECRET: SUPABASE_JWT_SECRET__prod
   _SECRET_DISCORD_WEBHOOK_URL: DISCORD_WEBHOOK_URL__prod
+  _GA_ENABLED: "true"                   # GA4計測を有効化
+  _GA_MEASUREMENT_ID: "G-XXXXXXXXXX"    # 本番用のGA4測定IDに置き換えてください
 
 options:
   logging: CLOUD_LOGGING_ONLY
@@ -67,7 +69,7 @@ steps:
       - "--set-secrets"
       - "TURSO_DATABASE_URL=${_SECRET_TURSO_DATABASE_URL}:latest,TURSO_AUTH_TOKEN=${_SECRET_TURSO_AUTH_TOKEN}:latest,SUPABASE_JWT_SECRET=${_SECRET_SUPABASE_JWT_SECRET}:latest,DISCORD_WEBHOOK_URL=${_SECRET_DISCORD_WEBHOOK_URL}:latest"
       - "--update-env-vars"
-      - "ENV=production,DB_TYPE=turso,SERVICE_MODE=main,SUPABASE_URL=${_SUPABASE_URL},SUPABASE_ANON_KEY=${_SUPABASE_ANON_KEY},GCS_BUCKET=${_GCS_BUCKET},BASE_PUBLIC_ASSET_URL=${_BASE_PUBLIC_ASSET_URL},ASSET_PREFIX=${_ASSET_PREFIX},GCS_PRIVATE_BUCKET=${_GCS_PRIVATE_BUCKET},OG_BUCKET=${_OG_BUCKET},OG_PREFIX=${_OG_PREFIX},OGP_JOB_NAME=${_JOB_NAME},OGP_GENERATION_MODE=cloud"
+      - "ENV=production,DB_TYPE=turso,SERVICE_MODE=main,SUPABASE_URL=${_SUPABASE_URL},SUPABASE_ANON_KEY=${_SUPABASE_ANON_KEY},GCS_BUCKET=${_GCS_BUCKET},BASE_PUBLIC_ASSET_URL=${_BASE_PUBLIC_ASSET_URL},ASSET_PREFIX=${_ASSET_PREFIX},GCS_PRIVATE_BUCKET=${_GCS_PRIVATE_BUCKET},OG_BUCKET=${_OG_BUCKET},OG_PREFIX=${_OG_PREFIX},OGP_JOB_NAME=${_JOB_NAME},OGP_GENERATION_MODE=cloud,GA_ENABLED=${_GA_ENABLED},GA_MEASUREMENT_ID=${_GA_MEASUREMENT_ID}"
 
   # 2) Deploy SSE (optional) - 本番環境ではスキップ
   - name: "gcr.io/cloud-builders/gcloud"
@@ -92,7 +94,7 @@ steps:
             --min-instances 0 \
             --concurrency 100 \
             --set-secrets TURSO_DATABASE_URL=${_SECRET_TURSO_DATABASE_URL}:latest,TURSO_AUTH_TOKEN=${_SECRET_TURSO_AUTH_TOKEN}:latest,SUPABASE_JWT_SECRET=${_SECRET_SUPABASE_JWT_SECRET}:latest,DISCORD_WEBHOOK_URL=${_SECRET_DISCORD_WEBHOOK_URL}:latest \
-            --update-env-vars "ENV=production,DB_TYPE=turso,SERVICE_MODE=sse,SUPABASE_URL=${_SUPABASE_URL},SUPABASE_ANON_KEY=${_SUPABASE_ANON_KEY},GCS_BUCKET=${_GCS_BUCKET},BASE_PUBLIC_ASSET_URL=${_BASE_PUBLIC_ASSET_URL},ASSET_PREFIX=${_ASSET_PREFIX},GCS_PRIVATE_BUCKET=${_GCS_PRIVATE_BUCKET},OG_BUCKET=${_OG_BUCKET},OG_PREFIX=${_OG_PREFIX},OGP_JOB_NAME=${_JOB_NAME},OGP_GENERATION_MODE=cloud"
+            --update-env-vars "ENV=production,DB_TYPE=turso,SERVICE_MODE=sse,SUPABASE_URL=${_SUPABASE_URL},SUPABASE_ANON_KEY=${_SUPABASE_ANON_KEY},GCS_BUCKET=${_GCS_BUCKET},BASE_PUBLIC_ASSET_URL=${_BASE_PUBLIC_ASSET_URL},ASSET_PREFIX=${_ASSET_PREFIX},GCS_PRIVATE_BUCKET=${_GCS_PRIVATE_BUCKET},OG_BUCKET=${_OG_BUCKET},OG_PREFIX=${_OG_PREFIX},OGP_JOB_NAME=${_JOB_NAME},OGP_GENERATION_MODE=cloud,GA_ENABLED=${_GA_ENABLED},GA_MEASUREMENT_ID=${_GA_MEASUREMENT_ID}"
         else
           echo "SSEサービスのデプロイはスキップされました (_DEPLOY_SSE=${_DEPLOY_SSE})"
         fi

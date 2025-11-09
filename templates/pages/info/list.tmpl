@@ -1,0 +1,180 @@
+{{ define "head" }}
+  <meta
+    name="description"
+    content="HuntersHubの更新情報・リリースノートをご覧いただけます。最新の機能追加やバグ修正、メンテナンス情報をお知らせします。"
+  />
+  <meta
+    name="keywords"
+    content="更新情報,リリースノート,HuntersHub,ハンターズハブ,モンスターハンター,モンハン,新機能,メンテナンス"
+  />
+  <meta property="og:title" content="更新情報 - HuntersHub" />
+  <meta
+    property="og:description"
+    content="HuntersHubの最新の更新情報とメンテナンス予定をご確認いただけます"
+  />
+  <link
+    rel="alternate"
+    type="application/rss+xml"
+    title="HuntersHub 更新情報"
+    href="/info-feed.xml"
+  />
+  <link
+    rel="alternate"
+    type="application/atom+xml"
+    title="HuntersHub 更新情報"
+    href="/info-atom.xml"
+  />
+{{ end }}
+
+{{ define "page" }}
+  <div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+      <!-- ページヘッダー -->
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-4">更新情報</h1>
+        <p class="text-gray-600">
+          HuntersHubの最新の更新情報、リリースノート、メンテナンス予定をご確認いただけます。<br />
+          <a
+            href="/roadmap"
+            class="text-blue-600 hover:underline"
+            >今後の実装予定はこちら</a
+          >
+        </p>
+        <div class="mt-4 flex gap-2">
+          <a
+            href="/info-feed.xml"
+            class="inline-flex items-center px-3 py-1 text-sm bg-orange-50 text-orange-600 border border-orange-200 rounded hover:bg-orange-100 transition-colors"
+          >
+            <svg
+              class="w-4 h-4 mr-1"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                d="M5 3a1 1 0 000 2c5.523 0 10 4.477 10 10a1 1 0 102 0C17 8.373 11.627 3 5 3z"
+              ></path>
+              <path
+                d="M4 9a1 1 0 011-1 7 7 0 017 7 1 1 0 11-2 0 5 5 0 00-5-5 1 1 0 01-1-1zM3 15a2 2 0 114 0 2 2 0 01-4 0z"
+              ></path>
+            </svg>
+            RSS
+          </a>
+          <a
+            href="/info-atom.xml"
+            class="inline-flex items-center px-3 py-1 text-sm bg-blue-50 text-blue-600 border border-blue-200 rounded hover:bg-blue-100 transition-colors"
+          >
+            <svg
+              class="w-4 h-4 mr-1"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                d="M5 3a1 1 0 000 2c5.523 0 10 4.477 10 10a1 1 0 102 0C17 8.373 11.627 3 5 3z"
+              ></path>
+              <path
+                d="M4 9a1 1 0 011-1 7 7 0 017 7 1 1 0 11-2 0 5 5 0 00-5-5 1 1 0 01-1-1zM3 15a2 2 0 114 0 2 2 0 01-4 0z"
+              ></path>
+            </svg>
+            Atom
+          </a>
+        </div>
+      </div>
+
+      <!-- カテゴリータブ -->
+      <div class="mb-6">
+        <div
+          class="flex gap-2 border-b border-gray-200"
+          x-data="{ category: '{{ .PageData.CurrentCategory }}' }"
+        >
+          <a
+            href="/info"
+            @click.prevent="category = 'all'"
+            :class="category === 'all' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-800'"
+            class="px-4 py-2 border-b-2 font-medium transition-colors"
+          >
+            すべて
+          </a>
+          <a
+            href="/info?category=release"
+            @click.prevent="category = 'release'"
+            :class="category === 'release' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-800'"
+            class="px-4 py-2 border-b-2 font-medium transition-colors"
+          >
+            リリース
+          </a>
+          <a
+            href="/info?category=maintenance"
+            @click.prevent="category = 'maintenance'"
+            :class="category === 'maintenance' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-800'"
+            class="px-4 py-2 border-b-2 font-medium transition-colors"
+          >
+            メンテナンス
+          </a>
+        </div>
+      </div>
+
+      <!-- 記事一覧 -->
+      <div class="space-y-6">
+        {{ if .PageData.Articles }}
+          {{ range .PageData.Articles }}
+            <article
+              class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+            >
+              <div class="flex items-start justify-between mb-3">
+                <div class="flex-1">
+                  <div class="flex items-center gap-2 mb-2">
+                    {{ if eq .Category "release" }}
+                      <span
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
+                      >
+                        リリース
+                      </span>
+                    {{ else if eq .Category "maintenance" }}
+                      <span
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"
+                      >
+                        メンテナンス
+                      </span>
+                    {{ end }}
+                    <time
+                      class="text-sm text-gray-500"
+                      datetime="{{ .Date.Format "2006-01-02" }}"
+                    >
+                      {{ .Date.Format "2006年1月2日" }}
+                    </time>
+                  </div>
+                  <h2 class="text-xl font-bold text-gray-800 mb-2">
+                    <a
+                      href="/info/{{ .Slug }}"
+                      class="hover:text-blue-600 transition-colors"
+                    >
+                      {{ .Title }}
+                    </a>
+                  </h2>
+                  <p class="text-gray-600">{{ .Summary }}</p>
+                </div>
+              </div>
+              {{ if .Tags }}
+                <div class="flex flex-wrap gap-2 mt-4">
+                  {{ range .Tags }}
+                    <span
+                      class="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100 text-gray-600"
+                    >
+                      #{{ . }}
+                    </span>
+                  {{ end }}
+                </div>
+              {{ end }}
+            </article>
+          {{ end }}
+        {{ else }}
+          <div
+            class="bg-blue-50 border border-blue-200 rounded-lg p-8 text-center"
+          >
+            <p class="text-gray-600">該当する更新情報がありません。</p>
+          </div>
+        {{ end }}
+      </div>
+    </div>
+  </div>
+{{ end }}

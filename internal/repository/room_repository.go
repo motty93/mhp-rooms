@@ -107,6 +107,7 @@ func (r *roomRepository) GetActiveRooms(gameVersionID *uuid.UUID, limit, offset 
 		models.Room
 		GameVersionName string  `json:"game_version_name"`
 		GameVersionCode string  `json:"game_version_code"`
+		HostUsername    *string `json:"host_username"`
 		HostDisplayName string  `json:"host_display_name"`
 		HostPSNOnlineID *string `json:"host_psn_online_id"`
 		CurrentPlayers  int     `json:"current_players"`
@@ -121,6 +122,7 @@ func (r *roomRepository) GetActiveRooms(gameVersionID *uuid.UUID, limit, offset 
 			rooms.is_active, rooms.is_closed, rooms.created_at, rooms.updated_at, rooms.closed_at,
 			gv.name as game_version_name,
 			gv.code as game_version_code,
+			u.username as host_username,
 			u.display_name as host_display_name,
 			u.psn_online_id as host_psn_online_id,
 			COUNT(DISTINCT rm.id) as current_players
@@ -161,6 +163,7 @@ func (r *roomRepository) GetActiveRooms(gameVersionID *uuid.UUID, limit, offset 
 			BaseModel: models.BaseModel{
 				ID: result.Room.HostUserID,
 			},
+			Username:    result.HostUsername,
 			DisplayName: result.HostDisplayName,
 			PSNOnlineID: result.HostPSNOnlineID,
 		}
@@ -199,6 +202,7 @@ func (r *roomRepository) GetActiveRoomsWithJoinStatus(userID *uuid.UUID, gameVer
 			rooms.is_active, rooms.is_closed, rooms.created_at, rooms.updated_at, rooms.closed_at,
 			gv.name as game_version_name,
 			gv.code as game_version_code,
+			u.username as host_username,
 			u.display_name as host_display_name,
 			u.psn_online_id as host_psn_online_id,
 			COALESCE(member_counts.current_players, 0) as current_players,
@@ -239,6 +243,7 @@ func (r *roomRepository) GetActiveRoomsWithJoinStatus(userID *uuid.UUID, gameVer
 		models.Room
 		GameVersionName string  `json:"game_version_name"`
 		GameVersionCode string  `json:"game_version_code"`
+		HostUsername    *string `json:"host_username"`
 		HostDisplayName string  `json:"host_display_name"`
 		HostPSNOnlineID *string `json:"host_psn_online_id"`
 		CurrentPlayers  int     `json:"current_players"`
@@ -264,6 +269,7 @@ func (r *roomRepository) GetActiveRoomsWithJoinStatus(userID *uuid.UUID, gameVer
 			BaseModel: models.BaseModel{
 				ID: result.Room.HostUserID,
 			},
+			Username:    result.HostUsername,
 			DisplayName: result.HostDisplayName,
 			PSNOnlineID: result.HostPSNOnlineID,
 		}
@@ -523,6 +529,22 @@ func (r *roomRepository) GetRoomMembers(roomID uuid.UUID) ([]models.RoomMember, 
 
 	if err != nil {
 		return nil, err
+	}
+
+	// DisplayNameを設定（display_name > username の優先順位）
+	for i := range members {
+		displayName := members[i].User.DisplayName
+		// display_nameが空の場合はusernameを使用
+		if displayName == "" && members[i].User.Username != nil && *members[i].User.Username != "" {
+			displayName = *members[i].User.Username
+		}
+		members[i].DisplayName = displayName
+	}
+
+	// player_numberを再割り当て（空いたスロットを詰める）
+	// 注意: DBは更新せず、表示用にメモリ上でのみ詰める
+	for i := range members {
+		members[i].PlayerNumber = i + 1
 	}
 
 	return members, nil

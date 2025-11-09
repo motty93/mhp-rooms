@@ -27,8 +27,28 @@
             {{ end }}{{ .PageData.Room.Name }}
           </div>
           <div class="text-gray-500 text-sm">
-            参加者 {{ .PageData.MemberCount }}/4
+            参加者 <span x-text="memberCount"></span>/4
           </div>
+        </button>
+        <!-- シェアボタン（モバイル） -->
+        <button
+          @click="openShare()"
+          class="text-gray-600 hover:text-gray-800 p-2"
+          title="共有"
+        >
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+            />
+          </svg>
         </button>
         <!-- ハンバーガーメニューボタン -->
         <div class="md:hidden">
@@ -93,7 +113,7 @@
             <div class="flex items-center space-x-3 mb-2">
               <img
                 src="/static/images/icon.webp"
-                alt="MonHub"
+                alt="HuntersHub"
                 class="w-8 h-8 flex-shrink-0"
               />
               <h2 class="text-xl font-bold text-gray-800 truncate">
@@ -269,33 +289,55 @@
                 🔑
               {{ end }}{{ .PageData.Room.Name }}
             </div>
-            <!-- PC版のみ：ホストの場合に設定アイコンを表示 -->
-            <button
-              x-show="isHost && $store.auth.initialized && $store.auth.isAuthenticated"
-              @click="openSettingsModal()"
-              class="hidden md:block text-gray-600 hover:text-gray-800 p-1 rounded hover:bg-gray-100 transition-colors"
-              title="部屋設定を変更"
-            >
-              <svg
-                class="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+            <div class="flex items-center space-x-1 ml-2">
+              <!-- シェアボタン（PC） -->
+              <button
+                @click="openShare()"
+                class="hidden md:block text-gray-600 hover:text-gray-800 p-1 rounded hover:bg-gray-100 transition-colors"
+                title="共有"
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                />
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-              </svg>
-            </button>
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                  />
+                </svg>
+              </button>
+              <!-- PC版のみ：ホストの場合に設定アイコンを表示 -->
+              <button
+                x-show="isHost && $store.auth.initialized && $store.auth.isAuthenticated"
+                @click="openSettingsModal()"
+                class="hidden md:block text-gray-600 hover:text-gray-800 p-1 rounded hover:bg-gray-100 transition-colors"
+                title="部屋設定を変更"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                  />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
         <div class="text-gray-600 text-sm leading-relaxed">
@@ -343,50 +385,47 @@
 
       <!-- ユーザーリスト -->
       <div class="flex-1 px-4 pt-4 space-y-3 overflow-y-auto">
-        {{ range $index, $member := .PageData.Members }}
-          {{ if $member }}
-            <button
-              class="w-full flex items-center space-x-3 p-2 bg-gray-100 hover:bg-gray-200 rounded border-2 transition-colors cursor-pointer"
-              :class="{'border-blue-500': currentUserId === '{{ $member.User.SupabaseUserID }}', 'border-gray-200': currentUserId !== '{{ $member.User.SupabaseUserID }}'}"
-            >
-              <img
-                src="{{ if and $member.User.AvatarURL (ne (stringPtr $member.User.AvatarURL) "") }}
-                  {{ stringPtr $member.User.AvatarURL }}
-                {{ else }}
-                  /static/images/default-avatar.webp
-                {{ end }}"
-                class="w-8 h-8 rounded-full object-cover"
-                alt="ユーザーアバター"
-              />
-              <span class="text-gray-800 text-sm font-medium">
-                {{ if $member.User.DisplayName }}
-                  {{ $member.User.DisplayName }}
-                {{ else if $member.User.Username }}
-                  {{ $member.User.Username }}
-                {{ else }}
-                  {{ $member.DisplayName }}
-                {{ end }}
-              </span>
-              {{ if $member.IsHost }}
+        <template x-for="(member, index) in members" :key="index">
+          <div>
+            <!-- メンバーが存在する場合 -->
+            <template x-if="member">
+              <a
+                :href="'/users/' + member.id"
+                class="w-full flex items-center space-x-3 p-2 bg-gray-100 hover:bg-gray-200 rounded border-2 transition-colors cursor-pointer"
+                :class="{'border-blue-500': currentUserId === member.supabase_user_id, 'border-gray-200': currentUserId !== member.supabase_user_id}"
+              >
+                <img
+                  :src="member.avatar_url || '/static/images/default-avatar.webp'"
+                  class="w-8 h-8 rounded-full object-cover"
+                  :alt="member.display_name + 'のアバター'"
+                />
                 <span
+                  class="text-gray-800 text-sm font-medium"
+                  x-text="member.display_name"
+                ></span>
+                <span
+                  x-show="member.is_host"
                   class="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded"
                   >ホスト</span
                 >
-              {{ end }}
-            </button>
-          {{ else }}
-            <div
-              class="flex items-center space-x-3 p-2 bg-gray-50 rounded border border-gray-200 opacity-60"
-            >
+              </a>
+            </template>
+
+            <!-- 空きスロット -->
+            <template x-if="!member">
               <div
-                class="w-6 h-8 bg-gray-300 rounded flex items-center justify-center"
+                class="flex items-center space-x-3 p-2 bg-gray-50 rounded border border-gray-200 opacity-60"
               >
-                <div class="w-4 h-6 bg-gray-500 rounded-sm"></div>
+                <div
+                  class="w-6 h-8 bg-gray-300 rounded flex items-center justify-center"
+                >
+                  <div class="w-4 h-6 bg-gray-500 rounded-sm"></div>
+                </div>
+                <span class="text-gray-400 text-sm">－</span>
               </div>
-              <span class="text-gray-400 text-sm">－</span>
-            </div>
-          {{ end }}
-        {{ end }}
+            </template>
+          </div>
+        </template>
       </div>
 
       <!-- ボタンエリア（デスクトップのみ表示） -->
@@ -517,9 +556,9 @@
                       ></span>
                     </div>
                     <div
-                      class="rounded-lg p-3 text-sm"
+                      class="rounded-lg p-3 text-sm whitespace-pre-wrap break-words"
                       :class="message.isOwn ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-800'"
-                      x-text="message.content"
+                      x-html="formatMessageContent(message.content, message.isOwn)"
                     ></div>
                   </div>
                 </div>
@@ -530,29 +569,76 @@
       </div>
 
       <!-- メッセージフォーム -->
-      <div class="bg-white border-t border-gray-200 p-4 flex-shrink-0">
+      <div
+        class="bg-white border-t border-gray-200 p-4 flex-shrink-0 md:relative mobile-message-form"
+      >
+        <!-- PC版のみ：送信方法切り替え -->
+        <div class="hidden md:flex items-center justify-end mb-2">
+          <label class="flex items-center text-sm text-gray-600 cursor-pointer">
+            <input
+              type="checkbox"
+              x-model="useCtrlEnterToSend"
+              class="mr-2 rounded"
+            />
+            <span>Enterで改行、Ctrl+Enterで送信</span>
+          </label>
+        </div>
+
         <form
           method="post"
           hx-post="/rooms/{{ .PageData.Room.ID }}/messages"
           hx-trigger="submit"
           hx-swap="none"
           hx-on::before-request="window.roomDetailInstance?.addOptimisticMessage()"
-          hx-on::after-request="this.reset(); document.getElementById('message-input').focus()"
+          hx-on::after-request="this.reset(); document.getElementById('message-input').focus(); window.roomDetailInstance?.resetTextareaHeight()"
           class="flex space-x-3"
         >
-          <input
-            id="message-input"
-            type="text"
-            name="message"
-            placeholder="メッセージを入力..."
-            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent"
-            :disabled="!$store.auth.initialized || !$store.auth.isAuthenticated"
-            required
-          />
+          <div class="flex-1 relative">
+            <textarea
+              id="message-input"
+              name="message"
+              :placeholder="window.innerWidth >= 768 ? 'メッセージを入力（Shift+Enterで改行）...' : 'メッセージを入力...'"
+              autocomplete="off"
+              rows="1"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent resize-none overflow-hidden"
+              style="min-height: 42px; max-height: 120px;"
+              :disabled="!$store.auth.initialized || !$store.auth.isAuthenticated"
+              @input="autoResizeTextarea($event.target); handleMentionInput($event.target)"
+              @keydown="handleMessageKeydown($event)"
+              required
+            ></textarea>
+
+            <!-- メンション候補ドロップダウン -->
+            <div
+              x-show="showMentionSuggestions"
+              x-cloak
+              class="absolute bottom-full left-0 mb-2 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto z-50 w-full"
+            >
+              <template
+                x-for="(member, index) in filteredMentionMembers"
+                :key="member.id"
+              >
+                <button
+                  type="button"
+                  @click="insertMention(member)"
+                  @mouseenter="selectedMentionIndex = index"
+                  class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center space-x-2"
+                  :class="{ 'bg-gray-100': selectedMentionIndex === index }"
+                >
+                  <img
+                    :src="member.avatar_url || '/static/images/default-avatar.webp'"
+                    class="w-6 h-6 rounded-full"
+                  />
+                  <span x-text="member.display_name"></span>
+                </button>
+              </template>
+            </div>
+          </div>
+
           <button
             type="submit"
             :disabled="!$store.auth.initialized || !$store.auth.isAuthenticated"
-            class="bg-gray-800 hover:bg-gray-900 text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            class="bg-gray-800 hover:bg-gray-900 text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed self-end"
           >
             送信
           </button>
@@ -561,626 +647,9 @@
     </div>
     <!-- 部屋設定モーダル -->
     {{ template "room_settings_modal.tmpl" }}
+    <!-- SNS共有モーダル -->
+    {{ template "share_modal.tmpl" }}
   </div>
 
-<script>
-// mobileMenuストアの初期化
-document.addEventListener('alpine:init', () => {
-  if (!Alpine.store('mobileMenu')) {
-    Alpine.store('mobileMenu', {
-      open: false,
-      toggle() {
-        this.open = !this.open
-      },
-      close() {
-        this.open = false
-      },
-    })
-  }
-})
-
-function roomDetail() {
-  return {
-    descriptionExpanded: false,
-    needsExpansion: false,
-    messages: [],
-    messageInput: '',
-    isAuthenticated: false,
-    currentUserId: null,
-    roomId: '{{ .PageData.Room.ID }}',
-    eventSource: null,
-    isLeaving: false,
-    isDismissing: false,
-    isHost: false,
-    hostUserId: '{{ .PageData.Room.Host.SupabaseUserID }}',
-    showSettingsModal: false,
-    settingsData: {
-      name: '',
-      description: '',
-      game_version_id: '',
-      max_players: 4,
-      target_monster: '',
-      rank_requirement: '',
-      password: ''
-    },
-    gameVersions: [],
-    errors: {},
-    isSubmitting: false,
-
-    async init() {
-
-
-      // グローバルインスタンスとして登録
-      window.roomDetailInstance = this;
-
-      // 説明文の展開が必要かチェック
-      this.checkDescriptionLength();
-
-      // Alpine.jsの初期化を確実に待つ
-      await this.waitForAlpineAuth();
-
-      // ホスト判定を更新
-      this.updateHostStatus();
-
-      // ゲームバージョン一覧を取得
-      await this.loadGameVersions();
-
-      // 初期メッセージのロード
-      await this.loadInitialMessages();
-
-      // SSE接続を確立
-      await this.connectSSE();
-
-      // チャットの最下部にスクロール
-      this.$nextTick(() => this.scrollToBottom());
-
-      // ページを離れる時にSSE接続を閉じる
-      window.addEventListener('beforeunload', () => {
-        if (this.eventSource) {
-          this.eventSource.close();
-        }
-      });
-    },
-
-    async waitForAlpineAuth() {
-      // Alpine.jsの認証ストアが確実に初期化されるまで待つ
-      let retries = 0;
-      const maxRetries = 50; // 最大5秒待つ
-
-      while (retries < maxRetries) {
-        if (window.Alpine && window.Alpine.store('auth')) {
-          await window.Alpine.store('auth').checkAuth();
-          const isAuth = window.Alpine.store('auth').isAuthenticated;
-          const user = window.Alpine.store('auth').user;
-
-          if (isAuth && user) {
-            this.isAuthenticated = true;
-            this.currentUserId = user.id;
-            return;
-          }
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 100));
-        retries++;
-      }
-
-    },
-
-    checkDescriptionLength() {
-      // 説明文が長い場合は展開ボタンを表示
-      const description = '{{ .PageData.Room.GetDescription }}';
-      this.needsExpansion = description.length > 100;
-    },
-
-    async checkAuth() {
-      // 認証状態の確認
-      if (window.Alpine && Alpine.store('auth')) {
-        await Alpine.store('auth').checkAuth();
-        this.isAuthenticated = Alpine.store('auth').isAuthenticated;
-        this.currentUserId = Alpine.store('auth').user?.id;
-
-        // Alpine.jsが反応するように強制的に更新を通知
-        this.$nextTick(() => {
-          this.isAuthenticated = Alpine.store('auth').isAuthenticated;
-          // ホスト判定を更新
-          this.updateHostStatus();
-          // 強制的にDOMを更新
-          this.$dispatch('host-status-updated', { isHost: this.isHost });
-        });
-      } else {
-        // Alpine.jsまたはauthストアが利用できない場合は少し待ってリトライ
-        await new Promise(resolve => setTimeout(resolve, 100));
-        return await this.checkAuth();
-      }
-    },
-
-    async loadInitialMessages() {
-      // ログからシステムメッセージを生成
-      this.messages = [];
-
-      {{ range .PageData.Logs }}
-        {{ if eq .Action "create" }}
-          this.messages.push({
-            id: '{{ .ID }}',
-            type: 'system',
-            subtype: 'create',
-            content: '{{ if .User }}{{ if .User.Username }}{{ .User.Username }}{{ else }}{{ .User.DisplayName }}{{ end }}{{ else }}ユーザー{{ end }}さんが部屋を作成しました',
-            timestamp: new Date('{{ .CreatedAt.Format "2006-01-02T15:04:05Z07:00" }}')
-          });
-        {{ else if eq .Action "join" }}
-          this.messages.push({
-            id: '{{ .ID }}',
-            type: 'system',
-            subtype: 'join',
-            content: '{{ index .Details.Data "user_name" }}さんが入室しました',
-            timestamp: new Date('{{ .CreatedAt.Format "2006-01-02T15:04:05Z07:00" }}')
-          });
-        {{ else if eq .Action "leave" }}
-          this.messages.push({
-            id: '{{ .ID }}',
-            type: 'system',
-            subtype: 'leave',
-            content: '{{ index .Details.Data "user_name" }}さんが退室しました',
-            timestamp: new Date('{{ .CreatedAt.Format "2006-01-02T15:04:05Z07:00" }}')
-          });
-        {{ end }}
-      {{ end }}
-
-      // 既存のメッセージを取得
-      if (this.isAuthenticated) {
-        try {
-          // 認証ヘッダーを取得
-          const token = Alpine.store('auth').session?.access_token;
-          const headers = {};
-          if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-          }
-
-          const response = await fetch(`/rooms/${this.roomId}/messages?limit=20`, {
-            headers: headers
-          });
-          if (response.ok) {
-            const messages = await response.json();
-            messages.forEach(msg => {
-              // SupabaseユーザーIDで比較（APIレスポンスにuser.supabase_user_idが含まれている場合）
-              const isOwn = msg.user.supabase_user_id === this.currentUserId;
-              this.messages.push({
-                id: msg.id,
-                type: 'user',
-                content: msg.message,
-                userName: msg.user.display_name || msg.user.username,
-                userAvatar: msg.user.avatar_url || '/static/images/default-avatar.webp',
-                isOwn: isOwn,
-                timestamp: new Date(msg.created_at)
-              });
-            });
-          }
-        } catch (err) {
-        }
-      }
-    },
-
-    sendMessage() {
-      if (!this.messageInput.trim() || !this.isAuthenticated) return;
-
-      // メッセージを送信（仮実装）
-      const newMessage = {
-        id: Date.now(),
-        type: 'user',
-        content: this.messageInput,
-        userName: Alpine.store('auth').user?.displayName || 'ゲスト',
-        isOwn: true,
-        timestamp: new Date()
-      };
-
-      this.messages.push(newMessage);
-      this.messageInput = '';
-
-      this.$nextTick(() => this.scrollToBottom());
-    },
-
-    formatTime(timestamp) {
-      const date = new Date(timestamp);
-      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-    },
-
-    scrollToBottom() {
-      const container = document.getElementById('chat-container');
-      if (container) {
-        container.scrollTop = container.scrollHeight;
-      }
-    },
-
-    async connectSSE() {
-      if (!this.isAuthenticated) return;
-
-      // 既存の接続があれば閉じる
-      if (this.eventSource) {
-        this.eventSource.close();
-        this.eventSource = null;
-      }
-
-      try {
-        // 一時的なSSEトークンを取得
-        const authToken = Alpine.store('auth').session?.access_token;
-        if (!authToken) {
-          return;
-        }
-
-        const response = await fetch(`/rooms/${this.roomId}/sse-token`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${authToken}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error(`SSEトークン取得失敗: ${response.status}`);
-        }
-
-        const tokenData = await response.json();
-        const sseToken = tokenData.token;
-
-        // SSEサーバーのホストを取得（環境変数で設定可能）
-        const sseHost = '{{ .SSEHost }}' || window.location.origin;
-        const basePath = sseHost.endsWith('/') ? sseHost.slice(0, -1) : sseHost;
-        const url = `${basePath}/rooms/${this.roomId}/messages/stream?token=${encodeURIComponent(sseToken)}`;
-
-        this.eventSource = new EventSource(url);
-      } catch (error) {
-        return;
-      }
-      this.sseReconnectCount = (this.sseReconnectCount || 0);
-
-      this.eventSource.addEventListener('open', (event) => {
-        this.sseReconnectCount = 0; // 接続成功時にリセット
-      });
-
-      // 接続確認メッセージ
-      this.eventSource.addEventListener('connected', (event) => {
-        this.sseReconnectCount = 0; // 接続成功確認時にリセット
-      });
-
-      this.eventSource.addEventListener('message', (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === 'message') {
-            this.handleNewMessage(data.data);
-          } else if (data.type === 'system_message') {
-            this.handleSystemMessage(data.data);
-          }
-        } catch (err) {
-        }
-      });
-
-      this.eventSource.addEventListener('error', (event) => {
-
-        // 再接続の制限（最大5回まで）
-        if (this.sseReconnectCount < 5) {
-          this.sseReconnectCount++;
-          const delay = Math.min(1000 * Math.pow(2, this.sseReconnectCount - 1), 30000); // 指数バックオフ（最大30秒）
-
-          setTimeout(async () => {
-            if (this.isAuthenticated && Alpine.store('auth').session?.access_token) {
-              await this.connectSSE();
-            }
-          }, delay);
-        } else {
-        }
-      });
-    },
-
-    handleNewMessage(message) {
-      // 自分のメッセージの場合はスキップ（すでに送信時に追加されている）
-      // SupabaseユーザーIDで比較
-      if (message.user.supabase_user_id === this.currentUserId) return;
-
-      // メッセージを追加
-      this.messages.push({
-        id: message.id,
-        type: 'user',
-        content: message.message,
-        userName: message.user.display_name || message.user.username,
-        userAvatar: message.user.avatar_url || '/static/images/default-avatar.webp',
-        isOwn: false,
-        timestamp: new Date(message.created_at)
-      });
-
-      this.$nextTick(() => this.scrollToBottom());
-    },
-
-    handleSystemMessage(message) {
-      // システムメッセージを追加
-      this.messages.push({
-        id: message.id,
-        type: 'system',
-        subtype: 'join', // 入室メッセージとして扱う
-        content: message.message,
-        timestamp: new Date()
-      });
-
-      this.$nextTick(() => this.scrollToBottom());
-    },
-
-    addOptimisticMessage() {
-      const messageInput = document.getElementById('message-input');
-      const messageText = messageInput.value.trim();
-
-      if (!messageText || !Alpine.store('auth').isAuthenticated) return;
-
-      // メッセージを即座に表示（楽観的更新）
-      const newMessage = {
-        id: Date.now(),
-        type: 'user',
-        content: messageText,
-        userName: Alpine.store('auth').user?.displayName || 'ゲスト',
-        userAvatar: Alpine.store('auth').user?.avatarUrl || '/static/images/default-avatar.webp',
-        isOwn: true,
-        timestamp: new Date()
-      };
-
-      this.messages.push(newMessage);
-      this.$nextTick(() => this.scrollToBottom());
-    },
-
-    async leaveRoom() {
-      if (this.isLeaving) return;
-
-      // 確認ダイアログを表示
-      if (!confirm('本当に部屋を退出しますか？')) {
-        return;
-      }
-
-      this.isLeaving = true;
-
-      try {
-        const authToken = Alpine.store('auth').session?.access_token;
-        if (!authToken) {
-          throw new Error('認証が必要です');
-        }
-
-        const response = await fetch(`/rooms/${this.roomId}/leave`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${authToken}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('退出処理に失敗しました');
-        }
-
-        // SSE接続を閉じる
-        if (this.eventSource) {
-          this.eventSource.close();
-        }
-
-        // 部屋一覧へリダイレクト
-        window.location.href = '/rooms';
-      } catch (error) {
-        alert('退出処理に失敗しました。もう一度お試しください。');
-        this.isLeaving = false;
-      }
-    },
-
-    updateHostStatus() {
-      if (this.isAuthenticated && this.currentUserId) {
-        this.isHost = this.currentUserId === this.hostUserId;
-      } else {
-        this.isHost = false;
-      }
-
-      // 強制的にAlpine.jsの反応を促す
-      this.$nextTick(() => {
-        this.$el.dispatchEvent(new CustomEvent('host-status-changed'));
-      });
-    },
-
-    async loadGameVersions() {
-      try {
-        const response = await fetch('/api/game-versions/active');
-        if (response.ok) {
-          const data = await response.json();
-          this.gameVersions = data.game_versions || [];
-        }
-      } catch (error) {
-      }
-    },
-
-    openSettingsModal() {
-
-      // 現在の部屋データで設定フォームを初期化
-      const room = {
-        name: '{{ .PageData.Room.Name }}',
-        description: '{{ .PageData.Room.GetDescription }}',
-        game_version_id: '{{ .PageData.Room.GameVersionID }}',
-        max_players: {{ .PageData.Room.MaxPlayers }},
-        target_monster: '{{ .PageData.Room.GetTargetMonster }}',
-        rank_requirement: '{{ .PageData.Room.GetRankRequirement }}'
-      };
-
-
-      this.settingsData = {
-        name: room.name || '',
-        description: room.description || '',
-        game_version_id: room.game_version_id || '',
-        max_players: room.max_players || 4,
-        target_monster: (room.target_monster && room.target_monster !== '<nil>') ? room.target_monster : '',
-        rank_requirement: (room.rank_requirement && room.rank_requirement !== '<nil>') ? room.rank_requirement : '',
-        password: '' // パスワードは常に空で初期化
-      };
-
-      this.errors = {};
-      this.showSettingsModal = true;
-
-    },
-
-    closeSettingsModal() {
-      this.showSettingsModal = false;
-      this.errors = {};
-      this.isSubmitting = false;
-    },
-
-    get isFormValid() {
-      return this.settingsData.name.trim() !== '' &&
-             this.settingsData.game_version_id !== '' &&
-             this.settingsData.max_players >= 2 &&
-             this.settingsData.max_players <= 4 &&
-             Object.keys(this.errors).length === 0;
-    },
-
-    validateField(field) {
-      // エラーをクリア
-      delete this.errors[field];
-
-      switch (field) {
-        case 'name':
-          if (!this.settingsData.name.trim()) {
-            this.errors.name = '部屋名は必須です。';
-          } else if (this.settingsData.name.length > 100) {
-            this.errors.name = '部屋名は100文字以内で入力してください。';
-          }
-          break;
-
-        case 'description':
-          if (this.settingsData.description.length > 500) {
-            this.errors.description = '説明文は500文字以内で入力してください。';
-          }
-          break;
-
-        case 'game_version_id':
-          if (!this.settingsData.game_version_id) {
-            this.errors.game_version_id = 'ゲームバージョンを選択してください。';
-          }
-          break;
-
-        case 'max_players':
-          if (this.settingsData.max_players < 2 || this.settingsData.max_players > 4) {
-            this.errors.max_players = '最大プレイヤー数は2〜4人の間で設定してください。';
-          }
-          break;
-
-        case 'target_monster':
-          if (this.settingsData.target_monster.length > 50) {
-            this.errors.target_monster = 'ターゲットモンスターは50文字以内で入力してください。';
-          }
-          break;
-
-        case 'rank_requirement':
-          if (this.settingsData.rank_requirement.length > 20) {
-            this.errors.rank_requirement = 'ランク要求は20文字以内で入力してください。';
-          }
-          break;
-
-        case 'password':
-          if (this.settingsData.password.length > 20) {
-            this.errors.password = 'パスワードは20文字以内で入力してください。';
-          }
-          break;
-      }
-
-      // リアクティブな更新を促す
-      this.$nextTick();
-    },
-
-    async updateRoom() {
-      if (this.isSubmitting || !this.isFormValid) return;
-
-      // 全フィールドのバリデーション
-      Object.keys(this.settingsData).forEach(field => {
-        this.validateField(field);
-      });
-
-      if (Object.keys(this.errors).length > 0) {
-        return;
-      }
-
-      this.isSubmitting = true;
-
-      try {
-        const authToken = Alpine.store('auth').session?.access_token;
-        if (!authToken) {
-          throw new Error('認証が必要です');
-        }
-
-        const response = await fetch(`/rooms/${this.roomId}`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${authToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(this.settingsData)
-        });
-
-        if (!response.ok) {
-          const errorData = await response.text();
-          throw new Error(errorData || '部屋設定の更新に失敗しました');
-        }
-
-        const result = await response.json();
-
-        // 成功メッセージを表示
-        alert('部屋設定を更新しました');
-
-        // モーダルを閉じる
-        this.closeSettingsModal();
-
-        // ページをリロードして最新の情報を表示
-        window.location.reload();
-      } catch (error) {
-        alert('部屋設定の更新に失敗しました: ' + error.message);
-        this.isSubmitting = false;
-      }
-    },
-
-    async dismissRoom() {
-      if (this.isDismissing) return;
-
-      // 確認ダイアログを表示
-      if (!confirm('本当に部屋を解散しますか？\n解散すると、すべてのメンバーが退出し、部屋は削除されます。')) {
-        return;
-      }
-
-      this.isDismissing = true;
-
-      try {
-        const authToken = Alpine.store('auth').session?.access_token;
-        if (!authToken) {
-          throw new Error('認証が必要です');
-        }
-
-        const response = await fetch(`/rooms/${this.roomId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${authToken}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('解散処理に失敗しました');
-        }
-
-        const result = await response.json();
-
-        // SSE接続を閉じる
-        if (this.eventSource) {
-          this.eventSource.close();
-        }
-
-        // リダイレクト先が指定されている場合はそちらへ、そうでなければ部屋一覧へ
-        window.location.href = result.redirect || '/rooms';
-      } catch (error) {
-        alert('解散処理に失敗しました。もう一度お試しください。');
-        this.isDismissing = false;
-      }
-    }
-  };
-}
-
-// グローバルスコープに公開
-window.roomDetail = roomDetail;
-</script>
+  {{ template "room_detail_script.tmpl" . }}
 {{ end }}

@@ -24,7 +24,7 @@ type URLSet struct {
 
 // SitemapHandler generates XML sitemap for the website
 func (h *PageHandler) Sitemap(w http.ResponseWriter, r *http.Request) {
-	baseURL := "https://monhub.com"
+	baseURL := "https://huntershub.com"
 	now := time.Now().Format("2006-01-02")
 
 	// サイトマップのURL定義

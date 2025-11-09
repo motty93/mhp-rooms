@@ -73,6 +73,7 @@ logs/
 
 # Static files (if generated)
 /public/build/
+/static/generated/
 
 # Test coverage
 coverage/

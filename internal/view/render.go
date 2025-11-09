@@ -5,18 +5,38 @@ import (
 	"html/template"
 	"net/http"
 	"path/filepath"
+
+	"mhp-rooms/internal/config"
 )
 
 type Data struct {
-	Title    string
-	HasHero  bool
-	User     interface{}
-	PageData interface{}
-	SSEHost  string
+	Title                  string
+	HasHero                bool
+	HideHeader             bool
+	StaticPage             bool
+	User                   interface{}
+	PageData               interface{}
+	SSEHost                string
+	IsProduction           bool
+	AnalyticsMeasurementID string
+	AnalyticsEnabled       bool
 }
 
 func Template(w http.ResponseWriter, templateName string, data Data) {
 	funcMap := TemplateFuncs()
+
+	if config.AppConfig != nil {
+		data.IsProduction = config.AppConfig.IsProduction()
+		if data.AnalyticsMeasurementID == "" {
+			data.AnalyticsMeasurementID = config.AppConfig.Analytics.MeasurementID
+		}
+		if !data.AnalyticsEnabled {
+			data.AnalyticsEnabled = config.AppConfig.Analytics.Enabled
+		}
+		if data.SSEHost == "" {
+			data.SSEHost = config.AppConfig.Server.SSEHost
+		}
+	}
 
 	tmpl, err := template.New("").Funcs(funcMap).ParseFiles(
 		filepath.Join("templates", "layouts", "base.tmpl"),

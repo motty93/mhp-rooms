@@ -78,6 +78,9 @@ func (app *Application) SetupRoutes() chi.Router {
 func (app *Application) setupPageRoutes(r chi.Router) {
 	ph := app.pageHandler
 	profileHandler := app.profileHandler
+	infoHandler := app.infoHandler
+	roadmapHandler := app.roadmapHandler
+	operatorHandler := app.operatorHandler
 
 	r.Get("/", app.withOptionalAuth(ph.Home))
 	r.Get("/terms", app.withOptionalAuth(ph.Terms))
@@ -92,21 +95,34 @@ func (app *Application) setupPageRoutes(r chi.Router) {
 	r.Get("/profile/edit", app.withAuth(profileHandler.EditForm))
 	r.Get("/profile/view", app.withAuth(profileHandler.ViewProfile))
 	r.Get("/users/{uuid}", app.withOptionalAuth(app.userHandler.Show))
+
+	// 更新情報・ロードマップ（完全静的のため認証ミドルウェアを適用しない）
+	r.Get("/info", infoHandler.List)
+	r.Get("/info/{slug}", infoHandler.Detail)
+	r.Get("/info-feed.xml", infoHandler.Feed)
+	r.Get("/info-atom.xml", infoHandler.AtomFeed)
+	r.Get("/roadmap", roadmapHandler.Index)
+	r.Get("/operator", operatorHandler.Index)
 }
 
 func (app *Application) setupRoomRoutes(r chi.Router) {
 	r.Route("/rooms", func(rr chi.Router) {
 		rh := app.roomHandler
 		rdh := app.roomDetailHandler
+		rjh := app.roomJoinHandler
 		rmh := app.roomMessageHandler
 
 		// 部屋一覧・詳細（本番環境では認証情報をオプションで取得、開発環境では認証なし）
 		if app.hasAuthMiddleware() {
 			rr.Get("/", app.withOptionalAuth(rh.Rooms))
 			rr.Get("/{id}", app.withOptionalAuth(rdh.RoomDetail))
+			// 部屋参加ページ（スケルトン、認証必須）
+			rr.Get("/{id}/join", app.withAuth(rjh.RoomJoinPage))
 		} else {
 			rr.Get("/", rh.Rooms)
 			rr.Get("/{id}", rdh.RoomDetail)
+			// 部屋参加ページ（開発環境では認証なし）
+			rr.Get("/{id}/join", rjh.RoomJoinPage)
 		}
 
 		// 部屋操作・メッセージ機能（本番環境では認証必須、開発環境では認証なし）
@@ -153,10 +169,7 @@ func (app *Application) setupAuthRoutes(r chi.Router) {
 		// 認証ページルート（レート制限は緩め）
 		ar.Get("/login", ah.LoginPage)
 		ar.Get("/register", ah.RegisterPage)
-		ar.Get("/password-reset", ah.PasswordResetPage)
-		ar.Get("/password-reset/confirm", ah.PasswordResetConfirmPage)
 		ar.Get("/callback", ah.AuthCallback)
-		ar.Get("/complete-profile", ah.CompleteProfilePage)
 
 		// 認証アクションルート（厳しいレート制限）
 		ar.Group(func(arr chi.Router) {
@@ -165,11 +178,8 @@ func (app *Application) setupAuthRoutes(r chi.Router) {
 			arr.Post("/login", ah.Login)
 			arr.Post("/register", ah.Register)
 			arr.Post("/logout", ah.Logout)
-			arr.Post("/password-reset", ah.PasswordResetRequest)
-			arr.Post("/password-reset/confirm", ah.PasswordResetConfirm)
 			arr.Get("/google", ah.GoogleAuth)
 			arr.Get("/google/callback", ah.GoogleCallback)
-			arr.Post("/complete-profile", ah.CompleteProfile)
 		})
 	})
 }

@@ -2,7 +2,7 @@
 
 ## 概要
 
-MonHubのURL構造とルーティングの設計ドキュメントです。SEO対策と使いやすさを両立させた設計を目指します。
+HuntersHubのURL構造とルーティングの設計ドキュメントです。SEO対策と使いやすさを両立させた設計を目指します。
 
 ## 現在の実装状況
 
@@ -26,8 +26,8 @@ MonHubのURL構造とルーティングの設計ドキュメントです。SEO�
 /auth/logout                # ログアウト（POST）
 /auth/password-reset        # パスワードリセット
 /auth/password-reset/confirm # パスワードリセット確認
-/auth/complete-profile      # プロフィール補完
-/auth/google                # Google OAuth認証（準備中）
+/auth/callback              # 認証コールバック
+/auth/google                # Google OAuth認証
 /auth/google/callback       # Google OAuth コールバック
 ```
 
@@ -86,9 +86,8 @@ r.HandleFunc("/auth/password-reset/confirm", h.PasswordResetConfirmHandler).Meth
 r.HandleFunc("/auth/google", h.GoogleAuthHandler).Methods("GET")
 r.HandleFunc("/auth/google/callback", h.GoogleCallbackHandler).Methods("GET")
 
-// プロフィール補完
-r.HandleFunc("/auth/complete-profile", h.CompleteProfilePageHandler).Methods("GET")
-r.HandleFunc("/auth/complete-profile", h.CompleteProfileHandler).Methods("POST")
+// 認証コールバック
+r.HandleFunc("/auth/callback", h.AuthCallbackHandler).Methods("GET")
 
 // API
 r.HandleFunc("/api/user/current", h.CurrentUserHandler).Methods("GET")

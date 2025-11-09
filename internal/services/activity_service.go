@@ -224,7 +224,7 @@ func (s *ActivityService) RecordUserJoin(userID uuid.UUID, registrationMethod st
 	activity := &models.UserActivity{
 		UserID:            userID,
 		ActivityType:      models.ActivityUserJoin,
-		Title:             "MonHubに参加しました",
+		Title:             "HuntersHubに参加しました",
 		Description:       stringPtr("新しいハンターとしてコミュニティに参加しました"),
 		RelatedEntityType: stringPtr(models.EntityTypeUser),
 		RelatedEntityID:   &userID,

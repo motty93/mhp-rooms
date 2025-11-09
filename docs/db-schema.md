@@ -1,7 +1,7 @@
 # データベーススキーマ
 
 ## 概要
-MonHubのデータベーススキーマ設計書です。
+HuntersHubのデータベーススキーマ設計書です。
 - **開発環境**: PostgreSQL (Docker Compose)
 - **本番環境**: Turso (libSQL) - SQLiteベースのクラウドデータベース
 

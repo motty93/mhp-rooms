@@ -12,6 +12,10 @@ RUN go mod download
 # Copy application source
 COPY . .
 
+# Pre-generate static changelog/roadmap assets so runtime instances do not need DB access.
+# TODO: When GCS/CDN distribution is introduced, replace this step with an upload job.
+RUN go run ./cmd/generate_info/main.go
+
 # Build optimized static binary for Linux
 RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build \
     -ldflags='-w -s' \

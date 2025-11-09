@@ -8,6 +8,7 @@ import (
 
 	"mhp-rooms/internal/config"
 	"mhp-rooms/internal/handlers"
+	"mhp-rooms/internal/info"
 	"mhp-rooms/internal/infrastructure/persistence"
 	"mhp-rooms/internal/infrastructure/sse"
 	"mhp-rooms/internal/infrastructure/storage"
@@ -22,6 +23,7 @@ type Application struct {
 	authHandler        *handlers.AuthHandler
 	roomHandler        *handlers.RoomHandler
 	roomDetailHandler  *handlers.RoomDetailHandler
+	roomJoinHandler    *handlers.RoomJoinHandler
 	roomMessageHandler *handlers.RoomMessageHandler
 	sseTokenHandler    *handlers.SSETokenHandler
 	pageHandler        *handlers.PageHandler
@@ -32,6 +34,9 @@ type Application struct {
 	userHandler        *handlers.UserHandler
 	followHandler      *handlers.FollowHandler
 	reportHandler      *handlers.ReportHandler
+	infoHandler        *handlers.InfoHandler
+	roadmapHandler     *handlers.RoadmapHandler
+	operatorHandler    *handlers.OperatorHandler
 	authMiddleware     *middleware.JWTAuth
 	securityConfig     *middleware.SecurityConfig
 	generalLimiter     *middleware.RateLimiter
@@ -80,6 +85,7 @@ func (app *Application) initDatabase() error {
 
 func (app *Application) initHandlers() error {
 	app.repo = repository.NewRepository(app.db)
+	articleGenerator := info.NewGenerator("static/generated/info", info.DefaultContentSources())
 
 	// SSE Hubを初期化
 	app.sseHub = sse.NewHub()
@@ -100,6 +106,7 @@ func (app *Application) initHandlers() error {
 	app.authHandler = handlers.NewAuthHandler(app.repo)
 	app.roomHandler = handlers.NewRoomHandler(app.repo, app.sseHub)
 	app.roomDetailHandler = handlers.NewRoomDetailHandler(app.repo)
+	app.roomJoinHandler = handlers.NewRoomJoinHandler(app.repo)
 	app.roomMessageHandler = handlers.NewRoomMessageHandler(app.repo, app.sseHub)
 	app.sseTokenHandler = handlers.NewSSETokenHandler(app.repo)
 	app.pageHandler = handlers.NewPageHandler(app.repo)
@@ -109,6 +116,9 @@ func (app *Application) initHandlers() error {
 	app.profileHandler = handlers.NewProfileHandler(app.repo, app.authMiddleware)
 	app.userHandler = handlers.NewUserHandler(app.repo)
 	app.followHandler = handlers.NewFollowHandler(app.repo)
+	app.infoHandler = handlers.NewInfoHandler(app.repo, articleGenerator)
+	app.roadmapHandler = handlers.NewRoadmapHandler(app.repo, articleGenerator)
+	app.operatorHandler = handlers.NewOperatorHandler(app.repo, articleGenerator)
 	// GCSUploaderを初期化
 	gcsUploader, err := storage.NewGCSUploader(context.Background())
 	if err != nil {

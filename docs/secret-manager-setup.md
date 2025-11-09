@@ -1,6 +1,6 @@
 # Secret Manager セットアップガイド
 
-このドキュメントは、MonHub プロジェクトで使用する Secret Manager のシークレット設定をまとめたものです。
+このドキュメントは、HuntersHub プロジェクトで使用する Secret Manager のシークレット設定をまとめたものです。
 
 ## 必要なシークレット一覧
 

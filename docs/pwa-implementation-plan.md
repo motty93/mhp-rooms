@@ -14,7 +14,7 @@
 ## 概要
 
 ### 目的
-MonHubをProgressive Web App (PWA)化し、以下の機能を提供する：
+HuntersHubをProgressive Web App (PWA)化し、以下の機能を提供する：
 - ホーム画面へのインストール可能化
 - オフライン時の基本的なフォールバック表示
 - アプリライクなユーザー体験の提供
@@ -91,8 +91,8 @@ MonHubをProgressive Web App (PWA)化し、以下の機能を提供する：
 
 ```json
 {
-  "name": "MonHub - モンハンポータブルオンラインルーム",
-  "short_name": "MonHub",
+  "name": "HuntersHub - モンハンポータブルオンラインルーム",
+  "short_name": "HuntersHub",
   "description": "PSPゲームのアドホックパーティを簡単に作成・参加できるサービス",
   "start_url": "/",
   "display": "standalone",
@@ -149,7 +149,7 @@ MonHubをProgressive Web App (PWA)化し、以下の機能を提供する：
 **ファイル**: `static/sw.js`
 
 ```javascript
-const CACHE_NAME = 'monhub-v1';
+const CACHE_NAME = 'huntershub-v1';
 const OFFLINE_URL = '/static/offline.html';
 
 // キャッシュする静的リソース
@@ -319,7 +319,7 @@ if ('serviceWorker' in navigator) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>オフライン - MonHub</title>
+  <title>オフライン - HuntersHub</title>
   <style>
     * {
       margin: 0;
@@ -407,7 +407,7 @@ if ('serviceWorker' in navigator) {
 <meta name="theme-color" content="#1f2937">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="MonHub">
+<meta name="apple-mobile-web-app-title" content="HuntersHub">
 
 <!-- iOS用アイコン（既存のapple-touch-iconを確認） -->
 <link rel="apple-touch-icon" sizes="192x192" href="/static/images/icons/icon-192.png">

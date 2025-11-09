@@ -86,13 +86,6 @@ func (h *RoomHandler) Rooms(w http.ResponseWriter, r *http.Request) {
 	var enhancedRooms []interface{}
 	dbUser, isAuthenticated := middleware.GetDBUserFromContext(r.Context())
 
-	// デバッグログ
-	if isAuthenticated {
-		log.Printf("[DEBUG] Rooms: 認証済みユーザー: ID=%v, Email=%s", dbUser.ID, dbUser.Email)
-	} else {
-		log.Printf("[DEBUG] Rooms: 未認証ユーザー")
-	}
-
 	if isAuthenticated && dbUser != nil {
 		// パフォーマンス最適化: 1つのクエリで参加状態を取得
 		roomsWithJoinStatus, err := h.repo.Room.GetActiveRoomsWithJoinStatus(&dbUser.ID, gameVersionID, perPage, offset)
@@ -503,18 +496,30 @@ func (h *RoomHandler) JoinRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 入室メッセージをSSEで通知
+	// 入室メッセージをDBに保存してSSEで通知
 	if h.hub != nil {
+		// DisplayNameの決定（display_name > username の優先順位）
+		displayName := dbUser.DisplayName
+		if displayName == "" && dbUser.Username != nil && *dbUser.Username != "" {
+			displayName = *dbUser.Username
+		}
+
 		joinMessage := models.RoomMessage{
 			BaseModel: models.BaseModel{
 				ID: uuid.New(),
 			},
 			RoomID:      roomID,
 			UserID:      userID,
-			Message:     fmt.Sprintf("%sさんが入室しました", dbUser.DisplayName),
+			Message:     fmt.Sprintf("%sさんが入室しました", displayName),
 			MessageType: "system",
 		}
 		joinMessage.User = *dbUser
+
+		// DBに保存
+		if err := h.repo.RoomMessage.CreateMessage(&joinMessage); err != nil {
+			log.Printf("入室メッセージの保存に失敗: %v", err)
+			// 保存失敗してもSSE送信は続行
+		}
 
 		event := sse.Event{
 			ID:   joinMessage.ID.String(),
@@ -522,6 +527,24 @@ func (h *RoomHandler) JoinRoom(w http.ResponseWriter, r *http.Request) {
 			Data: joinMessage,
 		}
 		h.hub.BroadcastToRoom(roomID, event)
+
+		// メンバー更新イベント（ユーザーパネル用）
+		members, err := h.repo.Room.GetRoomMembers(roomID)
+		if err != nil {
+			log.Printf("メンバー情報取得エラー: %v", err)
+			members = []models.RoomMember{} // エラー時は空配列
+		}
+
+		memberUpdateEvent := sse.Event{
+			ID:   uuid.New().String(),
+			Type: "member_update",
+			Data: map[string]interface{}{
+				"action":  "join",
+				"members": members,
+				"count":   len(members),
+			},
+		}
+		h.hub.BroadcastToRoom(roomID, memberUpdateEvent)
 	}
 
 	// アクティビティを記録（失敗してもメイン処理は続行）
@@ -574,6 +597,57 @@ func (h *RoomHandler) LeaveRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 退室メッセージをDBに保存してSSEで通知
+	if h.hub != nil {
+		// DisplayNameの決定（display_name > username の優先順位）
+		displayName := dbUser.DisplayName
+		if displayName == "" && dbUser.Username != nil && *dbUser.Username != "" {
+			displayName = *dbUser.Username
+		}
+
+		leaveMessage := models.RoomMessage{
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
+			RoomID:      roomID,
+			UserID:      userID,
+			Message:     fmt.Sprintf("%sさんが退室しました", displayName),
+			MessageType: "system",
+		}
+		leaveMessage.User = *dbUser
+
+		// DBに保存
+		if err := h.repo.RoomMessage.CreateMessage(&leaveMessage); err != nil {
+			log.Printf("退室メッセージの保存に失敗: %v", err)
+			// 保存失敗してもSSE送信は続行
+		}
+
+		event := sse.Event{
+			ID:   leaveMessage.ID.String(),
+			Type: "system_message",
+			Data: leaveMessage,
+		}
+		h.hub.BroadcastToRoom(roomID, event)
+
+		// メンバー更新イベント（ユーザーパネル用）
+		members, err := h.repo.Room.GetRoomMembers(roomID)
+		if err != nil {
+			log.Printf("メンバー情報取得エラー: %v", err)
+			members = []models.RoomMember{} // エラー時は空配列
+		}
+
+		memberUpdateEvent := sse.Event{
+			ID:   uuid.New().String(),
+			Type: "member_update",
+			Data: map[string]interface{}{
+				"action":  "leave",
+				"members": members,
+				"count":   len(members),
+			},
+		}
+		h.hub.BroadcastToRoom(roomID, memberUpdateEvent)
+	}
+
 	// アクティビティを記録（失敗してもメイン処理は続行）
 	if room != nil {
 		if err := h.activityService.RecordRoomLeave(userID, room); err != nil {
@@ -607,6 +681,39 @@ func (h *RoomHandler) LeaveCurrentRoom(w http.ResponseWriter, r *http.Request) {
 	if err := h.repo.Room.LeaveRoom(activeRoom.ID, userID); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
+	}
+
+	// 退室メッセージをDBに保存してSSEで通知
+	if h.hub != nil {
+		// DisplayNameの決定（display_name > username の優先順位）
+		displayName := dbUser.DisplayName
+		if displayName == "" && dbUser.Username != nil && *dbUser.Username != "" {
+			displayName = *dbUser.Username
+		}
+
+		leaveMessage := models.RoomMessage{
+			BaseModel: models.BaseModel{
+				ID: uuid.New(),
+			},
+			RoomID:      activeRoom.ID,
+			UserID:      userID,
+			Message:     fmt.Sprintf("%sさんが退室しました", displayName),
+			MessageType: "system",
+		}
+		leaveMessage.User = *dbUser
+
+		// DBに保存
+		if err := h.repo.RoomMessage.CreateMessage(&leaveMessage); err != nil {
+			log.Printf("退室メッセージの保存に失敗: %v", err)
+			// 保存失敗してもSSE送信は続行
+		}
+
+		event := sse.Event{
+			ID:   leaveMessage.ID.String(),
+			Type: "system_message",
+			Data: leaveMessage,
+		}
+		h.hub.BroadcastToRoom(activeRoom.ID, event)
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -669,8 +776,6 @@ func (h *RoomHandler) ToggleRoomClosed(w http.ResponseWriter, r *http.Request) {
 // GetAllRoomsAPIHandler APIエンドポイント：常に全データを返す
 func (h *RoomHandler) GetAllRoomsAPI(w http.ResponseWriter, r *http.Request) {
 	// Note: GameVersionsはHTMLレンダリング時に既に取得済み
-	// APIエンドポイントでは部屋データのみを返す
-
 	// 認証されたユーザーの場合、最適化されたメソッドを使用
 	var enhancedRooms []interface{}
 	dbUser, isAuthenticated := middleware.GetDBUserFromContext(r.Context())

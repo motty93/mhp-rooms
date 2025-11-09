@@ -1,15 +1,15 @@
 substitutions:
-  _SERVICE_NAME: monhub-stg
-  _SSE_SERVICE_NAME: monhub-sse-stg
+  _SERVICE_NAME: huntershub-stg
+  _SSE_SERVICE_NAME: huntershub-sse-stg
   _REGION: asia-northeast1
-  _ARTIFACT_REPOSITORY: monhub-registry
-  _IMAGE_NAME: monhub-app
+  _ARTIFACT_REPOSITORY: huntershub-registry
+  _IMAGE_NAME: huntershub-app
   _JOB_NAME: ogp-renderer-stg
   _JOB_IMAGE_NAME: ogp-renderer
   _GO_VERSION: "1.24"
   _DEPLOY_SSE: "false"                   # ステージング環境ではSSEをデプロイしない
   _DEPLOY_JOB: "true"                    # ステージング環境でJobをデプロイ
-  _OG_BUCKET: monhub-master              # ステージングと本番でバケットを共有
+  _OG_BUCKET: huntershub-master          # ステージングと本番でバケットを共有
   _OG_PREFIX: stg                        # ステージング環境用のプレフィックス
 
   # Supabase設定（非機密）
@@ -17,9 +17,9 @@ substitutions:
   _SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBma3Fyd3RnZnBieGR1eHRlY2J5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4NjE1NjIsImV4cCI6MjA2NjQzNzU2Mn0.DVuKTsjR5OXZlILQuh7qlabF6E5-WM_cKPVC4mkp5bw"
 
   # GCS設定（非機密）
-  _GCS_BUCKET: monhub-master
-  _GCS_PRIVATE_BUCKET: monhub-private
-  _BASE_PUBLIC_ASSET_URL: "https://storage.googleapis.com/monhub-master"
+  _GCS_BUCKET: huntershub-master
+  _GCS_PRIVATE_BUCKET: huntershub-private
+  _BASE_PUBLIC_ASSET_URL: "https://storage.googleapis.com/huntershub-master"
   _ASSET_PREFIX: stg
 
   # Secret Manager上のシークレット名（ステージング環境用）
@@ -27,10 +27,14 @@ substitutions:
   _SECRET_TURSO_AUTH_TOKEN: TURSO_AUTH_TOKEN__stg
   _SECRET_SUPABASE_JWT_SECRET: SUPABASE_JWT_SECRET__stg
   _SECRET_DISCORD_WEBHOOK_URL: DISCORD_WEBHOOK_URL__stg
+  _GA_ENABLED: "true"                    # ステージングでもGA4計測を有効化
+  _GA_MEASUREMENT_ID: "G-XXXXXXXXXY"     # ステージング用のGA4測定IDに置き換えてください
 
 options:
   logging: CLOUD_LOGGING_ONLY
-  machineType: E2_HIGHCPU_8  # 8コアマシンで高速化
+  machineType: E2_MEDIUM  # コストを抑えつつ十分な並列ビルド性能を確保
+  env:
+    - "DOCKER_BUILDKIT=1"     # BuildKitを有効にしてキャッシュを活用
 
 steps:
   # 1) Build App
@@ -46,6 +50,8 @@ steps:
       - "Dockerfile"
       - "--build-arg"
       - "GO_VERSION=${_GO_VERSION}"
+      - "--build-arg"
+      - "BUILDKIT_INLINE_CACHE=1"
       - "--cache-from"
       - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_IMAGE_NAME}:latest'
       - "."
@@ -62,28 +68,40 @@ steps:
   # 3) Build Job (ogp-renderer) - Appと並列でビルド
   - name: "gcr.io/cloud-builders/docker"
     id: "build-job-image"
+    entrypoint: "bash"
     args:
-      - "build"
-      - "-t"
-      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_JOB_IMAGE_NAME}:$SHORT_SHA'
-      - "-t"
-      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_JOB_IMAGE_NAME}:latest'
-      - "-f"
-      - "cmd/ogp-renderer/Dockerfile"
-      - "--build-arg"
-      - "GO_VERSION=${_GO_VERSION}"
-      - "--cache-from"
-      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_JOB_IMAGE_NAME}:latest'
-      - "."
+      - "-c"
+      - |
+        set -euo pipefail
+        if [ "${_DEPLOY_JOB}" != "true" ]; then
+          echo "Jobイメージのビルドはスキップされました (_DEPLOY_JOB=${_DEPLOY_JOB})"
+          exit 0
+        fi
+
+        docker build \
+          -t ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_JOB_IMAGE_NAME}:$SHORT_SHA \
+          -t ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_JOB_IMAGE_NAME}:latest \
+          -f cmd/ogp-renderer/Dockerfile \
+          --build-arg GO_VERSION=${_GO_VERSION} \
+          --build-arg BUILDKIT_INLINE_CACHE=1 \
+          --cache-from ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_JOB_IMAGE_NAME}:latest \
+          .
     waitFor: ["-"]  # 最初から実行（build-imageと並列）
 
   # 4) Push Job
   - name: "gcr.io/cloud-builders/docker"
     id: "push-job-image"
+    entrypoint: "bash"
     args:
-      - "push"
-      - "--all-tags"
-      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_JOB_IMAGE_NAME}'
+      - "-c"
+      - |
+        set -euo pipefail
+        if [ "${_DEPLOY_JOB}" != "true" ]; then
+          echo "Jobイメージのプッシュはスキップされました (_DEPLOY_JOB=${_DEPLOY_JOB})"
+          exit 0
+        fi
+
+        docker push --all-tags ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_JOB_IMAGE_NAME}
     waitFor: ["build-job-image"]
 
   # 5) Deploy Main (Cloud Run) - ステージング環境
@@ -119,7 +137,7 @@ steps:
       - "--set-secrets"
       - "TURSO_DATABASE_URL=${_SECRET_TURSO_DATABASE_URL}:latest,TURSO_AUTH_TOKEN=${_SECRET_TURSO_AUTH_TOKEN}:latest,SUPABASE_JWT_SECRET=${_SECRET_SUPABASE_JWT_SECRET}:latest,DISCORD_WEBHOOK_URL=${_SECRET_DISCORD_WEBHOOK_URL}:latest"
       - "--update-env-vars"
-      - "ENV=staging,DB_TYPE=turso,SERVICE_MODE=main,SUPABASE_URL=${_SUPABASE_URL},SUPABASE_ANON_KEY=${_SUPABASE_ANON_KEY},GCS_BUCKET=${_GCS_BUCKET},BASE_PUBLIC_ASSET_URL=${_BASE_PUBLIC_ASSET_URL},ASSET_PREFIX=${_ASSET_PREFIX},GCS_PRIVATE_BUCKET=${_GCS_PRIVATE_BUCKET},OG_BUCKET=${_OG_BUCKET},OG_PREFIX=${_OG_PREFIX},OGP_JOB_NAME=${_JOB_NAME},OGP_GENERATION_MODE=cloud"
+      - "ENV=staging,DB_TYPE=turso,SERVICE_MODE=main,SUPABASE_URL=${_SUPABASE_URL},SUPABASE_ANON_KEY=${_SUPABASE_ANON_KEY},GCS_BUCKET=${_GCS_BUCKET},BASE_PUBLIC_ASSET_URL=${_BASE_PUBLIC_ASSET_URL},ASSET_PREFIX=${_ASSET_PREFIX},GCS_PRIVATE_BUCKET=${_GCS_PRIVATE_BUCKET},OG_BUCKET=${_OG_BUCKET},OG_PREFIX=${_OG_PREFIX},OGP_JOB_NAME=${_JOB_NAME},OGP_GENERATION_MODE=cloud,GA_ENABLED=${_GA_ENABLED},GA_MEASUREMENT_ID=${_GA_MEASUREMENT_ID}"
     waitFor: ["push-image"]
 
   # 6) Deploy SSE (optional) - ステージング環境ではスキップ
@@ -145,7 +163,7 @@ steps:
             --min-instances 0 \
             --concurrency 100 \
             --set-secrets TURSO_DATABASE_URL=${_SECRET_TURSO_DATABASE_URL}:latest,TURSO_AUTH_TOKEN=${_SECRET_TURSO_AUTH_TOKEN}:latest,SUPABASE_JWT_SECRET=${_SECRET_SUPABASE_JWT_SECRET}:latest,DISCORD_WEBHOOK_URL=${_SECRET_DISCORD_WEBHOOK_URL}:latest \
-            --update-env-vars "ENV=staging,DB_TYPE=turso,SERVICE_MODE=sse,SUPABASE_URL=${_SUPABASE_URL},SUPABASE_ANON_KEY=${_SUPABASE_ANON_KEY},GCS_BUCKET=${_GCS_BUCKET},BASE_PUBLIC_ASSET_URL=${_BASE_PUBLIC_ASSET_URL},ASSET_PREFIX=${_ASSET_PREFIX},GCS_PRIVATE_BUCKET=${_GCS_PRIVATE_BUCKET},OG_BUCKET=${_OG_BUCKET},OG_PREFIX=${_OG_PREFIX},OGP_JOB_NAME=${_JOB_NAME},OGP_GENERATION_MODE=cloud"
+            --update-env-vars "ENV=staging,DB_TYPE=turso,SERVICE_MODE=sse,SUPABASE_URL=${_SUPABASE_URL},SUPABASE_ANON_KEY=${_SUPABASE_ANON_KEY},GCS_BUCKET=${_GCS_BUCKET},BASE_PUBLIC_ASSET_URL=${_BASE_PUBLIC_ASSET_URL},ASSET_PREFIX=${_ASSET_PREFIX},GCS_PRIVATE_BUCKET=${_GCS_PRIVATE_BUCKET},OG_BUCKET=${_OG_BUCKET},OG_PREFIX=${_OG_PREFIX},OGP_JOB_NAME=${_JOB_NAME},OGP_GENERATION_MODE=cloud,GA_ENABLED=${_GA_ENABLED},GA_MEASUREMENT_ID=${_GA_MEASUREMENT_ID}"
         else
           echo "SSEサービスのデプロイはスキップされました (_DEPLOY_SSE=${_DEPLOY_SSE})"
         fi

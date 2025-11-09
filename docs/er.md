@@ -1,7 +1,7 @@
 # ER図（Entity Relationship Diagram）
 
 ## 概要
-MonHubのデータベース構造を示すER図です。
+HuntersHubのデータベース構造を示すER図です。
 
 ## テーブル関係図
 

@@ -1,29 +1,29 @@
 {{ define "head" }}
   <meta
     name="description"
-    content="PSPゲームのアドホックパーティを簡単に作成・参加。モンハンポータブルシリーズ対応のオンライン協力プレイサービス - MonHub（モンハブ）"
+    content="モンハンシリーズのパーティメンバーを募集できる掲示板サービス。ポータブルシリーズ・MHXXに対応したプレイヤー募集 - HuntersHub（ハンターズハブ）"
   />
   <meta
     name="keywords"
-    content="PSP,アドホック,パーティ,モンハン,MHP,MHP2,MHP2G,MHP3,オンライン,協力プレイ,MonHub,モンハブ"
+    content="モンハン,アドホック,パーティ,MHP,MHP2,MHP2G,MHP3,MHXX,オンライン,協力プレイ,HuntersHub,ハンターズハブ"
   />
-  <meta property="og:title" content="ハンター募集 - MonHub" />
+  <meta property="og:title" content="ハンター募集 - HuntersHub" />
   <meta
     property="og:description"
-    content="モンスターハンターのパーティを簡単に作成・参加。モンハンポータブルシリーズ対応のオンライン協力プレイサービス"
+    content="モンハンシリーズのパーティメンバー募集掲示板。仲間を集めてオンラインプレイを楽しもう"
   />
   <meta property="og:type" content="website" />
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
-      "name": "MonHub",
-      "alternateName": "モンハブ",
-      "url": "https://monhub.com",
-      "description": "モンスターハンターのルームを簡単に作成・参加できるサービス",
+      "name": "HuntersHub",
+      "alternateName": "ハンターズハブ",
+      "url": "https://huntershub.com",
+      "description": "モンハンシリーズのパーティメンバー募集掲示板",
       "potentialAction": {
         "@type": "SearchAction",
-        "target": "https://monhub.com/rooms?q={search_term_string}",
+        "target": "https://huntershub.com/rooms?q={search_term_string}",
         "query-input": "required name=search_term_string"
       }
     }
@@ -103,13 +103,99 @@
     </div>
   </section>
 
+  <!-- 色変更デバッグUI -->
+  <!-- デバッグ用: x-show="true"にすると表示されます -->
+  <div
+    x-show="false"
+    x-data="{
+      showColorPicker: false,
+      colorPresets: [
+        { name: 'グレー（デフォルト）', color1: 'rgba(75, 85, 99, 0.85)', color2: 'rgba(55, 65, 81, 0.85)' },
+        { name: 'ダークブルー', color1: 'rgba(30, 58, 138, 0.85)', color2: 'rgba(29, 78, 216, 0.85)' },
+        { name: 'ネイビー', color1: 'rgba(31, 41, 55, 0.85)', color2: 'rgba(17, 24, 39, 0.85)' },
+        { name: 'ティール', color1: 'rgba(19, 78, 74, 0.85)', color2: 'rgba(13, 148, 136, 0.85)' },
+        { name: 'エメラルド', color1: 'rgba(6, 95, 70, 0.85)', color2: 'rgba(4, 120, 87, 0.85)' },
+        { name: 'スレート', color1: 'rgba(51, 65, 85, 0.85)', color2: 'rgba(30, 41, 59, 0.85)' },
+        { name: 'オレンジ', color1: 'rgba(194, 65, 12, 0.85)', color2: 'rgba(234, 88, 12, 0.85)' },
+        { name: 'アンバー', color1: 'rgba(180, 83, 9, 0.85)', color2: 'rgba(217, 119, 6, 0.85)' }
+      ],
+      applyColor(color1, color2) {
+        const heroElement = document.querySelector('.hero-bg');
+        if (heroElement) {
+          heroElement.style.background = `linear-gradient(135deg, ${color1} 0%, ${color2} 100%)`;
+        }
+      }
+    }"
+    class="fixed bottom-6 right-6 z-50"
+  >
+    <!-- カラーパレットパネル -->
+    <div
+      x-show="showColorPicker"
+      x-cloak
+      @click.away="showColorPicker = false"
+      x-transition:enter="transition ease-out duration-200"
+      x-transition:enter-start="opacity-0 transform translate-y-2"
+      x-transition:enter-end="opacity-100 transform translate-y-0"
+      x-transition:leave="transition ease-in duration-150"
+      x-transition:leave-start="opacity-100 transform translate-y-0"
+      x-transition:leave-end="opacity-0 transform translate-y-2"
+      class="absolute bottom-16 right-0 bg-white rounded-lg shadow-2xl border border-gray-200 p-4 w-64"
+    >
+      <h4 class="text-sm font-bold text-gray-800 mb-3">Hero背景色を変更</h4>
+      <div class="space-y-2">
+        <template x-for="preset in colorPresets" :key="preset.name">
+          <button
+            @click="applyColor(preset.color1, preset.color2)"
+            class="w-full text-left px-3 py-2 text-sm rounded hover:bg-gray-100 transition-colors flex items-center justify-between group"
+          >
+            <span class="text-gray-700" x-text="preset.name"></span>
+            <div class="flex gap-1">
+              <div
+                class="w-4 h-4 rounded border border-gray-300"
+                :style="`background: ${preset.color1}`"
+              ></div>
+              <div
+                class="w-4 h-4 rounded border border-gray-300"
+                :style="`background: ${preset.color2}`"
+              ></div>
+            </div>
+          </button>
+        </template>
+      </div>
+      <p class="text-xs text-gray-500 mt-3 pt-3 border-t">
+        ※この設定はページをリロードすると元に戻ります
+      </p>
+    </div>
+
+    <!-- フローティングボタン -->
+    <button
+      @click="showColorPicker = !showColorPicker"
+      class="bg-gray-800 hover:bg-gray-900 text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center"
+      title="Hero背景色を変更"
+    >
+      <svg
+        class="w-6 h-6"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
+        />
+      </svg>
+    </button>
+  </div>
+
   <!-- 特徴セクション -->
   <section class="py-16 bg-white">
     <div class="container mx-auto px-4">
       <div class="text-center mb-12">
-        <h3 class="text-3xl font-bold text-gray-800 mb-4">MonHubの特徴</h3>
+        <h3 class="text-3xl font-bold text-gray-800 mb-4">HuntersHubの特徴</h3>
         <p class="text-gray-600 max-w-2xl mx-auto">
-          モンスターハンターのパーティを簡単に作成・参加できるサービスです
+          モンスターハンターのパーティを簡単に作成・参加できる非公式のサービスです
         </p>
       </div>
 
@@ -284,7 +370,7 @@
         <!-- FAQ 1 -->
         <div class="bg-gray-50 rounded-lg p-6">
           <h4 class="font-bold text-gray-800 mb-2">
-            Q: MonHubの利用は無料ですか？
+            Q: HuntersHubの利用は無料ですか？
           </h4>
           <p class="text-gray-600">
             A:
@@ -295,22 +381,22 @@
         <!-- FAQ 2 -->
         <div class="bg-gray-50 rounded-lg p-6">
           <h4 class="font-bold text-gray-800 mb-2">
-            Q: どのPSPゲームに対応していますか？
+            Q: どのモンスターハンターシリーズに対応していますか？
           </h4>
           <p class="text-gray-600">
             A:
-            現在はモンスターハンターポータブルシリーズ（MHP、MHP2、MHP2G、MHP3）に対応しています。今後、他のモンハンシリーズにも対応予定です。
+            モンスターハンターポータブルシリーズ（MHP、MHP2、MHP2G、MHP3）とMHXXに対応しています。今後も対応タイトルを拡大予定です。
           </p>
         </div>
 
         <!-- FAQ 3 -->
         <div class="bg-gray-50 rounded-lg p-6">
           <h4 class="font-bold text-gray-800 mb-2">
-            Q: MonHubはどのように使うのですか？
+            Q: HuntersHubはどのように使うのですか？
           </h4>
           <p class="text-gray-600">
             A:
-            先にアドホックパーティなどのオンラインサービスで入室したあと、MonHubで部屋情報を入力しSNSなどに共有して使用します。仲間を集めるための情報共有ツールとしてご活用ください。
+            先にアドホックパーティなどのオンラインサービスで入室したあと、HuntersHubで部屋情報を入力しSNSなどに共有して使用します。仲間を集めるための情報共有ツールとしてご活用ください。
           </p>
         </div>
 
@@ -324,6 +410,17 @@
             はい、部屋作成時にパスワードを設定できます。友達だけでプレイしたい場合などにご利用ください。
           </p>
         </div>
+
+        <!-- FAQ 5 -->
+        <div class="bg-gray-50 rounded-lg p-6">
+          <h4 class="font-bold text-gray-800 mb-2">
+            Q: HuntersHubは公式のサービスですか？
+          </h4>
+          <p class="text-gray-600">
+            A:
+            いいえ、HuntersHubはモンスターハンターファンによって運営される非公式のコミュニティサービスです。株式会社カプコンおよびその関連会社とは一切関係がありません。「モンスターハンター」は株式会社カプコンの登録商標です。
+          </p>
+        </div>
       </div>
     </div>
   </section>
@@ -335,7 +432,7 @@
         さあ、仲間と一緒に狩りに出かけよう！
       </h3>
       <p class="text-xl mb-8 text-gray-300">
-        MonHubで新しい仲間を見つけて、過去作モンスターハンターをもっと楽しもう
+        HuntersHubで新しい仲間を見つけて、過去作モンスターハンターをもっと楽しもう
       </p>
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
         <a
