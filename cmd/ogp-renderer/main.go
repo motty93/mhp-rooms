@@ -48,11 +48,6 @@ const (
 	TitleFontSize       = 64.0 // タイトル
 	LogoFontSize        = 36.0 // HuntersHub
 	GameVersionFontSize = 36.0 // ゲームバージョン
-	FontPath            = "cmd/ogp-renderer/assets/fonts/NotoSansCJKjp-Bold.otf"
-
-	// アセット設定
-	IconImagePath = "cmd/ogp-renderer/assets/images/icon.webp"
-	HeroImagePath = "static/images/hero.webp"
 )
 
 func main() {
@@ -67,6 +62,17 @@ func main() {
 	roomIDStr := os.Getenv("ROOM_ID")
 	ogBucket := os.Getenv("OG_BUCKET")
 	ogPrefix := os.Getenv("OG_PREFIX")
+
+	// アセットパスの取得（環境変数で上書き可能）
+	fontPath := os.Getenv("FONT_PATH")
+	if fontPath == "" {
+		fontPath = "cmd/ogp-renderer/assets/fonts/NotoSansCJKjp-Bold.otf" // ローカル開発用デフォルト
+	}
+
+	iconImagePath := os.Getenv("ICON_IMAGE_PATH")
+	if iconImagePath == "" {
+		iconImagePath = "cmd/ogp-renderer/assets/images/icon.webp" // ローカル開発用デフォルト
+	}
 
 	if roomIDStr == "" {
 		log.Fatal("必須の環境変数が設定されていません: ROOM_ID")
@@ -118,7 +124,7 @@ func main() {
 	log.Printf("配色決定: game_version=%s", room.GameVersion.Code)
 
 	// OGP画像の生成
-	img, err := generateOGPImage(&room, pal)
+	img, err := generateOGPImage(&room, pal, fontPath, iconImagePath)
 	if err != nil {
 		log.Fatalf("OGP画像生成失敗: %v", err)
 	}
@@ -227,7 +233,7 @@ func uploadToGCS(ctx context.Context, img image.Image, ogBucket, ogPrefix string
 
 // generateOGPImage OGP画像を生成（Zenn風デザイン）
 // 内部では RenderScale 倍のキャンバスに描画し、最後に等倍へ縮小します。
-func generateOGPImage(room *models.Room, pal view.GameVersionPalette) (image.Image, error) {
+func generateOGPImage(room *models.Room, pal view.GameVersionPalette, fontPath, iconImagePath string) (image.Image, error) {
 	scale := float64(RenderScale)
 	W := int(float64(OGPWidth) * scale)
 	H := int(float64(OGPHeight) * scale)
@@ -244,17 +250,17 @@ func generateOGPImage(room *models.Room, pal view.GameVersionPalette) (image.Ima
 	}
 
 	// 左上: 部屋名
-	if err := drawTitleTopLeft(dc, room.Name, scale); err != nil {
+	if err := drawTitleTopLeft(dc, room.Name, scale, fontPath); err != nil {
 		return nil, fmt.Errorf("タイトル描画失敗: %w", err)
 	}
 
 	// 左下: ゲームバージョン
-	if err := drawGameVersionBottomLeft(dc, room.GameVersion.Code, scale); err != nil {
+	if err := drawGameVersionBottomLeft(dc, room.GameVersion.Code, scale, fontPath); err != nil {
 		return nil, fmt.Errorf("ゲームバージョン描画失敗: %w", err)
 	}
 
 	// 右下: HuntersHubロゴ
-	if err := drawHuntersHubLogoBottomRight(dc, scale); err != nil {
+	if err := drawHuntersHubLogoBottomRight(dc, scale, fontPath, iconImagePath); err != nil {
 		return nil, fmt.Errorf("ロゴ描画失敗: %w", err)
 	}
 
@@ -295,8 +301,8 @@ func drawGradientBorder(dc *gg.Context, pal view.GameVersionPalette, s float64) 
 }
 
 // drawTitleTopLeft 部屋名を左上に描画
-func drawTitleTopLeft(dc *gg.Context, title string, s float64) error {
-	face := mustLoadFaceTTF(FontPath, TitleFontSize*s)
+func drawTitleTopLeft(dc *gg.Context, title string, s float64, fontPath string) error {
+	face := mustLoadFaceTTF(fontPath, TitleFontSize*s)
 	dc.SetFontFace(face)
 
 	// テキストを折り返し
@@ -317,8 +323,8 @@ func drawTitleTopLeft(dc *gg.Context, title string, s float64) error {
 }
 
 // drawGameVersionBottomLeft ゲームバージョンを左下に描画
-func drawGameVersionBottomLeft(dc *gg.Context, gameCode string, s float64) error {
-	face := mustLoadFaceTTF(FontPath, GameVersionFontSize*s)
+func drawGameVersionBottomLeft(dc *gg.Context, gameCode string, s float64, fontPath string) error {
+	face := mustLoadFaceTTF(fontPath, GameVersionFontSize*s)
 	dc.SetFontFace(face)
 
 	x := (Padding + BorderWidth + ContentPadding) * s
@@ -331,9 +337,9 @@ func drawGameVersionBottomLeft(dc *gg.Context, gameCode string, s float64) error
 }
 
 // drawHuntersHubLogoBottomRight HuntersHubロゴを右下に描画
-func drawHuntersHubLogoBottomRight(dc *gg.Context, s float64) error {
+func drawHuntersHubLogoBottomRight(dc *gg.Context, s float64, fontPath, iconImagePath string) error {
 	// アイコン画像を読み込み
-	iconImg, err := gg.LoadImage(IconImagePath)
+	iconImg, err := gg.LoadImage(iconImagePath)
 	if err != nil {
 		log.Printf("アイコン画像の読み込みに失敗: %v", err)
 		return nil
@@ -344,7 +350,7 @@ func drawHuntersHubLogoBottomRight(dc *gg.Context, s float64) error {
 	resizedIcon := resize.Resize(iconSize, iconSize, iconImg, resize.Lanczos3)
 
 	// フォント設定
-	dc.SetFontFace(mustLoadFaceTTF(FontPath, LogoFontSize*s))
+	dc.SetFontFace(mustLoadFaceTTF(fontPath, LogoFontSize*s))
 
 	// テキスト幅を取得
 	text := "HuntersHub"

@@ -42,4 +42,8 @@ RUN chown -R appuser:appgroup /app
 
 USER appuser
 
+# 環境変数のデフォルト値を設定
+ENV FONT_PATH=/app/assets/fonts/NotoSansCJKjp-Bold.otf \
+    ICON_IMAGE_PATH=/app/assets/images/icon.webp
+
 CMD ["./ogp-renderer"]
