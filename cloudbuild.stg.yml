@@ -32,9 +32,14 @@ substitutions:
 
 options:
   logging: CLOUD_LOGGING_ONLY
-  machineType: E2_MEDIUM  # コストを抑えつつ十分な並列ビルド性能を確保
+  machineType: E2_MEDIUM
   env:
-    - "DOCKER_BUILDKIT=1"     # BuildKitを有効にしてキャッシュを活用
+    - "DOCKER_BUILDKIT=1"
+  volumes:
+    - name: go-modules
+      path: /go/pkg/mod
+    - name: go-build-cache
+      path: /root/.cache/go-build
 
 steps:
   # 1) Build App

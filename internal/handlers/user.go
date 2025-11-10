@@ -198,7 +198,7 @@ func (uh *UserHandler) checkRelationStatus(currentUserID, targetUserID uuid.UUID
 		return "follower"
 	}
 
-	// TODO: ブロック機能が実装されたらここでチェック
+	// TODO: ブロック機能が実装されたらここでチェック (issue#12で対応)
 
 	return "none"
 }

@@ -73,11 +73,21 @@ func buildCSP(config *SecurityConfig) string {
 		"cdn.jsdelivr.net",    // CDNライブラリ用
 		"unpkg.com",           // CDNライブラリ用
 		"cdn.tailwindcss.com", // Tailwind CSS CDN
+		"https://www.googletagmanager.com", // Google Tag Manager/Analytics
+		"https://www.google-analytics.com", // Google Analytics
+		"https://pagead2.googlesyndication.com", // Google AdSense
+		"https://adservice.google.com", // Google Ad Service
+		"https://googleads.g.doubleclick.net", // Google DoubleClick
 	}
 
-	// Supabase URL がある場合は追加
+	// Supabase URL がある場合は追加（末尾スラッシュを削除して正規化）
 	if config.SupabaseURL != "" {
-		scriptSrc = append(scriptSrc, config.SupabaseURL)
+		supabaseURL := strings.TrimSuffix(config.SupabaseURL, "/")
+		// http://を強制的にhttps://に変換
+		if strings.HasPrefix(supabaseURL, "http://") {
+			supabaseURL = "https://" + strings.TrimPrefix(supabaseURL, "http://")
+		}
+		scriptSrc = append(scriptSrc, supabaseURL)
 	}
 
 	policies = append(policies, "script-src "+strings.Join(scriptSrc, " "))
@@ -98,6 +108,9 @@ func buildCSP(config *SecurityConfig) string {
 		"'self'",
 		"data:",
 		"blob:",
+		"https://pagead2.googlesyndication.com", // AdSense広告画像
+		"https://googleads.g.doubleclick.net", // DoubleClick広告画像
+		"https://tpc.googlesyndication.com", // AdSense tracking pixels
 	}
 
 	// GCS/CDN URLを追加
@@ -119,6 +132,16 @@ func buildCSP(config *SecurityConfig) string {
 			imgSrc = append(imgSrc, "http://"+domain)
 		}
 	}
+
+	// Supabase URL がある場合は画像ソースにも追加（ストレージ用）
+	if config.SupabaseURL != "" {
+		supabaseURL := strings.TrimSuffix(config.SupabaseURL, "/")
+		if strings.HasPrefix(supabaseURL, "http://") {
+			supabaseURL = "https://" + strings.TrimPrefix(supabaseURL, "http://")
+		}
+		imgSrc = append(imgSrc, supabaseURL)
+	}
+
 	policies = append(policies, "img-src "+strings.Join(imgSrc, " "))
 
 	// フォントソース
@@ -133,11 +156,18 @@ func buildCSP(config *SecurityConfig) string {
 	// 接続ソース
 	connectSrc := []string{
 		"'self'",
+		"https://www.google-analytics.com", // Google Analyticsデータ送信用
+		"https://pagead2.googlesyndication.com", // AdSense通信用
+		"https://googleads.g.doubleclick.net", // DoubleClick通信用
 	}
 
-	// Supabase URL がある場合は追加
+	// Supabase URL がある場合は追加（API通信用）
 	if config.SupabaseURL != "" {
-		connectSrc = append(connectSrc, config.SupabaseURL)
+		supabaseURL := strings.TrimSuffix(config.SupabaseURL, "/")
+		if strings.HasPrefix(supabaseURL, "http://") {
+			supabaseURL = "https://" + strings.TrimPrefix(supabaseURL, "http://")
+		}
+		connectSrc = append(connectSrc, supabaseURL)
 	}
 
 	// 追加の許可ドメインがある場合は追加
@@ -149,8 +179,13 @@ func buildCSP(config *SecurityConfig) string {
 
 	policies = append(policies, "connect-src "+strings.Join(connectSrc, " "))
 
-	// フレームソース
-	policies = append(policies, "frame-src 'none'")
+	// フレームソース（AdSenseは iframe を使用）
+	frameSrc := []string{
+		"https://googleads.g.doubleclick.net",
+		"https://tpc.googlesyndication.com",
+		"https://www.google.com", // reCAPTCHA等
+	}
+	policies = append(policies, "frame-src "+strings.Join(frameSrc, " "))
 
 	// オブジェクトソース
 	policies = append(policies, "object-src 'none'")

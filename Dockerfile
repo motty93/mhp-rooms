@@ -5,19 +5,22 @@ RUN apk add --no-cache git gcc musl-dev sqlite-dev
 
 WORKDIR /app
 
-# Copy go.mod/go.sum first to leverage Docker layer caching
 COPY go.mod go.sum ./
-RUN go mod download
 
-# Copy application source
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
+
 COPY . .
 
 # Pre-generate static changelog/roadmap assets so runtime instances do not need DB access.
-# TODO: When GCS/CDN distribution is introduced, replace this step with an upload job.
-RUN go run ./cmd/generate_info/main.go
+# TODO: When GCS/CDN distribution is introduced, replace this step with an upload job. (issue#96で対応)
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go run ./cmd/generate_info/main.go
 
-# Build optimized static binary for Linux
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build \
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build \
     -ldflags='-w -s' \
     -a -installsuffix cgo \
     -o main ./cmd/server
