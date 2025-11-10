@@ -2,9 +2,8 @@
 title: "パフォーマンスウィンドウ改善 (準備中)"
 slug: "performance-window-improvement"
 date: 2025-11-25T18:00:00+09:00
-category: "release"
+category: "news"
 summary: "ゲームマッチングのレスポンス改善と通知連携のロールアウトを予定しています。公開準備が整い次第、本番環境に反映します。"
-tags: ["release", "performance"]
 draft: true
 ---
 

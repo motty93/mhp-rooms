@@ -191,7 +191,11 @@
       "Bash(PORT=8099 ENV=development DB_TYPE=turso timeout:*)",
       "Bash(PORT=8100 ENV=development DB_TYPE=turso timeout 15s make:*)",
       "WebFetch(domain:gadgemotty.com)",
-      "Bash(gcloud builds list:*)"
+      "Bash(gcloud builds list:*)",
+      "Bash(PORT=8101 ENV=development DB_TYPE=turso timeout 15s make run:*)",
+      "Bash(for file in content/info/*.md)",
+      "Bash(do sed -i 's/^category: \"\"release\"\"/category: \"\"news\"\"/' \"$file\")",
+      "Bash(do sed -i '/^tags:/d' \"$file\")"
     ],
     "deny": []
   }
