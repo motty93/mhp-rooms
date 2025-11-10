@@ -61,16 +61,7 @@ steps:
       - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_IMAGE_NAME}:latest'
       - "."
 
-  # 2) Push App
-  - name: "gcr.io/cloud-builders/docker"
-    id: "push-image"
-    args:
-      - "push"
-      - "--all-tags"
-      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_IMAGE_NAME}'
-    waitFor: ["build-image"]
-
-  # 3) Build Job (ogp-renderer) - Appと並列でビルド
+  # 2) Build Job (ogp-renderer) - Appと並列でビルド
   - name: "gcr.io/cloud-builders/docker"
     id: "build-job-image"
     entrypoint: "bash"
@@ -93,7 +84,16 @@ steps:
           .
     waitFor: ["-"]  # 最初から実行（build-imageと並列）
 
-  # 4) Push Job
+  # 3) Push App - build-image完了後すぐ実行
+  - name: "gcr.io/cloud-builders/docker"
+    id: "push-image"
+    args:
+      - "push"
+      - "--all-tags"
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_IMAGE_NAME}'
+    waitFor: ["build-image"]
+
+  # 4) Push Job - build-job-image完了後すぐ実行（push-imageと並列）
   - name: "gcr.io/cloud-builders/docker"
     id: "push-job-image"
     entrypoint: "bash"
@@ -109,7 +109,7 @@ steps:
         docker push --all-tags ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_JOB_IMAGE_NAME}
     waitFor: ["build-job-image"]
 
-  # 5) Deploy Main (Cloud Run) - ステージング環境
+  # 5) Deploy Main (Cloud Run) - ステージング環境（push-image完了後すぐ実行）
   - name: "gcr.io/cloud-builders/gcloud"
     id: "deploy-main"
     args:
@@ -143,7 +143,7 @@ steps:
       - "TURSO_DATABASE_URL=${_SECRET_TURSO_DATABASE_URL}:latest,TURSO_AUTH_TOKEN=${_SECRET_TURSO_AUTH_TOKEN}:latest,SUPABASE_JWT_SECRET=${_SECRET_SUPABASE_JWT_SECRET}:latest,DISCORD_WEBHOOK_URL=${_SECRET_DISCORD_WEBHOOK_URL}:latest"
       - "--update-env-vars"
       - "ENV=staging,DB_TYPE=turso,SERVICE_MODE=main,SUPABASE_URL=${_SUPABASE_URL},SUPABASE_ANON_KEY=${_SUPABASE_ANON_KEY},GCS_BUCKET=${_GCS_BUCKET},BASE_PUBLIC_ASSET_URL=${_BASE_PUBLIC_ASSET_URL},ASSET_PREFIX=${_ASSET_PREFIX},GCS_PRIVATE_BUCKET=${_GCS_PRIVATE_BUCKET},OG_BUCKET=${_OG_BUCKET},OG_PREFIX=${_OG_PREFIX},OGP_JOB_NAME=${_JOB_NAME},OGP_GENERATION_MODE=cloud,GA_ENABLED=${_GA_ENABLED},GA_MEASUREMENT_ID=${_GA_MEASUREMENT_ID}"
-    waitFor: ["push-image"]
+    waitFor: ["push-image"]  # push-imageのみ待つ（deploy-jobとは並列実行）
 
   # 6) Deploy SSE (optional) - ステージング環境ではスキップ
   - name: "gcr.io/cloud-builders/gcloud"
@@ -174,7 +174,7 @@ steps:
         fi
     waitFor: ["push-image"]
 
-  # 7) Deploy Job (Cloud Run Jobs) - ステージング環境
+  # 7) Deploy Job (Cloud Run Jobs) - ステージング環境（push-job-image完了後すぐ実行）
   - name: "gcr.io/cloud-builders/gcloud"
     id: "deploy-job"
     entrypoint: "bash"
@@ -193,7 +193,7 @@ steps:
         else
           echo "Job のデプロイはスキップされました (_DEPLOY_JOB=${_DEPLOY_JOB})"
         fi
-    waitFor: ["push-job-image"]
+    waitFor: ["push-job-image"]  # push-job-imageのみ待つ（deploy-mainとは並列実行）
 
 artifacts:
   images:
