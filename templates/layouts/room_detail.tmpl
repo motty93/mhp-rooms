@@ -40,16 +40,7 @@
 
       <!-- OGP Tags -->
       {{ if .PageData.Room }}
-        {{ $ogBucket := getEnv "OG_BUCKET" "" }}
-        {{ $ogPrefix := getEnv "OG_PREFIX" "dev" }}
         {{ $siteURL := getEnv "SITE_URL" "http://localhost:8080" }}
-        {{ $ogImageURL := "" }}
-        {{ if $ogBucket }}
-          {{ $ogImageURL = printf "https://storage.googleapis.com/%s/%s/ogp/rooms/%s.png?v=%d" $ogBucket $ogPrefix .PageData.Room.ID .PageData.Room.OGVersion }}
-        {{ else }}
-          {{ $ogImageURL = printf "%s/tmp/images/%s/ogp/rooms/%s.png?v=%d" $siteURL $ogPrefix .PageData.Room.ID .PageData.Room.OGVersion }}
-        {{ end }}
-
 
         <meta
           property="og:title"
@@ -62,7 +53,7 @@
             {{ .PageData.Room.GetTargetMonster }}
           {{ end }}"
         />
-        <meta property="og:image" content="{{ $ogImageURL }}" />
+        <meta property="og:image" content="{{ .PageData.OGImageURL }}" />
         <meta property="og:type" content="website" />
         <meta
           property="og:url"
@@ -77,7 +68,7 @@
           name="twitter:description"
           content="{{ .PageData.Room.GameVersion.Name }}の部屋 / 定員{{ .PageData.Room.MaxPlayers }}人"
         />
-        <meta name="twitter:image" content="{{ $ogImageURL }}" />
+        <meta name="twitter:image" content="{{ .PageData.OGImageURL }}" />
       {{ end }}
 
 
