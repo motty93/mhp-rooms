@@ -116,6 +116,22 @@
                 this.open = false
               },
             })
+
+            // トースト通知グローバルストア
+            Alpine.store('toast', {
+              show: false,
+              message: '',
+              type: 'success', // 'success' | 'error' | 'info'
+
+              showToast(message, type = 'success') {
+                this.message = message
+                this.type = type
+                this.show = true
+                setTimeout(() => {
+                  this.show = false
+                }, 3000)
+              },
+            })
           })
         </script>
       {{ end }}
@@ -260,30 +276,36 @@
 
       {{ template "head" . }}
 
-
-      <!-- デフォルトOGPメタタグ（各ページで上書きされない場合に使用） -->
-      <meta property="og:title" content="{{ .Title }} - HuntersHub" />
-      <meta
-        property="og:description"
-        content="モンハンシリーズのパーティメンバーを募集できる掲示板サービス"
-      />
-      <meta property="og:type" content="website" />
-      <meta property="og:site_name" content="HuntersHub" />
-      {{ $ogBucket := getEnv "OG_BUCKET" "" }}
-      {{ $ogPrefix := getEnv "OG_PREFIX" "dev" }}
-      {{ $siteURL := getEnv "SITE_URL" "http://localhost:8080" }}
-      {{ $defaultOGImage := "" }}
-      {{ if $ogBucket }}
-        {{ $defaultOGImage = printf "https://storage.googleapis.com/%s/%s/ogp/og_image.png" $ogBucket $ogPrefix }}
-      {{ else }}
-        {{ $defaultOGImage = printf "%s/tmp/images/%s/ogp/og_image.png" $siteURL $ogPrefix }}
+      {{ block "og_meta" . }}
+        <!-- デフォルトOGPメタタグ（各ページで上書きされない場合に使用） -->
+        <meta property="og:title" content="{{ .Title }} - HuntersHub" />
+        <meta
+          property="og:description"
+          content="モンハンシリーズのパーティメンバーを募集できる掲示板サービス"
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="HuntersHub" />
+        {{ $ogBucket := getEnv "OG_BUCKET" "" }}
+        {{ $ogPrefix := getEnv "OG_PREFIX" "dev" }}
+        {{ $siteURL := getEnv "SITE_URL" "http://localhost:8080" }}
+        {{ $defaultOGImage := "" }}
+        {{ if $ogBucket }}
+          {{ $defaultOGImage = printf "https://storage.googleapis.com/%s/%s/ogp/og_image.png" $ogBucket $ogPrefix }}
+        {{ else }}
+          {{ $defaultOGImage = printf "%s/tmp/images/%s/ogp/og_image.png" $siteURL $ogPrefix }}
+        {{ end }}
+        <meta property="og:image" content="{{ $defaultOGImage }}" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="{{ $defaultOGImage }}" />
       {{ end }}
-      <meta property="og:image" content="{{ $defaultOGImage }}" />
-      <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:image" content="{{ $defaultOGImage }}" />
     </head>
 
     <body class="bg-gray-50 min-h-screen flex flex-col" x-data>
+      {{ if not .StaticPage }}
+        <!-- トースト通知 -->
+        {{ template "toast_notification" . }}
+      {{ end }}
+
       {{ if not .HideHeader }}
         {{ template "header" . }}
 
