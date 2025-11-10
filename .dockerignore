@@ -2,6 +2,7 @@
 bin/
 tmp/
 *.log
+data/
 
 # Ignore development files
 .git/
@@ -41,3 +42,7 @@ scripts/*.sql
 
 # ingnore infrastructore
 terraform/
+
+# Ignore Cloud Build files
+cloudbuild*.yml
+.gcloudignore
