@@ -99,7 +99,7 @@ steps:
           echo "SSEサービスのデプロイはスキップされました (_DEPLOY_SSE=${_DEPLOY_SSE})"
         fi
 
-  # 3) Deploy Job (Cloud Run Jobs) - 本番環境
+  # 3) Deploy Job (Cloud Run Jobs) - 本番環境（deploy-mainと並列実行）
   - name: "gcr.io/cloud-builders/gcloud"
     id: "deploy-job"
     entrypoint: "bash"
@@ -118,5 +118,6 @@ steps:
         else
           echo "Job のデプロイはスキップされました (_DEPLOY_JOB=${_DEPLOY_JOB})"
         fi
+    waitFor: ["-"]  # deploy-mainとは独立して実行（並列化）
 
 timeout: "1800s"
