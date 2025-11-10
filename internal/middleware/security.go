@@ -80,9 +80,14 @@ func buildCSP(config *SecurityConfig) string {
 		"https://googleads.g.doubleclick.net", // Google DoubleClick
 	}
 
-	// Supabase URL がある場合は追加
+	// Supabase URL がある場合は追加（末尾スラッシュを削除して正規化）
 	if config.SupabaseURL != "" {
-		scriptSrc = append(scriptSrc, config.SupabaseURL)
+		supabaseURL := strings.TrimSuffix(config.SupabaseURL, "/")
+		// http://を強制的にhttps://に変換
+		if strings.HasPrefix(supabaseURL, "http://") {
+			supabaseURL = "https://" + strings.TrimPrefix(supabaseURL, "http://")
+		}
+		scriptSrc = append(scriptSrc, supabaseURL)
 	}
 
 	policies = append(policies, "script-src "+strings.Join(scriptSrc, " "))
@@ -127,6 +132,16 @@ func buildCSP(config *SecurityConfig) string {
 			imgSrc = append(imgSrc, "http://"+domain)
 		}
 	}
+
+	// Supabase URL がある場合は画像ソースにも追加（ストレージ用）
+	if config.SupabaseURL != "" {
+		supabaseURL := strings.TrimSuffix(config.SupabaseURL, "/")
+		if strings.HasPrefix(supabaseURL, "http://") {
+			supabaseURL = "https://" + strings.TrimPrefix(supabaseURL, "http://")
+		}
+		imgSrc = append(imgSrc, supabaseURL)
+	}
+
 	policies = append(policies, "img-src "+strings.Join(imgSrc, " "))
 
 	// フォントソース
@@ -146,9 +161,13 @@ func buildCSP(config *SecurityConfig) string {
 		"https://googleads.g.doubleclick.net", // DoubleClick通信用
 	}
 
-	// Supabase URL がある場合は追加
+	// Supabase URL がある場合は追加（API通信用）
 	if config.SupabaseURL != "" {
-		connectSrc = append(connectSrc, config.SupabaseURL)
+		supabaseURL := strings.TrimSuffix(config.SupabaseURL, "/")
+		if strings.HasPrefix(supabaseURL, "http://") {
+			supabaseURL = "https://" + strings.TrimPrefix(supabaseURL, "http://")
+		}
+		connectSrc = append(connectSrc, supabaseURL)
 	}
 
 	// 追加の許可ドメインがある場合は追加
