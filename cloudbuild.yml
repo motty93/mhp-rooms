@@ -28,7 +28,7 @@ substitutions:
   _SECRET_SUPABASE_JWT_SECRET: SUPABASE_JWT_SECRET__prod
   _SECRET_DISCORD_WEBHOOK_URL: DISCORD_WEBHOOK_URL__prod
   _GA_ENABLED: "true"                   # GA4計測を有効化
-  _GA_MEASUREMENT_ID: "G-XXXXXXXXXX"    # 本番用のGA4測定IDに置き換えてください
+  _GA_MEASUREMENT_ID: "G-5T7T5SCL50"    # 本番用のGA4測定IDに置き換えてください
 
 options:
   logging: CLOUD_LOGGING_ONLY
