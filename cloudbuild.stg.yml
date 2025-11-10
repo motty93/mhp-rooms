@@ -32,7 +32,7 @@ substitutions:
 
 options:
   logging: CLOUD_LOGGING_ONLY
-  machineType: E2_HIGHCPU_4
+  machineType: E2_MEDIUM
   env:
     - "DOCKER_BUILDKIT=1"
   volumes:
