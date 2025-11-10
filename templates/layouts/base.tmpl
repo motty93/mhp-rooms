@@ -14,25 +14,6 @@
         content="HuntersHub,ハンターズハブ,モンハン,モンスターハンター,アドホック,パーティ,MHP,MHP2,MHP2G,MHP3,MHXX,PSP,3DS,Switch,オンライン,対戦,協力プレイ"
       />
       <meta name="author" content="HuntersHub" />
-      <meta property="og:title" content="{{ .Title }} - HuntersHub" />
-      <meta
-        property="og:description"
-        content="モンハンシリーズのパーティメンバーを募集できる掲示板サービス"
-      />
-      <meta property="og:type" content="website" />
-      <meta property="og:site_name" content="HuntersHub" />
-      {{ $ogBucket := getEnv "OG_BUCKET" "" }}
-      {{ $ogPrefix := getEnv "OG_PREFIX" "dev" }}
-      {{ $siteURL := getEnv "SITE_URL" "http://localhost:8080" }}
-      {{ $defaultOGImage := "" }}
-      {{ if $ogBucket }}
-        {{ $defaultOGImage = printf "https://storage.googleapis.com/%s/%s/ogp/og_image.png" $ogBucket $ogPrefix }}
-      {{ else }}
-        {{ $defaultOGImage = printf "%s/tmp/images/%s/ogp/og_image.png" $siteURL $ogPrefix }}
-      {{ end }}
-      <meta property="og:image" content="{{ $defaultOGImage }}" />
-      <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:image" content="{{ $defaultOGImage }}" />
 
       <!-- 構造化データ：サイトナビゲーション -->
       <script type="application/ld+json">
@@ -278,6 +259,28 @@
       />
 
       {{ template "head" . }}
+
+
+      <!-- デフォルトOGPメタタグ（各ページで上書きされない場合に使用） -->
+      <meta property="og:title" content="{{ .Title }} - HuntersHub" />
+      <meta
+        property="og:description"
+        content="モンハンシリーズのパーティメンバーを募集できる掲示板サービス"
+      />
+      <meta property="og:type" content="website" />
+      <meta property="og:site_name" content="HuntersHub" />
+      {{ $ogBucket := getEnv "OG_BUCKET" "" }}
+      {{ $ogPrefix := getEnv "OG_PREFIX" "dev" }}
+      {{ $siteURL := getEnv "SITE_URL" "http://localhost:8080" }}
+      {{ $defaultOGImage := "" }}
+      {{ if $ogBucket }}
+        {{ $defaultOGImage = printf "https://storage.googleapis.com/%s/%s/ogp/og_image.png" $ogBucket $ogPrefix }}
+      {{ else }}
+        {{ $defaultOGImage = printf "%s/tmp/images/%s/ogp/og_image.png" $siteURL $ogPrefix }}
+      {{ end }}
+      <meta property="og:image" content="{{ $defaultOGImage }}" />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:image" content="{{ $defaultOGImage }}" />
     </head>
 
     <body class="bg-gray-50 min-h-screen flex flex-col" x-data>
