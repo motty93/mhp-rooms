@@ -116,6 +116,22 @@
                 this.open = false
               },
             })
+
+            // トースト通知グローバルストア
+            Alpine.store('toast', {
+              show: false,
+              message: '',
+              type: 'success', // 'success' | 'error' | 'info'
+
+              showToast(message, type = 'success') {
+                this.message = message
+                this.type = type
+                this.show = true
+                setTimeout(() => {
+                  this.show = false
+                }, 3000)
+              },
+            })
           })
         </script>
       {{ end }}
@@ -285,6 +301,11 @@
     </head>
 
     <body class="bg-gray-50 min-h-screen flex flex-col" x-data>
+      {{ if not .StaticPage }}
+        <!-- トースト通知 -->
+        {{ template "toast_notification" . }}
+      {{ end }}
+
       {{ if not .HideHeader }}
         {{ template "header" . }}
 
