@@ -28,6 +28,7 @@ type RoomJoinPageData struct {
 	IsJoined    bool           `json:"is_joined"`
 	IsHost      bool           `json:"is_host"`
 	HasPassword bool           `json:"has_password"`
+	OGImageURL  string         `json:"og_image_url"`
 }
 
 type RoomBasicInfo struct {
@@ -38,6 +39,7 @@ type RoomBasicInfo struct {
 	Host        models.User        `json:"host"`
 	MaxPlayers  int                `json:"max_players"`
 	HasPassword bool               `json:"has_password"`
+	OGVersion   int                `json:"og_version"`
 }
 
 // RoomJoinPage 部屋参加専用ページ（スケルトン）
@@ -89,7 +91,10 @@ func (h *RoomJoinHandler) RoomJoinPage(w http.ResponseWriter, r *http.Request) {
 		Host:        room.Host,
 		MaxPlayers:  room.MaxPlayers,
 		HasPassword: room.HasPassword(),
+		OGVersion:   room.OGVersion,
 	}
+
+	ogImageURL := BuildOGPImageURL(room.ID, room.OGVersion)
 
 	data := TemplateData{
 		Title:   room.Name + " - 部屋参加",
@@ -100,6 +105,7 @@ func (h *RoomJoinHandler) RoomJoinPage(w http.ResponseWriter, r *http.Request) {
 			IsJoined:    isJoined,
 			IsHost:      isHost,
 			HasPassword: room.HasPassword(),
+			OGImageURL:  ogImageURL,
 		},
 	}
 

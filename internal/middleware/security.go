@@ -68,16 +68,16 @@ func buildCSP(config *SecurityConfig) string {
 	// スクリプトソース
 	scriptSrc := []string{
 		"'self'",
-		"'unsafe-inline'",     // Alpine.js等のインラインスクリプト用
-		"'unsafe-eval'",       // Tailwind CDNが必要とする場合があります
-		"cdn.jsdelivr.net",    // CDNライブラリ用
-		"unpkg.com",           // CDNライブラリ用
-		"cdn.tailwindcss.com", // Tailwind CSS CDN
-		"https://www.googletagmanager.com", // Google Tag Manager/Analytics
-		"https://www.google-analytics.com", // Google Analytics
+		"'unsafe-inline'",                       // Alpine.js等のインラインスクリプト用
+		"'unsafe-eval'",                         // Tailwind CDNが必要とする場合があります
+		"cdn.jsdelivr.net",                      // CDNライブラリ用
+		"unpkg.com",                             // CDNライブラリ用
+		"cdn.tailwindcss.com",                   // Tailwind CSS CDN
+		"https://www.googletagmanager.com",      // Google Tag Manager/Analytics
+		"https://www.google-analytics.com",      // Google Analytics
 		"https://pagead2.googlesyndication.com", // Google AdSense
-		"https://adservice.google.com", // Google Ad Service
-		"https://googleads.g.doubleclick.net", // Google DoubleClick
+		"https://adservice.google.com",          // Google Ad Service
+		"https://googleads.g.doubleclick.net",   // Google DoubleClick
 	}
 
 	// Supabase URL がある場合は追加（末尾スラッシュを削除して正規化）
@@ -109,8 +109,8 @@ func buildCSP(config *SecurityConfig) string {
 		"data:",
 		"blob:",
 		"https://pagead2.googlesyndication.com", // AdSense広告画像
-		"https://googleads.g.doubleclick.net", // DoubleClick広告画像
-		"https://tpc.googlesyndication.com", // AdSense tracking pixels
+		"https://googleads.g.doubleclick.net",   // DoubleClick広告画像
+		"https://tpc.googlesyndication.com",     // AdSense tracking pixels
 	}
 
 	// GCS/CDN URLを追加
@@ -156,9 +156,9 @@ func buildCSP(config *SecurityConfig) string {
 	// 接続ソース
 	connectSrc := []string{
 		"'self'",
-		"https://www.google-analytics.com", // Google Analyticsデータ送信用
+		"https://www.google-analytics.com",      // Google Analyticsデータ送信用
 		"https://pagead2.googlesyndication.com", // AdSense通信用
-		"https://googleads.g.doubleclick.net", // DoubleClick通信用
+		"https://googleads.g.doubleclick.net",   // DoubleClick通信用
 	}
 
 	// Supabase URL がある場合は追加（API通信用）

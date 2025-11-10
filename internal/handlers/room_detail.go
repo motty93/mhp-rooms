@@ -33,6 +33,7 @@ type RoomDetailPageData struct {
 	Logs        []models.RoomLog     `json:"logs"`
 	MemberCount int                  `json:"member_count"`
 	IsHost      bool                 `json:"is_host"`
+	OGImageURL  string               `json:"og_image_url"`
 }
 
 func (h *RoomDetailHandler) RoomDetail(w http.ResponseWriter, r *http.Request) {
@@ -108,6 +109,8 @@ func (h *RoomDetailHandler) RoomDetail(w http.ResponseWriter, r *http.Request) {
 		isHost = dbUser.ID == room.HostUserID
 	}
 
+	ogImageURL := BuildOGPImageURL(room.ID, room.OGVersion)
+
 	// テンプレート用のデータを準備
 	data := TemplateData{
 		Title:   room.Name + " - 部屋詳細",
@@ -120,6 +123,7 @@ func (h *RoomDetailHandler) RoomDetail(w http.ResponseWriter, r *http.Request) {
 			Logs:        logs,
 			MemberCount: memberCount,
 			IsHost:      isHost,
+			OGImageURL:  ogImageURL,
 		},
 	}
 
