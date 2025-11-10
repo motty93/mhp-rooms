@@ -251,6 +251,11 @@ func (app *Application) setupStaticRoutes(r chi.Router) {
 	fileServer := http.FileServer(http.Dir("static"))
 	r.Handle("/static/*", http.StripPrefix("/static/", fileServer))
 
+	// favicon.icoへのルート（ブラウザ・クローラーの自動アクセス対応）
+	r.Get("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "static/images/icons/favicon.ico")
+	})
+
 	// ローカル環境のOGP画像配信（OG_BUCKETが空の場合のみ）
 	if os.Getenv("OG_BUCKET") == "" {
 		tmpFileServer := http.FileServer(http.Dir("tmp"))
