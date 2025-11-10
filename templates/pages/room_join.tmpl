@@ -8,6 +8,7 @@
 
   {{ $siteURL := getEnv "SITE_URL" "http://localhost:8080" }}
 
+
   <meta property="og:title" content="{{ .PageData.Room.Name }} - 部屋に参加" />
   <meta
     property="og:description"
@@ -20,10 +21,7 @@
     content="{{ $siteURL }}/rooms/{{ .PageData.Room.ID }}/join"
   />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta
-    name="twitter:title"
-    content="{{ .PageData.Room.Name }} - 部屋に参加"
-  />
+  <meta name="twitter:title" content="{{ .PageData.Room.Name }} - 部屋に参加" />
   <meta
     name="twitter:description"
     content="{{ .PageData.Room.GameVersion.Name }}の部屋に参加しましょう"
