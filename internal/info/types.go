@@ -5,7 +5,7 @@ import "time"
 type ArticleType string
 
 const (
-	ArticleTypeRelease     ArticleType = "release"
+	ArticleTypeNews        ArticleType = "news"
 	ArticleTypeMaintenance ArticleType = "maintenance"
 	ArticleTypeFeature     ArticleType = "feature"
 	ArticleTypeRoadmap     ArticleType = "roadmap"
@@ -19,7 +19,6 @@ type Article struct {
 	Updated  *time.Time  `yaml:"updated"`
 	Category ArticleType `yaml:"category"`
 	Summary  string      `yaml:"summary"`
-	Tags     []string    `yaml:"tags"`
 	Draft    bool        `yaml:"draft"`
 	Status   string      `yaml:"status"` // ロードマップ用（planned, in_progress, completed）
 	Content  string      // マークダウンから変換されたHTML
