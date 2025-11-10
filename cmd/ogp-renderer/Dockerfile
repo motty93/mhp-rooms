@@ -7,15 +7,16 @@ RUN apk add --no-cache git gcc musl-dev
 
 WORKDIR /build
 
-# Copy go modules
 COPY go.mod go.sum ./
-RUN go mod download
 
-# Copy source code
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
+
 COPY . .
 
-# Build optimized binary
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build \
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build \
     -ldflags='-w -s' \
     -a -installsuffix cgo \
     -o ogp-renderer ./cmd/ogp-renderer
