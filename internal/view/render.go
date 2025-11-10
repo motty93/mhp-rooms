@@ -41,6 +41,7 @@ func Template(w http.ResponseWriter, templateName string, data Data) {
 	tmpl, err := template.New("").Funcs(funcMap).ParseFiles(
 		filepath.Join("templates", "layouts", "base.tmpl"),
 		filepath.Join("templates", "components", "header.tmpl"),
+		filepath.Join("templates", "components", "toast_notification.tmpl"),
 		filepath.Join("templates", "components", "footer.tmpl"),
 		filepath.Join("templates", "components", "room_create_button.tmpl"),
 		filepath.Join("templates", "components", "room_create_modal.tmpl"),
