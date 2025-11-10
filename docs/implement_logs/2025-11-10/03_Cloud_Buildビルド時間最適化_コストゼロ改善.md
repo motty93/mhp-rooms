@@ -202,10 +202,16 @@ steps:
 
 ```yaml
 options:
-  machineType: E2_HIGHCPU_4  # E2_MEDIUMから変更
+  machineType: E2_HIGHCPU_8  # E2_MEDIUMから変更
 ```
 
-こちら変更済み。
+**注意**: Cloud Build API v1では`E2_HIGHCPU_4`は存在しません。利用可能なのは：
+- `E2_MEDIUM` (2vCPU, 4GB) - 現在使用中
+- `E2_HIGHCPU_8` (8vCPU, 8GB) - 次のステップ（月+$2.85-4.65）
+- `E2_HIGHCPU_16` (16vCPU, 16GB)
+- `E2_HIGHCPU_32` (32vCPU, 32GB)
+
+コスト重視のため、**E2_MEDIUMを継続使用**することにしました。
 
 ## 結論
 
