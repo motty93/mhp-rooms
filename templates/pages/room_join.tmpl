@@ -27,6 +27,40 @@
     content="{{ .PageData.Room.GameVersion.Name }}の部屋に参加しましょう"
   />
   <meta name="twitter:image" content="{{ .PageData.OGImageURL }}" />
+
+  <!-- 構造化データ：パンくずリスト -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "ホーム",
+          "item": "{{ $siteURL }}/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "部屋一覧",
+          "item": "{{ $siteURL }}/rooms"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "{{ .PageData.Room.Name }}",
+          "item": "{{ $siteURL }}/rooms/{{ .PageData.Room.ID }}"
+        },
+        {
+          "@type": "ListItem",
+          "position": 4,
+          "name": "部屋に参加",
+          "item": "{{ $siteURL }}/rooms/{{ .PageData.Room.ID }}/join"
+        }
+      ]
+    }
+  </script>
 {{ end }}
 
 {{ define "page" }}
