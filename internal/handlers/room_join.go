@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
 
 	"mhp-rooms/internal/middleware"
 	"mhp-rooms/internal/models"
@@ -24,11 +25,12 @@ func NewRoomJoinHandler(repo *repository.Repository) *RoomJoinHandler {
 }
 
 type RoomJoinPageData struct {
-	Room        *RoomBasicInfo `json:"room"`
-	IsJoined    bool           `json:"is_joined"`
-	IsHost      bool           `json:"is_host"`
-	HasPassword bool           `json:"has_password"`
-	OGImageURL  string         `json:"og_image_url"`
+	Room          *RoomBasicInfo `json:"room"`
+	IsJoined      bool           `json:"is_joined"`
+	IsHost        bool           `json:"is_host"`
+	HasPassword   bool           `json:"has_password"`
+	OGImageURL    string         `json:"og_image_url"`
+	IsLimitedView bool           `json:"is_limited_view"`
 }
 
 type RoomBasicInfo struct {
@@ -42,8 +44,25 @@ type RoomBasicInfo struct {
 	OGVersion   int                `json:"og_version"`
 }
 
+// isCrawler User-AgentからOGPクローラーかどうかを判定
+func isCrawler(userAgent string) bool {
+	userAgent = strings.ToLower(userAgent)
+	crawlerKeywords := []string{
+		"bot", "crawler", "spider", "facebookexternalhit", "twitterbot",
+		"slackbot", "discordbot", "telegrambot", "linkedinbot", "whatsapp",
+		"headlesschrome", "lighthouse", "googlebot", "bingbot",
+	}
+	for _, keyword := range crawlerKeywords {
+		if strings.Contains(userAgent, keyword) {
+			return true
+		}
+	}
+	return false
+}
+
 // RoomJoinPage 部屋参加専用ページ（スケルトン）
 // 認証チェックと最小限のクエリのみ実行
+// OGPクローラーには認証なしでOGPタグ付きHTMLを返す
 func (h *RoomJoinHandler) RoomJoinPage(w http.ResponseWriter, r *http.Request) {
 	roomIDStr := chi.URLParam(r, "id")
 	roomID, err := uuid.Parse(roomIDStr)
@@ -52,8 +71,16 @@ func (h *RoomJoinHandler) RoomJoinPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// クローラー判定
+	userAgent := r.Header.Get("User-Agent")
+	isBot := isCrawler(userAgent)
+
 	dbUser, exists := middleware.GetDBUserFromContext(r.Context())
-	if !exists || dbUser == nil {
+	isAuthenticated := exists && dbUser != nil
+	isLimitedView := isBot && !isAuthenticated
+
+	// 通常のユーザー（クローラーでない）かつ未認証の場合はログインへリダイレクト
+	if !isBot && !isAuthenticated {
 		redirectURL := "/auth/login?redirect=" + r.URL.Path
 		http.Redirect(w, r, redirectURL, http.StatusFound)
 		return
@@ -71,16 +98,20 @@ func (h *RoomJoinHandler) RoomJoinPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isJoined := h.repo.Room.IsUserJoinedRoom(roomID, dbUser.ID)
-	if isJoined {
-		http.Redirect(w, r, "/rooms/"+roomID.String(), http.StatusFound)
-		return
-	}
+	// 認証済みユーザーの場合のみ参加状態チェックとリダイレクト
+	var isJoined, isHost bool
+	if isAuthenticated {
+		isJoined = h.repo.Room.IsUserJoinedRoom(roomID, dbUser.ID)
+		if isJoined {
+			http.Redirect(w, r, "/rooms/"+roomID.String(), http.StatusFound)
+			return
+		}
 
-	isHost := dbUser.ID == room.HostUserID
-	if isHost {
-		http.Redirect(w, r, "/rooms/"+roomID.String(), http.StatusFound)
-		return
+		isHost = dbUser.ID == room.HostUserID
+		if isHost {
+			http.Redirect(w, r, "/rooms/"+roomID.String(), http.StatusFound)
+			return
+		}
 	}
 
 	basicInfo := &RoomBasicInfo{
@@ -101,11 +132,12 @@ func (h *RoomJoinHandler) RoomJoinPage(w http.ResponseWriter, r *http.Request) {
 		HasHero: false,
 		User:    r.Context().Value("user"),
 		PageData: RoomJoinPageData{
-			Room:        basicInfo,
-			IsJoined:    isJoined,
-			IsHost:      isHost,
-			HasPassword: room.HasPassword(),
-			OGImageURL:  ogImageURL,
+			Room:          basicInfo,
+			IsJoined:      isJoined,
+			IsHost:        isHost,
+			HasPassword:   room.HasPassword(),
+			OGImageURL:    ogImageURL,
+			IsLimitedView: isLimitedView,
 		},
 	}
 
