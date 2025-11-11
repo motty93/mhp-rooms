@@ -51,6 +51,7 @@ func isCrawler(userAgent string) bool {
 		"bot", "crawler", "spider", "facebookexternalhit", "twitterbot",
 		"slackbot", "discordbot", "telegrambot", "linkedinbot", "whatsapp",
 		"headlesschrome", "lighthouse", "googlebot", "bingbot",
+		"bluesky", "bsky", "atproto",
 	}
 	for _, keyword := range crawlerKeywords {
 		if strings.Contains(userAgent, keyword) {
