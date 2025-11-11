@@ -116,8 +116,8 @@ func (app *Application) setupRoomRoutes(r chi.Router) {
 		if app.hasAuthMiddleware() {
 			rr.Get("/", app.withOptionalAuth(rh.Rooms))
 			rr.Get("/{id}", app.withOptionalAuth(rdh.RoomDetail))
-			// 部屋参加ページ（スケルトン、認証必須）
-			rr.Get("/{id}/join", app.withAuth(rjh.RoomJoinPage))
+			// 部屋参加ページ（スケルトン、OGPクローラー対応のため認証オプション）
+			rr.Get("/{id}/join", app.withOptionalAuth(rjh.RoomJoinPage))
 		} else {
 			rr.Get("/", rh.Rooms)
 			rr.Get("/{id}", rdh.RoomDetail)
