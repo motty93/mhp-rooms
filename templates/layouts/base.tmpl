@@ -15,22 +15,41 @@
       />
       <meta name="author" content="HuntersHub" />
 
-      <!-- 構造化データ：サイトナビゲーション -->
+      <!-- 構造化データ -->
+      {{ $siteURL := getEnv "SITE_URL" "https://huntershub.net" }}
       <script type="application/ld+json">
         {
           "@context": "https://schema.org",
           "@graph": [
             {
               "@type": "WebSite",
-              "@id": "https://huntershub.com/#website",
-              "url": "https://huntershub.com/",
+              "@id": "{{ $siteURL }}/#website",
+              "url": "{{ $siteURL }}/",
               "name": "HuntersHub",
               "description": "モンハンシリーズのパーティメンバーを募集できる掲示板サービス",
-              "inLanguage": "ja"
+              "inLanguage": "ja",
+              "image": "{{ $siteURL }}/static/images/icon.webp",
+              "potentialAction": {
+                "@type": "SearchAction",
+                "target": {
+                  "@type": "EntryPoint",
+                  "urlTemplate": "{{ $siteURL }}/rooms?q={search_term_string}"
+                },
+                "query-input": "required name=search_term_string"
+              }
+            },
+            {
+              "@type": "Organization",
+              "@id": "{{ $siteURL }}/#organization",
+              "name": "HuntersHub",
+              "url": "{{ $siteURL }}/",
+              "logo": "{{ $siteURL }}/static/images/icon.webp",
+              "image": "{{ $siteURL }}/static/images/icon.webp",
+              "description": "モンハンシリーズのパーティメンバーを募集できる掲示板サービス"
             },
             {
               "@type": "SiteNavigationElement",
-              "@id": "https://huntershub.com/#navigation",
+              "@id": "{{ $siteURL }}/#navigation",
               "name": [
                 "ホーム",
                 "部屋一覧",
@@ -41,20 +60,18 @@
                 "プライバシーポリシー"
               ],
               "url": [
-                "https://huntershub.com/",
-                "https://huntershub.com/rooms",
-                "https://huntershub.com/auth/login",
-                "https://huntershub.com/auth/register",
-                "https://huntershub.com/contact",
-                "https://huntershub.com/terms",
-                "https://huntershub.com/privacy"
+                "{{ $siteURL }}/",
+                "{{ $siteURL }}/rooms",
+                "{{ $siteURL }}/auth/login",
+                "{{ $siteURL }}/auth/register",
+                "{{ $siteURL }}/contact",
+                "{{ $siteURL }}/terms",
+                "{{ $siteURL }}/privacy"
               ]
             }
           ]
         }
-      </script>
-
-      {{ $gaMeasurementID := .AnalyticsMeasurementID }}
+      </script> {{ $gaMeasurementID := .AnalyticsMeasurementID }}
       {{ if and .AnalyticsEnabled $gaMeasurementID }}
         <!-- Google Analytics 4 -->
         <script
