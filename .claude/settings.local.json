@@ -195,7 +195,8 @@
       "Bash(PORT=8101 ENV=development DB_TYPE=turso timeout 15s make run:*)",
       "Bash(for file in content/info/*.md)",
       "Bash(do sed -i 's/^category: \"\"release\"\"/category: \"\"news\"\"/' \"$file\")",
-      "Bash(do sed -i '/^tags:/d' \"$file\")"
+      "Bash(do sed -i '/^tags:/d' \"$file\")",
+      "WebFetch(domain:izanami.dev)"
     ],
     "deny": []
   }
