@@ -256,6 +256,11 @@ func (app *Application) setupStaticRoutes(r chi.Router) {
 		http.ServeFile(w, r, "static/images/icons/favicon.ico")
 	})
 
+	// robots.txtへのルート（クローラー対応）
+	r.Get("/robots.txt", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "static/robots.txt")
+	})
+
 	// ローカル環境のOGP画像配信（OG_BUCKETが空の場合のみ）
 	if os.Getenv("OG_BUCKET") == "" {
 		tmpFileServer := http.FileServer(http.Dir("tmp"))
