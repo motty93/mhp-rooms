@@ -83,13 +83,52 @@ function roomDetail() {
       const encodedUrl = encodeURIComponent(this.shareData.url);
       const encodedTitle = encodeURIComponent(this.shareData.title);
       const encodedText = encodeURIComponent(this.shareData.text);
+
+      // ゲームバージョンコードからハッシュタグを生成
+      const gameCode = '{{ .PageData.Room.GameVersion.Code }}';
+      const hashtags = this.getHashtags(gameCode);
+
+      // Facebook用（ハッシュタグなし）
       const shareMessage = `${this.shareData.title}\n${this.shareData.text}\n\n${this.shareData.url}`;
       const encodedMessage = encodeURIComponent(shareMessage);
+
+      // Twitter/Bluesky用（ハッシュタグあり）
+      const shareMessageWithHashtags = `${this.shareData.title}\n${this.shareData.text}\n\n${this.shareData.url}\n\n${hashtags}`;
+      const encodedMessageWithHashtags = encodeURIComponent(shareMessageWithHashtags);
+
       return {
-        x: `https://twitter.com/intent/tweet?text=${encodedMessage}`,
+        x: `https://twitter.com/intent/tweet?text=${encodedMessageWithHashtags}`,
         facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
-        bluesky: `https://bsky.app/intent/compose?text=${encodedMessage}`
+        bluesky: `https://bsky.app/intent/compose?text=${encodedMessageWithHashtags}`
       };
+    },
+
+    getHashtags(gameCode) {
+      // 基本ハッシュタグ（サービス名 + モンハン）
+      let hashtags = '#huntershub #モンハン';
+
+      // ゲームバージョン別ハッシュタグ（プラットフォーム特有のタグも含む）
+      switch(gameCode.toLowerCase()) {
+        case 'mhp':
+          hashtags += ' #PSP #アドホックパーティ #mhp #MHP';
+          break;
+        case 'mhp2':
+          hashtags += ' #PSP #アドホックパーティ #mhp2 #MHP2';
+          break;
+        case 'mhp2g':
+          hashtags += ' #PSP #アドホックパーティ #mhp2g #MHP2G';
+          break;
+        case 'mhp3':
+          hashtags += ' #PSP #アドホックパーティ #mhp3 #MHP3';
+          break;
+        case 'mhxx':
+          hashtags += ' #NintendoSwitch #mhxx #MHXX';
+          break;
+        default:
+          hashtags += ` #${gameCode.toLowerCase()} #${gameCode.toUpperCase()}`;
+      }
+
+      return hashtags;
     },
 
     async init() {
