@@ -222,36 +222,8 @@ function roomDetail() {
     },
 
     async loadInitialMessages() {
-      // ログからシステムメッセージを生成
+      // 初期メッセージはroom_messages APIから取得
       this.messages = [];
-
-      {{ range .PageData.Logs }}
-        {{ if eq .Action "create" }}
-          this.messages.push({
-            id: '{{ .ID }}',
-            type: 'system',
-            subtype: 'create',
-            content: '{{ if .User }}{{ if .User.Username }}{{ .User.Username }}{{ else }}{{ .User.DisplayName }}{{ end }}{{ else }}ユーザー{{ end }}さんが部屋を作成しました',
-            timestamp: new Date('{{ .CreatedAt.Format "2006-01-02T15:04:05Z07:00" }}')
-          });
-        {{ else if eq .Action "join" }}
-          this.messages.push({
-            id: '{{ .ID }}',
-            type: 'system',
-            subtype: 'join',
-            content: '{{ if .User }}{{ if .User.Username }}{{ .User.Username }}{{ else }}{{ .User.DisplayName }}{{ end }}{{ else }}ユーザー{{ end }}さんが入室しました',
-            timestamp: new Date('{{ .CreatedAt.Format "2006-01-02T15:04:05Z07:00" }}')
-          });
-        {{ else if eq .Action "leave" }}
-          this.messages.push({
-            id: '{{ .ID }}',
-            type: 'system',
-            subtype: 'leave',
-            content: '{{ if .User }}{{ if .User.Username }}{{ .User.Username }}{{ else }}{{ .User.DisplayName }}{{ end }}{{ else }}ユーザー{{ end }}さんが退室しました',
-            timestamp: new Date('{{ .CreatedAt.Format "2006-01-02T15:04:05Z07:00" }}')
-          });
-        {{ end }}
-      {{ end }}
 
       // 既存のメッセージを取得
       if (this.isAuthenticated) {
@@ -322,7 +294,23 @@ function roomDetail() {
 
     formatTime(timestamp) {
       const date = new Date(timestamp);
+      const now = new Date();
+      const isSameDay =
+        date.getFullYear() === now.getFullYear() &&
+        date.getMonth() === now.getMonth() &&
+        date.getDate() === now.getDate();
+
+      if (!isSameDay) {
+        return this.formatFullTimestamp(timestamp);
+      }
+
       return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    },
+
+    formatFullTimestamp(timestamp) {
+      const date = new Date(timestamp);
+      const pad = (value) => value.toString().padStart(2, '0');
+      return `${date.getFullYear()}/${pad(date.getMonth() + 1)}/${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
     },
 
     scrollToBottom() {
@@ -439,6 +427,7 @@ function roomDetail() {
       // メッセージ内容から入室/退室を判定
       const isLeave = data.message && data.message.includes('退室しました');
       const subtype = isLeave ? 'leave' : 'join';
+      const timestamp = data.created_at ? new Date(data.created_at) : new Date();
 
       // システムメッセージを追加
       this.messages.push({
@@ -446,7 +435,7 @@ function roomDetail() {
         type: 'system',
         subtype: subtype,
         content: data.message,
-        timestamp: new Date()
+        timestamp: timestamp
       });
 
       this.$nextTick(() => this.scrollToBottom());

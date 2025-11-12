@@ -512,7 +512,7 @@
             <div>
               <!-- システムメッセージ -->
               <template x-if="message.type === 'system'">
-                <div class="text-center">
+                <div class="text-center flex flex-col items-center">
                   <span
                     class="px-3 py-1 rounded-full text-sm"
                     :class="{
@@ -521,6 +521,10 @@
                     'bg-red-100 text-red-700': message.subtype === 'leave'
                   }"
                     x-text="message.content"
+                  ></span>
+                  <span
+                    class="text-gray-500 text-xs mt-1"
+                    x-text="formatFullTimestamp(message.timestamp)"
                   ></span>
                 </div>
               </template>
