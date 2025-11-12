@@ -307,6 +307,11 @@ func (h *RoomHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// システムメッセージとして部屋作成を記録
+	createMessage := fmt.Sprintf("%sさんが部屋を作成しました", h.getDisplayName(dbUser))
+	message := h.createSystemMessage(room.ID, dbUser, createMessage)
+	h.broadcastSystemMessage(message)
+
 	// アクティビティを記録（失敗してもメイン処理は続行）
 	if err := h.activityService.RecordRoomCreate(hostUserID, room); err != nil {
 		log.Printf("部屋作成アクティビティの記録に失敗: %v", err)
@@ -496,38 +501,12 @@ func (h *RoomHandler) JoinRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 入室メッセージをDBに保存してSSEで通知
+	// 入室メッセージをroom_messagesに保存（SSE有無を問わず）
+	joinMessageText := fmt.Sprintf("%sさんが入室しました", h.getDisplayName(dbUser))
+	systemJoinMessage := h.createSystemMessage(roomID, dbUser, joinMessageText)
+	h.broadcastSystemMessage(systemJoinMessage)
+
 	if h.hub != nil {
-		// DisplayNameの決定（display_name > username の優先順位）
-		displayName := dbUser.DisplayName
-		if displayName == "" && dbUser.Username != nil && *dbUser.Username != "" {
-			displayName = *dbUser.Username
-		}
-
-		joinMessage := models.RoomMessage{
-			BaseModel: models.BaseModel{
-				ID: uuid.New(),
-			},
-			RoomID:      roomID,
-			UserID:      userID,
-			Message:     fmt.Sprintf("%sさんが入室しました", displayName),
-			MessageType: "system",
-		}
-		joinMessage.User = *dbUser
-
-		// DBに保存
-		if err := h.repo.RoomMessage.CreateMessage(&joinMessage); err != nil {
-			log.Printf("入室メッセージの保存に失敗: %v", err)
-			// 保存失敗してもSSE送信は続行
-		}
-
-		event := sse.Event{
-			ID:   joinMessage.ID.String(),
-			Type: "system_message",
-			Data: joinMessage,
-		}
-		h.hub.BroadcastToRoom(roomID, event)
-
 		// メンバー更新イベント（ユーザーパネル用）
 		members, err := h.repo.Room.GetRoomMembers(roomID)
 		if err != nil {
@@ -597,38 +576,11 @@ func (h *RoomHandler) LeaveRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 退室メッセージをDBに保存してSSEで通知
+	leaveMessageText := fmt.Sprintf("%sさんが退室しました", h.getDisplayName(dbUser))
+	systemLeaveMessage := h.createSystemMessage(roomID, dbUser, leaveMessageText)
+	h.broadcastSystemMessage(systemLeaveMessage)
+
 	if h.hub != nil {
-		// DisplayNameの決定（display_name > username の優先順位）
-		displayName := dbUser.DisplayName
-		if displayName == "" && dbUser.Username != nil && *dbUser.Username != "" {
-			displayName = *dbUser.Username
-		}
-
-		leaveMessage := models.RoomMessage{
-			BaseModel: models.BaseModel{
-				ID: uuid.New(),
-			},
-			RoomID:      roomID,
-			UserID:      userID,
-			Message:     fmt.Sprintf("%sさんが退室しました", displayName),
-			MessageType: "system",
-		}
-		leaveMessage.User = *dbUser
-
-		// DBに保存
-		if err := h.repo.RoomMessage.CreateMessage(&leaveMessage); err != nil {
-			log.Printf("退室メッセージの保存に失敗: %v", err)
-			// 保存失敗してもSSE送信は続行
-		}
-
-		event := sse.Event{
-			ID:   leaveMessage.ID.String(),
-			Type: "system_message",
-			Data: leaveMessage,
-		}
-		h.hub.BroadcastToRoom(roomID, event)
-
 		// メンバー更新イベント（ユーザーパネル用）
 		members, err := h.repo.Room.GetRoomMembers(roomID)
 		if err != nil {
@@ -683,38 +635,8 @@ func (h *RoomHandler) LeaveCurrentRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 退室メッセージをDBに保存してSSEで通知
-	if h.hub != nil {
-		// DisplayNameの決定（display_name > username の優先順位）
-		displayName := dbUser.DisplayName
-		if displayName == "" && dbUser.Username != nil && *dbUser.Username != "" {
-			displayName = *dbUser.Username
-		}
-
-		leaveMessage := models.RoomMessage{
-			BaseModel: models.BaseModel{
-				ID: uuid.New(),
-			},
-			RoomID:      activeRoom.ID,
-			UserID:      userID,
-			Message:     fmt.Sprintf("%sさんが退室しました", displayName),
-			MessageType: "system",
-		}
-		leaveMessage.User = *dbUser
-
-		// DBに保存
-		if err := h.repo.RoomMessage.CreateMessage(&leaveMessage); err != nil {
-			log.Printf("退室メッセージの保存に失敗: %v", err)
-			// 保存失敗してもSSE送信は続行
-		}
-
-		event := sse.Event{
-			ID:   leaveMessage.ID.String(),
-			Type: "system_message",
-			Data: leaveMessage,
-		}
-		h.hub.BroadcastToRoom(activeRoom.ID, event)
-	}
+	leaveMessageText := fmt.Sprintf("%sさんが退室しました", h.getDisplayName(dbUser))
+	h.broadcastSystemMessage(h.createSystemMessage(activeRoom.ID, dbUser, leaveMessageText))
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"message": "現在の部屋から退室しました"}`))
@@ -1050,23 +972,22 @@ func (h *RoomHandler) DismissRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 解散メッセージをSSEで通知
+	dismissText := fmt.Sprintf("ルームがホスト（%s）によって解散されました", h.getDisplayName(dbUser))
+	dismissMessage := h.createSystemMessage(roomID, dbUser, dismissText)
+	h.broadcastSystemMessage(dismissMessage)
+
 	if h.hub != nil {
-		dismissMessage := models.RoomMessage{
-			BaseModel: models.BaseModel{
-				ID: uuid.New(),
-			},
-			RoomID:      roomID,
-			UserID:      userID,
-			Message:     fmt.Sprintf("ルームがホスト（%s）によって解散されました", dbUser.DisplayName),
-			MessageType: "system",
+		var data interface{} = map[string]interface{}{
+			"message": dismissText,
 		}
-		dismissMessage.User = *dbUser
+		if dismissMessage != nil {
+			data = *dismissMessage
+		}
 
 		event := sse.Event{
-			ID:   dismissMessage.ID.String(),
+			ID:   uuid.New().String(),
 			Type: "room_dismissed",
-			Data: dismissMessage,
+			Data: data,
 		}
 		h.hub.BroadcastToRoom(roomID, event)
 	}
@@ -1085,6 +1006,59 @@ func (h *RoomHandler) DismissRoom(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
+}
+
+func (h *RoomHandler) createSystemMessage(roomID uuid.UUID, user *models.User, message string) *models.RoomMessage {
+	if user == nil || strings.TrimSpace(message) == "" {
+		return nil
+	}
+
+	roomMessage := &models.RoomMessage{
+		BaseModel: models.BaseModel{
+			ID: uuid.New(),
+		},
+		RoomID:      roomID,
+		UserID:      user.ID,
+		Message:     message,
+		MessageType: "system",
+	}
+	roomMessage.User = *user
+
+	if err := h.repo.RoomMessage.CreateMessage(roomMessage); err != nil {
+		log.Printf("システムメッセージの保存に失敗: %v", err)
+		return nil
+	}
+
+	return roomMessage
+}
+
+func (h *RoomHandler) broadcastSystemMessage(message *models.RoomMessage) {
+	if message == nil || h.hub == nil {
+		return
+	}
+
+	event := sse.Event{
+		ID:   message.ID.String(),
+		Type: "system_message",
+		Data: *message,
+	}
+	h.hub.BroadcastToRoom(message.RoomID, event)
+}
+
+func (h *RoomHandler) getDisplayName(user *models.User) string {
+	if user == nil {
+		return ""
+	}
+
+	if user.DisplayName != "" {
+		return user.DisplayName
+	}
+
+	if user.Username != nil && *user.Username != "" {
+		return *user.Username
+	}
+
+	return "ユーザー"
 }
 
 // GetUserRoomStatus 現在のユーザーの部屋状態を取得
