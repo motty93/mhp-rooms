@@ -10,10 +10,19 @@
       <script src="/static/js/vendor/htmx.min.js"></script>
       <script src="/static/js/vendor/alpine.min.js" defer></script>
 
+      <!-- Supabase設定 -->
+      <script>
+        window.SUPABASE_CONFIG = {
+          url: '{{ getEnv "SUPABASE_URL" "" }}',
+          anonKey: '{{ getEnv "SUPABASE_ANON_KEY" "" }}'
+        };
+      </script>
+
       <!-- Supabase -->
       <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
       <script src="/static/js/supabase.js"></script>
       <script src="/static/js/auth-store.js"></script>
+      <script src="/static/js/room-create-store.js"></script>
       <script src="/static/js/htmx-auth.js?v=20250728g"></script>
 
       <!-- Tailwind CSSは開発用にCDNを維持 -->
@@ -113,6 +122,35 @@
               console.error('Supabase初期化エラー:', e)
             }
           }
+        })
+      </script>
+      <script>
+        document.addEventListener('alpine:init', () => {
+          Alpine.store('mobileMenu', {
+            open: false,
+            toggle() {
+              this.open = !this.open
+            },
+            close() {
+              this.open = false
+            },
+          })
+
+          // トースト通知グローバルストア
+          Alpine.store('toast', {
+            show: false,
+            message: '',
+            type: 'success', // 'success' | 'error' | 'info'
+
+            showToast(message, type = 'success') {
+              this.message = message
+              this.type = type
+              this.show = true
+              setTimeout(() => {
+                this.show = false
+              }, 3000)
+            },
+          })
         })
       </script>
     </head>
