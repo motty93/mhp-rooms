@@ -279,23 +279,28 @@ body {
   
   /* 部屋詳細ページのSlackライクレイアウト */
   .mobile-chat-area {
-    /* flexboxの自然な動作に任せる（flex-1で自動調整） */
-    min-height: 0; /* flexアイテムのデフォルト最小サイズをリセット */
-    padding-bottom: 120px; /* フォームの高さ分の余白を確保 */
+    /* モバイルヘッダー(56px) + メッセージフォーム(160px) を引いた高さ */
+    height: calc(100vh - 56px - 160px);
+    min-height: 0;
+    overflow-y: auto;
   }
 
   /* モバイル版のメインコンテナ高さ調整 */
   .mobile-room-detail {
     height: 100vh;
     overflow: hidden;
+    flex-direction: column;
   }
 
   /* モバイル版のメッセージフォームを画面下部に固定 */
   .mobile-message-form {
-    position: sticky;
+    position: fixed;
     bottom: 0;
-    z-index: 10;
+    left: 0;
+    right: 0;
+    z-index: 50;
     background-color: white;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
   }
 }
 

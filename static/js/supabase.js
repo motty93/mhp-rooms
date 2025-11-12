@@ -2,23 +2,22 @@ let supabase
 
 async function initializeSupabase() {
   try {
-    const response = await fetch('/api/config/supabase')
-    const data = await response.json()
+    // テンプレートから埋め込まれた設定を使用
+    const config = window.SUPABASE_CONFIG || {}
 
-    if (data.error || !data.config || !data.config.url || !data.config.anonKey) {
+    if (!config.url || !config.anonKey) {
       // 認証機能を無効化
-
       window.supabaseAuth = createDummyAuth()
 
       if (window.Alpine && window.Alpine.store('auth')) {
         window.Alpine.store('auth').updateSession(null)
-        window.Alpine.store('auth').configError = data.message || 'Supabase設定が未設定です'
+        window.Alpine.store('auth').configError = 'Supabase設定が未設定です'
       }
 
       return null
     }
 
-    window.supabaseClient = window.supabase.createClient(data.config.url, data.config.anonKey, {
+    window.supabaseClient = window.supabase.createClient(config.url, config.anonKey, {
       auth: {
         autoRefreshToken: true,
         persistSession: true,

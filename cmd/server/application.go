@@ -27,7 +27,6 @@ type Application struct {
 	roomMessageHandler *handlers.RoomMessageHandler
 	sseTokenHandler    *handlers.SSETokenHandler
 	pageHandler        *handlers.PageHandler
-	configHandler      *handlers.ConfigHandler
 	reactionHandler    *handlers.ReactionHandler
 	gameVersionHandler *handlers.GameVersionHandler
 	profileHandler     *handlers.ProfileHandler
@@ -110,7 +109,6 @@ func (app *Application) initHandlers() error {
 	app.roomMessageHandler = handlers.NewRoomMessageHandler(app.repo, app.sseHub)
 	app.sseTokenHandler = handlers.NewSSETokenHandler(app.repo)
 	app.pageHandler = handlers.NewPageHandler(app.repo)
-	app.configHandler = handlers.NewConfigHandler()
 	app.reactionHandler = handlers.NewReactionHandler(app.repo)
 	app.gameVersionHandler = handlers.NewGameVersionHandler(app.repo)
 	app.profileHandler = handlers.NewProfileHandler(app.repo, app.authMiddleware)
