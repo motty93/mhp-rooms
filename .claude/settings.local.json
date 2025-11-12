@@ -196,7 +196,9 @@
       "Bash(for file in content/info/*.md)",
       "Bash(do sed -i 's/^category: \"\"release\"\"/category: \"\"news\"\"/' \"$file\")",
       "Bash(do sed -i '/^tags:/d' \"$file\")",
-      "WebFetch(domain:izanami.dev)"
+      "WebFetch(domain:izanami.dev)",
+      "Bash(git show:*)",
+      "Bash(ENV=development DB_TYPE=turso make run:*)"
     ],
     "deny": []
   }
