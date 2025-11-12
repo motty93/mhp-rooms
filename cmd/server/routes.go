@@ -187,7 +187,6 @@ func (app *Application) setupAuthRoutes(r chi.Router) {
 func (app *Application) setupAPIRoutes(r chi.Router) {
 	r.Route("/api", func(ar chi.Router) {
 		// 認証不要なAPIエンドポイント
-		ar.Get("/config/supabase", app.configHandler.GetSupabaseConfig)
 		ar.Get("/health", app.healthCheck)
 		ar.Get("/game-versions/active", app.gameVersionHandler.GetActiveGameVersionsAPI)
 

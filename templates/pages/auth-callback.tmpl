@@ -40,19 +40,18 @@
       console.log('現在のURL:', window.location.href)
       console.log('URLハッシュ:', window.location.hash)
       try {
-        // Supabase設定を取得
-        const configResponse = await fetch('/api/config/supabase')
-        const configData = await configResponse.json()
-        if (configData.error || !configData.config) {
-          console.error('Supabase設定の取得に失敗しました')
+        // テンプレートから埋め込まれた設定を使用
+        const config = window.SUPABASE_CONFIG || {}
+        if (!config.url || !config.anonKey) {
+          console.error('Supabase設定が未設定です')
           window.location.href =
             '/auth/login?error=' + encodeURIComponent('認証設定エラー')
           return
         }
         // Supabaseクライアントを初期化
         const supabaseClient = window.supabase.createClient(
-          configData.config.url,
-          configData.config.anonKey,
+          config.url,
+          config.anonKey,
           {
             auth: {
               autoRefreshToken: true,

@@ -591,7 +591,7 @@
           hx-swap="none"
           hx-on::before-request="window.roomDetailInstance?.addOptimisticMessage()"
           hx-on::after-request="this.reset(); document.getElementById('message-input').focus(); window.roomDetailInstance?.resetTextareaHeight()"
-          class="flex space-x-3"
+          class="flex items-start space-x-3"
         >
           <div class="flex-1 relative">
             <textarea
@@ -638,7 +638,7 @@
           <button
             type="submit"
             :disabled="!$store.auth.initialized || !$store.auth.isAuthenticated"
-            class="bg-gray-800 hover:bg-gray-900 text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed self-end"
+            class="bg-gray-800 hover:bg-gray-900 text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed h-[42px]"
           >
             送信
           </button>
