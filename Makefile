@@ -68,6 +68,13 @@ seeds:
 	@echo "シードデータを挿入中..."
 	@go run $(SEED_PATH)/main.go -seed
 
+# アクティビティデータ修正（一時的なデータマイグレーション）
+fix-activity:
+	@echo "アクティビティデータを修正中..."
+	@echo "⚠️  このスクリプトは既に修正済みのデータをスキップします"
+	@go run ./cmd/fix-activity/main.go
+	@echo "✅ アクティビティデータ修正完了"
+
 # OGP画像生成
 generate-ogp:
 	@if [ -z "$(ROOM_ID)" ]; then \
@@ -134,6 +141,7 @@ help:
 	@echo "  migrate       - マイグレーションを実行"
 	@echo "  migrate-dev   - 開発モードでマイグレーションを実行"
 	@echo "  seeds         - シードデータを挿入"
+	@echo "  fix-activity  - アクティビティデータを修正（一時的なデータマイグレーション）"
 	@echo "  generate-ogp  - OGP画像を生成（ROOM_ID=<uuid>を指定）"
 	@echo "  generate-info - 更新情報・ロードマップの静的ファイルを生成"
 	@echo "  test          - テストを実行"
