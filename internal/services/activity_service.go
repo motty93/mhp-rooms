@@ -89,11 +89,17 @@ func (s *ActivityService) RecordRoomJoin(userID uuid.UUID, room *models.Room, ho
 		HostUserID:  room.HostUserID.String(),
 	}
 
+	// DisplayNameが空の場合はUsernameを使用
+	hostDisplayName := hostUser.DisplayName
+	if hostDisplayName == "" && hostUser.Username != nil {
+		hostDisplayName = *hostUser.Username
+	}
+
 	activity := &models.UserActivity{
 		UserID:            userID,
 		ActivityType:      models.ActivityRoomJoin,
 		Title:             fmt.Sprintf("【部屋参加】%s", room.Name),
-		Description:       stringPtr(fmt.Sprintf("ホスト: %s", hostUser.DisplayName)),
+		Description:       stringPtr(fmt.Sprintf("ホスト: %s", hostDisplayName)),
 		RelatedEntityType: stringPtr(models.EntityTypeRoom),
 		RelatedEntityID:   &room.ID,
 		Icon:              "fa-right-to-bracket",
@@ -187,9 +193,15 @@ func (s *ActivityService) RecordFollow(followerID, followingID uuid.UUID, follow
 		IsMutualFollow:  isMutual,
 	}
 
-	title := fmt.Sprintf("%sさんをフォローしました", followingUser.DisplayName)
+	// DisplayNameが空の場合はUsernameを使用
+	displayName := followingUser.DisplayName
+	if displayName == "" && followingUser.Username != nil {
+		displayName = *followingUser.Username
+	}
+
+	title := fmt.Sprintf("%sさんをフォローしました", displayName)
 	if isMutual {
-		title = fmt.Sprintf("%sさんと相互フォローになりました", followingUser.DisplayName)
+		title = fmt.Sprintf("%sさんと相互フォローになりました", displayName)
 	}
 
 	activity := &models.UserActivity{
