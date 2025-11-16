@@ -139,35 +139,38 @@
     </div>
   </div>
 
-  <script>
-    function registerPage() {
-      return {
-        agreedToTerms: false,
-        errorMessage: '',
-        async checkAuthAndRedirect() {
-          try {
-            const authStore = Alpine.store('auth')
-            await authStore.checkAuth()
-            if (authStore.isAuthenticated) {
-              window.location.href = '/rooms'
-            }
-          } catch (error) {
-            console.error('認証状態確認エラー:', error)
+<script>
+  function registerPage() {
+    return {
+      agreedToTerms: false,
+      errorMessage: '',
+      redirectUrl: '{{ if .PageData }}{{ index .PageData "RedirectURL" }}{{ else }}/rooms{{ end }}',
+      async checkAuthAndRedirect() {
+        try {
+          const authStore = Alpine.store('auth')
+          await authStore.checkAuth()
+          if (authStore.isAuthenticated) {
+            window.location.href = this.redirectUrl
           }
-        },
-        async handleGoogleRegister() {
-          if (!this.agreedToTerms) {
-            this.errorMessage = '利用規約に同意してください'
-            return
-          }
-          try {
-            await Alpine.store('auth').signInWithGoogle()
-          } catch (error) {
-            console.error('Google登録エラー:', error)
-            this.errorMessage = error.message || 'Google登録に失敗しました'
-          }
-        },
-      }
+        } catch (error) {
+          console.error('認証状態確認エラー:', error)
+        }
+      },
+      async handleGoogleRegister() {
+        if (!this.agreedToTerms) {
+          this.errorMessage = '利用規約に同意してください'
+          return
+        }
+        try {
+          sessionStorage.setItem('auth_redirect_url', this.redirectUrl)
+          await Alpine.store('auth').signInWithGoogle()
+        } catch (error) {
+          console.error('Google登録エラー:', error)
+          this.errorMessage = error.message || 'Google登録に失敗しました'
+        }
+      },
     }
-  </script>
+  }
+
+</script>
 {{ end }}
