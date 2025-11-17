@@ -198,7 +198,9 @@
       "Bash(do sed -i '/^tags:/d' \"$file\")",
       "WebFetch(domain:izanami.dev)",
       "Bash(git show:*)",
-      "Bash(ENV=development DB_TYPE=turso make run:*)"
+      "Bash(ENV=development DB_TYPE=turso make run:*)",
+      "Bash(ENV=development DB_TYPE=turso go run:*)",
+      "mcp__playwright__browser_run_code"
     ],
     "deny": []
   }

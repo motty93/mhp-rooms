@@ -333,176 +333,178 @@
       {{ if not .HideHeader }}
         {{ template "header" . }}
 
-        <!-- モバイルメニュー -->
-        <div class="md:hidden">
-          <!-- オーバーレイ -->
-          <div
-            x-show="$store.mobileMenu.open"
-            x-cloak
-            @click="$store.mobileMenu.close()"
-            class="fixed inset-0 bg-black bg-opacity-50 z-[9998]"
-            x-transition:enter="transition-opacity ease-out duration-300"
-            x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100"
-            x-transition:leave="transition-opacity ease-in duration-200"
-            x-transition:leave-start="opacity-100"
-            x-transition:leave-end="opacity-0"
-            style="display: none"
-          ></div>
-
-          <!-- モバイルメニューパネル -->
-          <div
-            x-show="$store.mobileMenu.open"
-            x-cloak
-            class="fixed top-0 right-0 h-full w-80 bg-white shadow-lg z-[9999] overflow-y-auto"
-            x-transition:enter="transition ease-out duration-300"
-            x-transition:enter-start="transform translate-x-full"
-            x-transition:enter-end="transform translate-x-0"
-            x-transition:leave="transition ease-in duration-200"
-            x-transition:leave-start="transform translate-x-0"
-            x-transition:leave-end="transform translate-x-full"
-            style="display: none"
-          >
-            <!-- メニューヘッダー -->
+        {{ if not .StaticPage }}
+          <!-- モバイルメニュー -->
+          <div class="md:hidden">
+            <!-- オーバーレイ -->
             <div
-              class="flex items-center justify-between p-6 border-b border-gray-200"
+              x-show="$store.mobileMenu.open"
+              x-cloak
+              @click="$store.mobileMenu.close()"
+              class="fixed inset-0 bg-black bg-opacity-50 z-[9998]"
+              x-transition:enter="transition-opacity ease-out duration-300"
+              x-transition:enter-start="opacity-0"
+              x-transition:enter-end="opacity-100"
+              x-transition:leave="transition-opacity ease-in duration-200"
+              x-transition:leave-start="opacity-100"
+              x-transition:leave-end="opacity-0"
+              style="display: none"
+            ></div>
+
+            <!-- モバイルメニューパネル -->
+            <div
+              x-show="$store.mobileMenu.open"
+              x-cloak
+              class="fixed top-0 right-0 h-full w-80 bg-white shadow-lg z-[9999] overflow-y-auto"
+              x-transition:enter="transition ease-out duration-300"
+              x-transition:enter-start="transform translate-x-full"
+              x-transition:enter-end="transform translate-x-0"
+              x-transition:leave="transition ease-in duration-200"
+              x-transition:leave-start="transform translate-x-0"
+              x-transition:leave-end="transform translate-x-full"
+              style="display: none"
             >
-              <div class="flex items-center space-x-3">
-                <img
-                  src="/static/images/icon.webp"
-                  alt="HuntersHub"
-                  class="w-8 h-8"
-                />
-                <h2 class="text-xl font-bold text-gray-800">HuntersHub</h2>
-              </div>
-              <button
-                @click="$store.mobileMenu.close()"
-                class="text-gray-500 hover:text-gray-700"
+              <!-- メニューヘッダー -->
+              <div
+                class="flex items-center justify-between p-6 border-b border-gray-200"
               >
-                <svg
-                  class="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+                <div class="flex items-center space-x-3">
+                  <img
+                    src="/static/images/icon.webp"
+                    alt="HuntersHub"
+                    class="w-8 h-8"
+                  />
+                  <h2 class="text-xl font-bold text-gray-800">HuntersHub</h2>
+                </div>
+                <button
+                  @click="$store.mobileMenu.close()"
+                  class="text-gray-500 hover:text-gray-700"
                 >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  ></path>
-                </svg>
-              </button>
-            </div>
-
-            <!-- メニュー内容 -->
-            <div class="p-6">
-              <!-- 未認証時のメニュー -->
-              <div
-                x-show="$store.auth.initialized && !$store.auth.loading && !$store.auth.isAuthenticated"
-                style="display: none;"
-              >
-                <div class="space-y-4">
-                  <a
-                    href="/auth/login"
-                    @click="$store.mobileMenu.close()"
-                    class="block w-full text-center bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                  <svg
+                    class="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    ログイン
-                  </a>
-                  <a
-                    href="/auth/register"
-                    @click="$store.mobileMenu.close()"
-                    class="block w-full text-center bg-gray-800 text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-900 transition-colors"
-                  >
-                    新規登録
-                  </a>
-                </div>
-                <hr class="my-6 border-gray-200" />
-                <div class="space-y-2">
-                  <a
-                    href="/rooms"
-                    @click="$store.mobileMenu.close()"
-                    class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    部屋一覧
-                  </a>
-                </div>
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    ></path>
+                  </svg>
+                </button>
               </div>
 
-              <!-- 認証済み時のメニュー -->
-              <div
-                x-show="$store.auth.initialized && !$store.auth.loading && $store.auth.isAuthenticated"
-                style="display: none;"
-              >
-                <div class="space-y-2">
-                  <!-- 参加中の部屋 -->
-                  <template x-if="$store.auth.currentRoom">
+              <!-- メニュー内容 -->
+              <div class="p-6">
+                <!-- 未認証時のメニュー -->
+                <div
+                  x-show="$store.auth.initialized && !$store.auth.loading && !$store.auth.isAuthenticated"
+                  style="display: none;"
+                >
+                  <div class="space-y-4">
                     <a
-                      :href="'/rooms/' + $store.auth.currentRoom.id"
+                      href="/auth/login"
                       @click="$store.mobileMenu.close()"
-                      class="block px-4 py-3 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border-l-4 border-blue-500"
+                      class="block w-full text-center bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors"
                     >
-                      <div class="flex items-center space-x-2">
-                        <svg
-                          class="w-5 h-5"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fill-rule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                            clip-rule="evenodd"
-                          />
-                        </svg>
-                        <div>
-                          <div
-                            class="font-medium"
-                            x-text="'参加中の部屋'"
-                          ></div>
-                          <div
-                            class="text-sm opacity-75"
-                            x-text="$store.auth.currentRoom.name"
-                          ></div>
-                        </div>
-                      </div>
+                      ログイン
                     </a>
-                  </template>
-                  <a
-                    href="/rooms"
-                    @click="$store.mobileMenu.close()"
-                    class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    部屋一覧
-                  </a>
+                    <a
+                      href="/auth/register"
+                      @click="$store.mobileMenu.close()"
+                      class="block w-full text-center bg-gray-800 text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-900 transition-colors"
+                    >
+                      新規登録
+                    </a>
+                  </div>
+                  <hr class="my-6 border-gray-200" />
+                  <div class="space-y-2">
+                    <a
+                      href="/rooms"
+                      @click="$store.mobileMenu.close()"
+                      class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      部屋一覧
+                    </a>
+                  </div>
+                </div>
+
+                <!-- 認証済み時のメニュー -->
+                <div
+                  x-show="$store.auth.initialized && !$store.auth.loading && $store.auth.isAuthenticated"
+                  style="display: none;"
+                >
+                  <div class="space-y-2">
+                    <!-- 参加中の部屋 -->
+                    <template x-if="$store.auth.currentRoom">
+                      <a
+                        :href="'/rooms/' + $store.auth.currentRoom.id"
+                        @click="$store.mobileMenu.close()"
+                        class="block px-4 py-3 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border-l-4 border-blue-500"
+                      >
+                        <div class="flex items-center space-x-2">
+                          <svg
+                            class="w-5 h-5"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fill-rule="evenodd"
+                              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                              clip-rule="evenodd"
+                            />
+                          </svg>
+                          <div>
+                            <div
+                              class="font-medium"
+                              x-text="'参加中の部屋'"
+                            ></div>
+                            <div
+                              class="text-sm opacity-75"
+                              x-text="$store.auth.currentRoom.name"
+                            ></div>
+                          </div>
+                        </div>
+                      </a>
+                    </template>
+                    <a
+                      href="/rooms"
+                      @click="$store.mobileMenu.close()"
+                      class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      部屋一覧
+                    </a>
+                    <button
+                      @click="$store.roomCreate.open(); $store.mobileMenu.close();"
+                      class="block w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      部屋作成
+                    </button>
+                  </div>
+                  <hr class="my-6 border-gray-200" />
+                  <div class="space-y-2">
+                    <a
+                      href="/profile"
+                      @click="$store.mobileMenu.close()"
+                      class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      プロフィール
+                    </a>
+                  </div>
+                  <hr class="my-6 border-gray-200" />
                   <button
-                    @click="$store.roomCreate.open(); $store.mobileMenu.close();"
-                    class="block w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                    @click="if(confirm('ログアウトしますか？')) { $store.auth.signOut(); $store.mobileMenu.close(); }"
+                    class="block w-full text-left px-4 py-3 text-red-600 hover:bg-gray-100 rounded-lg transition-colors"
                   >
-                    部屋作成
+                    ログアウト
                   </button>
                 </div>
-                <hr class="my-6 border-gray-200" />
-                <div class="space-y-2">
-                  <a
-                    href="/profile"
-                    @click="$store.mobileMenu.close()"
-                    class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    プロフィール
-                  </a>
-                </div>
-                <hr class="my-6 border-gray-200" />
-                <button
-                  @click="if(confirm('ログアウトしますか？')) { $store.auth.signOut(); $store.mobileMenu.close(); }"
-                  class="block w-full text-left px-4 py-3 text-red-600 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  ログアウト
-                </button>
               </div>
             </div>
           </div>
-        </div>
+        {{ end }}
       {{ end }}
 
 

@@ -187,32 +187,42 @@ func (j *JWTAuth) Middleware(next http.Handler) http.Handler {
 		})
 
 		if err != nil || !token.Valid {
+			http.SetCookie(w, &http.Cookie{
+				Name:   "sb-access-token",
+				Value:  "",
+				Path:   "/",
+				MaxAge: -1,
+			})
+
 			if config.AppConfig.Debug.AuthLogs {
-				log.Printf("AUTH DEBUG: %s %s - トークン解析エラー: %v, Valid: %t", r.Method, r.URL.Path, err, token != nil && token.Valid)
+				log.Printf("AUTH DEBUG: %s %s - トークン解析エラー（クッキー削除）: %v, Valid: %t", r.Method, r.URL.Path, err, token != nil && token.Valid)
 			}
-			// htmxリクエストの場合はHX-Redirectヘッダーを使用
 			if r.Header.Get("HX-Request") == "true" {
 				w.Header().Set("HX-Redirect", "/auth/login")
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
-			// 通常のリクエストの場合はリダイレクト
 			http.Redirect(w, r, "/auth/login", http.StatusFound)
 			return
 		}
 
 		claims, ok := token.Claims.(*SupabaseJWTClaims)
 		if !ok {
+			http.SetCookie(w, &http.Cookie{
+				Name:   "sb-access-token",
+				Value:  "",
+				Path:   "/",
+				MaxAge: -1,
+			})
+
 			if config.AppConfig.Debug.AuthLogs {
-				log.Printf("AUTH DEBUG: %s %s - クレーム変換エラー", r.Method, r.URL.Path)
+				log.Printf("AUTH DEBUG: %s %s - クレーム変換エラー（クッキー削除）", r.Method, r.URL.Path)
 			}
-			// htmxリクエストの場合はHX-Redirectヘッダーを使用
 			if r.Header.Get("HX-Request") == "true" {
 				w.Header().Set("HX-Redirect", "/auth/login")
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
-			// 通常のリクエストの場合はリダイレクト
 			http.Redirect(w, r, "/auth/login", http.StatusFound)
 			return
 		}
@@ -323,9 +333,15 @@ func (j *JWTAuth) OptionalMiddleware(next http.Handler) http.Handler {
 				r = r.WithContext(ctx)
 			}
 		} else {
-			// デバッグログ: トークン解析エラー
+			http.SetCookie(w, &http.Cookie{
+				Name:   "sb-access-token",
+				Value:  "",
+				Path:   "/",
+				MaxAge: -1,
+			})
+
 			if config.AppConfig.Debug.AuthLogs {
-				log.Printf("AUTH DEBUG: %s %s - トークン解析エラー: %v", r.Method, r.URL.Path, err)
+				log.Printf("AUTH DEBUG: %s %s - トークン解析エラー（クッキー削除）: %v", r.Method, r.URL.Path, err)
 			}
 		}
 

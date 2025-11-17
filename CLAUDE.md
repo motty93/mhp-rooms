@@ -14,9 +14,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **言語**: Go 1.22.2
 - **Webフレームワーク**: Chi
-- **データベース**: 
-  - **開発環境**: PostgreSQL (Docker Compose)
-  - **本番環境**: Neon (Serverless PostgreSQL)
+- **データベース**:
+  - **開発環境**: Turso (libSQL - staging)
+  - **本番環境**: Turso (libSQL - production)
   - **ORM**: GORM v2
 - **フロントエンド**: 
   - HTML/CSS/JavaScript (テンプレートエンジン使用)
@@ -120,37 +120,47 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## データベース設定
 
 ### 開発環境
-Docker Composeで起動するPostgreSQLを使用します。
+Turso (libSQL) のstagingデータベースを使用します。
 ```bash
-make container-up  # DBとRedisを起動
-make migrate       # マイグレーション実行
+# .envファイルに以下を設定
+DB_TYPE=turso
+TURSO_DATABASE_URL="libsql://monhub-staging-motty93.aws-ap-northeast-1.turso.io"
+TURSO_AUTH_TOKEN="..."
+
+# マイグレーション実行
+make migrate
 ```
 
-### 本番環境（Neon）
-Neonデータベースを使用します。以下の2つの方法で設定できます：
+### 本番環境（Turso Production）
+Tursoデータベース（本番環境）を使用します。Cloud Runの環境変数で設定：
 
-#### 方法1: DATABASE_URL（推奨・最も簡単）
 ```bash
-# NeonコンソールからConnection Stringをコピーして設定
+# TursoコンソールからDatabase URLとAuth Tokenを取得して設定
 gcloud run services update mhp-rooms \
   --region=asia-northeast1 \
-  --set-env-vars=DATABASE_URL="postgresql://username:password@ep-xxx.region.neon.tech/database?sslmode=require" \
+  --set-env-vars=DB_TYPE="turso" \
+  --set-env-vars=TURSO_DATABASE_URL="libsql://..." \
+  --set-env-vars=TURSO_AUTH_TOKEN="..." \
   --set-env-vars=ENV="production"
 ```
 
-#### 方法2: 個別の環境変数
+### Tursoデータベース情報の取得
+
 ```bash
-gcloud run services update mhp-rooms \
-  --region=asia-northeast1 \
-  --set-env-vars=DB_HOST="ep-xxx.region.neon.tech" \
-  --set-env-vars=DB_USER="your-username" \
-  --set-env-vars=DB_PASSWORD="your-password" \
-  --set-env-vars=DB_NAME="your-database" \
-  --set-env-vars=DB_SSLMODE="require" \
-  --set-env-vars=ENV="production"
+# Turso CLIでデータベース一覧を確認
+turso db list
+
+# 特定のデータベースのURLを取得
+turso db show <database-name>
+
+# 認証トークンを作成
+turso db tokens create <database-name>
 ```
 
-**注意**: DATABASE_URLが設定されている場合は、個別の環境変数より優先して使用されます。
+**注意**:
+- Tursoは libSQL（SQLiteの拡張）ベースのサーバーレスデータベースです
+- 開発環境と本番環境で別のデータベースインスタンスを使用します
+- 認証トークンは定期的に更新することを推奨します
 
 ## UI/UX設計ルール【重要】
 

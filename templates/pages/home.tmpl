@@ -31,68 +31,34 @@
 {{ end }}
 
 {{ define "page" }}
-  <script>
-    // 認証状態確認とリダイレクト
-    document.addEventListener('DOMContentLoaded', function () {
-      // Alpine.jsの初期化を待つ
-      setTimeout(() => {
-        if (window.Alpine && window.Alpine.store('auth')) {
-          const auth = window.Alpine.store('auth')
-          if (auth.isAuthenticated) {
-            window.location.href = '/rooms'
-          }
-        }
-      }, 100)
-    })
-  </script>
   <section class="hero-bg text-white py-52">
     <div class="container mx-auto px-4 text-center relative z-10">
       <h2 class="text-4xl md:text-5xl font-bold mb-6">
         みんなで集まって遊ぼう！<br />
         <span class="text-3xl md:text-4xl">モンハンパーティ募集</span>
       </h2>
-      <p class="text-sm md:text-xl mb-8 text-gray-100">
+      <p class="text-base md:text-xl mb-8 text-gray-100">
         仲間を見つけて、一緒にゲームを楽しもう
       </p>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto mb-8">
         <div class="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur-sm">
           <div class="mhp-icon game-icon mx-auto mb-2 rounded"></div>
-          <p class="text-sm font-semibold">MHP</p>
+          <p class="text-base font-semibold">MHP</p>
         </div>
         <div class="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur-sm">
           <div class="mhp2-icon game-icon mx-auto mb-2 rounded"></div>
-          <p class="text-sm font-semibold">MHP2</p>
+          <p class="text-base font-semibold">MHP2</p>
         </div>
         <div class="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur-sm">
           <div class="mhp2g-icon game-icon mx-auto mb-2 rounded"></div>
-          <p class="text-sm font-semibold">MHP2G</p>
+          <p class="text-base font-semibold">MHP2G</p>
         </div>
         <div class="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur-sm">
           <div class="mhp3-icon game-icon mx-auto mb-2 rounded"></div>
-          <p class="text-sm font-semibold">MHP3</p>
+          <p class="text-base font-semibold">MHP3</p>
         </div>
       </div>
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <!-- 認証済みユーザー用の部屋作成ボタン -->
-        <button
-          @click="$store.roomCreate.open()"
-          x-show="$store.auth.isAuthenticated"
-          style="display: none;"
-          class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white font-medium py-3 px-8 rounded-lg transition-colors backdrop-blur-sm"
-        >
-          部屋を作る
-        </button>
-
-        <!-- 未認証ユーザー用の無効化ボタン -->
-        <button
-          x-show="!$store.auth.isAuthenticated"
-          @click="$store.auth.handleUnauthenticatedAction()"
-          class="bg-gray-400 bg-opacity-50 text-gray-300 font-medium py-3 px-8 rounded-lg cursor-not-allowed backdrop-blur-sm"
-          title="ログインが必要です"
-        >
-          部屋を作る
-        </button>
-
         <a
           href="/rooms"
           class="text-white hover:bg-white hover:bg-opacity-20 font-medium py-3 px-8 rounded-lg transition-colors inline-block text-center"
@@ -339,19 +305,16 @@
         </div>
       </div>
 
-      <div class="text-center mt-12">
+      <div class="text-center mt-12 flex flex-col gap-4 justify-center items-center">
         <a
           href="/auth/register"
-          x-show="!$store.auth.isAuthenticated"
-          class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-4 px-8 rounded-lg transition-colors inline-block"
+          class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-4 px-8 rounded-lg transition-colors inline-block w-full max-w-xs"
         >
           今すぐ始める（無料）
         </a>
         <a
           href="/rooms"
-          x-show="$store.auth.isAuthenticated"
-          style="display: none;"
-          class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-4 px-8 rounded-lg transition-colors inline-block"
+          class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-4 px-8 rounded-lg transition-colors inline-block w-full max-w-xs"
         >
           部屋一覧を見る
         </a>
@@ -437,7 +400,6 @@
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
         <a
           href="/auth/register"
-          x-show="!$store.auth.isAuthenticated"
           class="bg-white text-gray-800 hover:bg-gray-100 font-medium py-3 px-8 rounded-lg transition-colors inline-block"
         >
           無料で始める

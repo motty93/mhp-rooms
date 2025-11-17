@@ -32,6 +32,11 @@ func (h *AuthHandler) SetAuthMiddleware(auth *middleware.JWTAuth) {
 }
 
 func (h *AuthHandler) LoginPage(w http.ResponseWriter, r *http.Request) {
+	if user, ok := middleware.GetUserFromContext(r.Context()); ok && user != nil {
+		http.Redirect(w, r, "/rooms", http.StatusFound)
+		return
+	}
+
 	redirectURL := r.URL.Query().Get("redirect")
 	if redirectURL == "" {
 		redirectURL = "/rooms"
@@ -47,8 +52,21 @@ func (h *AuthHandler) LoginPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) RegisterPage(w http.ResponseWriter, r *http.Request) {
+	if user, ok := middleware.GetUserFromContext(r.Context()); ok && user != nil {
+		http.Redirect(w, r, "/rooms", http.StatusFound)
+		return
+	}
+
+	redirectURL := r.URL.Query().Get("redirect")
+	if redirectURL == "" {
+		redirectURL = "/rooms"
+	}
+
 	data := TemplateData{
 		Title: "新規登録",
+		PageData: map[string]interface{}{
+			"RedirectURL": redirectURL,
+		},
 	}
 	renderTemplate(w, "register.tmpl", data)
 }
