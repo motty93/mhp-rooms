@@ -19,20 +19,6 @@ func NewPageHandler(repo *repository.Repository) *PageHandler {
 	}
 }
 
-func (h *PageHandler) Terms(w http.ResponseWriter, r *http.Request) {
-	data := TemplateData{
-		Title: "利用規約",
-	}
-	renderTemplate(w, "terms.tmpl", data)
-}
-
-func (h *PageHandler) Privacy(w http.ResponseWriter, r *http.Request) {
-	data := TemplateData{
-		Title: "プライバシーポリシー",
-	}
-	renderTemplate(w, "privacy.tmpl", data)
-}
-
 func (h *PageHandler) Hello(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	fmt.Fprint(w, `<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded block">

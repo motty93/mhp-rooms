@@ -96,7 +96,8 @@ func (g *Generator) generateFeed(articles ArticleList) error {
 	}
 
 	// 更新情報のみをフィードに含める（最新20件）
-	infoArticles := articles.FilterByCategory(ArticleTypeNews)
+	infoArticles := articles.FilterByCategory(ArticleTypeRelease)
+	infoArticles = append(infoArticles, articles.FilterByCategory(ArticleTypeNews)...)
 	infoArticles = append(infoArticles, articles.FilterByCategory(ArticleTypeMaintenance)...)
 	infoArticles = infoArticles.SortByDateDesc()
 

@@ -53,13 +53,15 @@ func (h *InfoHandler) List(w http.ResponseWriter, r *http.Request) {
 	switch category {
 	case "news":
 		filteredArticles = articles.FilterByCategory(info.ArticleTypeNews)
+	case "release":
+		filteredArticles = articles.FilterByCategory(info.ArticleTypeRelease)
 	case "maintenance":
 		filteredArticles = articles.FilterByCategory(info.ArticleTypeMaintenance)
 	default:
 		// すべての更新情報（ロードマップは除外）
-		newsArticles := articles.FilterByCategory(info.ArticleTypeNews)
-		maintenanceArticles := articles.FilterByCategory(info.ArticleTypeMaintenance)
-		filteredArticles = append(newsArticles, maintenanceArticles...)
+		filteredArticles = append(filteredArticles, articles.FilterByCategory(info.ArticleTypeRelease)...)
+		filteredArticles = append(filteredArticles, articles.FilterByCategory(info.ArticleTypeNews)...)
+		filteredArticles = append(filteredArticles, articles.FilterByCategory(info.ArticleTypeMaintenance)...)
 		category = "all"
 	}
 
