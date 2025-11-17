@@ -12,5 +12,9 @@ func DefaultContentSources() []ContentSource {
 		{Dir: "content/info"},
 		{Dir: "content/roadmap", DefaultCategory: ArticleTypeRoadmap},
 		{Dir: "content/operator", DefaultCategory: ArticleTypeOperator},
+		{Dir: "content/guide", DefaultCategory: ArticleTypeGuide},
+		{Dir: "content/faq", DefaultCategory: ArticleTypeFAQ},
+		{Dir: "content/terms", DefaultCategory: ArticleTypeTerms},
+		{Dir: "content/privacy", DefaultCategory: ArticleTypePrivacy},
 	}
 }

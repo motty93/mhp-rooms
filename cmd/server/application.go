@@ -36,6 +36,10 @@ type Application struct {
 	infoHandler        *handlers.InfoHandler
 	roadmapHandler     *handlers.RoadmapHandler
 	operatorHandler    *handlers.OperatorHandler
+	guideHandler       *handlers.StaticPageHandler
+	faqHandler         *handlers.StaticPageHandler
+	termsHandler       *handlers.StaticPageHandler
+	privacyHandler     *handlers.StaticPageHandler
 	authMiddleware     *middleware.JWTAuth
 	securityConfig     *middleware.SecurityConfig
 	generalLimiter     *middleware.RateLimiter
@@ -117,6 +121,10 @@ func (app *Application) initHandlers() error {
 	app.infoHandler = handlers.NewInfoHandler(app.repo, articleGenerator)
 	app.roadmapHandler = handlers.NewRoadmapHandler(app.repo, articleGenerator)
 	app.operatorHandler = handlers.NewOperatorHandler(app.repo, articleGenerator)
+	app.guideHandler = handlers.NewGuideHandler(app.repo, articleGenerator)
+	app.faqHandler = handlers.NewFAQHandler(app.repo, articleGenerator)
+	app.termsHandler = handlers.NewTermsHandler(app.repo, articleGenerator)
+	app.privacyHandler = handlers.NewPrivacyHandler(app.repo, articleGenerator)
 	// GCSUploaderを初期化
 	gcsUploader, err := storage.NewGCSUploader(context.Background())
 	if err != nil {
