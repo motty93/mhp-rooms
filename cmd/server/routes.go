@@ -82,7 +82,7 @@ func (app *Application) setupPageRoutes(r chi.Router) {
 	roadmapHandler := app.roadmapHandler
 	operatorHandler := app.operatorHandler
 
-	r.Get("/", app.withOptionalAuth(ph.Home))
+	r.Get("/", ph.Home)
 	r.Get("/terms", app.withOptionalAuth(ph.Terms))
 	r.Get("/privacy", app.withOptionalAuth(ph.Privacy))
 	r.Get("/contact", app.withOptionalAuth(ph.Contact))
@@ -167,8 +167,8 @@ func (app *Application) setupAuthRoutes(r chi.Router) {
 		ah := app.authHandler
 
 		// 認証ページルート（レート制限は緩め）
-		ar.Get("/login", ah.LoginPage)
-		ar.Get("/register", ah.RegisterPage)
+		ar.Get("/login", app.withOptionalAuth(ah.LoginPage))
+		ar.Get("/register", app.withOptionalAuth(ah.RegisterPage))
 		ar.Get("/callback", ah.AuthCallback)
 
 		// 認証アクションルート（厳しいレート制限）
