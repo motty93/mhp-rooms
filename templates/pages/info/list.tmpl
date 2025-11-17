@@ -12,7 +12,7 @@
   <div class="max-w-4xl mx-auto">
     <!-- ページヘッダー -->
     <div class="mb-8">
-      <h1 class="text-3xl font-bold text-gray-800 mb-4">更新情報</h1>
+      <h1 class="text-2xl font-bold text-gray-800 mb-4">更新情報</h1>
       <p class="text-gray-600">
         HuntersHubの最新の更新情報、リリースノート、メンテナンス予定をご確認いただけます。<br />
         <a href="/roadmap" class="text-blue-600 hover:underline">今後の実装予定はこちら</a>
@@ -41,30 +41,35 @@
       </div>
     </div>
 
-    <div x-data="{ category: 'all' }">
+    <div x-data="{ category: '{{ .PageData.CurrentCategory }}' }">
       <!-- カテゴリータブ -->
       <div class="mb-6">
-        <div class="flex gap-2 border-b border-gray-200">
+        <div class="flex gap-2 border-b border-gray-200 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 flex-nowrap">
           <button @click="category = 'all'"
             :class="category === 'all' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-800'"
-            class="px-4 py-2 border-b-2 font-medium transition-colors">
+            class="px-4 py-2 border-b-2 font-medium transition-colors flex-shrink-0 whitespace-nowrap">
             すべて
+          </button>
+          <button @click="category = 'release'"
+            :class="category === 'release' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-800'"
+            class="px-4 py-2 border-b-2 font-medium transition-colors flex-shrink-0 whitespace-nowrap">
+            リリース
           </button>
           <button @click="category = 'news'"
             :class="category === 'news' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-800'"
-            class="px-4 py-2 border-b-2 font-medium transition-colors">
+            class="px-4 py-2 border-b-2 font-medium transition-colors flex-shrink-0 whitespace-nowrap">
             お知らせ
           </button>
           <button @click="category = 'maintenance'"
             :class="category === 'maintenance' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-800'"
-            class="px-4 py-2 border-b-2 font-medium transition-colors">
+            class="px-4 py-2 border-b-2 font-medium transition-colors flex-shrink-0 whitespace-nowrap">
             メンテナンス
           </button>
         </div>
       </div>
 
       <!-- 記事一覧 -->
-      <div class="space-y-6">
+      <div class="space-y-6 min-h-[1000px]">
         {{ if .PageData.Articles }}
         {{ range .PageData.Articles }}
         <a href="/info/{{ .Slug }}"
@@ -74,7 +79,12 @@
             <div class="flex items-start justify-between mb-3">
               <div class="flex-1">
                 <div class="flex items-center gap-2 mb-2">
-                  {{ if eq .Category "news" }}
+                  {{ if eq .Category "release" }}
+                  <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    リリース
+                  </span>
+                  {{ else if eq .Category "news" }}
                   <span
                     class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                     お知らせ
@@ -89,7 +99,7 @@
                     {{ .Date.Format "2006年1月2日" }}
                   </time>
                 </div>
-                <h2 class="text-xl font-bold text-gray-800 mb-2">
+                <h2 class="text-lg font-semibold text-gray-800 mb-2">
                   {{ .Title }}
                 </h2>
                 <p class="text-gray-600">{{ .Summary }}</p>
