@@ -11,6 +11,10 @@ const (
 	ArticleTypeFeature     ArticleType = "feature"
 	ArticleTypeRoadmap     ArticleType = "roadmap"
 	ArticleTypeOperator    ArticleType = "operator"
+	ArticleTypeGuide       ArticleType = "guide"
+	ArticleTypeFAQ         ArticleType = "faq"
+	ArticleTypeTerms       ArticleType = "terms"
+	ArticleTypePrivacy     ArticleType = "privacy"
 )
 
 type Article struct {

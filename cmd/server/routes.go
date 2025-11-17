@@ -83,12 +83,14 @@ func (app *Application) setupPageRoutes(r chi.Router) {
 	operatorHandler := app.operatorHandler
 
 	r.Get("/", ph.Home)
-	r.Get("/terms", app.withOptionalAuth(ph.Terms))
-	r.Get("/privacy", app.withOptionalAuth(ph.Privacy))
 	r.Get("/contact", app.withOptionalAuth(ph.Contact))
 	r.With(middleware.ContactRateLimitMiddleware(app.contactLimiter)).Post("/contact", app.withOptionalAuth(ph.Contact))
-	r.Get("/faq", app.withOptionalAuth(ph.FAQ))
-	r.Get("/guide", app.withOptionalAuth(ph.Guide))
+
+	// 静的ページ（認証ミドルウェアなし、共通ヘッダー表示）
+	r.Get("/guide", app.guideHandler.Show)
+	r.Get("/faq", app.faqHandler.Show)
+	r.Get("/terms", app.termsHandler.Show)
+	r.Get("/privacy", app.privacyHandler.Show)
 	r.Get("/hello", app.withOptionalAuth(ph.Hello))
 	r.Get("/sitemap.xml", app.withOptionalAuth(ph.Sitemap))
 	r.Get("/profile", app.withAuth(profileHandler.Profile))
