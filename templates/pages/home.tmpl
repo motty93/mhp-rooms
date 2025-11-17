@@ -31,20 +31,6 @@
 {{ end }}
 
 {{ define "page" }}
-  <script>
-    // 認証状態確認とリダイレクト
-    document.addEventListener('DOMContentLoaded', function () {
-      // Alpine.jsの初期化を待つ
-      setTimeout(() => {
-        if (window.Alpine && window.Alpine.store('auth')) {
-          const auth = window.Alpine.store('auth')
-          if (auth.isAuthenticated) {
-            window.location.href = '/rooms'
-          }
-        }
-      }, 100)
-    })
-  </script>
   <section class="hero-bg text-white py-52">
     <div class="container mx-auto px-4 text-center relative z-10">
       <h2 class="text-4xl md:text-5xl font-bold mb-6">
@@ -73,26 +59,6 @@
         </div>
       </div>
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <!-- 認証済みユーザー用の部屋作成ボタン -->
-        <button
-          @click="$store.roomCreate.open()"
-          x-show="$store.auth.isAuthenticated"
-          style="display: none;"
-          class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white font-medium py-3 px-8 rounded-lg transition-colors backdrop-blur-sm"
-        >
-          部屋を作る
-        </button>
-
-        <!-- 未認証ユーザー用の無効化ボタン -->
-        <button
-          x-show="!$store.auth.isAuthenticated"
-          @click="$store.auth.handleUnauthenticatedAction()"
-          class="bg-gray-400 bg-opacity-50 text-gray-300 font-medium py-3 px-8 rounded-lg cursor-not-allowed backdrop-blur-sm"
-          title="ログインが必要です"
-        >
-          部屋を作る
-        </button>
-
         <a
           href="/rooms"
           class="text-white hover:bg-white hover:bg-opacity-20 font-medium py-3 px-8 rounded-lg transition-colors inline-block text-center"
@@ -342,15 +308,12 @@
       <div class="text-center mt-12">
         <a
           href="/auth/register"
-          x-show="!$store.auth.isAuthenticated"
           class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-4 px-8 rounded-lg transition-colors inline-block"
         >
           今すぐ始める（無料）
         </a>
         <a
           href="/rooms"
-          x-show="$store.auth.isAuthenticated"
-          style="display: none;"
           class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-4 px-8 rounded-lg transition-colors inline-block"
         >
           部屋一覧を見る
@@ -437,7 +400,6 @@
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
         <a
           href="/auth/register"
-          x-show="!$store.auth.isAuthenticated"
           class="bg-white text-gray-800 hover:bg-gray-100 font-medium py-3 px-8 rounded-lg transition-colors inline-block"
         >
           無料で始める
