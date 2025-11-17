@@ -6,6 +6,7 @@ type ArticleType string
 
 const (
 	ArticleTypeNews        ArticleType = "news"
+	ArticleTypeRelease     ArticleType = "release"
 	ArticleTypeMaintenance ArticleType = "maintenance"
 	ArticleTypeFeature     ArticleType = "feature"
 	ArticleTypeRoadmap     ArticleType = "roadmap"
