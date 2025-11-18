@@ -258,9 +258,7 @@ func (app *Application) setupStaticRoutes(r chi.Router) {
 	})
 
 	// robots.txtへのルート（クローラー対応）
-	r.Get("/robots.txt", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "static/robots.txt")
-	})
+	r.Get("/robots.txt", app.pageHandler.Robots)
 
 	// ローカル環境のOGP画像配信（OG_BUCKETが空の場合のみ）
 	if os.Getenv("OG_BUCKET") == "" {

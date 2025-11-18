@@ -8,5 +8,5 @@ func (h *PageHandler) Home(w http.ResponseWriter, r *http.Request) {
 		HasHero:    true,
 		StaticPage: true,
 	}
-	renderTemplate(w, "home.tmpl", data)
+	renderTemplate(w, r, "home.tmpl", data)
 }

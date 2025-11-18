@@ -112,7 +112,7 @@ func (app *Application) initHandlers() error {
 	app.roomJoinHandler = handlers.NewRoomJoinHandler(app.repo)
 	app.roomMessageHandler = handlers.NewRoomMessageHandler(app.repo, app.sseHub)
 	app.sseTokenHandler = handlers.NewSSETokenHandler(app.repo)
-	app.pageHandler = handlers.NewPageHandler(app.repo)
+	app.pageHandler = handlers.NewPageHandler(app.repo, articleGenerator)
 	app.reactionHandler = handlers.NewReactionHandler(app.repo)
 	app.gameVersionHandler = handlers.NewGameVersionHandler(app.repo)
 	app.profileHandler = handlers.NewProfileHandler(app.repo, app.authMiddleware)
