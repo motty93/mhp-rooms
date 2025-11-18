@@ -1,7 +1,27 @@
 {{ define "head" }}
   <meta name="description" content="{{ .PageData.Page.Summary }}" />
+{{ end }}
+
+{{ define "og_meta" }}
+  {{ $siteURL := getEnv "SITE_URL" "http://localhost:8080" }}
+  {{ $ogBucket := getEnv "OG_BUCKET" "" }}
+  {{ $ogPrefix := getEnv "OG_PREFIX" "dev" }}
+  {{ $defaultOGImage := "" }}
+  {{ if $ogBucket }}
+    {{ $defaultOGImage = printf "https://storage.googleapis.com/%s/%s/ogp/og_image.png" $ogBucket $ogPrefix }}
+  {{ else }}
+    {{ $defaultOGImage = printf "%s/tmp/images/%s/ogp/og_image.png" $siteURL $ogPrefix }}
+  {{ end }}
+
   <meta property="og:title" content="{{ .PageData.Page.Title }} - HuntersHub" />
   <meta property="og:description" content="{{ .PageData.Page.Summary }}" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="HuntersHub" />
+  <meta property="og:image" content="{{ $defaultOGImage }}" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="{{ .PageData.Page.Title }} - HuntersHub" />
+  <meta name="twitter:description" content="{{ .PageData.Page.Summary }}" />
+  <meta name="twitter:image" content="{{ $defaultOGImage }}" />
 {{ end }}
 
 {{ define "page" }}
