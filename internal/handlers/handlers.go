@@ -15,7 +15,8 @@ type BaseHandler struct {
 
 type TemplateData = view.Data
 
-func renderTemplate(w http.ResponseWriter, templateName string, data TemplateData) {
+func renderTemplate(w http.ResponseWriter, r *http.Request, templateName string, data TemplateData) {
+	data = withCanonicalURL(r, data)
 	view.Template(w, templateName, data)
 }
 

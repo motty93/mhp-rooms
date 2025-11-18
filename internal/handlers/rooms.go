@@ -178,7 +178,7 @@ func (h *RoomHandler) Rooms(w http.ResponseWriter, r *http.Request) {
 		HasHero:  false,
 		PageData: pageData,
 	}
-	renderTemplate(w, "rooms.tmpl", data)
+	renderTemplate(w, r, "rooms.tmpl", data)
 }
 
 type CreateRoomRequest struct {
