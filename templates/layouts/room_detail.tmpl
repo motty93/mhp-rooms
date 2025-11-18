@@ -5,6 +5,10 @@
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>{{ .Title }} - HuntersHub</title>
+      {{ if .CanonicalURL }}
+        <link rel="canonical" href="{{ .CanonicalURL }}" />
+      {{ end }}
+
 
       <!-- ローカルライブラリ -->
       <script src="/static/js/vendor/htmx.min.js"></script>
@@ -65,10 +69,14 @@
         />
         <meta property="og:image" content="{{ .PageData.OGImageURL }}" />
         <meta property="og:type" content="website" />
-        <meta
-          property="og:url"
-          content="{{ $siteURL }}/rooms/{{ .PageData.Room.ID }}"
-        />
+        {{ if .CanonicalURL }}
+          <meta property="og:url" content="{{ .CanonicalURL }}" />
+        {{ else }}
+          <meta
+            property="og:url"
+            content="{{ $siteURL }}/rooms/{{ .PageData.Room.ID }}"
+          />
+        {{ end }}
         <meta name="twitter:card" content="summary_large_image" />
         <meta
           name="twitter:title"
@@ -79,6 +87,15 @@
           content="{{ .PageData.Room.GameVersion.Name }}の部屋 / 定員{{ .PageData.Room.MaxPlayers }}人"
         />
         <meta name="twitter:image" content="{{ .PageData.OGImageURL }}" />
+        {{ if .CanonicalURL }}
+          <meta name="twitter:url" content="{{ .CanonicalURL }}" />
+        {{ else }}
+          <meta
+            name="twitter:url"
+            content="{{ $siteURL }}/rooms/{{ .PageData.Room.ID }}"
+          />
+        {{ end }}
+
 
         <!-- 構造化データ：パンくずリスト -->
         <script type="application/ld+json">

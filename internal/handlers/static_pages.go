@@ -105,5 +105,5 @@ func (h *StaticPageHandler) Show(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	renderTemplate(w, "static_page.tmpl", data)
+	renderTemplate(w, r, "static_page.tmpl", data)
 }

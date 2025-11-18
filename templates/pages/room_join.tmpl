@@ -16,10 +16,14 @@
   />
   <meta property="og:image" content="{{ .PageData.OGImageURL }}" />
   <meta property="og:type" content="website" />
-  <meta
-    property="og:url"
-    content="{{ $siteURL }}/rooms/{{ .PageData.Room.ID }}/join"
-  />
+  {{ if .CanonicalURL }}
+    <meta property="og:url" content="{{ .CanonicalURL }}" />
+  {{ else }}
+    <meta
+      property="og:url"
+      content="{{ $siteURL }}/rooms/{{ .PageData.Room.ID }}/join"
+    />
+  {{ end }}
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="{{ .PageData.Room.Name }} - 部屋に参加" />
   <meta
@@ -27,6 +31,15 @@
     content="{{ .PageData.Room.GameVersion.Name }}の部屋に参加しましょう"
   />
   <meta name="twitter:image" content="{{ .PageData.OGImageURL }}" />
+  {{ if .CanonicalURL }}
+    <meta name="twitter:url" content="{{ .CanonicalURL }}" />
+  {{ else }}
+    <meta
+      name="twitter:url"
+      content="{{ $siteURL }}/rooms/{{ .PageData.Room.ID }}/join"
+    />
+  {{ end }}
+
 
   <!-- 構造化データ：パンくずリスト -->
   <script type="application/ld+json">

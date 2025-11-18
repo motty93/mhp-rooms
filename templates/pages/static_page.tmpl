@@ -1,7 +1,72 @@
 {{ define "head" }}
   <meta name="description" content="{{ .PageData.Page.Summary }}" />
+  {{ $page := .PageData.Page }}
+  {{ $ogBucket := getEnv "OG_BUCKET" "" }}
+  {{ $ogPrefix := getEnv "OG_PREFIX" "dev" }}
+  {{ $siteURL := getEnv "SITE_URL" "http://localhost:8080" }}
+  {{ $defaultOGImage := "" }}
+  {{ if $ogBucket }}
+    {{ $defaultOGImage = printf "https://storage.googleapis.com/%s/%s/ogp/og_image.png" $ogBucket $ogPrefix }}
+  {{ else }}
+    {{ $defaultOGImage = printf "%s/tmp/images/%s/ogp/og_image.png" $siteURL $ogPrefix }}
+  {{ end }}
+  {{ $published := $page.Date.Format "2006-01-02" }}
+  {{ $modified := $published }}
+  {{ if $page.Updated }}
+    {{ $modified = $page.Updated.Format "2006-01-02" }}
+  {{ end }}
+  {{ $mainEntity := map "@type" "WebPage" "@id" .CanonicalURL }}
+  {{ $author := map "@type" "Organization" "name" "HuntersHub" }}
+  {{ $publisherLogo := map "@type" "ImageObject" "url" $defaultOGImage }}
+  {{ $publisher := map "@type" "Organization" "name" "HuntersHub" "logo" $publisherLogo }}
+  {{ $articleData := map
+    "@context" "https://schema.org"
+    "@type" "Article"
+    "headline" $page.Title
+    "description" $page.Summary
+    "datePublished" $published
+    "dateModified" $modified
+    "url" .CanonicalURL
+    "image" $defaultOGImage
+    "author" $author
+    "publisher" $publisher
+    "mainEntityOfPage" $mainEntity
+  }}
+  <script type="application/ld+json">
+    {{ json $articleData }}
+  </script>
+{{ end }}
+
+{{ define "og_meta" }}
+  {{ $siteURL := getEnv "SITE_URL" "http://localhost:8080" }}
+  {{ $ogBucket := getEnv "OG_BUCKET" "" }}
+  {{ $ogPrefix := getEnv "OG_PREFIX" "dev" }}
+  {{ $defaultOGImage := "" }}
+  {{ if $ogBucket }}
+    {{ $defaultOGImage = printf "https://storage.googleapis.com/%s/%s/ogp/og_image.png" $ogBucket $ogPrefix }}
+  {{ else }}
+    {{ $defaultOGImage = printf "%s/tmp/images/%s/ogp/og_image.png" $siteURL $ogPrefix }}
+  {{ end }}
+
+
   <meta property="og:title" content="{{ .PageData.Page.Title }} - HuntersHub" />
   <meta property="og:description" content="{{ .PageData.Page.Summary }}" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="HuntersHub" />
+  <meta property="og:image" content="{{ $defaultOGImage }}" />
+  {{ if .CanonicalURL }}
+    <meta property="og:url" content="{{ .CanonicalURL }}" />
+  {{ end }}
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta
+    name="twitter:title"
+    content="{{ .PageData.Page.Title }} - HuntersHub"
+  />
+  <meta name="twitter:description" content="{{ .PageData.Page.Summary }}" />
+  <meta name="twitter:image" content="{{ $defaultOGImage }}" />
+  {{ if .CanonicalURL }}
+    <meta name="twitter:url" content="{{ .CanonicalURL }}" />
+  {{ end }}
 {{ end }}
 
 {{ define "page" }}

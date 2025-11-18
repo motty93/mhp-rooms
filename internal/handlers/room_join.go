@@ -142,5 +142,5 @@ func (h *RoomJoinHandler) RoomJoinPage(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	renderTemplate(w, "room_join.tmpl", data)
+	renderTemplate(w, r, "room_join.tmpl", data)
 }

@@ -135,7 +135,7 @@ func (ph *ProfileHandler) Profile(w http.ResponseWriter, r *http.Request) {
 		PageData: profileData,
 	}
 
-	renderTemplate(w, "profile.tmpl", data)
+	renderTemplate(w, r, "profile.tmpl", data)
 }
 
 // EditForm プロフィール編集フォームを返す（htmx用）

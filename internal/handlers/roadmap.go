@@ -57,5 +57,5 @@ func (h *RoadmapHandler) Index(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	renderTemplate(w, "roadmap/index.tmpl", data)
+	renderTemplate(w, r, "roadmap/index.tmpl", data)
 }

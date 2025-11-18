@@ -21,7 +21,7 @@ func (h *PageHandler) Contact(w http.ResponseWriter, r *http.Request) {
 		data := TemplateData{
 			Title: "お問い合わせ",
 		}
-		renderTemplate(w, "contact.tmpl", data)
+		renderTemplate(w, r, "contact.tmpl", data)
 	case "POST":
 		h.handleContactSubmission(w, r)
 	default:

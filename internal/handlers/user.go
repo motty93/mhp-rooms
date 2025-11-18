@@ -108,7 +108,7 @@ func (uh *UserHandler) Show(w http.ResponseWriter, r *http.Request) {
 		PageData: profileData,
 	}
 
-	renderTemplate(w, "user_profile.tmpl", data)
+	renderTemplate(w, r, "user_profile.tmpl", data)
 }
 
 // GetUserProfile APIエンドポイント：ユーザープロフィール情報を取得

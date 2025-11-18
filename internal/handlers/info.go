@@ -78,7 +78,7 @@ func (h *InfoHandler) List(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	renderTemplate(w, "info/list.tmpl", data)
+	renderTemplate(w, r, "info/list.tmpl", data)
 }
 
 // Detail は個別の更新情報を表示する
@@ -118,7 +118,7 @@ func (h *InfoHandler) Detail(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	renderTemplate(w, "info/detail.tmpl", data)
+	renderTemplate(w, r, "info/detail.tmpl", data)
 }
 
 // Feed はRSSフィードを返す
