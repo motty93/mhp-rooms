@@ -111,6 +111,7 @@ func (h *BlogHandler) Detail(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
 		Title:      foundArticle.Title,
 		StaticPage: true,
+		HideHeader: true,
 		PageData: map[string]interface{}{
 			"Article": foundArticle,
 		},
