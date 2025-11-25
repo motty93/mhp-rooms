@@ -15,19 +15,25 @@ const (
 	ArticleTypeFAQ         ArticleType = "faq"
 	ArticleTypeTerms       ArticleType = "terms"
 	ArticleTypePrivacy     ArticleType = "privacy"
+	// ブログ用カテゴリ
+	ArticleTypeBlogCommunity       ArticleType = "community"
+	ArticleTypeBlogTechnical       ArticleType = "technical"
+	ArticleTypeBlogTroubleshooting ArticleType = "troubleshooting"
 )
 
 type Article struct {
-	Title    string      `yaml:"title"`
-	Slug     string      `yaml:"slug"`
-	Date     time.Time   `yaml:"date"`
-	Updated  *time.Time  `yaml:"updated"`
-	Category ArticleType `yaml:"category"`
-	Summary  string      `yaml:"summary"`
-	Draft    bool        `yaml:"draft"`
-	Status   string      `yaml:"status"` // ロードマップ用（planned, in_progress, completed）
-	Content  string      // マークダウンから変換されたHTML
-	FilePath string      // 元のマークダウンファイルパス
+	Title       string      `yaml:"title"`
+	Slug        string      `yaml:"slug"`
+	Date        time.Time   `yaml:"date"`
+	Updated     *time.Time  `yaml:"updated"`
+	Category    ArticleType `yaml:"category"`
+	Summary     string      `yaml:"summary"`
+	Draft       bool        `yaml:"draft"`
+	Status      string      `yaml:"status"` // ロードマップ用（planned, in_progress, completed）
+	Images      []string    `yaml:"images"` // 記事内で使用する画像パスのリスト
+	Content     string      // マークダウンから変換されたHTML
+	FilePath    string      // 元のマークダウンファイルパス
+	ReadingTime int         // 読了時間（分）
 }
 
 type ArticleList []*Article

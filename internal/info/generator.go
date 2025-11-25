@@ -89,7 +89,7 @@ func (g *Generator) generateFeed(articles ArticleList) error {
 	now := time.Now()
 	feed := &feeds.Feed{
 		Title:       "HuntersHub 更新情報",
-		Link:        &feeds.Link{Href: "https://huntershub.com"},
+		Link:        &feeds.Link{Href: "https://huntershub.net"},
 		Description: "モンスターハンターポータブルシリーズのアドホックパーティ ルーム管理サービス",
 		Author:      &feeds.Author{Name: "HuntersHub Team"},
 		Created:     now,
@@ -110,7 +110,7 @@ func (g *Generator) generateFeed(articles ArticleList) error {
 		article := infoArticles[i]
 		item := &feeds.Item{
 			Title:       article.Title,
-			Link:        &feeds.Link{Href: fmt.Sprintf("https://huntershub.com/info/%s", article.Slug)},
+			Link:        &feeds.Link{Href: fmt.Sprintf("https://huntershub.net/info/%s", article.Slug)},
 			Description: article.Summary,
 			Content:     article.Content,
 			Created:     article.Date,

@@ -203,7 +203,9 @@
       "mcp__playwright__browser_run_code",
       "Bash(xargs:*)",
       "Bash(PORT=8102 ENV=development DB_TYPE=turso timeout 15s make run:*)",
-      "Bash(PORT=8102 ENV=development DB_TYPE=turso make:*)"
+      "Bash(PORT=8102 ENV=development DB_TYPE=turso make:*)",
+      "WebFetch(domain:w.atwiki.jp)",
+      "WebFetch(domain:docs.github.com)"
     ],
     "deny": []
   }
