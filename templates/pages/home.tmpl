@@ -177,7 +177,7 @@
               <article>
                 <!-- サムネイル -->
                 <div
-                  class="h-32 bg-gradient-to-br {{ if eq .Category "technical" }}
+                  class="h-32 {{ if .Images }}bg-gray-100{{ else }}bg-gradient-to-br {{ if eq .Category "technical" }}
                     from-purple-100 to-purple-50
                   {{ else if eq .Category "community" }}
                     from-green-100 to-green-50
@@ -185,9 +185,11 @@
                     from-red-100 to-red-50
                   {{ else }}
                     from-blue-100 to-blue-50
-                  {{ end }} flex items-center justify-center"
+                  {{ end }}{{ end }} flex items-center justify-center overflow-hidden"
                 >
-                  {{ if eq .Category "technical" }}
+                  {{ if .Images }}
+                    <img src="{{ index .Images 0 }}" alt="{{ .Title }}" class="w-full h-full object-cover" />
+                  {{ else if eq .Category "technical" }}
                     <svg
                       class="w-16 h-16 text-purple-400"
                       fill="none"

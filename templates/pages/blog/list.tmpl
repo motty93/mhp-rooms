@@ -17,10 +17,10 @@
         モンスターハンターポータブルシリーズに関する技術情報、コミュニティ情報、<br />
         トラブルシューティングなど、HuntersHubからの情報をお届けします。
       </p>
-      <div class="flex justify-center gap-3">
+      <div class="flex justify-center gap-2">
         <a href="/blog-feed.xml"
-          class="inline-flex items-center px-4 py-2 text-sm bg-orange-50 text-orange-700 border border-orange-200 rounded-lg hover:bg-orange-100 transition-colors">
-          <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+          class="inline-flex items-center px-3 py-1.5 text-xs text-gray-600 border border-gray-300 rounded hover:bg-gray-50 transition-colors">
+          <svg class="w-3.5 h-3.5 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
             <path d="M5 3a1 1 0 000 2c5.523 0 10 4.477 10 10a1 1 0 102 0C17 8.373 11.627 3 5 3z"></path>
             <path
               d="M4 9a1 1 0 011-1 7 7 0 017 7 1 1 0 11-2 0 5 5 0 00-5-5 1 1 0 01-1-1zM3 15a2 2 0 114 0 2 2 0 01-4 0z">
@@ -29,8 +29,8 @@
           RSS
         </a>
         <a href="/blog-atom.xml"
-          class="inline-flex items-center px-4 py-2 text-sm bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors">
-          <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+          class="inline-flex items-center px-3 py-1.5 text-xs text-gray-600 border border-gray-300 rounded hover:bg-gray-50 transition-colors">
+          <svg class="w-3.5 h-3.5 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
             <path d="M5 3a1 1 0 000 2c5.523 0 10 4.477 10 10a1 1 0 102 0C17 8.373 11.627 3 5 3z"></path>
             <path
               d="M4 9a1 1 0 011-1 7 7 0 017 7 1 1 0 11-2 0 5 5 0 00-5-5 1 1 0 01-1-1zM3 15a2 2 0 114 0 2 2 0 01-4 0z">
@@ -44,32 +44,33 @@
     <div x-data="{ category: '{{ .PageData.CurrentCategory }}' }">
       <!-- カテゴリータブ -->
       <div class="mb-8">
-        <div class="flex justify-center gap-2 border-b border-gray-200 overflow-x-auto pb-px">
+        <div
+          class="flex justify-start md:justify-center gap-2 border-b border-gray-200 overflow-x-auto pb-px scrollbar-hide">
           <button @click="category = 'all'"
             :class="category === 'all' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300'"
-            class="px-6 py-3 border-b-2 font-medium transition-colors whitespace-nowrap">
+            class="px-4 md:px-6 py-3 border-b-2 font-medium transition-colors whitespace-nowrap flex-shrink-0">
             すべて
           </button>
           <button @click="category = 'technical'"
             :class="category === 'technical' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300'"
-            class="px-6 py-3 border-b-2 font-medium transition-colors whitespace-nowrap">
+            class="px-4 md:px-6 py-3 border-b-2 font-medium transition-colors whitespace-nowrap flex-shrink-0">
             技術情報
           </button>
           <button @click="category = 'community'"
             :class="category === 'community' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300'"
-            class="px-6 py-3 border-b-2 font-medium transition-colors whitespace-nowrap">
+            class="px-4 md:px-6 py-3 border-b-2 font-medium transition-colors whitespace-nowrap flex-shrink-0">
             コミュニティ
           </button>
           <button @click="category = 'troubleshooting'"
             :class="category === 'troubleshooting' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300'"
-            class="px-6 py-3 border-b-2 font-medium transition-colors whitespace-nowrap">
+            class="px-4 md:px-6 py-3 border-b-2 font-medium transition-colors whitespace-nowrap flex-shrink-0">
             トラブルシューティング
           </button>
         </div>
       </div>
 
       <!-- 記事一覧（2列グリッド） -->
-      <div class="grid md:grid-cols-2 gap-4 min-h-[600px]">
+      <div class="grid md:grid-cols-2 gap-3">
         {{ if .PageData.Articles }}
         {{ range .PageData.Articles }}
         <a href="/blog/{{ .Slug }}"
@@ -77,7 +78,8 @@
           data-category="{{ .Category }}" x-show="category === 'all' || category === '{{ .Category }}'">
           <article class="flex h-full">
             <!-- サムネイル領域（横並び・小さめ） -->
-            <div class="w-32 flex-shrink-0 {{ if .Images }}bg-gray-100{{ else }}bg-gradient-to-br {{ if eq .Category "technical" }}from-purple-100 to-purple-50{{ else if eq .Category "community" }}from-green-100 to-green-50{{ else if eq .Category "troubleshooting" }}from-red-100 to-red-50{{ else }}from-blue-100 to-blue-50{{ end }}{{ end }} flex items-center justify-center overflow-hidden">
+            <div
+              class="w-32 flex-shrink-0 {{ if .Images }}bg-gray-100{{ else }}bg-gradient-to-br {{ if eq .Category "technical" }}from-purple-100 to-purple-50{{ else if eq .Category "community" }}from-green-100 to-green-50{{ else if eq .Category "troubleshooting" }}from-red-100 to-red-50{{ else }}from-blue-100 to-blue-50{{ end }}{{ end }} flex items-center justify-center overflow-hidden">
               {{ if .Images }}
               <img src="{{ index .Images 0 }}" alt="{{ .Title }}" class="w-full h-full object-cover" />
               {{ else if eq .Category "technical" }}
@@ -107,39 +109,40 @@
             </div>
 
             <!-- 記事情報 -->
-            <div class="flex-1 p-4 flex flex-col justify-between">
-              <div>
-                <div class="flex items-center gap-2 mb-2">
+            <div class="flex-1 p-3 flex flex-col justify-between min-w-0">
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 mb-1.5">
                   {{ if eq .Category "technical" }}
                   <span
-                    class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
+                    class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700 flex-shrink-0">
                     技術情報
                   </span>
                   {{ else if eq .Category "community" }}
                   <span
-                    class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
+                    class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700 flex-shrink-0">
                     コミュニティ
                   </span>
                   {{ else if eq .Category "troubleshooting" }}
                   <span
-                    class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">
+                    class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700 flex-shrink-0">
                     トラブルシューティング
                   </span>
                   {{ end }}
                 </div>
 
-                <h2 class="text-base font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
+                <h2
+                  class="text-sm md:text-base font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
                   {{ .Title }}
                 </h2>
               </div>
 
-              <div class="flex items-center gap-3 text-xs text-gray-500 mt-2">
+              <div class="flex items-center gap-2 text-xs text-gray-500 mt-1.5">
                 <time datetime="{{ .Date.Format "2006-01-02" }}">
                   {{ .Date.Format "2006/1/2" }}
                 </time>
                 {{ if gt .ReadingTime 0 }}
                 <span class="flex items-center">
-                  <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="w-3 h-3 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                   </svg>
