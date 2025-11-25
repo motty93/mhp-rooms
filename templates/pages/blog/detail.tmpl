@@ -1,0 +1,321 @@
+{{ define "head" }}
+<meta name="description" content="{{ .PageData.Article.Summary }}" />
+<meta name="keywords" content="HuntersHub,ハンターズハブ,モンスターハンター,モンハン,ブログ,技術情報" />
+<meta property="og:title" content="{{ .PageData.Article.Title }} - HuntersHub" />
+<meta property="og:description" content="{{ .PageData.Article.Summary }}" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="{{ .PageData.Article.Date.Format "2006-01-02T15:04:05Z07:00" }}" />
+{{ if .PageData.Article.Updated }}
+<meta property="article:modified_time" content="{{ .PageData.Article.Updated.Format "2006-01-02T15:04:05Z07:00" }}" />
+{{ end }}
+{{ end }}
+
+{{ define "page" }}
+<div class="container mx-auto px-4 py-8">
+  <!-- パンくずリスト -->
+  <nav class="mb-6 text-sm text-gray-600 max-w-7xl mx-auto">
+    <a href="/" class="hover:text-gray-800">ホーム</a>
+    <span class="mx-2">/</span>
+    <a href="/blog" class="hover:text-gray-800">HuntersHub通信</a>
+    <span class="mx-2">/</span>
+    <span class="text-gray-800">{{ .PageData.Article.Title }}</span>
+  </nav>
+
+  <!-- 2カラムレイアウト -->
+  <div class="max-w-7xl mx-auto">
+    <div class="flex flex-col lg:flex-row gap-8">
+      <!-- メインコンテンツ -->
+      <div class="flex-1 min-w-0">
+        <article class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8">
+          <header class="mb-8 border-b border-gray-200 pb-6">
+            <div class="flex items-center gap-2 mb-3">
+              {{ if eq .PageData.Article.Category "technical" }}
+              <span
+                class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                技術情報
+              </span>
+              {{ else if eq .PageData.Article.Category "community" }}
+              <span
+                class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                コミュニティ
+              </span>
+              {{ else if eq .PageData.Article.Category "troubleshooting" }}
+              <span
+                class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                トラブルシューティング
+              </span>
+              {{ end }}
+            </div>
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+              {{ .PageData.Article.Title }}
+            </h1>
+            <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+              <time datetime="{{ .PageData.Article.Date.Format "2006-01-02" }}">
+                {{ .PageData.Article.Date.Format "2006/1/2" }}
+              </time>
+              {{ if .PageData.Article.Updated }}
+              <span class="text-gray-400">•</span>
+              <time datetime="{{ .PageData.Article.Updated.Format "2006-01-02" }}">
+                更新: {{ .PageData.Article.Updated.Format "2006/1/2" }}
+              </time>
+              {{ end }}
+              {{ if gt .PageData.Article.ReadingTime 0 }}
+              <span class="text-gray-400">•</span>
+              <span class="flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                約{{ .PageData.Article.ReadingTime }}分
+              </span>
+              {{ end }}
+            </div>
+          </header>
+
+          <!-- 記事本文 -->
+          <div class="prose prose-lg max-w-none" id="article-content">
+            {{ .PageData.Article.Content | safeHTML }}
+          </div>
+          <style>
+            /* GitHubスタイルのMarkdown */
+            #article-content {
+              font-size: 16px;
+              line-height: 1.6;
+              color: #24292f;
+            }
+
+            /* 見出し */
+            #article-content h2 {
+              font-size: 1.5em;
+              font-weight: 600;
+              margin-top: 1.5em;
+              margin-bottom: 0.75em;
+              padding-bottom: 0.3em;
+              border-bottom: 1px solid #d0d7de;
+            }
+
+            #article-content h3 {
+              font-size: 1.25em;
+              font-weight: 600;
+              margin-top: 1.25em;
+              margin-bottom: 0.5em;
+            }
+
+            #article-content h4 {
+              font-size: 1em;
+              font-weight: 600;
+              margin-top: 1em;
+              margin-bottom: 0.5em;
+            }
+
+            /* 段落 */
+            #article-content p {
+              margin-top: 0;
+              margin-bottom: 1em;
+            }
+
+            /* リスト */
+            #article-content ul,
+            #article-content ol {
+              margin-top: 0;
+              margin-bottom: 1em;
+              padding-left: 2em;
+            }
+
+            #article-content ul {
+              list-style-type: disc;
+            }
+
+            #article-content ol {
+              list-style-type: decimal;
+            }
+
+            #article-content li {
+              margin-top: 0.25em;
+              margin-bottom: 0.25em;
+            }
+
+            #article-content li > p {
+              margin-bottom: 0.5em;
+            }
+
+            /* コード */
+            #article-content code {
+              padding: 0.2em 0.4em;
+              margin: 0;
+              font-size: 85%;
+              background-color: rgba(175, 184, 193, 0.2);
+              border-radius: 6px;
+              font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+            }
+
+            #article-content pre {
+              padding: 16px;
+              overflow: auto;
+              font-size: 85%;
+              line-height: 1.45;
+              background-color: #f6f8fa;
+              border-radius: 6px;
+              margin-top: 0;
+              margin-bottom: 1em;
+            }
+
+            #article-content pre code {
+              display: inline;
+              padding: 0;
+              margin: 0;
+              overflow: visible;
+              line-height: inherit;
+              word-wrap: normal;
+              background-color: transparent;
+              border: 0;
+            }
+
+            /* リンク */
+            #article-content a {
+              color: #0969da;
+              text-decoration: none;
+            }
+
+            #article-content a:hover {
+              text-decoration: underline;
+            }
+
+            /* 強調 */
+            #article-content strong {
+              font-weight: 600;
+            }
+
+            /* 水平線 */
+            #article-content hr {
+              height: 0.25em;
+              padding: 0;
+              margin: 24px 0;
+              background-color: #d0d7de;
+              border: 0;
+            }
+
+            /* 引用 */
+            #article-content blockquote {
+              padding: 0 1em;
+              color: #57606a;
+              border-left: 0.25em solid #d0d7de;
+              margin: 0 0 1em 0;
+            }
+          </style>
+        </article>
+
+        <!-- 一覧に戻る -->
+        <div class="mt-8">
+          <a href="/blog"
+            class="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7">
+              </path>
+            </svg>
+            ブログ一覧に戻る
+          </a>
+        </div>
+      </div>
+
+      <!-- サイドバー（デスクトップのみ） -->
+      <aside class="hidden lg:block lg:w-64 flex-shrink-0">
+        <div class="sticky top-20">
+          <!-- 目次 -->
+          <nav class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <h2 class="text-sm font-bold text-gray-900 mb-3 flex items-center">
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 6h16M4 12h16M4 18h7"></path>
+              </svg>
+              目次
+            </h2>
+            <div id="toc" class="text-sm space-y-1">
+              <!-- JavaScriptで動的に生成 -->
+            </div>
+          </nav>
+
+          <!-- シェアボタン（将来実装） -->
+          <div class="mt-4 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <h3 class="text-sm font-bold text-gray-900 mb-3">この記事をシェア</h3>
+            <div class="flex gap-2">
+              <button
+                class="flex-1 p-2 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors"
+                title="Twitter">
+                <svg class="w-5 h-5 mx-auto" fill="currentColor" viewBox="0 0 24 24">
+                  <path
+                    d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z">
+                  </path>
+                </svg>
+              </button>
+              <button
+                class="flex-1 p-2 bg-green-50 text-green-600 rounded hover:bg-green-100 transition-colors"
+                title="LINE">
+                <svg class="w-5 h-5 mx-auto" fill="currentColor" viewBox="0 0 24 24">
+                  <path
+                    d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314">
+                  </path>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<!-- 目次自動生成スクリプト -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const content = document.getElementById('article-content');
+    const toc = document.getElementById('toc');
+
+    if (!content || !toc) return;
+
+    // h2とh3要素を取得
+    const headings = content.querySelectorAll('h2, h3');
+
+    if (headings.length === 0) {
+      toc.innerHTML = '<p class="text-gray-500 text-xs">目次がありません</p>';
+      return;
+    }
+
+    // 目次HTML生成
+    let tocHTML = '<ul class="space-y-1">';
+    headings.forEach((heading, index) => {
+      // IDを付与（なければ）
+      if (!heading.id) {
+        heading.id = `heading-${index}`;
+      }
+
+      const level = heading.tagName.toLowerCase();
+      const text = heading.textContent;
+      const indent = level === 'h3' ? 'ml-3' : '';
+
+      tocHTML += `
+        <li class="${indent}">
+          <a href="#${heading.id}"
+             class="block py-1 px-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors text-xs leading-relaxed">
+            ${text}
+          </a>
+        </li>
+      `;
+    });
+    tocHTML += '</ul>';
+
+    toc.innerHTML = tocHTML;
+
+    // スムーススクロール
+    toc.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+  });
+</script>
+{{ end }}

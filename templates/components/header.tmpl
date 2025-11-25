@@ -1,7 +1,8 @@
 {{ define "header" }}
   {{ if .StaticPage }}
     <header
-      class="fixed top-0 left-0 right-0 z-50 fixed-header border-b border-gray-200 bg-white"
+      class="fixed top-0 left-0 right-0 z-50 fixed-header border-b border-gray-200 bg-white transition-transform duration-300"
+      id="static-header"
     >
       <div class="container mx-auto px-4">
         <div class="flex items-center justify-between h-16">
@@ -13,7 +14,24 @@
             />
             <h1 class="text-2xl font-bold text-gray-800">HuntersHub</h1>
           </a>
-          <div class="hidden md:flex items-center gap-3">
+
+
+          <div class="hidden md:flex lg:hidden items-center gap-3">
+            <a
+              href="/auth/login"
+              class="text-gray-700 hover:text-gray-900 font-medium transition-colors px-3 py-2 rounded-md hover:bg-gray-100"
+            >
+              ログイン
+            </a>
+            <a
+              href="/auth/register"
+              class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-2 px-4 rounded-md transition-colors"
+            >
+              新規登録
+            </a>
+          </div>
+
+          <div class="hidden lg:flex items-center gap-3">
             <a
               href="/auth/login"
               class="text-gray-700 hover:text-gray-900 font-medium transition-colors px-3 py-2 rounded-md hover:bg-gray-100"
@@ -92,6 +110,32 @@
             </button>
           </div>
           <div class="p-6 space-y-4">
+            <!-- ナビゲーションリンク -->
+            <div class="space-y-2 pb-4 border-b border-gray-200">
+              <a
+                href="/"
+                class="block w-full text-left text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+                data-static-menu-link
+              >
+                ホーム
+              </a>
+              <a
+                href="/rooms"
+                class="block w-full text-left text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+                data-static-menu-link
+              >
+                部屋一覧
+              </a>
+              <a
+                href="/contact"
+                class="block w-full text-left text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+                data-static-menu-link
+              >
+                お問い合わせ
+              </a>
+            </div>
+
+            <!-- 認証ボタン -->
             <a
               href="/auth/login"
               class="block w-full text-center bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors"
@@ -105,13 +149,6 @@
               data-static-menu-link
             >
               新規登録
-            </a>
-            <a
-              href="/rooms"
-              class="block w-full text-center text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-100 transition-colors"
-              data-static-menu-link
-            >
-              部屋一覧
             </a>
           </div>
         </div>
@@ -152,11 +189,58 @@
             link.addEventListener('click', closeMenu)
           })
         })
+
+        // スクロールヘッダー機能
+        ;(function() {
+          const header = document.getElementById('static-header')
+          if (!header) return
+
+          let lastScroll = 0
+
+          window.addEventListener('scroll', () => {
+            const currentScroll = window.pageYOffset
+
+            if (currentScroll <= 0) {
+              header.classList.remove('-translate-y-full')
+              return
+            }
+
+            if (currentScroll > lastScroll && currentScroll > 80) {
+              header.classList.add('-translate-y-full')
+            } else if (currentScroll < lastScroll) {
+              header.classList.remove('-translate-y-full')
+            }
+
+            lastScroll = currentScroll
+          })
+        })()
       </script>
     </header>
   {{ else }}
     <header
-      class="fixed top-0 left-0 right-0 z-50 fixed-header border-b border-gray-200"
+      class="fixed top-0 left-0 right-0 z-50 fixed-header border-b border-gray-200 transition-transform duration-300"
+      x-data="{
+        lastScroll: 0,
+        hidden: false,
+        init() {
+          window.addEventListener('scroll', () => {
+            const currentScroll = window.pageYOffset;
+            if (currentScroll <= 0) {
+              this.hidden = false;
+              return;
+            }
+
+            if (currentScroll > this.lastScroll && currentScroll > 80) {
+              this.hidden = true;
+            } else if (currentScroll < this.lastScroll) {
+              this.hidden = false;
+            }
+
+            this.lastScroll = currentScroll;
+          });
+        }
+      }"
+      :class="{ '-translate-y-full': hidden }"
     >
       <div class="container mx-auto px-4">
         <div class="flex items-center justify-between h-16">
@@ -170,6 +254,7 @@
               <h1 class="text-2xl font-bold text-gray-800">HuntersHub</h1>
             </a>
           </div>
+
 
           <div class="flex items-center space-x-6">
             <!-- 認証コントロール -->
