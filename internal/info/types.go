@@ -29,8 +29,8 @@ type Article struct {
 	Category    ArticleType `yaml:"category"`
 	Summary     string      `yaml:"summary"`
 	Draft       bool        `yaml:"draft"`
-	Status      string      `yaml:"status"` // ロードマップ用（planned, in_progress, completed）
-	Images      []string    `yaml:"images"` // 記事内で使用する画像パスのリスト
+	Status      string      `yaml:"status"`    // ロードマップ用（planned, in_progress, completed）
+	Thumbnail   string      `yaml:"thumbnail"` // サムネイル画像パス
 	Content     string      // マークダウンから変換されたHTML
 	FilePath    string      // 元のマークダウンファイルパス
 	ReadingTime int         // 読了時間（分）

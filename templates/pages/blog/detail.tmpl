@@ -77,9 +77,9 @@
             </div>
 
             <!-- サムネイル画像 -->
-            {{ if .PageData.Article.Images }}
+            {{ if .PageData.Article.Thumbnail }}
             <div class="mb-6 -mx-6 md:-mx-8">
-              <img src="{{ index .PageData.Article.Images 0 }}" alt="{{ .PageData.Article.Title }}"
+              <img src="{{ .PageData.Article.Thumbnail }}" alt="{{ .PageData.Article.Title }}"
                 class="w-full h-64 md:h-96 object-cover" />
             </div>
             {{ end }}

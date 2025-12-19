@@ -177,7 +177,7 @@
               <article>
                 <!-- サムネイル -->
                 <div
-                  class="h-32 {{ if .Images }}
+                  class="h-32 {{ if .Thumbnail }}
                     bg-gray-100
                   {{ else }}
                     bg-gradient-to-br
@@ -192,9 +192,9 @@
                     {{ end }}
                   {{ end }} flex items-center justify-center overflow-hidden"
                 >
-                  {{ if .Images }}
+                  {{ if .Thumbnail }}
                     <img
-                      src="{{ index .Images 0 }}"
+                      src="{{ .Thumbnail }}"
                       alt="{{ .Title }}"
                       class="w-full h-full object-cover"
                     />

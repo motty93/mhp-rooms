@@ -79,9 +79,9 @@
           <article class="flex h-full">
             <!-- サムネイル領域（横並び・小さめ） -->
             <div
-              class="w-32 flex-shrink-0 {{ if .Images }}bg-gray-100{{ else }}bg-gradient-to-br {{ if eq .Category "technical" }}from-purple-100 to-purple-50{{ else if eq .Category "community" }}from-green-100 to-green-50{{ else if eq .Category "troubleshooting" }}from-red-100 to-red-50{{ else }}from-blue-100 to-blue-50{{ end }}{{ end }} flex items-center justify-center overflow-hidden">
-              {{ if .Images }}
-              <img src="{{ index .Images 0 }}" alt="{{ .Title }}" class="w-full h-full object-cover" />
+              class="w-32 flex-shrink-0 {{ if .Thumbnail }}bg-gray-100{{ else }}bg-gradient-to-br {{ if eq .Category "technical" }}from-purple-100 to-purple-50{{ else if eq .Category "community" }}from-green-100 to-green-50{{ else if eq .Category "troubleshooting" }}from-red-100 to-red-50{{ else }}from-blue-100 to-blue-50{{ end }}{{ end }} flex items-center justify-center overflow-hidden">
+              {{ if .Thumbnail }}
+              <img src="{{ .Thumbnail }}" alt="{{ .Title }}" class="w-full h-full object-cover" />
               {{ else if eq .Category "technical" }}
               <svg class="w-10 h-10 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
