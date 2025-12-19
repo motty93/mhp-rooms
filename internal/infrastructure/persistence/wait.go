@@ -16,7 +16,20 @@ func WaitForDB(cfg *config.Config, maxAttempts int, delay time.Duration) error {
 		return nil
 	}
 
-	// PostgreSQLの場合は接続確認
+	// Tursoの場合は待機不要（サーバーレスで常時起動）
+	// 接続失敗は設定ミスかトークン期限切れなのでリトライしても解決しない
+	if cfg.Database.Type == "turso" {
+		log.Println("Tursoデータベースに接続中...")
+		adapter, err := NewDBAdapter(cfg)
+		if err != nil {
+			return fmt.Errorf("Tursoデータベース接続エラー: %w", err)
+		}
+		adapter.Close()
+		log.Println("Tursoデータベース接続に成功しました")
+		return nil
+	}
+
+	// PostgreSQLの場合は接続確認（Docker起動待ち）
 	for i := 0; i < maxAttempts; i++ {
 		adapter, err := NewDBAdapter(cfg)
 		if err == nil {
