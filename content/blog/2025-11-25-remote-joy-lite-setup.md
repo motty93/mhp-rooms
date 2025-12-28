@@ -30,52 +30,64 @@ Remote Joy Liteは、PSPの画面をPCにリアルタイム表示し、録画も
 
 ### ステップ1：必要ファイルを用意
 
-- Remote Joy Lite本体（v0.19またはv0.20α）
-- `libusb-win32-bin-1.2.6.0.zip`（PSP Type Bドライバ）
+- [Remote Joy Lite v0.19](https://www.sendspace.com/file/w0kk8h)
+- [libusb-win32-bin-1.2.6.0.zip](https://sourceforge.net/projects/libusb-win32/files/libusb-win32-releases/1.2.6.0/)（PSP Type Bドライバ）
 
 ### ステップ2：PSP側セットアップ
 
 #### プラグインを配置
 
-1. PSPをUSB接続し、メモリースティックのルートに`seplugins`フォルダを作成（既存なら不要）
-2. `RemoteJoyLite.prx`を`ms0:/seplugins/`へコピー（PSP Goは`ef0:/seplugins/`）
+1. PSPをUSBケーブルでPCに接続し、メモリースティックを開く
+2. メモリースティックを開いてすぐの場所に`seplugins`フォルダを作成（すでにあれば不要）
+3. ダウンロードした`RemoteJoyLite.prx`を`seplugins`フォルダの中にコピー
 
-#### 設定ファイルに追記
+※PSP Goの場合は本体内蔵メモリの`seplugins`フォルダにコピーしてください。
 
-`seplugins`配下のテキストに1行ずつ追加します。
+#### 設定ファイルを作成・追記
 
+`seplugins`フォルダ内に以下の2つのテキストファイルを作成し、それぞれに1行追加します。
+
+**game.txt**
 ```
 ms0:/seplugins/RemoteJoyLite.prx 1
 ```
 
-PSP Goの場合:
-
+**vsh.txt**
 ```
-ef0:/seplugins/RemoteJoyLite.prx 1
+ms0:/seplugins/RemoteJoyLite.prx 1
 ```
 
-- `game.txt`：ゲーム・自作アプリで有効化
-- `vsh.txt`：XMBで有効化
+PSP Goの場合は`ms0:`を`ef0:`に置き換えてください。
+
+> **game.txtとvsh.txtの違い**
+>
+> - `game.txt`：ゲーム起動中にプラグインを有効化
+> - `vsh.txt`：ホーム画面（XMB）でプラグインを有効化
+>
+> ゲームだけ映ればいい場合は`game.txt`のみでOKです。両方有効にすると、ゲーム起動時の切り替えでフリーズする場合があります。
 
 #### プラグインを有効化
 
-1. Rを押しながら起動しリカバリーモードへ
-2. Pluginsから`RemoteJoyLite.prx`を`Enabled`
-3. PSPを再起動
+1. PSPのホーム画面（XMB）でSELECTボタンを押して「VSH MENU」を開く
+2. 「XMB PLUGINS」と「GAME PLUGINS」をそれぞれ「Enabled」に変更
+3. 「PLUGIN MANAGER」を開き、`RemoteJoyLite.prx`を「Enabled」に変更
+
+※各項目は×ボタンで切り替えられます。
 
 ### ステップ3：PC側セットアップ
 
 #### PSP Type Bドライバを入れる
 
-1. `libusb-win32-bin-1.2.6.0.zip`を解凍し、`inf-wizard.exe`を管理者権限で起動
-2. 「PSP Type B」を選択し、指示に従ってドライバを生成・インストール
-3. デバイスマネージャーで「PSP Type B」が表示されることを確認
+1. `libusb-win32-bin-1.2.6.0.zip`を解凍し、`inf-wizard.exe`を右クリック→「管理者として実行」で起動
+2. リストから「PSP Type B」を選択し、画面の指示に従ってドライバを生成・インストール
+3. デバイスマネージャー（Windowsキー + X →「デバイスマネージャー」）で「PSP Type B」が表示されれば成功
 
 **Windows 10/11で認識しないとき**
 
-- UEFIでセキュアブートを無効化
-- 「ドライバ署名の強制を無効化」で再起動してからインストール
-- それでもNGならZadigで「libusb-win32」ドライバに切り替え
+- PC起動時にBIOS/UEFI設定画面を開き、セキュアブートを無効化
+- Windowsの「ドライバ署名の強制を無効化」モードで再起動してからインストール
+- それでもうまくいかない場合はZadigというツールで「libusb-win32」ドライバに切り替え
+- すべてうまくいかない場合は[Wikiの「STEP3 PSP Type-Bドライバーのインストール」](https://w.atwiki.jp/mhp3rdta/pages/151.html)を参照してください
 
 ## 使い方
 
@@ -87,21 +99,22 @@ ef0:/seplugins/RemoteJoyLite.prx 1
 
 ### キーボードショートカット
 
-- `Alt + Enter`：全画面切替
-- `Esc`または右クリック：設定メニュー
-- `F1`：FPS・カラーモード表示
-- `F3`：転送ON/OFF
-- `F4`：タイトルバー表示切替
+- `Alt + Enter`：全画面表示に切替
+- `Esc`または右クリック：設定メニューを開く
+- `F1`：FPS（フレームレート）とカラーモードを表示
+- `F3`：映像転送のON/OFF
+- `F4`：タイトルバーの表示/非表示
 
 ### 推奨設定とコツ
 
-- 設定「Etc」タブの「アスペクト比を保持」にチェック
-- 重い場合はFPSを60→30/10に下げる
-- 録画は余裕のあるドライブへ保存し、USBハブを介さずPC直挿し推奨
+- 設定画面の「Etc」タブで「アスペクト比を保持」にチェックを入れると、画面が歪まない
+- 動作が重い場合はFPSを60から30や10に下げると軽くなる
+- 録画ファイルは空き容量に余裕のあるドライブに保存する
+- USBハブを使わず、PCのUSBポートに直接つなぐのがおすすめ
 
 ### 音声について
 
-Remote Joy Liteは映像のみ。音声が欲しい場合はPSPのイヤホン端子とPCのライン入力をステレオミニケーブルで接続してください。
+Remote Joy Liteは映像のみ転送されます。音声も欲しい場合は、PSPのイヤホン端子とPCのマイク端子（またはライン入力）をオーディオケーブル（3.5mmステレオミニ）で接続してください。
 
 ## モンハンでの活用
 
@@ -114,36 +127,36 @@ Remote Joy Liteは映像のみ。音声が欲しい場合はPSPのイヤホン�
 
 ### 「WAITING」のまま映らない
 
-1. デバイスマネージャーで「PSP Type B」を確認
-2. ドライバを削除→再インストール
-3. `inf-wizard.exe`を管理者で実行
-4. Zadigで「libusb-win32」に変更を試す
+1. デバイスマネージャーで「PSP Type B」が表示されているか確認
+2. ドライバを一度削除してから再インストール
+3. `inf-wizard.exe`を右クリック→「管理者として実行」
+4. それでもダメならZadigで「libusb-win32」ドライバに切り替えを試す
 
 ### プラグインが有効化されない
 
-- `RemoteJoyLite.prx`の配置パスを再確認
-- `game.txt`/`vsh.txt`の末尾「1」が有効化指定になっているか
-- リカバリーモードのPluginsで`Enabled`になっているか
+- `RemoteJoyLite.prx`を置いた場所が正しいか再確認
+- `game.txt`や`vsh.txt`の行末が「1」（有効）になっているか確認
+- リカバリーモードの「Plugins」で「Enabled」になっているか確認
 
 ### Windows 10/11で不安定
 
-- セキュアブート無効化、署名強制オフで再インストール
-- それでも不安定なら別USBポートや別PCで確認
+- セキュアブートを無効化し、ドライバ署名の強制をオフにしてから再インストール
+- それでも不安定なら別のUSBポートや別のPCで試してみる
 
-### 録画にノイズ・ドロップが出る
+### 録画にノイズ・コマ落ちが出る
 
-- 別のUSBケーブルやポートを試す
-- 他の常駐プラグインとの競合を疑い、不要なプラグインを無効化
-- 保存先ドライブの空き容量と速度を確認
+- 別のUSBケーブルやUSBポートを試す
+- 他に入れているプラグインとの相性が悪い可能性があるため、不要なプラグインを一時的に無効化
+- 保存先ドライブの空き容量と書き込み速度を確認
 
 ### 特定のゲームだけ動かない
 
-- CFWを6.35 PRO-B2以降（または同世代のLME）に更新
-- 拡張メモリ系プラグインを一時停止
+- CFWを6.35 PRO-B2以降（または同世代のLME）に更新する
+- 拡張メモリ系のプラグインを一時的に無効化してみる
 
 ### 音が出ない
 
-Remote Joy Lite単体では音声転送できません。PSPとPCをオーディオケーブルで物理接続してください。
+Remote Joy Liteは映像のみで、音声は転送されません。音声が必要な場合は、PSPとPCをオーディオケーブルで接続してください。
 
 ## 代替手段
 

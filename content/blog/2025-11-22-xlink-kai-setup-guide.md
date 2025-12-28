@@ -5,6 +5,7 @@ date: 2025-11-22T00:00:00+09:00
 category: "technical"
 summary: "XLink Kaiを使用してPSPのモンスターハンターポータブル2ndGをオンラインでプレイするためのセットアップ方法を詳しく解説します。"
 draft: false
+thumbnail: "/static/images/blog/xlink-kai-setup-guide/main.webp"
 ---
 
 ## はじめに
