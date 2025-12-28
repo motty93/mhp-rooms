@@ -17,6 +17,7 @@ type Data struct {
 	User                   interface{}
 	PageData               interface{}
 	CanonicalURL           string
+	SiteURL                string
 	SSEHost                string
 	IsProduction           bool
 	AnalyticsMeasurementID string

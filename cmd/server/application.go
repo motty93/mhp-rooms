@@ -36,6 +36,7 @@ type Application struct {
 	infoHandler        *handlers.InfoHandler
 	roadmapHandler     *handlers.RoadmapHandler
 	operatorHandler    *handlers.OperatorHandler
+	blogHandler        *handlers.BlogHandler
 	guideHandler       *handlers.StaticPageHandler
 	faqHandler         *handlers.StaticPageHandler
 	termsHandler       *handlers.StaticPageHandler
@@ -89,6 +90,9 @@ func (app *Application) initDatabase() error {
 func (app *Application) initHandlers() error {
 	app.repo = repository.NewRepository(app.db)
 	articleGenerator := info.NewGenerator("static/generated/info", info.DefaultContentSources())
+	blogGenerator := info.NewGenerator("static/generated/blog", []info.ContentSource{
+		{Dir: "content/blog", DefaultCategory: info.ArticleTypeBlogTechnical},
+	})
 
 	// SSE Hubを初期化
 	app.sseHub = sse.NewHub()
@@ -121,6 +125,7 @@ func (app *Application) initHandlers() error {
 	app.infoHandler = handlers.NewInfoHandler(app.repo, articleGenerator)
 	app.roadmapHandler = handlers.NewRoadmapHandler(app.repo, articleGenerator)
 	app.operatorHandler = handlers.NewOperatorHandler(app.repo, articleGenerator)
+	app.blogHandler = handlers.NewBlogHandler(app.repo, blogGenerator)
 	app.guideHandler = handlers.NewGuideHandler(app.repo, articleGenerator)
 	app.faqHandler = handlers.NewFAQHandler(app.repo, articleGenerator)
 	app.termsHandler = handlers.NewTermsHandler(app.repo, articleGenerator)
