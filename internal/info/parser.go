@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
+	"unicode/utf8"
 
 	"github.com/yuin/goldmark"
 	meta "github.com/yuin/goldmark-meta"
@@ -60,7 +62,40 @@ func (p *Parser) ParseFile(filePath string) (*Article, error) {
 		return nil, fmt.Errorf("メタデータのアンマーシャルエラー: %w", err)
 	}
 
+	// 読了時間を計算
+	article.ReadingTime = calculateReadingTime(string(content))
+
 	return article, nil
+}
+
+// calculateReadingTime は記事の読了時間を計算する（日本語: 500文字/分）
+func calculateReadingTime(content string) int {
+	// マークダウンのメタデータ部分（---で囲まれた部分）を除外
+	parts := strings.SplitN(content, "---", 3)
+	if len(parts) >= 3 {
+		content = parts[2]
+	}
+
+	// マークダウン記法を除外（簡易版）
+	content = strings.ReplaceAll(content, "#", "")
+	content = strings.ReplaceAll(content, "*", "")
+	content = strings.ReplaceAll(content, "_", "")
+	content = strings.ReplaceAll(content, "`", "")
+	content = strings.ReplaceAll(content, "[", "")
+	content = strings.ReplaceAll(content, "]", "")
+	content = strings.ReplaceAll(content, "(", "")
+	content = strings.ReplaceAll(content, ")", "")
+
+	// 文字数をカウント
+	charCount := utf8.RuneCountInString(content)
+
+	// 日本語の平均読書速度: 500文字/分
+	minutes := charCount / 500
+	if minutes < 1 {
+		return 1
+	}
+
+	return minutes
 }
 
 // ディレクトリ内の全マークダウンファイルをパースする

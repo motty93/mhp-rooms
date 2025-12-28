@@ -1,16 +1,16 @@
 {{ define "head" }}
   <meta
     name="description"
-    content="モンハンシリーズのパーティメンバーを募集できる掲示板サービス。ポータブルシリーズ・MHXXに対応したプレイヤー募集 - HuntersHub（ハンターズハブ）"
+    content="モンスターハンター全シリーズ対応のオンラインマルチプレイ仲間募集掲示板。MHP/MHP2/MHP2G/MHP3/MHXX/MHW/MHWIBのプレイヤー募集・パーティ募集。XLink Kai・PPSSPP対応。2025年も現役で遊べる - HuntersHub"
   />
   <meta
     name="keywords"
-    content="モンハン,アドホック,パーティ,MHP,MHP2,MHP2G,MHP3,MHXX,オンライン,協力プレイ,HuntersHub,ハンターズハブ"
+    content="モンハン,モンスターハンター,MHP,MHP2,MHP2G,MHP3,MHXX,ダブルクロス,MHW,ワールド,アイスボーン,MHWIB,オンライン,マルチプレイ,協力プレイ,仲間募集,プレイヤー募集,野良,募集掲示板,リアルタイム,XLink Kai,PPSSPP,アドホックパーティ,PSP,Switch,Steam,PS4,PS5,2025,今から遊べる,現役,ポータブルシリーズ,HuntersHub,ハンターズハブ"
   />
   <meta property="og:title" content="ハンター募集 - HuntersHub" />
   <meta
     property="og:description"
-    content="モンハンシリーズのパーティメンバー募集掲示板。仲間を集めてオンラインプレイを楽しもう"
+    content="MHP/MHP2G/MHP3/MHXX/MHW/MHWIBのパーティメンバー募集掲示板。リアルタイムで仲間を見つけてオンラインプレイを楽しもう"
   />
   <meta property="og:type" content="website" />
   <script type="application/ld+json">
@@ -19,11 +19,11 @@
       "@type": "WebSite",
       "name": "HuntersHub",
       "alternateName": "ハンターズハブ",
-      "url": "https://huntershub.com",
-      "description": "モンハンシリーズのパーティメンバー募集掲示板",
+      "url": "https://huntershub.net",
+      "description": "モンスターハンター全シリーズ対応のパーティメンバー募集掲示板。MHP/MHP2/MHP2G/MHP3/MHXX/MHW/MHWIBのリアルタイム仲間募集サービス",
       "potentialAction": {
         "@type": "SearchAction",
-        "target": "https://huntershub.com/rooms?q={search_term_string}",
+        "target": "https://huntershub.net/rooms?q={search_term_string}",
         "query-input": "required name=search_term_string"
       }
     }
@@ -154,6 +154,179 @@
       </svg>
     </button>
   </div>
+
+  <!-- ブログプロモーションセクション -->
+  {{ if .PageData.LatestBlogArticles }}
+    <section class="py-12 bg-gradient-to-r from-blue-50 to-purple-50">
+      <div class="container mx-auto px-4">
+        <div class="text-center mb-8">
+          <h3 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+            HuntersHub通信 📡
+          </h3>
+          <p class="text-gray-600">
+            開発の裏話やコミュニティの最新情報をお届け
+          </p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          {{ range .PageData.LatestBlogArticles }}
+            <a
+              href="/blog/{{ .Slug }}"
+              class="group block bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-200"
+            >
+              <article>
+                <!-- サムネイル -->
+                <div
+                  class="h-32 {{ if .Thumbnail }}
+                    bg-gray-100
+                  {{ else }}
+                    bg-gradient-to-br
+                    {{ if eq .Category "technical" }}
+                      from-purple-100 to-purple-50
+                    {{ else if eq .Category "community" }}
+                      from-green-100 to-green-50
+                    {{ else if eq .Category "troubleshooting" }}
+                      from-red-100 to-red-50
+                    {{ else }}
+                      from-blue-100 to-blue-50
+                    {{ end }}
+                  {{ end }} flex items-center justify-center overflow-hidden"
+                >
+                  {{ if .Thumbnail }}
+                    <img
+                      src="{{ .Thumbnail }}"
+                      alt="{{ .Title }}"
+                      class="w-full h-full object-cover"
+                    />
+                  {{ else if eq .Category "technical" }}
+                    <svg
+                      class="w-16 h-16 text-purple-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                      ></path>
+                    </svg>
+                  {{ else if eq .Category "community" }}
+                    <svg
+                      class="w-16 h-16 text-green-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                      ></path>
+                    </svg>
+                  {{ else if eq .Category "troubleshooting" }}
+                    <svg
+                      class="w-16 h-16 text-red-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                      ></path>
+                    </svg>
+                  {{ else }}
+                    <svg
+                      class="w-16 h-16 text-blue-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      ></path>
+                    </svg>
+                  {{ end }}
+                </div>
+
+                <!-- 記事情報 -->
+                <div class="p-4">
+                  <div class="mb-2">
+                    {{ if eq .Category "technical" }}
+                      <span
+                        class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700"
+                      >
+                        技術情報
+                      </span>
+                    {{ else if eq .Category "community" }}
+                      <span
+                        class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700"
+                      >
+                        コミュニティ
+                      </span>
+                    {{ else if eq .Category "troubleshooting" }}
+                      <span
+                        class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700"
+                      >
+                        トラブルシューティング
+                      </span>
+                    {{ end }}
+                  </div>
+
+                  <h4
+                    class="text-base font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2 mb-2"
+                  >
+                    {{ .Title }}
+                  </h4>
+
+                  <div class="flex items-center gap-2 text-xs text-gray-500">
+                    <time datetime="{{ .Date.Format "2006-01-02" }}">
+                      {{ .Date.Format "2006/1/2" }}
+                    </time>
+                    {{ if gt .ReadingTime 0 }}
+                      <span>•</span>
+                      <span>約{{ .ReadingTime }}分</span>
+                    {{ end }}
+                  </div>
+                </div>
+              </article>
+            </a>
+          {{ end }}
+        </div>
+
+        <div class="text-center mt-8">
+          <a
+            href="/blog"
+            class="inline-flex items-center gap-2 px-6 py-3 bg-white text-gray-700 font-medium rounded-lg border border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-all"
+          >
+            もっと見る
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              ></path>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </section>
+  {{ end }}
+
 
   <!-- 特徴セクション -->
   <section class="py-16 bg-white">

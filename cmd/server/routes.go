@@ -81,6 +81,7 @@ func (app *Application) setupPageRoutes(r chi.Router) {
 	infoHandler := app.infoHandler
 	roadmapHandler := app.roadmapHandler
 	operatorHandler := app.operatorHandler
+	blogHandler := app.blogHandler
 
 	r.Get("/", ph.Home)
 	r.Get("/contact", app.withOptionalAuth(ph.Contact))
@@ -105,6 +106,12 @@ func (app *Application) setupPageRoutes(r chi.Router) {
 	r.Get("/info-atom.xml", infoHandler.AtomFeed)
 	r.Get("/roadmap", roadmapHandler.Index)
 	r.Get("/operator", operatorHandler.Index)
+
+	// ブログ（完全静的のため認証ミドルウェアを適用しない）
+	r.Get("/blog", blogHandler.List)
+	r.Get("/blog/{slug}", blogHandler.Detail)
+	r.Get("/blog-feed.xml", blogHandler.Feed)
+	r.Get("/blog-atom.xml", blogHandler.AtomFeed)
 }
 
 func (app *Application) setupRoomRoutes(r chi.Router) {
@@ -258,9 +265,7 @@ func (app *Application) setupStaticRoutes(r chi.Router) {
 	})
 
 	// robots.txtへのルート（クローラー対応）
-	r.Get("/robots.txt", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "static/robots.txt")
-	})
+	r.Get("/robots.txt", app.pageHandler.Robots)
 
 	// ローカル環境のOGP画像配信（OG_BUCKETが空の場合のみ）
 	if os.Getenv("OG_BUCKET") == "" {

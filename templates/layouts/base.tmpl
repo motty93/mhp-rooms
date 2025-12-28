@@ -23,7 +23,7 @@
           "@graph": [
             {
               "@type": "WebSite",
-              "@id": "{{ $siteURL }}/#website",
+              "@id": "{{ $siteURL }}/schema/website",
               "url": "{{ $siteURL }}/",
               "name": "HuntersHub",
               "description": "モンハンシリーズのパーティメンバーを募集できる掲示板サービス",
@@ -40,7 +40,7 @@
             },
             {
               "@type": "Organization",
-              "@id": "{{ $siteURL }}/#organization",
+              "@id": "{{ $siteURL }}/schema/organization",
               "name": "HuntersHub",
               "url": "{{ $siteURL }}/",
               "logo": "{{ $siteURL }}/static/images/icon.webp",
@@ -49,7 +49,7 @@
             },
             {
               "@type": "SiteNavigationElement",
-              "@id": "{{ $siteURL }}/#navigation",
+              "@id": "{{ $siteURL }}/schema/navigation",
               "name": [
                 "ホーム",
                 "部屋一覧",
@@ -72,6 +72,9 @@
           ]
         }
       </script> {{ $gaMeasurementID := .AnalyticsMeasurementID }}
+      {{ if .CanonicalURL }}
+        <link rel="canonical" href="{{ .CanonicalURL }}" />
+      {{ end }}
       {{ if and .AnalyticsEnabled $gaMeasurementID }}
         <!-- Google Analytics 4 -->
         <script
@@ -309,6 +312,9 @@
         />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="HuntersHub" />
+        {{ if .CanonicalURL }}
+          <meta property="og:url" content="{{ .CanonicalURL }}" />
+        {{ end }}
         {{ $ogBucket := getEnv "OG_BUCKET" "" }}
         {{ $ogPrefix := getEnv "OG_PREFIX" "dev" }}
         {{ $siteURL := getEnv "SITE_URL" "http://localhost:8080" }}
@@ -321,6 +327,9 @@
         <meta property="og:image" content="{{ $defaultOGImage }}" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:image" content="{{ $defaultOGImage }}" />
+        {{ if .CanonicalURL }}
+          <meta name="twitter:url" content="{{ .CanonicalURL }}" />
+        {{ end }}
       {{ end }}
     </head>
 
