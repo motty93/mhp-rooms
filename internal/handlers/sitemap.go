@@ -47,6 +47,12 @@ func (h *PageHandler) Sitemap(w http.ResponseWriter, r *http.Request) {
 		urls = append(urls, articleURLs...)
 	}
 
+	if blogURLs, err := h.buildBlogURLs(baseURL); err != nil {
+		log.Printf("sitemap: failed to load blog articles: %v", err)
+	} else {
+		urls = append(urls, blogURLs...)
+	}
+
 	if roomURLs, err := h.buildRoomURLs(baseURL); err != nil {
 		log.Printf("sitemap: failed to load rooms: %v", err)
 	} else {
@@ -169,6 +175,50 @@ func (h *PageHandler) buildArticleURLs(baseURL string) ([]URL, error) {
 	}
 
 	return urls, nil
+}
+
+func (h *PageHandler) buildBlogURLs(baseURL string) ([]URL, error) {
+	articles, err := h.loadArticles()
+	if err != nil {
+		return nil, err
+	}
+
+	// ブログ一覧ページ
+	urls := make([]URL, 0, len(articles)+1)
+	if latest := newestArticleDate(articles, info.ArticleTypeBlogCommunity, info.ArticleTypeBlogTechnical, info.ArticleTypeBlogTroubleshooting); latest != nil {
+		urls = append(urls, URL{
+			Loc:        baseURL + "/blog",
+			LastMod:    formatSitemapDate(*latest),
+			ChangeFreq: "weekly",
+			Priority:   0.8,
+		})
+	}
+
+	// 各ブログ記事
+	for _, article := range articles {
+		if !isBlogArticle(article.Category) {
+			continue
+		}
+		urls = append(urls, URL{
+			Loc:        fmt.Sprintf("%s/blog/%s", baseURL, article.Slug),
+			LastMod:    formatSitemapDate(articleTimestamp(article)),
+			ChangeFreq: "monthly",
+			Priority:   0.7,
+		})
+	}
+
+	return urls, nil
+}
+
+func isBlogArticle(category info.ArticleType) bool {
+	switch category {
+	case info.ArticleTypeBlogCommunity,
+		info.ArticleTypeBlogTechnical,
+		info.ArticleTypeBlogTroubleshooting:
+		return true
+	default:
+		return false
+	}
 }
 
 func (h *PageHandler) buildRoomURLs(baseURL string) ([]URL, error) {

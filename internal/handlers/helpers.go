@@ -29,17 +29,22 @@ func BuildOGPImageURL(roomID uuid.UUID, ogVersion int) string {
 	)
 }
 
-// withCanonicalURL ensures every view receives a canonical URL derived from the request path.
+// withCanonicalURL ensures every view receives a canonical URL and site URL derived from the request path.
 func withCanonicalURL(r *http.Request, data TemplateData) TemplateData {
+	base := strings.TrimRight(config.GetEnv("SITE_URL", "http://localhost:8080"), "/")
+
+	if data.SiteURL == "" {
+		data.SiteURL = base
+	}
+
 	if r == nil || data.CanonicalURL != "" {
 		return data
 	}
-	data.CanonicalURL = buildCanonicalURL(r)
+	data.CanonicalURL = buildCanonicalURL(r, base)
 	return data
 }
 
-func buildCanonicalURL(r *http.Request) string {
-	base := strings.TrimRight(config.GetEnv("SITE_URL", "http://localhost:8080"), "/")
+func buildCanonicalURL(r *http.Request, base string) string {
 	path := r.URL.Path
 	if path == "" {
 		path = "/"

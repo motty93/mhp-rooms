@@ -1,13 +1,59 @@
 {{ define "head" }}
 <meta name="description" content="{{ .PageData.Article.Summary }}" />
 <meta name="keywords" content="HuntersHub,ハンターズハブ,モンスターハンター,モンハン,ブログ,技術情報" />
+<!-- Open Graph -->
 <meta property="og:title" content="{{ .PageData.Article.Title }} - HuntersHub" />
 <meta property="og:description" content="{{ .PageData.Article.Summary }}" />
 <meta property="og:type" content="article" />
+<meta property="og:url" content="{{ .CanonicalURL }}" />
+<meta property="og:site_name" content="HuntersHub" />
+<meta property="og:locale" content="ja_JP" />
+{{ if .PageData.Article.Thumbnail }}
+<meta property="og:image" content="{{ .SiteURL }}{{ .PageData.Article.Thumbnail }}" />
+{{ else }}
+<meta property="og:image" content="{{ .SiteURL }}/static/images/ogp-default.png" />
+{{ end }}
 <meta property="article:published_time" content="{{ .PageData.Article.Date.Format "2006-01-02T15:04:05Z07:00" }}" />
 {{ if .PageData.Article.Updated }}
 <meta property="article:modified_time" content="{{ .PageData.Article.Updated.Format "2006-01-02T15:04:05Z07:00" }}" />
 {{ end }}
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="{{ .PageData.Article.Title }} - HuntersHub" />
+<meta name="twitter:description" content="{{ .PageData.Article.Summary }}" />
+{{ if .PageData.Article.Thumbnail }}
+<meta name="twitter:image" content="{{ .SiteURL }}{{ .PageData.Article.Thumbnail }}" />
+{{ else }}
+<meta name="twitter:image" content="{{ .SiteURL }}/static/images/ogp-default.png" />
+{{ end }}
+<!-- 構造化データ (JSON-LD) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "{{ .PageData.Article.Title }}",
+  "description": "{{ .PageData.Article.Summary }}",
+  "datePublished": "{{ .PageData.Article.Date.Format "2006-01-02T15:04:05Z07:00" }}",
+  {{ if .PageData.Article.Updated }}"dateModified": "{{ .PageData.Article.Updated.Format "2006-01-02T15:04:05Z07:00" }}",{{ else }}"dateModified": "{{ .PageData.Article.Date.Format "2006-01-02T15:04:05Z07:00" }}",{{ end }}
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "{{ .CanonicalURL }}"
+  },
+  "author": {
+    "@type": "Organization",
+    "name": "HuntersHub"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "HuntersHub",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "{{ .SiteURL }}/static/images/icons/icon-512x512.png"
+    }
+  }{{ if .PageData.Article.Thumbnail }},
+  "image": "{{ .SiteURL }}{{ .PageData.Article.Thumbnail }}"{{ end }}
+}
+</script>
 {{ end }}
 
 {{ define "page" }}
