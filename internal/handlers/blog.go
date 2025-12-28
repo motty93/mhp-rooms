@@ -9,7 +9,7 @@ import (
 	"mhp-rooms/internal/repository"
 )
 
-type InfoHandler struct {
+type BlogHandler struct {
 	BaseHandler
 	articlesPath string
 	feedPath     string
@@ -17,29 +17,29 @@ type InfoHandler struct {
 	generator    *info.Generator
 }
 
-func NewInfoHandler(repo *repository.Repository, generator *info.Generator) *InfoHandler {
-	return &InfoHandler{
+func NewBlogHandler(repo *repository.Repository, generator *info.Generator) *BlogHandler {
+	return &BlogHandler{
 		BaseHandler: BaseHandler{
 			repo: repo,
 		},
-		articlesPath: "static/generated/info/articles.json",
-		feedPath:     "static/generated/info/feed.xml",
-		atomPath:     "static/generated/info/atom.xml",
+		articlesPath: "static/generated/blog/articles.json",
+		feedPath:     "static/generated/blog/feed.xml",
+		atomPath:     "static/generated/blog/atom.xml",
 		generator:    generator,
 	}
 }
 
 // loadArticles はJSONファイルから記事を読み込む
-func (h *InfoHandler) loadArticles() (info.ArticleList, error) {
+func (h *BlogHandler) loadArticles() (info.ArticleList, error) {
 	articles, err := loadArticlesWithFallback(h.articlesPath, h.generator)
 	if err != nil {
-		return nil, fmt.Errorf("記事データの読み込みに失敗しました: %w", err)
+		return nil, fmt.Errorf("ブログ記事データの読み込みに失敗しました: %w", err)
 	}
 	return articles, nil
 }
 
-// List は更新情報一覧を表示する
-func (h *InfoHandler) List(w http.ResponseWriter, r *http.Request) {
+// List はブログ一覧を表示する
+func (h *BlogHandler) List(w http.ResponseWriter, r *http.Request) {
 	articles, err := h.loadArticles()
 	if err != nil {
 		http.Error(w, "記事の読み込みに失敗しました", http.StatusInternalServerError)
@@ -51,17 +51,17 @@ func (h *InfoHandler) List(w http.ResponseWriter, r *http.Request) {
 	var filteredArticles info.ArticleList
 
 	switch category {
-	case "news":
-		filteredArticles = articles.FilterByCategory(info.ArticleTypeNews)
-	case "release":
-		filteredArticles = articles.FilterByCategory(info.ArticleTypeRelease)
-	case "maintenance":
-		filteredArticles = articles.FilterByCategory(info.ArticleTypeMaintenance)
+	case "community":
+		filteredArticles = articles.FilterByCategory(info.ArticleTypeBlogCommunity)
+	case "technical":
+		filteredArticles = articles.FilterByCategory(info.ArticleTypeBlogTechnical)
+	case "troubleshooting":
+		filteredArticles = articles.FilterByCategory(info.ArticleTypeBlogTroubleshooting)
 	default:
-		// すべての更新情報（ロードマップは除外）
-		filteredArticles = append(filteredArticles, articles.FilterByCategory(info.ArticleTypeRelease)...)
-		filteredArticles = append(filteredArticles, articles.FilterByCategory(info.ArticleTypeNews)...)
-		filteredArticles = append(filteredArticles, articles.FilterByCategory(info.ArticleTypeMaintenance)...)
+		// すべてのブログ記事
+		filteredArticles = append(filteredArticles, articles.FilterByCategory(info.ArticleTypeBlogCommunity)...)
+		filteredArticles = append(filteredArticles, articles.FilterByCategory(info.ArticleTypeBlogTechnical)...)
+		filteredArticles = append(filteredArticles, articles.FilterByCategory(info.ArticleTypeBlogTroubleshooting)...)
 		category = "all"
 	}
 
@@ -69,8 +69,7 @@ func (h *InfoHandler) List(w http.ResponseWriter, r *http.Request) {
 	filteredArticles = filteredArticles.SortByDateDesc()
 
 	data := TemplateData{
-		Title:      "更新情報",
-		HideHeader: true,
+		Title:      "HuntersHub通信",
 		StaticPage: true,
 		PageData: map[string]interface{}{
 			"Articles":        filteredArticles,
@@ -78,11 +77,11 @@ func (h *InfoHandler) List(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	renderTemplate(w, r, "info/list.tmpl", data)
+	renderTemplate(w, r, "blog/list.tmpl", data)
 }
 
-// Detail は個別の更新情報を表示する
-func (h *InfoHandler) Detail(w http.ResponseWriter, r *http.Request) {
+// Detail は個別のブログ記事を表示する
+func (h *BlogHandler) Detail(w http.ResponseWriter, r *http.Request) {
 	slug := chi.URLParam(r, "slug")
 	if slug == "" {
 		http.Error(w, "記事が見つかりません", http.StatusNotFound)
@@ -111,18 +110,18 @@ func (h *InfoHandler) Detail(w http.ResponseWriter, r *http.Request) {
 
 	data := TemplateData{
 		Title:      foundArticle.Title,
-		HideHeader: true,
 		StaticPage: true,
+		HideHeader: true,
 		PageData: map[string]interface{}{
 			"Article": foundArticle,
 		},
 	}
 
-	renderTemplate(w, r, "info/detail.tmpl", data)
+	renderTemplate(w, r, "blog/detail.tmpl", data)
 }
 
 // Feed はRSSフィードを返す
-func (h *InfoHandler) Feed(w http.ResponseWriter, r *http.Request) {
+func (h *BlogHandler) Feed(w http.ResponseWriter, r *http.Request) {
 	feedData, err := readGeneratedFile(h.feedPath, h.generator)
 	if err != nil {
 		http.Error(w, "フィードが見つかりません", http.StatusNotFound)
@@ -134,7 +133,7 @@ func (h *InfoHandler) Feed(w http.ResponseWriter, r *http.Request) {
 }
 
 // AtomFeed はAtomフィードを返す
-func (h *InfoHandler) AtomFeed(w http.ResponseWriter, r *http.Request) {
+func (h *BlogHandler) AtomFeed(w http.ResponseWriter, r *http.Request) {
 	feedData, err := readGeneratedFile(h.atomPath, h.generator)
 	if err != nil {
 		http.Error(w, "フィードが見つかりません", http.StatusNotFound)

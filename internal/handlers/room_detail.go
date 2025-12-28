@@ -128,12 +128,13 @@ func (h *RoomDetailHandler) RoomDetail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// カスタムレンダリング関数
-	renderRoomDetailTemplate(w, "room_detail.tmpl", data)
+	renderRoomDetailTemplate(w, r, "room_detail.tmpl", data)
 }
 
 // renderRoomDetailTemplate は部屋詳細専用のテンプレートレンダリング関数
-func renderRoomDetailTemplate(w http.ResponseWriter, templateName string, data interface{}) {
+func renderRoomDetailTemplate(w http.ResponseWriter, r *http.Request, templateName string, data TemplateData) {
 	funcMap := view.TemplateFuncs()
+	data = withCanonicalURL(r, data)
 
 	tmpl, err := template.New("").Funcs(funcMap).ParseFiles(
 		filepath.Join("templates", "layouts", "room_detail.tmpl"),

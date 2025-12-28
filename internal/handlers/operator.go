@@ -62,5 +62,5 @@ func (h *OperatorHandler) Index(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	renderTemplate(w, "operator/index.tmpl", data)
+	renderTemplate(w, r, "operator/index.tmpl", data)
 }

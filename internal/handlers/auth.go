@@ -48,7 +48,7 @@ func (h *AuthHandler) LoginPage(w http.ResponseWriter, r *http.Request) {
 			"RedirectURL": redirectURL,
 		},
 	}
-	renderTemplate(w, "login.tmpl", data)
+	renderTemplate(w, r, "login.tmpl", data)
 }
 
 func (h *AuthHandler) RegisterPage(w http.ResponseWriter, r *http.Request) {
@@ -68,7 +68,7 @@ func (h *AuthHandler) RegisterPage(w http.ResponseWriter, r *http.Request) {
 			"RedirectURL": redirectURL,
 		},
 	}
-	renderTemplate(w, "register.tmpl", data)
+	renderTemplate(w, r, "register.tmpl", data)
 }
 
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
@@ -115,7 +115,7 @@ func (h *AuthHandler) AuthCallback(w http.ResponseWriter, r *http.Request) {
 	data := TemplateData{
 		Title: "認証中",
 	}
-	renderTemplate(w, "auth-callback.tmpl", data)
+	renderTemplate(w, r, "auth-callback.tmpl", data)
 }
 
 func (h *AuthHandler) CurrentUser(w http.ResponseWriter, r *http.Request) {

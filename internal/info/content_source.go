@@ -16,5 +16,6 @@ func DefaultContentSources() []ContentSource {
 		{Dir: "content/faq", DefaultCategory: ArticleTypeFAQ},
 		{Dir: "content/terms", DefaultCategory: ArticleTypeTerms},
 		{Dir: "content/privacy", DefaultCategory: ArticleTypePrivacy},
+		{Dir: "content/blog", DefaultCategory: ArticleTypeBlogTechnical},
 	}
 }

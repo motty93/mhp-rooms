@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"fmt"
+	"net/http"
+	"strings"
 
 	"mhp-rooms/internal/config"
 
@@ -25,4 +27,27 @@ func BuildOGPImageURL(roomID uuid.UUID, ogVersion int) string {
 		"%s/tmp/images/%s/ogp/rooms/%s.png?v=%d",
 		siteURL, ogPrefix, roomID, ogVersion,
 	)
+}
+
+// withCanonicalURL ensures every view receives a canonical URL and site URL derived from the request path.
+func withCanonicalURL(r *http.Request, data TemplateData) TemplateData {
+	base := strings.TrimRight(config.GetEnv("SITE_URL", "http://localhost:8080"), "/")
+
+	if data.SiteURL == "" {
+		data.SiteURL = base
+	}
+
+	if r == nil || data.CanonicalURL != "" {
+		return data
+	}
+	data.CanonicalURL = buildCanonicalURL(r, base)
+	return data
+}
+
+func buildCanonicalURL(r *http.Request, base string) string {
+	path := r.URL.Path
+	if path == "" {
+		path = "/"
+	}
+	return base + path
 }

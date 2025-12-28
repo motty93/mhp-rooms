@@ -1,4 +1,5 @@
-let supabase
+// Supabase クライアントのローカル参照（CDNの supabase グローバル変数との競合を避けるため別名使用）
+let supabaseInstance
 
 async function initializeSupabase() {
   try {
@@ -25,12 +26,12 @@ async function initializeSupabase() {
       },
     })
 
-    supabase = window.supabaseClient
+    supabaseInstance = window.supabaseClient
 
     // 初期セッションを取得
     const {
       data: { session },
-    } = await supabase.auth.getSession()
+    } = await supabaseInstance.auth.getSession()
 
     // 初期セッションを設定（セッションがある場合はクッキーも設定）
     if (session && session.access_token) {
@@ -43,7 +44,7 @@ async function initializeSupabase() {
     }
 
     // 認証状態の変更を監視（初期化時は呼ばれない）
-    supabase.auth.onAuthStateChange((event, session) => {
+    supabaseInstance.auth.onAuthStateChange((event, session) => {
       // 初期化イベント（INITIAL_SESSION）は無視する
       if (event === 'INITIAL_SESSION') {
         return
@@ -70,7 +71,7 @@ async function initializeSupabase() {
     })
 
     window.supabaseAuth = auth
-    return supabase
+    return supabaseInstance
   } catch (error) {
     console.error('Supabase初期化エラー:', error)
 
@@ -110,7 +111,7 @@ function createDummyAuth() {
 
 const auth = {
   async signOut() {
-    const { error } = await supabase.auth.signOut()
+    const { error } = await supabaseInstance.auth.signOut()
     if (error) throw error
   },
 
@@ -118,7 +119,7 @@ const auth = {
     const {
       data: { user },
       error,
-    } = await supabase.auth.getUser()
+    } = await supabaseInstance.auth.getUser()
     if (error) throw error
     return user
   },
@@ -127,7 +128,7 @@ const auth = {
     const {
       data: { session },
       error,
-    } = await supabase.auth.getSession()
+    } = await supabaseInstance.auth.getSession()
     if (error) throw error
     return session
   },
@@ -138,7 +139,7 @@ const auth = {
   },
 
   async signInWithGoogle() {
-    const { data, error } = await supabase.auth.signInWithOAuth({
+    const { data, error } = await supabaseInstance.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
@@ -155,7 +156,7 @@ const auth = {
   },
 
   async updateUserMetadata(metadata) {
-    const { data, error } = await supabase.auth.updateUser({
+    const { data, error } = await supabaseInstance.auth.updateUser({
       data: metadata,
     })
 
