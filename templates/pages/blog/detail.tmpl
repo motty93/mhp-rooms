@@ -449,28 +449,31 @@
   document.querySelectorAll('[data-share-button]').forEach(button => {
     button.addEventListener('click', function() {
       const platform = this.getAttribute('data-share-button');
-      const url = encodeURIComponent(window.location.href);
-      const title = encodeURIComponent(document.title);
+      const rawUrl = window.location.href;
+      const rawTitle = document.title;
+      // タイトルとURLを改行で区切ったテキスト
+      const shareText = encodeURIComponent(`${rawTitle}\n\n${rawUrl}`);
+      const encodedUrl = encodeURIComponent(rawUrl);
       let shareUrl = '';
       switch (platform) {
         case 'x':
-          shareUrl = `https://twitter.com/intent/tweet?url=${url}&text=${title}`;
+          shareUrl = `https://twitter.com/intent/tweet?text=${shareText}`;
           window.open(shareUrl, '_blank', 'noopener,noreferrer');
           break;
         case 'facebook':
-          shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
+          shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
           window.open(shareUrl, '_blank', 'noopener,noreferrer');
           break;
         case 'bluesky':
-          shareUrl = `https://bsky.app/intent/compose?text=${title}%20${url}`;
+          shareUrl = `https://bsky.app/intent/compose?text=${shareText}`;
           window.open(shareUrl, '_blank', 'noopener,noreferrer');
           break;
         case 'line':
-          shareUrl = `https://line.me/R/msg/text/?${title}%20${url}`;
+          shareUrl = `https://line.me/R/msg/text/?${shareText}`;
           window.open(shareUrl, '_blank', 'noopener,noreferrer');
           break;
         case 'threads':
-          shareUrl = `https://threads.net/intent/post?text=${title}%20${url}`;
+          shareUrl = `https://threads.net/intent/post?text=${shareText}`;
           window.open(shareUrl, '_blank', 'noopener,noreferrer');
           break;
         case 'feed':
@@ -506,6 +509,18 @@
           break;
       }
     });
+  });
+
+  // 記事内の外部リンクを別タブで開く
+  document.querySelectorAll('.prose a').forEach(link => {
+    const href = link.getAttribute('href');
+    if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
+      // 外部リンクの場合
+      if (!href.includes(window.location.hostname)) {
+        link.setAttribute('target', '_blank');
+        link.setAttribute('rel', 'noopener noreferrer');
+      }
+    }
   });
 
 </script>
