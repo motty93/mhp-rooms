@@ -6,6 +6,8 @@ import (
 
 	"mhp-rooms/internal/info"
 	"mhp-rooms/internal/repository"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type RoadmapHandler struct {
@@ -44,9 +46,8 @@ func (h *RoadmapHandler) Index(w http.ResponseWriter, r *http.Request) {
 	// ロードマップのみフィルタリング
 	roadmaps := articles.FilterByCategory(info.ArticleTypeRoadmap)
 
-	// ステータス順、日付順でソート（予定 → 開発中 → 完了の順）
-	// 簡易実装：日付降順のみ
-	roadmaps = roadmaps.SortByDateDesc()
+	// ステータス順、日付順でソート（開発中 → 予定 → 完了の順）
+	roadmaps = roadmaps.SortByStatusAndDate()
 
 	data := TemplateData{
 		Title:      "開発ロードマップ",
@@ -58,4 +59,45 @@ func (h *RoadmapHandler) Index(w http.ResponseWriter, r *http.Request) {
 	}
 
 	renderTemplate(w, r, "roadmap/index.tmpl", data)
+}
+
+// Detail は個別のロードマップ詳細を表示する
+func (h *RoadmapHandler) Detail(w http.ResponseWriter, r *http.Request) {
+	slug := chi.URLParam(r, "slug")
+	if slug == "" {
+		http.Error(w, "ロードマップが見つかりません", http.StatusNotFound)
+		return
+	}
+
+	articles, err := h.loadArticles()
+	if err != nil {
+		http.Error(w, "ロードマップの読み込みに失敗しました", http.StatusInternalServerError)
+		return
+	}
+
+	// ロードマップのみフィルタリングしてからスラッグで検索
+	roadmaps := articles.FilterByCategory(info.ArticleTypeRoadmap)
+	var foundArticle *info.Article
+	for _, article := range roadmaps {
+		if article.Slug == slug {
+			foundArticle = article
+			break
+		}
+	}
+
+	if foundArticle == nil {
+		http.Error(w, "ロードマップが見つかりません", http.StatusNotFound)
+		return
+	}
+
+	data := TemplateData{
+		Title:      foundArticle.Title + " - 開発ロードマップ",
+		HideHeader: true,
+		StaticPage: true,
+		PageData: map[string]interface{}{
+			"Article": foundArticle,
+		},
+	}
+
+	renderTemplate(w, r, "roadmap/detail.tmpl", data)
 }

@@ -17,75 +17,35 @@
       </p>
     </div>
 
-    <!-- ステータス凡例 -->
-    <div class="mb-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
-      <h2 class="font-bold text-gray-800 mb-3">ステータスの見方</h2>
-      <div class="flex flex-wrap gap-4">
-        <div class="flex items-center gap-2">
-          <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700">
-            予定
-          </span>
-          <span class="text-sm text-gray-600">企画・設計段階</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-            開発中
-          </span>
-          <span class="text-sm text-gray-600">実装を進行中</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-            完了
-          </span>
-          <span class="text-sm text-gray-600">リリース済み</span>
-        </div>
-      </div>
-    </div>
-
     <!-- ロードマップアイテム一覧 -->
     <div class="grid gap-6 md:grid-cols-2">
       {{ if .PageData.Roadmaps }}
       {{ range .PageData.Roadmaps }}
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-        <div class="flex items-start justify-between mb-3">
-          <div class="flex-1">
-            <div class="mb-3">
-              {{ if eq .Status "planned" }}
-              <span
-                class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700">
-                予定
-              </span>
-              {{ else if eq .Status "in_progress" }}
-              <span
-                class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                開発中
-              </span>
-              {{ else if eq .Status "completed" }}
-              <span
-                class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                完了
-              </span>
-              {{ end }}
-            </div>
-            <h2 class="text-xl font-bold text-gray-800 mb-2">
-              {{ .Title }}
-            </h2>
-            <p class="text-gray-600 mb-4">{{ .Summary }}</p>
-            <div class="prose prose-sm max-w-none text-gray-700" x-data="{ expanded: false }">
-              <div x-show="!expanded" class="line-clamp-3">
-                {{ truncate .Content 200 }}
-              </div>
-              <div x-show="expanded" x-cloak>
-                {{ .Content | safeHTML }}
-              </div>
-              <button @click="expanded = !expanded" class="text-blue-600 hover:text-blue-800 text-sm font-medium mt-2">
-                <span x-show="!expanded">詳細を見る ▼</span>
-                <span x-show="expanded" x-cloak>閉じる ▲</span>
-              </button>
-            </div>
-          </div>
+      <a href="/roadmap/{{ .Slug }}" class="block bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md hover:border-blue-300 transition-all cursor-pointer">
+        <div class="mb-3">
+          {{ if eq .Status "planned" }}
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700">
+            予定
+          </span>
+          {{ else if eq .Status "in_progress" }}
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+            開発中
+          </span>
+          {{ else if eq .Status "completed" }}
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+            完了
+          </span>
+          {{ end }}
         </div>
-      </div>
+        <h2 class="text-xl font-bold text-gray-800 mb-2">{{ .Title }}</h2>
+        <p class="text-gray-600 mb-4">{{ .Summary }}</p>
+        <span class="inline-flex items-center text-blue-600 text-sm font-medium">
+          詳細を見る
+          <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
+        </span>
+      </a>
       {{ end }}
       {{ else }}
       <div class="col-span-2 bg-blue-50 border border-blue-200 rounded-lg p-8 text-center">

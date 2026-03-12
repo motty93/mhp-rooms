@@ -88,8 +88,8 @@
 
 1. **リポジトリのクローン**
    ```bash
-   git clone https://github.com/motty93/mhp-rooms.git
-   cd mhp-rooms
+   git clone https://github.com/motty93/huntershub.git
+   cd huntershub
    ```
 
 2. **Dockerコンテナの起動**
@@ -132,7 +132,7 @@ make container-down # Dockerコンテナを停止
 
 ## DBコンテナの接続
 ```bash
-docker exec -it mhp-rooms-db-1 psql -U mhp_user -d mhp_rooms_dev
+docker exec -it huntershub-db-1 psql -U huntershub_user -d huntershub_dev
 ```
 
 ## 環境変数
@@ -227,4 +227,4 @@ claude
 
 ## お問い合わせ
 
-質問や提案がある場合は、[Issues](https://github.com/motty93/mhp-rooms/issues) でお知らせください。
+質問や提案がある場合は、[Issues](https://github.com/motty93/huntershub/issues) でお知らせください。
