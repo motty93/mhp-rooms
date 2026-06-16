@@ -57,7 +57,6 @@ document.addEventListener('alpine:init', () => {
 
     // モーダルを開く
     async open() {
-
       // 認証チェック
       const authStore = Alpine.store('auth')
       if (!authStore.initialized || !authStore.isAuthenticated) {
@@ -146,7 +145,11 @@ document.addEventListener('alpine:init', () => {
 
     // フォームバリデーション
     get isValidForm() {
-      return this.formData.name.trim() && this.formData.gameVersionId && this.formData.maxPlayers
+      return (
+        this.formData.name.trim() &&
+        this.formData.gameVersionId &&
+        this.formData.maxPlayers
+      )
     },
 
     // 部屋作成処理
@@ -217,8 +220,11 @@ document.addEventListener('alpine:init', () => {
         // 成功時は部屋詳細画面に遷移
         this.close()
 
+        const roomId = result.room_id || result.room?.id || null
         if (result.redirect) {
           window.location.href = result.redirect
+        } else if (roomId) {
+          window.location.href = `/rooms/${roomId}?share=created`
         } else {
           window.location.reload()
         }

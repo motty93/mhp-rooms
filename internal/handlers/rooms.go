@@ -328,9 +328,10 @@ func (h *RoomHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 
 	// 作成成功時には部屋詳細URLを返す
 	response := map[string]interface{}{
-		"message": "ルームを作成しました",
-		"room_id": room.ID.String(),
-		"room":    room,
+		"message":  "ルームを作成しました",
+		"room_id":  room.ID.String(),
+		"room":     room,
+		"redirect": fmt.Sprintf("/rooms/%s?share=created", room.ID.String()),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
