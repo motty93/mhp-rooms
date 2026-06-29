@@ -161,7 +161,7 @@ function roomDetail() {
       // チャットの最下部にスクロール
       this.$nextTick(() => this.scrollToBottom());
 
-      if (this.shouldShowCreatedShareModal()) {
+      if (this.consumeCreatedShareFlag()) {
         this.$nextTick(() => this.openCreatedShareModal());
       }
 
@@ -735,7 +735,7 @@ function roomDetail() {
       return this.shareMessages[randomIndex];
     },
 
-    shouldShowCreatedShareModal() {
+    consumeCreatedShareFlag() {
       const url = new URL(window.location.href);
       if (url.searchParams.get('share') !== 'created') {
         return false;

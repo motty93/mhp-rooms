@@ -207,9 +207,9 @@ document.addEventListener('alpine:init', () => {
         }
 
         const result = await response.json()
+        const roomId = result.room_id || result.room?.id || null
 
         if (window.Analytics && window.Analytics.isEnabled()) {
-          const roomId = result.room_id || result.room?.id || null
           window.Analytics.trackRoomCreate(
             roomId,
             this.formData.gameVersionId,
@@ -220,7 +220,6 @@ document.addEventListener('alpine:init', () => {
         // 成功時は部屋詳細画面に遷移
         this.close()
 
-        const roomId = result.room_id || result.room?.id || null
         if (result.redirect) {
           window.location.href = result.redirect
         } else if (roomId) {
