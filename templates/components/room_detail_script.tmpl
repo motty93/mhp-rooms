@@ -161,6 +161,10 @@ function roomDetail() {
       // チャットの最下部にスクロール
       this.$nextTick(() => this.scrollToBottom());
 
+      if (this.consumeCreatedShareFlag()) {
+        this.$nextTick(() => this.openCreatedShareModal());
+      }
+
       // ページを離れる時にSSE接続を閉じる
       window.addEventListener('beforeunload', () => {
         if (this.eventSource) {
@@ -731,10 +735,40 @@ function roomDetail() {
       return this.shareMessages[randomIndex];
     },
 
-    async openShare() {
+    consumeCreatedShareFlag() {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('share') !== 'created') {
+        return false;
+      }
+
+      url.searchParams.delete('share');
+      const nextUrl = url.pathname + url.search + url.hash;
+      window.history.replaceState({}, '', nextUrl);
+      return true;
+    },
+
+    prepareShareData() {
       const hasPassword = {{ .PageData.Room.HasPassword }};
       const roomId = '{{ .PageData.Room.ID }}';
       const joinUrl = window.location.origin + '/rooms/' + roomId + '/join';
+
+      if (hasPassword) {
+        this.shareData.url = joinUrl;
+        this.shareData.text = this.getRandomShareMessage() + '\n※パスワード保護されています';
+      } else {
+        // 統一されたUX: パスワードなしでも/joinを使用
+        this.shareData.url = joinUrl;
+        this.shareData.text = this.getRandomShareMessage();
+      }
+    },
+
+    openCreatedShareModal() {
+      this.prepareShareData();
+      this.showShareModal = true;
+    },
+
+    async openShare() {
+      const hasPassword = {{ .PageData.Room.HasPassword }};
 
       if (hasPassword) {
         const confirmMessage =
@@ -746,14 +780,9 @@ function roomDetail() {
         if (!confirm(confirmMessage)) {
           return;
         }
-
-        this.shareData.url = joinUrl;
-        this.shareData.text = this.getRandomShareMessage() + '\n※パスワード保護されています';
-      } else {
-        // 統一されたUX: パスワードなしでも/joinを使用
-        this.shareData.url = joinUrl;
-        this.shareData.text = this.getRandomShareMessage();
       }
+
+      this.prepareShareData();
 
       if (this.isMobileDevice() && navigator.share) {
         try {

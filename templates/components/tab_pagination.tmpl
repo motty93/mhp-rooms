@@ -1,0 +1,94 @@
+{{ define "tab_pagination" }}
+  {{ if gt .TotalPages 1 }}
+    {{ $currentPage := .CurrentPage }}
+    {{ $totalPages := .TotalPages }}
+    {{ $baseURL := .BaseURL }}
+    <nav
+      class="mt-6 flex justify-center items-center gap-2"
+      aria-label="ページ送り"
+    >
+      <!-- 前のページ -->
+      {{ if gt $currentPage 1 }}
+        <button
+          type="button"
+          hx-get="{{ $baseURL }}?page={{ sub $currentPage 1 }}"
+          hx-target="#tab-content"
+          hx-indicator="#tab-loader"
+          hx-swap="innerHTML show:#profile-tabs:top"
+          class="inline-flex items-center justify-center w-9 h-9 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+          aria-label="前のページ"
+        >
+          <i class="fa-solid fa-chevron-left text-sm"></i>
+        </button>
+      {{ else }}
+        <span
+          class="inline-flex items-center justify-center w-9 h-9 text-gray-400 bg-gray-100 border border-gray-300 rounded-md cursor-not-allowed"
+          aria-label="前のページ（無効）"
+        >
+          <i class="fa-solid fa-chevron-left text-sm"></i>
+        </span>
+      {{ end }}
+
+
+      <!-- ページ番号（先頭・末尾・現在ページ前後を表示。先頭・末尾・省略記号はモバイルでは非表示） -->
+      <div class="flex items-center gap-1">
+        {{ range $page := sequence 1 $totalPages }}
+          {{ if eq $page $currentPage }}
+            <span
+              class="inline-flex items-center justify-center min-w-[2.25rem] h-9 px-2 text-sm font-medium text-white bg-gray-800 border border-gray-800 rounded-md"
+              aria-current="page"
+            >
+              {{ $page }}
+            </span>
+          {{ else if and (ge $page (sub $currentPage 1)) (le $page (add $currentPage 1)) }}
+            <button
+              type="button"
+              hx-get="{{ $baseURL }}?page={{ $page }}"
+              hx-target="#tab-content"
+              hx-indicator="#tab-loader"
+              hx-swap="innerHTML show:#profile-tabs:top"
+              class="inline-flex items-center justify-center min-w-[2.25rem] h-9 px-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+            >
+              {{ $page }}
+            </button>
+          {{ else if or (eq $page 1) (eq $page $totalPages) }}
+            <button
+              type="button"
+              hx-get="{{ $baseURL }}?page={{ $page }}"
+              hx-target="#tab-content"
+              hx-indicator="#tab-loader"
+              hx-swap="innerHTML show:#profile-tabs:top"
+              class="hidden sm:inline-flex items-center justify-center min-w-[2.25rem] h-9 px-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+            >
+              {{ $page }}
+            </button>
+          {{ else if or (eq $page (sub $currentPage 2)) (eq $page (add $currentPage 2)) }}
+            <span class="hidden sm:inline px-1 text-gray-500">…</span>
+          {{ end }}
+        {{ end }}
+      </div>
+
+      <!-- 次のページ -->
+      {{ if lt $currentPage $totalPages }}
+        <button
+          type="button"
+          hx-get="{{ $baseURL }}?page={{ add $currentPage 1 }}"
+          hx-target="#tab-content"
+          hx-indicator="#tab-loader"
+          hx-swap="innerHTML show:#profile-tabs:top"
+          class="inline-flex items-center justify-center w-9 h-9 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+          aria-label="次のページ"
+        >
+          <i class="fa-solid fa-chevron-right text-sm"></i>
+        </button>
+      {{ else }}
+        <span
+          class="inline-flex items-center justify-center w-9 h-9 text-gray-400 bg-gray-100 border border-gray-300 rounded-md cursor-not-allowed"
+          aria-label="次のページ（無効）"
+        >
+          <i class="fa-solid fa-chevron-right text-sm"></i>
+        </span>
+      {{ end }}
+    </nav>
+  {{ end }}
+{{ end }}
