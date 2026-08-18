@@ -43,15 +43,31 @@ func NewProfileHandler(repo *repository.Repository, jwtAuth *middleware.JWTAuth)
 	}
 }
 
+// activityWindowDays アクティビティタブに表示する期間（日数）
+const activityWindowDays = 14
+
+// roomsTabData 「作成した部屋」タブの描画データ
+type roomsTabData struct {
+	Rooms      []RoomSummary
+	Pagination Pagination
+}
+
+// activityTabData 「アクティビティ」タブの描画データ
+type activityTabData struct {
+	Activities []Activity
+	Pagination Pagination
+}
+
 type ProfileData struct {
-	User          *models.User      `json:"user"`
-	IsOwnProfile  bool              `json:"isOwnProfile"`
-	Activities    []Activity        `json:"activities"`
-	Rooms         []RoomSummary     `json:"rooms"`
-	Followers     []Follower        `json:"followers"`
-	FollowerCount int64             `json:"followerCount"`
-	FavoriteGames []string          `json:"favoriteGames"`
-	PlayTimes     *models.PlayTimes `json:"playTimes"`
+	User            *models.User      `json:"user"`
+	IsOwnProfile    bool              `json:"isOwnProfile"`
+	Activities      []Activity        `json:"activities"`
+	Rooms           []RoomSummary     `json:"rooms"`
+	RoomsPagination Pagination        `json:"roomsPagination"`
+	Followers       []Follower        `json:"followers"`
+	FollowerCount   int64             `json:"followerCount"`
+	FavoriteGames   []string          `json:"favoriteGames"`
+	PlayTimes       *models.PlayTimes `json:"playTimes"`
 }
 
 type Activity struct {
@@ -110,24 +126,22 @@ func (ph *ProfileHandler) Profile(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// 実際に作成した部屋を取得
-	rooms, err := ph.repo.Room.GetRoomsByHostUser(user.ID, 10, 0) // 最大10件取得
-	var roomSummaries []RoomSummary
-	if err == nil {
-		for _, room := range rooms {
-			roomSummaries = append(roomSummaries, roomToSummary(room))
-		}
+	// 作成した部屋の1ページ目を取得（タブ初期表示用）
+	rooms, roomsPagination, err := ph.hostedRoomsPage(user.ID, 1, "/api/profile/rooms")
+	if err != nil {
+		ph.logger.Printf("部屋取得エラー: %v", err)
 	}
 
 	profileData := ProfileData{
-		User:          user,
-		IsOwnProfile:  true,
-		Activities:    ph.getMockActivities(),
-		Rooms:         roomSummaries,
-		Followers:     ph.getMockFollowers(),
-		FollowerCount: followerCount,
-		FavoriteGames: favoriteGames,
-		PlayTimes:     playTimes,
+		User:            user,
+		IsOwnProfile:    true,
+		Activities:      ph.getMockActivities(),
+		Rooms:           rooms,
+		RoomsPagination: roomsPagination,
+		Followers:       ph.getMockFollowers(),
+		FollowerCount:   followerCount,
+		FavoriteGames:   favoriteGames,
+		PlayTimes:       playTimes,
 	}
 
 	data := TemplateData{
@@ -210,27 +224,21 @@ func (ph *ProfileHandler) Activity(w http.ResponseWriter, r *http.Request) {
 		targetUserID = dbUser.ID
 	}
 
-	// データベースからアクティビティを取得（過去2週間分）
-	userActivities, err := ph.repo.UserActivity.GetUserActivities(targetUserID, 100, 0)
+	// 過去2週間分のアクティビティをページ単位で取得
+	page := parsePageParam(r)
+	since := time.Now().AddDate(0, 0, -activityWindowDays)
+
+	total, err := ph.repo.UserActivity.CountUserActivities(targetUserID, since)
+	if err != nil {
+		ph.logger.Printf("アクティビティ件数取得エラー: %v", err)
+		total = 0
+	}
+
+	userActivities, err := ph.repo.UserActivity.GetUserActivities(targetUserID, since, tabPerPage, (page-1)*tabPerPage)
 	if err != nil {
 		ph.logger.Printf("アクティビティ取得エラー: %v", err)
 		// エラー時はフォールバック（空の配列を返す）
 		userActivities = []models.UserActivity{}
-	}
-
-	// 過去2週間のアクティビティのみフィルタリング
-	twoWeeksAgo := time.Now().AddDate(0, 0, -14)
-	var filteredActivities []models.UserActivity
-	for _, activity := range userActivities {
-		if activity.CreatedAt.After(twoWeeksAgo) {
-			filteredActivities = append(filteredActivities, activity)
-		}
-	}
-	userActivities = filteredActivities
-
-	// 最大20件に制限
-	if len(userActivities) > 20 {
-		userActivities = userActivities[:20]
 	}
 
 	// models.UserActivityをActivity構造体に変換
@@ -246,10 +254,9 @@ func (ph *ProfileHandler) Activity(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	data := struct {
-		Activities []Activity
-	}{
+	data := activityTabData{
 		Activities: displayActivities,
+		Pagination: newPagination(total, page, tabPerPage, r.URL.Path),
 	}
 
 	if err := renderPartialTemplate(w, "profile_activity", data); err != nil {
@@ -290,30 +297,16 @@ func (ph *ProfileHandler) Rooms(w http.ResponseWriter, r *http.Request) {
 		targetUserID = user.ID
 	}
 
-	// デバッグログ: どのユーザーIDで検索しているかを確認
-	ph.logger.Printf("作成した部屋を検索中 - ユーザーID: %s", targetUserID.String())
-
-	// ユーザーが作成した部屋を取得
-	rooms, err := ph.repo.Room.GetRoomsByHostUser(targetUserID, 50, 0) // 最大50件取得
+	rooms, pagination, err := ph.hostedRoomsPage(targetUserID, parsePageParam(r), r.URL.Path)
 	if err != nil {
 		ph.logger.Printf("部屋取得エラー: %v", err)
 		http.Error(w, "部屋データの取得に失敗しました", http.StatusInternalServerError)
 		return
 	}
 
-	ph.logger.Printf("取得した部屋数: %d", len(rooms))
-
-	// models.RoomをRoomSummaryに変換
-	var roomSummaries []RoomSummary
-	for _, room := range rooms {
-		roomSummaries = append(roomSummaries, roomToSummary(room))
-	}
-
-	// テンプレートデータを準備
-	data := struct {
-		Rooms []RoomSummary
-	}{
-		Rooms: roomSummaries,
+	data := roomsTabData{
+		Rooms:      rooms,
+		Pagination: pagination,
 	}
 
 	// 部分テンプレートを使用してレンダリング
@@ -502,6 +495,26 @@ func formatRelativeTime(t time.Time) string {
 		months := int(diff.Hours() / (24 * 30))
 		return fmt.Sprintf("%d ヶ月前", months)
 	}
+}
+
+// hostedRoomsPage ユーザーが作成した部屋の指定ページとページ情報を返す
+func (b *BaseHandler) hostedRoomsPage(userID uuid.UUID, page int, baseURL string) ([]RoomSummary, Pagination, error) {
+	total, err := b.repo.Room.CountRoomsByHostUser(userID)
+	if err != nil {
+		return nil, Pagination{}, fmt.Errorf("count rooms by host user: %w", err)
+	}
+
+	rooms, err := b.repo.Room.GetRoomsByHostUser(userID, tabPerPage, (page-1)*tabPerPage)
+	if err != nil {
+		return nil, Pagination{}, fmt.Errorf("get rooms by host user: %w", err)
+	}
+
+	var summaries []RoomSummary
+	for _, room := range rooms {
+		summaries = append(summaries, roomToSummary(room))
+	}
+
+	return summaries, newPagination(total, page, tabPerPage, baseURL), nil
 }
 
 // roomToSummary models.RoomをRoomSummaryに変換

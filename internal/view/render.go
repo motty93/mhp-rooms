@@ -24,6 +24,14 @@ type Data struct {
 	AnalyticsEnabled       bool
 }
 
+// partialDependencies 部分テンプレートが内部で参照する他のコンポーネント
+var partialDependencies = map[string][]string{
+	"profile_card_content": {"follow_buttons.tmpl", "block_report_buttons.tmpl"},
+	"profile_rooms":        {"tab_pagination.tmpl"},
+	"user_profile_rooms":   {"tab_pagination.tmpl"},
+	"profile_activity":     {"tab_pagination.tmpl"},
+}
+
 func Template(w http.ResponseWriter, templateName string, data Data) {
 	funcMap := TemplateFuncs()
 
@@ -51,6 +59,8 @@ func Template(w http.ResponseWriter, templateName string, data Data) {
 		filepath.Join("templates", "components", "profile_edit_form.tmpl"),
 		filepath.Join("templates", "components", "profile_activity.tmpl"),
 		filepath.Join("templates", "components", "profile_rooms.tmpl"),
+		filepath.Join("templates", "components", "user_profile_rooms.tmpl"),
+		filepath.Join("templates", "components", "tab_pagination.tmpl"),
 		filepath.Join("templates", "components", "profile_followers.tmpl"),
 		filepath.Join("templates", "components", "profile_following.tmpl"),
 		filepath.Join("templates", "components", "follow_buttons.tmpl"),
@@ -77,11 +87,8 @@ func Partial(w http.ResponseWriter, templateName string, data interface{}) error
 	templateFileName := templateName + ".tmpl"
 	templateFiles := []string{filepath.Join("templates", "components", templateFileName)}
 
-	if templateName == "profile_card_content" {
-		templateFiles = append(templateFiles,
-			filepath.Join("templates", "components", "follow_buttons.tmpl"),
-			filepath.Join("templates", "components", "block_report_buttons.tmpl"),
-		)
+	for _, dep := range partialDependencies[templateName] {
+		templateFiles = append(templateFiles, filepath.Join("templates", "components", dep))
 	}
 
 	tmpl, err := template.New("").Funcs(funcMap).ParseFiles(templateFiles...)

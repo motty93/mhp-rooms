@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"mhp-rooms/internal/middleware"
@@ -31,6 +32,7 @@ type UserProfileData struct {
 	RelationStatus  string            `json:"relationStatus"` // none, following, follower, mutual, blocked
 	Activities      []Activity        `json:"activities"`
 	Rooms           []RoomSummary     `json:"rooms"`
+	RoomsPagination Pagination        `json:"roomsPagination"`
 	Followers       []Follower        `json:"followers"`
 	FollowerCount   int64             `json:"followerCount"`
 	FavoriteGames   []string          `json:"favoriteGames"`
@@ -81,13 +83,10 @@ func (uh *UserHandler) Show(w http.ResponseWriter, r *http.Request) {
 	favoriteGames, _ := user.GetFavoriteGames()
 	playTimes, _ := user.GetPlayTimes()
 
-	// 実際に作成した部屋を取得
-	rooms, err := uh.repo.Room.GetRoomsByHostUser(user.ID, 10, 0)
-	var roomSummaries []RoomSummary
-	if err == nil {
-		for _, room := range rooms {
-			roomSummaries = append(roomSummaries, roomToSummary(room))
-		}
+	// 作成した部屋の1ページ目を取得（タブ初期表示用）
+	rooms, roomsPagination, err := uh.hostedRoomsPage(user.ID, 1, fmt.Sprintf("/api/users/%s/rooms", user.ID))
+	if err != nil {
+		log.Printf("部屋取得エラー: %v", err)
 	}
 
 	profileData := UserProfileData{
@@ -96,7 +95,8 @@ func (uh *UserHandler) Show(w http.ResponseWriter, r *http.Request) {
 		IsAuthenticated: currentUser != nil,
 		RelationStatus:  relationStatus,
 		Activities:      uh.getMockActivities(),
-		Rooms:           roomSummaries,
+		Rooms:           rooms,
+		RoomsPagination: roomsPagination,
 		Followers:       uh.getMockFollowers(),
 		FollowerCount:   followerCount,
 		FavoriteGames:   favoriteGames,
@@ -153,13 +153,10 @@ func (uh *UserHandler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 	favoriteGames, _ := user.GetFavoriteGames()
 	playTimes, _ := user.GetPlayTimes()
 
-	// 実際に作成した部屋を取得
-	rooms, err := uh.repo.Room.GetRoomsByHostUser(user.ID, 10, 0)
-	var roomSummaries []RoomSummary
-	if err == nil {
-		for _, room := range rooms {
-			roomSummaries = append(roomSummaries, roomToSummary(room))
-		}
+	// 作成した部屋の1ページ目を取得（タブ初期表示用）
+	rooms, roomsPagination, err := uh.hostedRoomsPage(user.ID, 1, fmt.Sprintf("/api/users/%s/rooms", user.ID))
+	if err != nil {
+		log.Printf("部屋取得エラー: %v", err)
 	}
 
 	profileData := UserProfileData{
@@ -168,7 +165,8 @@ func (uh *UserHandler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 		IsAuthenticated: currentUser != nil,
 		RelationStatus:  relationStatus,
 		Activities:      uh.getMockActivities(),
-		Rooms:           roomSummaries,
+		Rooms:           rooms,
+		RoomsPagination: roomsPagination,
 		Followers:       uh.getMockFollowers(),
 		FollowerCount:   followerCount,
 		FavoriteGames:   favoriteGames,
@@ -329,24 +327,16 @@ func (uh *UserHandler) Rooms(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ユーザーが作成した部屋を取得
-	rooms, err := uh.repo.Room.GetRoomsByHostUser(targetUserID, 50, 0)
+	rooms, pagination, err := uh.hostedRoomsPage(targetUserID, parsePageParam(r), r.URL.Path)
 	if err != nil {
+		log.Printf("部屋取得エラー: %v", err)
 		http.Error(w, "部屋データの取得に失敗しました", http.StatusInternalServerError)
 		return
 	}
 
-	// models.RoomをRoomSummaryに変換
-	var roomSummaries []RoomSummary
-	for _, room := range rooms {
-		roomSummaries = append(roomSummaries, roomToSummary(room))
-	}
-
-	// テンプレートデータを準備
-	data := struct {
-		Rooms []RoomSummary
-	}{
-		Rooms: roomSummaries,
+	data := roomsTabData{
+		Rooms:      rooms,
+		Pagination: pagination,
 	}
 
 	// 他のユーザー用の部分テンプレートを使用してレンダリング
