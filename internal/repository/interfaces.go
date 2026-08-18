@@ -49,6 +49,7 @@ type RoomRepository interface {
 	GetRoomLogs(roomID uuid.UUID) ([]models.RoomLog, error)
 	GetUserRoomStatus(userID uuid.UUID) (string, *models.Room, error) // (status, room, error)
 	GetRoomsByHostUser(userID uuid.UUID, limit, offset int) ([]models.Room, error)
+	CountRoomsByHostUser(userID uuid.UUID) (int64, error)
 }
 
 type PlayerNameRepository interface {
@@ -90,9 +91,9 @@ type UserFollowRepository interface {
 
 type UserActivityRepository interface {
 	CreateActivity(activity *models.UserActivity) error
-	GetUserActivities(userID uuid.UUID, limit, offset int) ([]models.UserActivity, error)
+	GetUserActivities(userID uuid.UUID, since time.Time, limit, offset int) ([]models.UserActivity, error)
 	GetUserActivitiesByType(userID uuid.UUID, activityType string, limit, offset int) ([]models.UserActivity, error)
-	CountUserActivities(userID uuid.UUID) (int64, error)
+	CountUserActivities(userID uuid.UUID, since time.Time) (int64, error)
 	DeleteActivity(id uuid.UUID) error
 	DeleteOldActivities(olderThan time.Time) error
 }

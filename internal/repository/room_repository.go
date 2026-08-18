@@ -741,3 +741,16 @@ func (r *roomRepository) GetRoomsByHostUser(userID uuid.UUID, limit, offset int)
 
 	return rooms, nil
 }
+
+// CountRoomsByHostUser ホストユーザーが作成した部屋の総数を取得
+func (r *roomRepository) CountRoomsByHostUser(userID uuid.UUID) (int64, error) {
+	var count int64
+	if err := r.db.GetConn().
+		Model(&models.Room{}).
+		Where("host_user_id = ?", userID).
+		Count(&count).Error; err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
