@@ -77,3 +77,45 @@ func (al ArticleList) SortByDateDesc() ArticleList {
 
 	return sorted
 }
+
+// SortByStatusAndDate はロードマップ用のソート
+// 開発中 → 予定 → 完了 の順、各ステータス内では日付降順
+func (al ArticleList) SortByStatusAndDate() ArticleList {
+	sorted := make(ArticleList, len(al))
+	copy(sorted, al)
+
+	// ステータスの優先度（小さいほど上位）
+	statusPriority := func(status string) int {
+		switch status {
+		case "in_progress":
+			return 0
+		case "planned":
+			return 1
+		case "completed":
+			return 2
+		default:
+			return 3
+		}
+	}
+
+	for i := 0; i < len(sorted); i++ {
+		for j := i + 1; j < len(sorted); j++ {
+			pi := statusPriority(sorted[i].Status)
+			pj := statusPriority(sorted[j].Status)
+
+			// ステータスが異なる場合は優先度で比較
+			if pi != pj {
+				if pi > pj {
+					sorted[i], sorted[j] = sorted[j], sorted[i]
+				}
+			} else {
+				// 同じステータスなら日付降順
+				if sorted[i].Date.Before(sorted[j].Date) {
+					sorted[i], sorted[j] = sorted[j], sorted[i]
+				}
+			}
+		}
+	}
+
+	return sorted
+}

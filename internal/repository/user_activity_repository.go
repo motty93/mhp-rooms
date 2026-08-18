@@ -48,8 +48,8 @@ func (r *userActivityRepository) CreateActivity(activity *models.UserActivity) e
 	return r.db.GetConn().Create(activity).Error
 }
 
-// GetUserActivities 指定したユーザーのアクティビティを時系列順で取得
-func (r *userActivityRepository) GetUserActivities(userID uuid.UUID, limit, offset int) ([]models.UserActivity, error) {
+// GetUserActivities 指定したユーザーの since 以降のアクティビティを新しい順で取得
+func (r *userActivityRepository) GetUserActivities(userID uuid.UUID, since time.Time, limit, offset int) ([]models.UserActivity, error) {
 	if userID == uuid.Nil {
 		return nil, errors.New("ユーザーIDが必須です")
 	}
@@ -62,7 +62,7 @@ func (r *userActivityRepository) GetUserActivities(userID uuid.UUID, limit, offs
 	}
 
 	err := r.db.GetConn().
-		Where("user_id = ?", userID).
+		Where("user_id = ? AND created_at > ?", userID, since).
 		Order("created_at DESC").
 		Limit(limit).
 		Offset(offset).
@@ -105,8 +105,8 @@ func (r *userActivityRepository) GetUserActivitiesByType(userID uuid.UUID, activ
 	return activities, nil
 }
 
-// CountUserActivities 指定したユーザーのアクティビティ総数を取得
-func (r *userActivityRepository) CountUserActivities(userID uuid.UUID) (int64, error) {
+// CountUserActivities 指定したユーザーの since 以降のアクティビティ総数を取得
+func (r *userActivityRepository) CountUserActivities(userID uuid.UUID, since time.Time) (int64, error) {
 	if userID == uuid.Nil {
 		return 0, errors.New("ユーザーIDが必須です")
 	}
@@ -114,7 +114,7 @@ func (r *userActivityRepository) CountUserActivities(userID uuid.UUID) (int64, e
 	var count int64
 	err := r.db.GetConn().
 		Model(&models.UserActivity{}).
-		Where("user_id = ?", userID).
+		Where("user_id = ? AND created_at > ?", userID, since).
 		Count(&count).Error
 
 	return count, err

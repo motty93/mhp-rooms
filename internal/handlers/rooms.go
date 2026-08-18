@@ -49,14 +49,8 @@ type RoomsPageData struct {
 
 func (h *RoomHandler) Rooms(w http.ResponseWriter, r *http.Request) {
 	filter := r.URL.Query().Get("game_version")
-	page := 1
+	page := parsePageParam(r)
 	perPage := 20
-
-	if pageStr := r.URL.Query().Get("page"); pageStr != "" {
-		if parsedPage, err := strconv.Atoi(pageStr); err == nil && parsedPage > 0 {
-			page = parsedPage
-		}
-	}
 
 	// 1ページあたりの表示件数のパース
 	if perPageStr := r.URL.Query().Get("per_page"); perPageStr != "" {
@@ -328,9 +322,10 @@ func (h *RoomHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 
 	// 作成成功時には部屋詳細URLを返す
 	response := map[string]interface{}{
-		"message": "ルームを作成しました",
-		"room_id": room.ID.String(),
-		"room":    room,
+		"message":  "ルームを作成しました",
+		"room_id":  room.ID.String(),
+		"room":     room,
+		"redirect": fmt.Sprintf("/rooms/%s?share=created", room.ID.String()),
 	}
 
 	w.Header().Set("Content-Type", "application/json")

@@ -105,6 +105,7 @@ func (app *Application) setupPageRoutes(r chi.Router) {
 	r.Get("/info-feed.xml", infoHandler.Feed)
 	r.Get("/info-atom.xml", infoHandler.AtomFeed)
 	r.Get("/roadmap", roadmapHandler.Index)
+	r.Get("/roadmap/{slug}", roadmapHandler.Detail)
 	r.Get("/operator", operatorHandler.Index)
 
 	// ブログ（完全静的のため認証ミドルウェアを適用しない）
