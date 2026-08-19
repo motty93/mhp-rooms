@@ -1,4 +1,4 @@
-.PHONY: build run dev test lint fmt clean migrate migrate-dev container-up container-down setup generate-ogp generate-info
+.PHONY: build run dev test lint fmt clean migrate migrate-dev container-up container-down setup generate-ogp generate-info room-cleanup
 
 # バイナリ名
 BINARY_NAME=mhp-rooms
@@ -88,6 +88,13 @@ generate-ogp:
 	go run cmd/ogp-renderer/main.go
 	@echo "✅ OGP画像生成完了: tmp/images/dev/ogp/rooms/$(ROOM_ID).png"
 
+# 一定期間活動がない部屋の自動削除（DRY_RUN=true で対象一覧のみ表示）
+room-cleanup:
+	@echo "部屋の自動削除を実行中: ROOM_INACTIVE_HOURS=$(or $(ROOM_INACTIVE_HOURS),48) DRY_RUN=$(or $(DRY_RUN),false)"
+	@ROOM_INACTIVE_HOURS=$(or $(ROOM_INACTIVE_HOURS),48) \
+	DRY_RUN=$(or $(DRY_RUN),false) \
+	go run cmd/room-cleanup/main.go
+
 # 更新情報・ロードマップの静的ファイル生成
 generate-info:
 	@echo "更新情報・ロードマップの静的ファイルを生成中..."
@@ -144,6 +151,7 @@ help:
 	@echo "  fix-activity  - アクティビティデータを修正（一時的なデータマイグレーション）"
 	@echo "  generate-ogp  - OGP画像を生成（ROOM_ID=<uuid>を指定）"
 	@echo "  generate-info - 更新情報・ロードマップの静的ファイルを生成"
+	@echo "  room-cleanup  - 一定期間活動がない部屋を自動削除（DRY_RUN=true で確認のみ）"
 	@echo "  test          - テストを実行"
 	@echo "  lint          - リンターを実行"
 	@echo "  fmt           - コードをフォーマット"

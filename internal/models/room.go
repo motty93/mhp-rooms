@@ -8,6 +8,12 @@ import (
 	"mhp-rooms/internal/utils"
 )
 
+// 部屋の解散理由（rooms.dismiss_reason）
+const (
+	DismissReasonHost     = "host"     // ホストによる解散
+	DismissReasonInactive = "inactive" // 一定期間活動がなく自動解散
+)
+
 type Room struct {
 	BaseModel
 	RoomCode        string     `gorm:"type:varchar(20);uniqueIndex;not null" json:"room_code"`
@@ -24,6 +30,8 @@ type Room struct {
 	IsClosed        bool       `gorm:"not null;default:false" json:"is_closed"`
 	ClosedAt        *time.Time `json:"closed_at"`
 	OGVersion       int        `gorm:"not null;default:0" json:"og_version"`
+	DismissedAt     *time.Time `json:"dismissed_at"`
+	DismissReason   *string    `gorm:"type:varchar(20)" json:"dismiss_reason"`
 
 	// リレーション
 	GameVersion GameVersion   `gorm:"foreignKey:GameVersionID" json:"game_version"`
@@ -56,6 +64,11 @@ func (r *Room) CheckPassword(password string) bool {
 
 func (r *Room) HasPassword() bool {
 	return r.PasswordHash != nil
+}
+
+// IsAutoDismissed 一定期間活動がなく自動解散された部屋かどうか
+func (r *Room) IsAutoDismissed() bool {
+	return !r.IsActive && r.DismissReason != nil && *r.DismissReason == DismissReasonInactive
 }
 
 func (r *Room) IsFull() bool {

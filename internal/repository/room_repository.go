@@ -592,8 +592,8 @@ func (r *roomRepository) UpdateRoom(room *models.Room) error {
 	})
 }
 
-// DismissRoom 部屋を解散
-func (r *roomRepository) DismissRoom(roomID uuid.UUID) error {
+// DismissRoom 部屋を解散する。reason には models.DismissReasonHost / models.DismissReasonInactive を渡す
+func (r *roomRepository) DismissRoom(roomID uuid.UUID, reason string) error {
 	return r.db.GetConn().Transaction(func(tx *gorm.DB) error {
 		// 部屋情報を取得
 		var room models.Room
@@ -601,12 +601,14 @@ func (r *roomRepository) DismissRoom(roomID uuid.UUID) error {
 			return err
 		}
 
+		now := time.Now()
+
 		// 全メンバーを退出状態に変更
 		if err := tx.Model(&models.RoomMember{}).
 			Where("room_id = ? AND status = ?", roomID, "active").
 			Updates(map[string]interface{}{
 				"status":  "left",
-				"left_at": time.Now(),
+				"left_at": now,
 			}).Error; err != nil {
 			return err
 		}
@@ -615,24 +617,59 @@ func (r *roomRepository) DismissRoom(roomID uuid.UUID) error {
 		if err := tx.Model(&room).Updates(map[string]interface{}{
 			"is_active":       false,
 			"current_players": 0,
-			"updated_at":      time.Now(),
+			"dismissed_at":    now,
+			"dismiss_reason":  reason,
+			"updated_at":      now,
 		}).Error; err != nil {
 			return err
 		}
 
-		// 解散ログを記録
+		// 解散ログを記録（自動解散は操作ユーザーなし）
+		action := "dismiss"
+		userID := &room.HostUserID
+		if reason == models.DismissReasonInactive {
+			action = "auto_dismiss"
+			userID = nil
+		}
 		log := models.RoomLog{
 			RoomID: roomID,
-			UserID: &room.HostUserID,
-			Action: "dismiss",
+			UserID: userID,
+			Action: action,
 			Details: models.JSONB{
 				Data: map[string]interface{}{
 					"room_name": room.Name,
+					"reason":    reason,
 				},
 			},
 		}
 		return tx.Create(&log).Error
 	})
+}
+
+// FindInactiveRooms idleSince 以降に活動（作成・設定変更・参加・退出・チャット）が一度もない募集中の部屋を取得
+func (r *roomRepository) FindInactiveRooms(idleSince time.Time) ([]models.Room, error) {
+	// libSQL(SQLite) は日時を文字列として比較するため、タイムゾーン表記（+09:00 / +00:00）が
+	// 混在すると誤判定する。datetime() で UTC に正規化してから比較する（Postgres は素の比較で正しい）
+	ts := func(column string) string { return column }
+	param := "?"
+	if r.db.GetType() == "turso" {
+		ts = func(column string) string { return "datetime(" + column + ")" }
+		param = "datetime(?)"
+	}
+
+	var rooms []models.Room
+	err := r.db.GetConn().
+		Where("is_active = ?", true).
+		Where(ts("rooms.created_at")+" < "+param+" AND "+ts("rooms.updated_at")+" < "+param, idleSince, idleSince).
+		Where("NOT EXISTS (SELECT 1 FROM room_messages rm WHERE rm.room_id = rooms.id AND "+ts("rm.created_at")+" >= "+param+")", idleSince).
+		Where("NOT EXISTS (SELECT 1 FROM room_logs rl WHERE rl.room_id = rooms.id AND "+ts("rl.created_at")+" >= "+param+")", idleSince).
+		Order("rooms.created_at ASC").
+		Find(&rooms).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return rooms, nil
 }
 
 // GetUserRoomStatus ユーザーの部屋状態を取得
