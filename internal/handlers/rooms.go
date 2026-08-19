@@ -962,7 +962,7 @@ func (h *RoomHandler) DismissRoom(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 部屋解散処理
-	if err := h.repo.DismissRoom(roomID); err != nil {
+	if err := h.repo.DismissRoom(roomID, models.DismissReasonHost); err != nil {
 		http.Error(w, "部屋の解散に失敗しました", http.StatusInternalServerError)
 		return
 	}

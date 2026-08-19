@@ -39,6 +39,20 @@ func sampleRooms(n int) []RoomSummary {
 	return rooms
 }
 
+// sampleAutoDismissedRoom 自動削除された部屋の表示データ
+func sampleAutoDismissedRoom() RoomSummary {
+	return RoomSummary{
+		ID:          uuid.New(),
+		Name:        "放置された部屋",
+		GameVersion: "MHP3",
+		PlayerCount: "0/4人",
+		Status:      "自動削除",
+		StatusColor: "text-orange-600",
+		StatusNote:  "一定期間利用がなかったため、自動的に削除されました",
+		CreatedAt:   "3日前",
+	}
+}
+
 func TestRenderRoomsTabPartials(t *testing.T) {
 	chdirRepoRoot(t)
 
@@ -164,6 +178,31 @@ func TestRenderProfilePagesWithRoomsTab(t *testing.T) {
 			}
 			if !strings.Contains(body, `?page=2"`) {
 				t.Errorf("初期表示に2ページ目へのリンクが無い")
+			}
+		})
+	}
+}
+
+func TestRenderRoomsTabShowsAutoDismissNote(t *testing.T) {
+	chdirRepoRoot(t)
+
+	for _, tmpl := range []string{"profile_rooms", "user_profile_rooms"} {
+		t.Run(tmpl, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			data := roomsTabData{
+				Rooms:      append(sampleRooms(1), sampleAutoDismissedRoom()),
+				Pagination: newPagination(2, 1, tabPerPage, "/api/profile/rooms"),
+			}
+			if err := renderPartialTemplate(w, tmpl, data); err != nil {
+				t.Fatalf("renderPartialTemplate() error = %v", err)
+			}
+
+			body := w.Body.String()
+			if !strings.Contains(body, "自動削除") {
+				t.Errorf("「自動削除」ラベルが描画されていない:\n%s", body)
+			}
+			if strings.Count(body, "一定期間利用がなかったため") != 1 {
+				t.Errorf("注記は自動削除の部屋にだけ 1 回描画されるはず:\n%s", body)
 			}
 		})
 	}
