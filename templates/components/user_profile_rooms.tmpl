@@ -29,6 +29,11 @@
                 <span class="text-xs text-gray-500 italic">参加不可</span>
               {{ end }}
             </div>
+            {{ if .StatusNote }}
+              <p class="mt-2 text-xs text-orange-600">
+                <i class="fa-solid fa-circle-info mr-1"></i>{{ .StatusNote }}
+              </p>
+            {{ end }}
           </div>
         {{ end }}
       </div>

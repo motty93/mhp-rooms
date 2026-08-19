@@ -174,6 +174,26 @@ func (s *ActivityService) RecordRoomClose(userID uuid.UUID, room *models.Room) e
 	return s.repo.UserActivity.CreateActivity(activity)
 }
 
+// RecordRoomAutoDismiss 一定期間活動がなく自動解散された部屋のアクティビティをホストに記録
+func (s *ActivityService) RecordRoomAutoDismiss(hostUserID uuid.UUID, room *models.Room) error {
+	if hostUserID == uuid.Nil || room == nil {
+		return fmt.Errorf("無効な入力: hostUserID=%v, room=%v", hostUserID, room)
+	}
+
+	activity := &models.UserActivity{
+		UserID:            hostUserID,
+		ActivityType:      models.ActivityRoomClose,
+		Title:             fmt.Sprintf("【部屋自動削除】%s", room.Name),
+		Description:       stringPtr("一定期間利用がなかったため、部屋が自動的に削除されました"),
+		RelatedEntityType: stringPtr(models.EntityTypeRoom),
+		RelatedEntityID:   &room.ID,
+		Icon:              "fa-broom",
+		IconColor:         "text-orange-500",
+	}
+
+	return s.repo.UserActivity.CreateActivity(activity)
+}
+
 // RecordFollow フォロー開始のアクティビティを記録
 func (s *ActivityService) RecordFollow(followerID, followingID uuid.UUID, followingUser *models.User) error {
 	if followerID == uuid.Nil || followingID == uuid.Nil || followingUser == nil {

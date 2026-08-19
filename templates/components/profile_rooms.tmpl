@@ -28,6 +28,11 @@
               <span>{{ .PlayerCount }}</span>
               <span class="{{ .StatusColor }}">{{ .Status }}</span>
             </div>
+            {{ if .StatusNote }}
+              <p class="mt-2 text-xs text-orange-600">
+                <i class="fa-solid fa-circle-info mr-1"></i>{{ .StatusNote }}
+              </p>
+            {{ end }}
           </div>
         {{ end }}
       </div>

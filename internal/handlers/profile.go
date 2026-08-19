@@ -87,6 +87,7 @@ type RoomSummary struct {
 	PlayerCount string    `json:"playerCount"`
 	Status      string    `json:"status"`
 	StatusColor string    `json:"statusColor"`
+	StatusNote  string    `json:"statusNote"`
 	CreatedAt   string    `json:"createdAt"`
 	IsClickable bool      `json:"isClickable"`
 }
@@ -525,10 +526,15 @@ func roomToSummary(room models.Room) RoomSummary {
 	}
 
 	// ステータス判定
-	var status, statusColor string
+	var status, statusColor, statusNote string
 	var isClickable bool
 
-	if !room.IsActive {
+	if room.IsAutoDismissed() {
+		status = "自動削除"
+		statusColor = "text-orange-600"
+		statusNote = "一定期間利用がなかったため、自動的に削除されました"
+		isClickable = false
+	} else if !room.IsActive {
 		status = "削除済み"
 		statusColor = "text-gray-500"
 		isClickable = false
@@ -552,6 +558,7 @@ func roomToSummary(room models.Room) RoomSummary {
 		PlayerCount: playerCount,
 		Status:      status,
 		StatusColor: statusColor,
+		StatusNote:  statusNote,
 		CreatedAt:   formatRelativeTime(room.CreatedAt),
 		IsClickable: isClickable,
 	}
