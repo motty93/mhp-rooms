@@ -207,3 +207,32 @@ func TestRenderRoomsTabShowsAutoDismissNote(t *testing.T) {
 		})
 	}
 }
+
+// TestRenderPagesIncludeNotificationUI 共通レイアウトにお知らせベルとパネルが描画されることを確認する
+func TestRenderPagesIncludeNotificationUI(t *testing.T) {
+	chdirRepoRoot(t)
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/profile", nil)
+	renderTemplate(w, r, "profile.tmpl", TemplateData{Title: "test", PageData: ProfileData{
+		User:            sampleUser(),
+		PlayTimes:       &models.PlayTimes{},
+		IsOwnProfile:    true,
+		RoomsPagination: newPagination(0, 1, tabPerPage, "/api/profile/rooms"),
+	}})
+
+	body := w.Body.String()
+	if w.Code != 200 || strings.Contains(body, "Template parsing error") || strings.Contains(body, "Template execution error") {
+		t.Fatalf("status = %d, body:\n%s", w.Code, truncate(body, 1500))
+	}
+	for _, want := range []string{
+		`@click="$store.notifications.toggle()"`,                       // ヘッダーのベル
+		`x-for="item in $store.notifications.items"`,                   // パネルの一覧
+		`/static/js/notification-store.js`,                             // ストアの読み込み
+		`$store.mobileMenu.close(); $store.notifications.openPanel();`, // モバイルメニューの項目
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("描画結果に %q が含まれていない", want)
+		}
+	}
+}

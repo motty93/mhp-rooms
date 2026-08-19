@@ -115,3 +115,12 @@ type ReportRepository interface {
 	SearchReports(params ReportSearchParams) ([]models.UserReport, int64, error)
 	BatchUpdateStatus(ids []uuid.UUID, status models.ReportStatus, adminNote *string) error
 }
+
+type NotificationRepository interface {
+	Create(notification *models.Notification) error
+	ListByUser(userID uuid.UUID, limit int) ([]models.Notification, error)
+	CountUnread(userID uuid.UUID) (int64, error)
+	MarkAllRead(userID uuid.UUID, readAt time.Time) error
+	GetState(userID uuid.UUID) (*models.UserNotificationState, error)
+	UpsertInfoReadAt(userID uuid.UUID, readAt time.Time) error
+}

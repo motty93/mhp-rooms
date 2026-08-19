@@ -240,6 +240,10 @@ func (app *Application) setupAPIRoutes(r chi.Router) {
 		// フォロー関連API（認証必須）
 		ar.Post("/users/{userID}/follow", app.withAuth(app.followHandler.FollowUser))
 		ar.Delete("/users/{userID}/unfollow", app.withAuth(app.followHandler.UnfollowUser))
+
+		// お知らせ API（認証必須）
+		ar.Get("/notifications", app.withAuth(app.notificationHandler.List))
+		ar.Post("/notifications/read", app.withAuth(app.notificationHandler.MarkAllRead))
 		ar.Get("/users/{userID}/follow-status", app.withAuth(app.followHandler.GetFollowStatus))
 
 		// リアクション関連API（認証必須）

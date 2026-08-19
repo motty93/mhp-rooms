@@ -49,5 +49,7 @@ func CommonMigrate(db *gorm.DB) error {
 		&models.PasswordReset{},
 		&models.UserReport{},
 		&models.ReportAttachment{},
+		&models.Notification{},
+		&models.UserNotificationState{},
 	)
 }
