@@ -113,8 +113,8 @@ func (r *Repository) UpdateRoom(room *models.Room) error {
 	return r.Room.UpdateRoom(room)
 }
 
-func (r *Repository) DismissRoom(id uuid.UUID) error {
-	return r.Room.DismissRoom(id)
+func (r *Repository) DismissRoom(id uuid.UUID, reason string) error {
+	return r.Room.DismissRoom(id, reason)
 }
 
 func (r *Repository) ToggleRoomClosed(id uuid.UUID, isClosed bool) error {

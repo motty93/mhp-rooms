@@ -6,6 +6,9 @@ substitutions:
   _IMAGE_NAME: huntershub-app
   _JOB_NAME: ogp-renderer                # ← 追加: Cloud Run Job 名
   _JOB_IMAGE_NAME: ogp-renderer          # ← 追加: Job 用イメージ名
+  _CLEANUP_JOB_NAME: room-cleanup        # 放置部屋の自動削除 Job 名
+  _CLEANUP_JOB_IMAGE_NAME: room-cleanup  # 自動削除 Job 用イメージ名（ステージングでビルド済み）
+  _ROOM_INACTIVE_HOURS: "48"             # 最後の活動から何時間で自動削除するか
   _GO_VERSION: "1.24"
   _DEPLOY_SSE: "false"                   # true に設定するとSSEサービスもデプロイ
   _DEPLOY_JOB: "true"                    # ← 追加: Job をデプロイするか
@@ -117,6 +120,28 @@ steps:
             --set-env-vars DB_TYPE=turso,OG_BUCKET=${_OG_BUCKET},OG_PREFIX=${_OG_PREFIX}
         else
           echo "Job のデプロイはスキップされました (_DEPLOY_JOB=${_DEPLOY_JOB})"
+        fi
+    waitFor: ["-"]  # deploy-mainとは独立して実行（並列化）
+
+  # 4) Deploy Job (room-cleanup) - 本番環境（ステージングでビルド済みの latest イメージを使用）
+  #    定期実行は Cloud Scheduler から起動する（docs/deploy.md 参照）
+  - name: "gcr.io/cloud-builders/gcloud"
+    id: "deploy-cleanup-job"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        if [ "${_DEPLOY_JOB}" = "true" ]; then
+          echo "Cloud Run Job (room-cleanup) をデプロイしています..."
+          gcloud run jobs deploy ${_CLEANUP_JOB_NAME} \
+            --image ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_CLEANUP_JOB_IMAGE_NAME}:latest \
+            --region ${_REGION} \
+            --tasks 1 \
+            --max-retries 1 \
+            --set-secrets TURSO_DATABASE_URL=${_SECRET_TURSO_DATABASE_URL}:latest,TURSO_AUTH_TOKEN=${_SECRET_TURSO_AUTH_TOKEN}:latest \
+            --set-env-vars DB_TYPE=turso,ROOM_INACTIVE_HOURS=${_ROOM_INACTIVE_HOURS}
+        else
+          echo "room-cleanup Job のデプロイはスキップされました (_DEPLOY_JOB=${_DEPLOY_JOB})"
         fi
     waitFor: ["-"]  # deploy-mainとは独立して実行（並列化）
 
