@@ -46,6 +46,13 @@ func (s *RoomCleanupService) DismissInactiveRooms(idleDuration time.Duration) ([
 	var dismissed []models.Room
 	var errs []error
 	for _, room := range rooms {
+		// 解散するとメンバーは退出状態になるため、お知らせ用に事前に取得しておく
+		members, err := s.repo.Room.GetRoomMembers(room.ID)
+		if err != nil {
+			log.Printf("解散前のメンバー取得に失敗: room_id=%s: %v", room.ID, err)
+			members = nil
+		}
+
 		if err := s.repo.Room.DismissRoom(room.ID, models.DismissReasonInactive); err != nil {
 			errs = append(errs, fmt.Errorf("dismiss room %s (%s): %w", room.ID, room.Name, err))
 			continue
@@ -58,6 +65,9 @@ func (s *RoomCleanupService) DismissInactiveRooms(idleDuration time.Duration) ([
 		}
 		if err := s.notificationService.NotifyRoomAutoDismissed(&room); err != nil {
 			log.Printf("部屋自動削除のお知らせ作成に失敗: room_id=%s: %v", room.ID, err)
+		}
+		if err := s.notificationService.NotifyRoomAutoDismissedToMembers(&room, members); err != nil {
+			log.Printf("部屋自動削除のメンバー向けお知らせ作成に失敗: room_id=%s: %v", room.ID, err)
 		}
 	}
 

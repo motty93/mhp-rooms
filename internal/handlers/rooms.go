@@ -1070,10 +1070,22 @@ func (h *RoomHandler) DismissRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 解散するとメンバーは退出状態になるため、お知らせ用に事前に取得しておく
+	membersBeforeDismiss, err := h.repo.Room.GetRoomMembers(roomID)
+	if err != nil {
+		log.Printf("解散前のメンバー取得に失敗: %v", err)
+		membersBeforeDismiss = nil
+	}
+
 	// 部屋解散処理
 	if err := h.repo.DismissRoom(roomID, models.DismissReasonHost); err != nil {
 		http.Error(w, "部屋の解散に失敗しました", http.StatusInternalServerError)
 		return
+	}
+
+	// 参加していたメンバーへのお知らせ（失敗しても解散処理には影響させない）
+	if err := h.notificationService.NotifyRoomDismissedToMembers(room, membersBeforeDismiss); err != nil {
+		log.Printf("解散のお知らせ作成に失敗: %v", err)
 	}
 
 	dismissText := fmt.Sprintf("ルームがホスト（%s）によって解散されました", h.getDisplayName(dbUser))
