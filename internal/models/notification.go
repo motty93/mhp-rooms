@@ -10,6 +10,7 @@ import (
 const (
 	NotificationRoomAutoDismissed = "room_auto_dismissed" // 作成した部屋が一定期間活動がなく自動削除された
 	NotificationRoomKicked        = "room_kicked"         // 部屋からホストにより退出させられた
+	NotificationRoomDismissed     = "room_dismissed"      // 参加していた部屋がホストにより解散された
 	NotificationFollow            = "follow"              // フォローされた
 )
 
