@@ -52,6 +52,8 @@ func Template(w http.ResponseWriter, templateName string, data Data) {
 		filepath.Join("templates", "layouts", "base.tmpl"),
 		filepath.Join("templates", "components", "header.tmpl"),
 		filepath.Join("templates", "components", "toast_notification.tmpl"),
+		filepath.Join("templates", "components", "notification_bell.tmpl"),
+		filepath.Join("templates", "components", "notification_panel.tmpl"),
 		filepath.Join("templates", "components", "footer.tmpl"),
 		filepath.Join("templates", "components", "room_create_button.tmpl"),
 		filepath.Join("templates", "components", "room_create_modal.tmpl"),

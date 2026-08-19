@@ -23,8 +23,9 @@ import (
 
 type RoomHandler struct {
 	BaseHandler
-	hub             *sse.Hub
-	activityService *services.ActivityService
+	hub                 *sse.Hub
+	activityService     *services.ActivityService
+	notificationService *services.NotificationService
 }
 
 func NewRoomHandler(repo *repository.Repository, hub *sse.Hub) *RoomHandler {
@@ -32,8 +33,9 @@ func NewRoomHandler(repo *repository.Repository, hub *sse.Hub) *RoomHandler {
 		BaseHandler: BaseHandler{
 			repo: repo,
 		},
-		hub:             hub,
-		activityService: services.NewActivityService(repo),
+		hub:                 hub,
+		activityService:     services.NewActivityService(repo),
+		notificationService: services.NewNotificationService(repo),
 	}
 }
 
@@ -673,6 +675,11 @@ func (h *RoomHandler) KickMember(w http.ResponseWriter, r *http.Request) {
 	targetName := h.getDisplayName(targetUser)
 	kickText := fmt.Sprintf("%sさんはホストにより退出となりました", targetName)
 	h.broadcastSystemMessage(h.createSystemMessage(roomID, dbUser, kickText))
+
+	// お知らせは失敗してもキック処理には影響させない
+	if err := h.notificationService.NotifyRoomKicked(targetUser.ID, room); err != nil {
+		log.Printf("キックのお知らせ作成に失敗: %v", err)
+	}
 
 	if h.hub != nil {
 		// 退出させられた本人にリダイレクトを促すイベント
