@@ -6,6 +6,13 @@ import (
 	"github.com/google/uuid"
 )
 
+// RoomMember.Status の値
+const (
+	MemberStatusActive = "active"
+	MemberStatusLeft   = "left"
+	MemberStatusKicked = "kicked" // ホストにより退出させられた（同じ部屋には再参加できない）
+)
+
 type RoomMember struct {
 	ID           uuid.UUID  `gorm:"type:uuid;primary_key" json:"id"`
 	RoomID       uuid.UUID  `gorm:"type:uuid;not null" json:"room_id"`

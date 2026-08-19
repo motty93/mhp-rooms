@@ -44,6 +44,7 @@ type RoomRepository interface {
 	DecrementRoomPlayerCount(id uuid.UUID) error
 	JoinRoom(roomID, userID uuid.UUID, password string) error
 	LeaveRoom(roomID, userID uuid.UUID) error
+	KickMember(roomID, userID uuid.UUID) error
 	FindActiveRoomByUserID(userID uuid.UUID) (*models.Room, error)
 	IsUserJoinedRoom(roomID, userID uuid.UUID) bool
 	GetRoomMembers(roomID uuid.UUID) ([]models.RoomMember, error)
@@ -113,4 +114,13 @@ type ReportRepository interface {
 	GetReportStatsByUserID(userID uuid.UUID) (map[string]int64, error)
 	SearchReports(params ReportSearchParams) ([]models.UserReport, int64, error)
 	BatchUpdateStatus(ids []uuid.UUID, status models.ReportStatus, adminNote *string) error
+}
+
+type NotificationRepository interface {
+	Create(notification *models.Notification) error
+	ListByUser(userID uuid.UUID, limit int) ([]models.Notification, error)
+	CountUnread(userID uuid.UUID) (int64, error)
+	MarkAllRead(userID uuid.UUID, readAt time.Time) error
+	GetState(userID uuid.UUID) (*models.UserNotificationState, error)
+	UpsertInfoReadAt(userID uuid.UUID, readAt time.Time) error
 }

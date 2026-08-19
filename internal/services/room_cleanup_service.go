@@ -12,15 +12,17 @@ import (
 
 // RoomCleanupService 一定期間活動がない部屋を自動解散するサービス
 type RoomCleanupService struct {
-	repo            *repository.Repository
-	activityService *ActivityService
+	repo                *repository.Repository
+	activityService     *ActivityService
+	notificationService *NotificationService
 }
 
 // NewRoomCleanupService 新しいRoomCleanupServiceインスタンスを作成
 func NewRoomCleanupService(repo *repository.Repository) *RoomCleanupService {
 	return &RoomCleanupService{
-		repo:            repo,
-		activityService: NewActivityService(repo),
+		repo:                repo,
+		activityService:     NewActivityService(repo),
+		notificationService: NewNotificationService(repo),
 	}
 }
 
@@ -53,6 +55,9 @@ func (s *RoomCleanupService) DismissInactiveRooms(idleDuration time.Duration) ([
 		// アクティビティ記録の失敗は解散処理の成否に影響させない
 		if err := s.activityService.RecordRoomAutoDismiss(room.HostUserID, &room); err != nil {
 			log.Printf("部屋自動削除アクティビティの記録に失敗: room_id=%s: %v", room.ID, err)
+		}
+		if err := s.notificationService.NotifyRoomAutoDismissed(&room); err != nil {
+			log.Printf("部屋自動削除のお知らせ作成に失敗: room_id=%s: %v", room.ID, err)
 		}
 	}
 

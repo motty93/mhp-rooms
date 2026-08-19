@@ -16,8 +16,9 @@ import (
 
 type FollowHandler struct {
 	BaseHandler
-	activityService *services.ActivityService
-	logger          *log.Logger
+	activityService     *services.ActivityService
+	notificationService *services.NotificationService
+	logger              *log.Logger
 }
 
 func NewFollowHandler(repo *repository.Repository) *FollowHandler {
@@ -25,8 +26,9 @@ func NewFollowHandler(repo *repository.Repository) *FollowHandler {
 		BaseHandler: BaseHandler{
 			repo: repo,
 		},
-		activityService: services.NewActivityService(repo),
-		logger:          log.New(log.Writer(), "[FollowHandler] ", log.LstdFlags),
+		activityService:     services.NewActivityService(repo),
+		notificationService: services.NewNotificationService(repo),
+		logger:              log.New(log.Writer(), "[FollowHandler] ", log.LstdFlags),
 	}
 }
 
@@ -93,6 +95,11 @@ func (fh *FollowHandler) FollowUser(w http.ResponseWriter, r *http.Request) {
 	if err := fh.activityService.RecordFollow(followerUserID, followingUserID, followingUser); err != nil {
 		fh.logger.Printf("フォローアクティビティの記録に失敗: %v", err)
 		// アクティビティ記録失敗はメイン処理に影響させない
+	}
+
+	// フォローされた側へのお知らせ（失敗してもメイン処理は続行）
+	if err := fh.notificationService.NotifyFollowed(followerUserID, followingUserID, dbUser); err != nil {
+		fh.logger.Printf("フォローのお知らせ作成に失敗: %v", err)
 	}
 
 	// プロフィールカードのHTMLを返す

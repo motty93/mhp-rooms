@@ -363,6 +363,13 @@ func (r *roomRepository) JoinRoom(roomID, userID uuid.UUID, password string) err
 			return err
 		}
 
+		// キックされたユーザーは同じ部屋に再参加できない
+		var kickedMember models.RoomMember
+		if err := tx.Where("room_id = ? AND user_id = ? AND status = ?", roomID, userID, models.MemberStatusKicked).
+			First(&kickedMember).Error; err == nil {
+			return fmt.Errorf("KICKED:この部屋から退出させられたため、再度参加することはできません")
+		}
+
 		if !room.CanJoin() {
 			return fmt.Errorf("ルームに参加できません")
 		}
@@ -434,12 +441,22 @@ func (r *roomRepository) JoinRoom(roomID, userID uuid.UUID, password string) err
 }
 
 func (r *roomRepository) LeaveRoom(roomID, userID uuid.UUID) error {
+	return r.removeMember(roomID, userID, models.MemberStatusLeft, "leave")
+}
+
+// KickMember ホストがメンバーを退出させる。status を kicked にするため、同じ部屋には再参加できなくなる
+func (r *roomRepository) KickMember(roomID, userID uuid.UUID) error {
+	return r.removeMember(roomID, userID, models.MemberStatusKicked, "kick")
+}
+
+// removeMember アクティブなメンバーを status に変更して部屋から外し、人数を減らして action のログを残す
+func (r *roomRepository) removeMember(roomID, userID uuid.UUID, status, action string) error {
 	return r.db.GetConn().Transaction(func(tx *gorm.DB) error {
 		now := time.Now()
 		result := tx.Model(&models.RoomMember{}).
-			Where("room_id = ? AND user_id = ? AND status = ?", roomID, userID, "active").
+			Where("room_id = ? AND user_id = ? AND status = ?", roomID, userID, models.MemberStatusActive).
 			Updates(map[string]interface{}{
-				"status":  "left",
+				"status":  status,
 				"left_at": &now,
 			})
 
@@ -469,7 +486,7 @@ func (r *roomRepository) LeaveRoom(roomID, userID uuid.UUID) error {
 		log := models.RoomLog{
 			RoomID: roomID,
 			UserID: &userID,
-			Action: "leave",
+			Action: action,
 			Details: models.JSONB{
 				Data: map[string]interface{}{
 					"user_name": user.DisplayName,

@@ -483,6 +483,11 @@ window.userProfileRoomsHandler = {
           throw new Error(errorData.message || '参加に失敗しました')
         }
 
+        if (response.status === 403) {
+          const errorData = await response.json()
+          throw new Error(errorData.message || '参加に失敗しました')
+        }
+
         throw new Error('参加に失敗しました')
       }
 
