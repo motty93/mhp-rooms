@@ -145,6 +145,7 @@ func (app *Application) setupRoomRoutes(r chi.Router) {
 				protected.Delete("/{id}", rh.DismissRoom)
 				protected.Post("/{id}/join", rh.JoinRoom)
 				protected.Post("/{id}/leave", rh.LeaveRoom)
+				protected.Post("/{id}/kick", rh.KickMember)
 				protected.Put("/{id}/toggle-closed", rh.ToggleRoomClosed)
 
 				// メッセージ関連
@@ -161,6 +162,7 @@ func (app *Application) setupRoomRoutes(r chi.Router) {
 			rr.Delete("/{id}", rh.DismissRoom)
 			rr.Post("/{id}/join", rh.JoinRoom)
 			rr.Post("/{id}/leave", rh.LeaveRoom)
+			rr.Post("/{id}/kick", rh.KickMember)
 			rr.Put("/{id}/toggle-closed", rh.ToggleRoomClosed)
 
 			// メッセージ関連

@@ -44,6 +44,7 @@ type RoomRepository interface {
 	DecrementRoomPlayerCount(id uuid.UUID) error
 	JoinRoom(roomID, userID uuid.UUID, password string) error
 	LeaveRoom(roomID, userID uuid.UUID) error
+	KickMember(roomID, userID uuid.UUID) error
 	FindActiveRoomByUserID(userID uuid.UUID) (*models.Room, error)
 	IsUserJoinedRoom(roomID, userID uuid.UUID) bool
 	GetRoomMembers(roomID uuid.UUID) ([]models.RoomMember, error)

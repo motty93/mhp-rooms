@@ -63,6 +63,13 @@ function roomDetail() {
     // 送信方法切り替え（PC版のみ）
     useCtrlEnterToSend: false,
     // シェア機能関連
+    // メンバー操作メニュー / キック
+    openMemberMenu: null,
+    showKickModal: false,
+    kickTarget: null,
+    isKicking: false,
+    kickError: '',
+
     showShareModal: false,
     shareMessages: [
       'ハンター募集中！一緒にモンスターを狩ろう！',
@@ -164,6 +171,11 @@ function roomDetail() {
       if (this.consumeCreatedShareFlag()) {
         this.$nextTick(() => this.openCreatedShareModal());
       }
+
+      // 通報完了後、ホストにはキック確認を提案する
+      window.addEventListener('report-submitted', (event) => {
+        this.onReportSubmitted(event.detail?.userId);
+      });
 
       // ページを離れる時にSSE接続を閉じる
       window.addEventListener('beforeunload', () => {
@@ -385,6 +397,8 @@ function roomDetail() {
             this.handleSystemMessage(json.data);
           } else if (type === 'member_update') {
             this.handleMemberUpdate(json.data);
+          } else if (type === 'member_kicked') {
+            this.handleMemberKicked(json.data);
           }
         } catch (err) {
           console.error('SSE parse error:', err);
@@ -1052,9 +1066,116 @@ function roomDetail() {
 
       this.members = memberSlots;
       this.memberCount = count;
+      this.openMemberMenu = null;
 
       // Alpine.jsの反応を促す
       this.$nextTick();
+    },
+
+    // ===== メンバー操作メニュー / キック =====
+    isSelf(member) {
+      return !!member && !!this.currentUserId && member.supabase_user_id === this.currentUserId;
+    },
+
+    toggleMemberMenu(index) {
+      this.openMemberMenu = this.openMemberMenu === index ? null : index;
+    },
+
+    closeMemberMenu() {
+      this.openMemberMenu = null;
+    },
+
+    findMemberById(userId) {
+      return this.members.find((member) => member && member.id === userId) || null;
+    },
+
+    openReportForMember(member) {
+      if (!member || this.isSelf(member)) return;
+      this.closeMemberMenu();
+
+      const modalElement = document.querySelector('#reportModal');
+      const modal = modalElement && window.Alpine ? Alpine.$data(modalElement) : null;
+      if (modal && typeof modal.openModal === 'function') {
+        modal.openModal(member.id, member.display_name);
+      } else {
+        window.location.href = '/users/' + member.id;
+      }
+    },
+
+    // 通報が完了したら、ホストにはそのメンバーのキック確認を続けて表示する
+    onReportSubmitted(userId) {
+      if (!this.isHost || !userId) return;
+      const member = this.findMemberById(userId);
+      if (member && !member.is_host && !this.isSelf(member)) {
+        this.openKickModal(member);
+      }
+    },
+
+    openKickModal(member) {
+      if (!this.isHost || !member || member.is_host || this.isSelf(member)) return;
+      this.closeMemberMenu();
+      this.kickTarget = member;
+      this.kickError = '';
+      this.showKickModal = true;
+    },
+
+    closeKickModal() {
+      if (this.isKicking) return;
+      this.showKickModal = false;
+      this.kickTarget = null;
+      this.kickError = '';
+    },
+
+    async confirmKick() {
+      if (this.isKicking || !this.kickTarget) return;
+
+      this.isKicking = true;
+      this.kickError = '';
+
+      try {
+        const authToken = Alpine.store('auth').session?.access_token;
+        if (!authToken) {
+          throw new Error('認証が必要です');
+        }
+
+        const response = await fetch(`/rooms/${this.roomId}/kick`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ user_id: this.kickTarget.id })
+        });
+
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text || 'メンバーの退出処理に失敗しました');
+        }
+
+        // メンバー一覧は SSE の member_update で更新される。SSE 未接続でも表示が残らないよう即時に外す
+        this.members = this.members.map((member) =>
+          member && member.id === this.kickTarget.id ? null : member
+        );
+        this.memberCount = this.members.filter(Boolean).length;
+
+        this.isKicking = false;
+        this.closeKickModal();
+      } catch (error) {
+        this.kickError = error.message || 'メンバーの退出処理に失敗しました';
+        this.isKicking = false;
+      }
+    },
+
+    // 自分がホストにより退出させられた場合は部屋一覧へ戻す
+    handleMemberKicked(data) {
+      if (!data || !this.currentUserId || data.supabase_user_id !== this.currentUserId) return;
+
+      if (this.eventSource) {
+        this.eventSource.close();
+        this.eventSource = null;
+      }
+      alert(data.message || 'ホストにより部屋から退出させられました');
+      window.location.href = '/rooms';
     }
   };
 }
