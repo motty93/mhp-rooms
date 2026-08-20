@@ -207,24 +207,6 @@ func (db *DB) insertInitialData() error {
 
 // commonMigrate はデータベース共通のマイグレーションを実行
 func (db *DB) commonMigrate() error {
-	// 共通のテーブル作成
-	return db.conn.AutoMigrate(
-		&models.Platform{},
-		&models.GameVersion{},
-		&models.User{},
-		&models.Room{},
-		&models.RoomMember{},
-		&models.RoomMessage{},
-		&models.MessageReaction{},
-		&models.ReactionType{},
-		&models.UserBlock{},
-		&models.PlayerName{},
-		&models.UserFollow{},
-		&models.UserActivity{},
-		&models.RoomLog{},
-		&models.PasswordReset{},
-		&models.UserReport{},
-		&models.ReportAttachment{},
-		&models.Contact{},
-	)
+	// 共通のテーブル作成（モデル一覧は models.AllModels で一元管理）
+	return db.conn.AutoMigrate(models.AllModels()...)
 }
