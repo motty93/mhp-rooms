@@ -17,36 +17,37 @@ import (
 )
 
 type Application struct {
-	config             *config.Config
-	db                 persistence.DBAdapter
-	repo               *repository.Repository
-	authHandler        *handlers.AuthHandler
-	roomHandler        *handlers.RoomHandler
-	roomDetailHandler  *handlers.RoomDetailHandler
-	roomJoinHandler    *handlers.RoomJoinHandler
-	roomMessageHandler *handlers.RoomMessageHandler
-	sseTokenHandler    *handlers.SSETokenHandler
-	pageHandler        *handlers.PageHandler
-	reactionHandler    *handlers.ReactionHandler
-	gameVersionHandler *handlers.GameVersionHandler
-	profileHandler     *handlers.ProfileHandler
-	userHandler        *handlers.UserHandler
-	followHandler      *handlers.FollowHandler
-	reportHandler      *handlers.ReportHandler
-	infoHandler        *handlers.InfoHandler
-	roadmapHandler     *handlers.RoadmapHandler
-	operatorHandler    *handlers.OperatorHandler
-	blogHandler        *handlers.BlogHandler
-	guideHandler       *handlers.StaticPageHandler
-	faqHandler         *handlers.StaticPageHandler
-	termsHandler       *handlers.StaticPageHandler
-	privacyHandler     *handlers.StaticPageHandler
-	authMiddleware     *middleware.JWTAuth
-	securityConfig     *middleware.SecurityConfig
-	generalLimiter     *middleware.RateLimiter
-	authLimiter        *middleware.RateLimiter
-	contactLimiter     *middleware.RateLimiter
-	sseHub             *sse.Hub
+	config              *config.Config
+	db                  persistence.DBAdapter
+	repo                *repository.Repository
+	authHandler         *handlers.AuthHandler
+	roomHandler         *handlers.RoomHandler
+	roomDetailHandler   *handlers.RoomDetailHandler
+	roomJoinHandler     *handlers.RoomJoinHandler
+	roomMessageHandler  *handlers.RoomMessageHandler
+	sseTokenHandler     *handlers.SSETokenHandler
+	pageHandler         *handlers.PageHandler
+	reactionHandler     *handlers.ReactionHandler
+	gameVersionHandler  *handlers.GameVersionHandler
+	profileHandler      *handlers.ProfileHandler
+	userHandler         *handlers.UserHandler
+	followHandler       *handlers.FollowHandler
+	notificationHandler *handlers.NotificationHandler
+	reportHandler       *handlers.ReportHandler
+	infoHandler         *handlers.InfoHandler
+	roadmapHandler      *handlers.RoadmapHandler
+	operatorHandler     *handlers.OperatorHandler
+	blogHandler         *handlers.BlogHandler
+	guideHandler        *handlers.StaticPageHandler
+	faqHandler          *handlers.StaticPageHandler
+	termsHandler        *handlers.StaticPageHandler
+	privacyHandler      *handlers.StaticPageHandler
+	authMiddleware      *middleware.JWTAuth
+	securityConfig      *middleware.SecurityConfig
+	generalLimiter      *middleware.RateLimiter
+	authLimiter         *middleware.RateLimiter
+	contactLimiter      *middleware.RateLimiter
+	sseHub              *sse.Hub
 }
 
 func NewApplication(cfg *config.Config) (*Application, error) {
@@ -122,6 +123,7 @@ func (app *Application) initHandlers() error {
 	app.profileHandler = handlers.NewProfileHandler(app.repo, app.authMiddleware)
 	app.userHandler = handlers.NewUserHandler(app.repo)
 	app.followHandler = handlers.NewFollowHandler(app.repo)
+	app.notificationHandler = handlers.NewNotificationHandler(app.repo, articleGenerator)
 	app.infoHandler = handlers.NewInfoHandler(app.repo, articleGenerator)
 	app.roadmapHandler = handlers.NewRoadmapHandler(app.repo, articleGenerator)
 	app.operatorHandler = handlers.NewOperatorHandler(app.repo, articleGenerator)

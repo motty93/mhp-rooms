@@ -111,6 +111,7 @@
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
         <script src="/static/js/supabase.js"></script>
         <script src="/static/js/auth-store.js"></script>
+        <script src="/static/js/notification-store.js"></script>
         <script src="/static/js/room-create-store.js"></script>
         <script src="/static/js/htmx-auth.js"></script>
       {{ end }}
@@ -343,6 +344,9 @@
         {{ template "header" . }}
 
         {{ if not .StaticPage }}
+          <!-- お知らせパネル -->
+          {{ template "notification_panel" }}
+
           <!-- モバイルメニュー -->
           <div class="md:hidden">
             <!-- オーバーレイ -->
@@ -478,6 +482,19 @@
                         </div>
                       </a>
                     </template>
+                    <button
+                      type="button"
+                      @click="$store.mobileMenu.close(); $store.notifications.openPanel();"
+                      class="w-full flex items-center justify-between px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <span>お知らせ</span>
+                      <span
+                        x-show="$store.notifications.unreadCount > 0"
+                        x-cloak
+                        class="min-w-[1.25rem] h-5 px-1 rounded-full bg-red-600 text-white text-xs font-bold flex items-center justify-center"
+                        x-text="$store.notifications.badgeText"
+                      ></span>
+                    </button>
                     <a
                       href="/rooms"
                       @click="$store.mobileMenu.close()"

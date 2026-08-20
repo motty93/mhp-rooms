@@ -512,6 +512,12 @@
             this.showSuccessMessage(
               '通報を受け付けました。ご報告ありがとうございます。',
             )
+            // 通報完了を他のコンポーネントへ通知（部屋詳細ではホストにキック確認を提案する）
+            window.dispatchEvent(
+              new CustomEvent('report-submitted', {
+                detail: { userId: this.reportedUserId },
+              }),
+            )
             this.closeModal()
           } catch (error) {
             console.error('通報エラー:', error)

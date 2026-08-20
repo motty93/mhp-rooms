@@ -23,8 +23,9 @@ import (
 
 type RoomHandler struct {
 	BaseHandler
-	hub             *sse.Hub
-	activityService *services.ActivityService
+	hub                 *sse.Hub
+	activityService     *services.ActivityService
+	notificationService *services.NotificationService
 }
 
 func NewRoomHandler(repo *repository.Repository, hub *sse.Hub) *RoomHandler {
@@ -32,8 +33,9 @@ func NewRoomHandler(repo *repository.Repository, hub *sse.Hub) *RoomHandler {
 		BaseHandler: BaseHandler{
 			repo: repo,
 		},
-		hub:             hub,
-		activityService: services.NewActivityService(repo),
+		hub:                 hub,
+		activityService:     services.NewActivityService(repo),
+		notificationService: services.NewNotificationService(repo),
 	}
 }
 
@@ -492,6 +494,17 @@ func (h *RoomHandler) JoinRoom(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(response)
 			return
 		}
+		// キックされたユーザーは再参加できない
+		if strings.HasPrefix(err.Error(), "KICKED:") {
+			response := map[string]interface{}{
+				"error":   "KICKED",
+				"message": strings.TrimPrefix(err.Error(), "KICKED:"),
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			json.NewEncoder(w).Encode(response)
+			return
+		}
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -605,6 +618,102 @@ func (h *RoomHandler) LeaveRoom(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"message": "ルームから退室しました"}`))
+}
+
+// KickMember ホストがメンバーを部屋から退出させる。退出させられたユーザーは同じ部屋に再参加できない
+func (h *RoomHandler) KickMember(w http.ResponseWriter, r *http.Request) {
+	roomID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "無効なルームIDです", http.StatusBadRequest)
+		return
+	}
+
+	var req struct {
+		UserID string `json:"user_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "リクエストの解析に失敗しました", http.StatusBadRequest)
+		return
+	}
+	targetUserID, err := uuid.Parse(req.UserID)
+	if err != nil {
+		http.Error(w, "無効なユーザーIDです", http.StatusBadRequest)
+		return
+	}
+
+	dbUser, exists := middleware.GetDBUserFromContext(r.Context())
+	if !exists || dbUser == nil {
+		http.Error(w, "認証されていないか、ユーザー情報が見つかりません", http.StatusUnauthorized)
+		return
+	}
+
+	room, err := h.repo.Room.FindRoomByID(roomID)
+	if err != nil {
+		http.Error(w, "部屋が見つかりません", http.StatusNotFound)
+		return
+	}
+	if room.HostUserID != dbUser.ID {
+		http.Error(w, "部屋のホストのみがメンバーを退出させられます", http.StatusForbidden)
+		return
+	}
+	if targetUserID == dbUser.ID {
+		http.Error(w, "自分自身を退出させることはできません", http.StatusBadRequest)
+		return
+	}
+
+	targetUser, err := h.repo.User.FindUserByID(targetUserID)
+	if err != nil {
+		http.Error(w, "対象のユーザーが見つかりません", http.StatusNotFound)
+		return
+	}
+
+	if err := h.repo.Room.KickMember(roomID, targetUserID); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	targetName := h.getDisplayName(targetUser)
+	kickText := fmt.Sprintf("%sさんはホストにより退出となりました", targetName)
+	h.broadcastSystemMessage(h.createSystemMessage(roomID, dbUser, kickText))
+
+	// お知らせは失敗してもキック処理には影響させない
+	if err := h.notificationService.NotifyRoomKicked(targetUser.ID, room); err != nil {
+		log.Printf("キックのお知らせ作成に失敗: %v", err)
+	}
+
+	if h.hub != nil {
+		// 退出させられた本人にリダイレクトを促すイベント
+		h.hub.BroadcastToRoom(roomID, sse.Event{
+			ID:   uuid.New().String(),
+			Type: "member_kicked",
+			Data: map[string]interface{}{
+				"user_id":          targetUser.ID,
+				"supabase_user_id": targetUser.SupabaseUserID,
+				"display_name":     targetName,
+				"message":          "ホストにより部屋から退出させられました",
+			},
+		})
+
+		// メンバー更新イベント（ユーザーパネル用）
+		members, err := h.repo.Room.GetRoomMembers(roomID)
+		if err != nil {
+			log.Printf("メンバー情報取得エラー: %v", err)
+			members = []models.RoomMember{}
+		}
+		h.hub.BroadcastToRoom(roomID, sse.Event{
+			ID:   uuid.New().String(),
+			Type: "member_update",
+			Data: map[string]interface{}{
+				"action":  "kick",
+				"members": members,
+				"count":   len(members),
+			},
+		})
+	}
+
+	respondWithJSON(w, http.StatusOK, map[string]interface{}{
+		"message": fmt.Sprintf("%sさんを退出させました", targetName),
+	})
 }
 
 func (h *RoomHandler) LeaveCurrentRoom(w http.ResponseWriter, r *http.Request) {
@@ -961,10 +1070,22 @@ func (h *RoomHandler) DismissRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 解散するとメンバーは退出状態になるため、お知らせ用に事前に取得しておく
+	membersBeforeDismiss, err := h.repo.Room.GetRoomMembers(roomID)
+	if err != nil {
+		log.Printf("解散前のメンバー取得に失敗: %v", err)
+		membersBeforeDismiss = nil
+	}
+
 	// 部屋解散処理
 	if err := h.repo.DismissRoom(roomID, models.DismissReasonHost); err != nil {
 		http.Error(w, "部屋の解散に失敗しました", http.StatusInternalServerError)
 		return
+	}
+
+	// 参加していたメンバーへのお知らせ（失敗しても解散処理には影響させない）
+	if err := h.notificationService.NotifyRoomDismissedToMembers(room, membersBeforeDismiss); err != nil {
+		log.Printf("解散のお知らせ作成に失敗: %v", err)
 	}
 
 	dismissText := fmt.Sprintf("ルームがホスト（%s）によって解散されました", h.getDisplayName(dbUser))

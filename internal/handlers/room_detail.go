@@ -142,6 +142,8 @@ func renderRoomDetailTemplate(w http.ResponseWriter, r *http.Request, templateNa
 		filepath.Join("templates", "components", "room_settings_modal.tmpl"),
 		filepath.Join("templates", "components", "room_detail_script.tmpl"),
 		filepath.Join("templates", "components", "share_modal.tmpl"),
+		filepath.Join("templates", "components", "kick_modal.tmpl"),
+		filepath.Join("templates", "components", "report_modal.tmpl"),
 	)
 	if err != nil {
 		http.Error(w, "Template parsing error: "+err.Error(), http.StatusInternalServerError)
