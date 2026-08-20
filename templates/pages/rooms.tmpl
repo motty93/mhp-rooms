@@ -78,6 +78,40 @@
               <option value="{{ .Code }}">{{ .Code }}</option>
             {{ end }}
           </select>
+
+          <!-- 表示切り替え（モバイルは常に行表示のためデスクトップのみ） -->
+          <div class="hidden md:flex items-center gap-1 md:ml-auto">
+            <button
+              type="button"
+              @click="setViewMode('grid')"
+              :class="viewMode === 'grid' ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-50'"
+              class="p-2 border rounded-md transition-colors"
+              aria-label="グリッド表示"
+              title="グリッド表示"
+            >
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+                />
+              </svg>
+            </button>
+            <button
+              type="button"
+              @click="setViewMode('list')"
+              :class="viewMode === 'list' ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-50'"
+              class="p-2 border rounded-md transition-colors"
+              aria-label="リスト表示"
+              title="リスト表示"
+            >
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fill-rule="evenodd"
+                  d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
         <div
           class="mt-4 text-sm text-gray-600"
@@ -103,8 +137,10 @@
 
     <section class="py-8">
       <div class="container mx-auto px-4" id="room-list-container">
+        <!-- グリッド表示（デスクトップでグリッド選択時のみ） -->
         <div
-          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6 justify-items-center md:justify-items-stretch"
+          class="hidden md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+          :class="viewMode === 'grid' ? 'md:grid' : ''"
           x-show="filteredRooms.length > 0"
           x-cloak
         >
@@ -246,6 +282,91 @@
                   </div>
                 </div>
               </div>
+            </div>
+          </template>
+        </div>
+
+        <!-- 行表示（モバイルは常時、デスクトップはリスト選択時） -->
+        <div
+          class="bg-white border-y border-gray-200 divide-y divide-gray-200 -mx-4 sm:mx-0 sm:border sm:rounded-lg sm:overflow-hidden"
+          :class="viewMode === 'grid' ? 'md:hidden' : ''"
+          x-show="filteredRooms.length > 0"
+          x-cloak
+        >
+          <template x-for="room in filteredRooms" :key="room.id">
+            <div
+              @click="handleRowClick(room)"
+              @keydown.enter.prevent="handleRowClick(room)"
+              role="button"
+              :tabindex="isRowClickable(room) ? 0 : -1"
+              :aria-label="room.isJoined ? '「' + room.name + '」に入室' : '「' + room.name + '」に参加'"
+              class="flex items-center gap-3 px-4 py-3 transition-colors"
+              :class="room.isJoined ? 'bg-blue-50 cursor-pointer hover:bg-blue-100' : (isRowClickable(room) ? 'cursor-pointer hover:bg-gray-50 active:bg-gray-100' : 'opacity-60')"
+            >
+              <div
+                :class="getGameIconClass(room.gameVersion.code)"
+                class="game-icon rounded"
+                :data-game="room.gameVersion.code"
+              ></div>
+
+              <div class="flex-1 min-w-0">
+                <h4
+                  class="font-bold text-gray-800 text-sm truncate"
+                  x-text="(room.hasPassword ? '🔑 ' : '') + room.name"
+                  :title="room.name"
+                ></h4>
+                <p
+                  class="text-xs text-gray-500 truncate mt-0.5"
+                  x-text="rowMetaText(room)"
+                ></p>
+                <template x-if="room.description">
+                  <p
+                    class="text-xs text-gray-400 truncate mt-0.5"
+                    x-text="room.description"
+                  ></p>
+                </template>
+              </div>
+
+              <div class="flex flex-col items-end gap-1 flex-shrink-0">
+                <template x-if="room.isClosed">
+                  <span
+                    class="bg-gray-100 text-gray-800 text-xs px-2 py-0.5 rounded-full"
+                    >closed</span
+                  >
+                </template>
+                <template x-if="!room.isClosed">
+                  <span
+                    class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full"
+                    x-text="room.currentPlayers + '/' + room.maxPlayers"
+                  ></span>
+                </template>
+                <template x-if="room.isJoined">
+                  <span
+                    class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full font-medium"
+                    >参加中</span
+                  >
+                </template>
+                <template
+                  x-if="!room.isJoined && !room.isClosed && room.currentPlayers >= room.maxPlayers"
+                >
+                  <span class="text-xs text-gray-400">満員</span>
+                </template>
+              </div>
+
+              <svg
+                class="w-5 h-5 text-gray-300 flex-shrink-0"
+                x-show="isRowClickable(room)"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
             </div>
           </template>
         </div>
@@ -1013,6 +1134,7 @@
         allRooms: [],
         filteredRooms: [],
         activeFilter: '',
+        viewMode: 'grid',
         lastFocusedElement: null,
         showConfirmDialog: false,
         confirmRoomId: null,
@@ -1048,6 +1170,11 @@
           const shoshinsha = this.allRooms.find(r => r.name === '初心者歓迎部屋');
           if (shoshinsha) {
             console.log('初心者歓迎部屋:', shoshinsha.name, 'isJoined:', shoshinsha.isJoined, 'raw is_joined:', roomsData.find(r => r.name === '初心者歓迎部屋')?.is_joined);
+          }
+          // 表示モードを復元（デスクトップのみ有効。モバイルは常に行表示）
+          const savedViewMode = localStorage.getItem('roomListViewMode');
+          if (savedViewMode === 'grid' || savedViewMode === 'list') {
+            this.viewMode = savedViewMode;
           }
           // URLパラメータから初期フィルタを設定
           const urlParams = new URLSearchParams(window.location.search);
@@ -1187,6 +1314,37 @@
           // ページ番号をリセット
           url.searchParams.delete('page');
           window.location.href = url.toString();
+        },
+        // 表示モード切り替え（グリッド / リスト）
+        setViewMode(mode) {
+          this.viewMode = mode;
+          localStorage.setItem('roomListViewMode', mode);
+        },
+        // 行表示でタップ可能か（参加済みは入室、空きありは参加）
+        isRowClickable(room) {
+          return room.isJoined || (!room.isClosed && room.currentPlayers < room.maxPlayers);
+        },
+        // 行表示のメタ情報テキスト
+        rowMetaText(room) {
+          const parts = [room.gameVersion.code, 'ホスト: ' + (room.host.displayName || room.host.username)];
+          if (room.targetMonster) parts.push('ターゲット: ' + room.targetMonster);
+          if (room.rankRequirement) parts.push('ランク: ' + room.rankRequirement);
+          return parts.filter(Boolean).join(' ・ ');
+        },
+        // 行タップ時の動作（カードのボタンと同じ分岐）
+        handleRowClick(room) {
+          if (room.isJoined) {
+            window.location.href = '/rooms/' + room.id;
+            return;
+          }
+          if (!this.isRowClickable(room)) return;
+          const authStore = Alpine.store('auth');
+          if (!authStore.initialized) return;
+          if (!authStore.isAuthenticated) {
+            this.openLoginModal();
+            return;
+          }
+          this.openModal(room);
         },
         // 参加ボタンの有効/無効判定
         get isJoinDisabled() {
