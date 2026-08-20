@@ -1,0 +1,83 @@
+{{ define "head" }}
+  <meta name="robots" content="noindex, nofollow" />
+{{ end }}
+
+{{ define "page" }}
+  <div class="min-h-[calc(100vh-4rem)]">
+    {{ template "admin_nav" "rooms" }}
+
+
+    <section class="py-8">
+      <div class="container mx-auto px-4">
+        <h2 class="text-lg font-bold text-gray-800 mb-4">
+          全部屋一覧（解散済み含む）
+        </h2>
+
+        {{ if .PageData.Rooms }}
+          <div
+            class="bg-white border border-gray-200 rounded-lg overflow-x-auto"
+          >
+            <table class="w-full text-sm">
+              <thead>
+                <tr
+                  class="text-left text-xs text-gray-500 border-b border-gray-200 bg-gray-50"
+                >
+                  <th class="px-4 py-3">部屋名</th>
+                  <th class="px-4 py-3 whitespace-nowrap">ゲーム</th>
+                  <th class="px-4 py-3">ホスト</th>
+                  <th class="px-4 py-3 whitespace-nowrap">人数</th>
+                  <th class="px-4 py-3 whitespace-nowrap">状態</th>
+                  <th class="px-4 py-3 whitespace-nowrap">ホストへの通報</th>
+                  <th class="px-4 py-3 whitespace-nowrap">作成日時</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                {{ range .PageData.Rooms }}
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3">
+                      <a
+                        href="/admin/rooms/{{ .ID }}"
+                        class="text-blue-600 hover:underline font-medium"
+                        >{{ .Name }}</a
+                      >
+                    </td>
+                    <td class="px-4 py-3 text-gray-700 whitespace-nowrap">
+                      {{ .GameVersion }}
+                    </td>
+                    <td class="px-4 py-3 text-gray-700">{{ .HostName }}</td>
+                    <td class="px-4 py-3 text-gray-700 whitespace-nowrap">
+                      {{ .Players }}
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                      <span
+                        class="inline-block px-2 py-0.5 rounded-full text-xs {{ .StatusClass }}"
+                        >{{ .StatusLabel }}</span
+                      >
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                      {{ if gt .ReportCount 0 }}
+                        <span
+                          class="inline-block px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-700 font-medium"
+                          >{{ .ReportCount }}件</span
+                        >
+                      {{ else }}
+                        <span class="text-gray-400">-</span>
+                      {{ end }}
+                    </td>
+                    <td class="px-4 py-3 text-gray-500 whitespace-nowrap">
+                      {{ .CreatedAt }}
+                    </td>
+                  </tr>
+                {{ end }}
+              </tbody>
+            </table>
+          </div>
+        {{ else }}
+          <p class="text-gray-500 py-8 text-center">部屋がまだありません</p>
+        {{ end }}
+
+        {{ template "admin_pagination" .PageData.Pagination }}
+      </div>
+    </section>
+  </div>
+{{ end }}

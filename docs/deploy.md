@@ -57,6 +57,7 @@ GitHub
 
 | 項目 | ステージング | 本番 |
 |------|------------|------|
+| URL | https://stg.huntershub.net | https://huntershub.net |
 | Cloud Buildファイル | `cloudbuild.stg.yml` | `cloudbuild.yml` |
 | サービス名 | `huntershub-stg` | `huntershub` |
 | OGP Job名 | `ogp-renderer-stg` | `ogp-renderer` |

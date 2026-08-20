@@ -1,0 +1,64 @@
+{{ define "head" }}
+  <meta name="robots" content="noindex, nofollow" />
+{{ end }}
+
+{{ define "page" }}
+  <div class="min-h-[calc(100vh-4rem)]">
+    {{ template "admin_nav" "dashboard" }}
+
+
+    <section class="py-8">
+      <div class="container mx-auto px-4">
+        <h2 class="text-lg font-bold text-gray-800 mb-4">活動タイムライン</h2>
+
+        {{ if .PageData.Logs }}
+          <div
+            class="bg-white border border-gray-200 rounded-lg overflow-x-auto"
+          >
+            <table class="w-full text-sm">
+              <thead>
+                <tr
+                  class="text-left text-xs text-gray-500 border-b border-gray-200 bg-gray-50"
+                >
+                  <th class="px-4 py-3 whitespace-nowrap">日時</th>
+                  <th class="px-4 py-3 whitespace-nowrap">アクション</th>
+                  <th class="px-4 py-3">部屋</th>
+                  <th class="px-4 py-3">実行者</th>
+                  <th class="px-4 py-3">詳細</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                {{ range .PageData.Logs }}
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 text-gray-500 whitespace-nowrap">
+                      {{ .CreatedAt }}
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                      <span
+                        class="inline-block px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700"
+                        >{{ .ActionLabel }}</span
+                      >
+                    </td>
+                    <td class="px-4 py-3">
+                      <a
+                        href="/admin/rooms/{{ .RoomID }}"
+                        class="text-blue-600 hover:underline"
+                        >{{ .RoomName }}</a
+                      >
+                    </td>
+                    <td class="px-4 py-3 text-gray-700">{{ .ActorName }}</td>
+                    <td class="px-4 py-3 text-gray-500">{{ .Detail }}</td>
+                  </tr>
+                {{ end }}
+              </tbody>
+            </table>
+          </div>
+        {{ else }}
+          <p class="text-gray-500 py-8 text-center">ログがまだありません</p>
+        {{ end }}
+
+        {{ template "admin_pagination" .PageData.Pagination }}
+      </div>
+    </section>
+  </div>
+{{ end }}

@@ -6,6 +6,12 @@ import (
 	"mhp-rooms/internal/utils"
 )
 
+// ユーザーロール
+const (
+	RoleUser  = "user"
+	RoleAdmin = "admin"
+)
+
 // PlayTimes プレイ時間帯の構造体
 type PlayTimes struct {
 	Weekday string `json:"weekday,omitempty"`
@@ -43,6 +49,11 @@ type User struct {
 }
 
 // GetFavoriteGames お気に入りゲームのリストを取得
+// IsAdmin 管理者ロールかどうかを返す
+func (u *User) IsAdmin() bool {
+	return u.Role == RoleAdmin
+}
+
 func (u *User) GetFavoriteGames() ([]string, error) {
 	if u.FavoriteGames.Data == nil {
 		return []string{}, nil

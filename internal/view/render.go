@@ -68,6 +68,7 @@ func Template(w http.ResponseWriter, templateName string, data Data) {
 		filepath.Join("templates", "components", "follow_buttons.tmpl"),
 		filepath.Join("templates", "components", "block_report_buttons.tmpl"),
 		filepath.Join("templates", "components", "report_modal.tmpl"),
+		filepath.Join("templates", "components", "admin_nav.tmpl"),
 		filepath.Join("templates", "pages", templateName),
 	)
 	if err != nil {

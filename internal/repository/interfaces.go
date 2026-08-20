@@ -52,6 +52,14 @@ type RoomRepository interface {
 	GetUserRoomStatus(userID uuid.UUID) (string, *models.Room, error) // (status, room, error)
 	GetRoomsByHostUser(userID uuid.UUID, limit, offset int) ([]models.Room, error)
 	CountRoomsByHostUser(userID uuid.UUID) (int64, error)
+	GetAllRoomsForAdmin(limit, offset int) ([]models.Room, error)
+	CountAllRooms() (int64, error)
+}
+
+type RoomLogRepository interface {
+	CreateLog(log *models.RoomLog) error
+	ListRecentLogs(limit, offset int) ([]models.RoomLog, error)
+	CountLogs() (int64, error)
 }
 
 type PlayerNameRepository interface {
@@ -110,6 +118,7 @@ type ReportRepository interface {
 	CheckDuplicateReport(reporterID, reportedID uuid.UUID) (bool, error)
 	AddAttachment(attachment *models.ReportAttachment) error
 	GetAttachmentsByReportID(reportID uuid.UUID) ([]models.ReportAttachment, error)
+	CountReportsByReportedUserIDs(userIDs []uuid.UUID) (map[uuid.UUID]int64, error)
 	DeleteAttachment(id uuid.UUID) error
 	GetReportStatsByUserID(userID uuid.UUID) (map[string]int64, error)
 	SearchReports(params ReportSearchParams) ([]models.UserReport, int64, error)
