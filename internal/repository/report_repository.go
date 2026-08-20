@@ -234,3 +234,29 @@ func (r *reportRepository) BatchUpdateStatus(ids []uuid.UUID, status models.Repo
 		Where("id IN ?", ids).
 		Updates(updates).Error
 }
+
+// CountReportsByReportedUserIDs 指定ユーザーそれぞれが通報された件数を返す
+func (r *reportRepository) CountReportsByReportedUserIDs(userIDs []uuid.UUID) (map[uuid.UUID]int64, error) {
+	counts := make(map[uuid.UUID]int64, len(userIDs))
+	if len(userIDs) == 0 {
+		return counts, nil
+	}
+
+	var rows []struct {
+		ReportedUserID uuid.UUID
+		Count          int64
+	}
+	err := r.db.Model(&models.UserReport{}).
+		Select("reported_user_id, COUNT(*) as count").
+		Where("reported_user_id IN ?", userIDs).
+		Group("reported_user_id").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+
+	for _, row := range rows {
+		counts[row.ReportedUserID] = row.Count
+	}
+	return counts, nil
+}

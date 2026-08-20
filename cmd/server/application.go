@@ -33,6 +33,7 @@ type Application struct {
 	userHandler         *handlers.UserHandler
 	followHandler       *handlers.FollowHandler
 	notificationHandler *handlers.NotificationHandler
+	adminHandler        *handlers.AdminHandler
 	reportHandler       *handlers.ReportHandler
 	infoHandler         *handlers.InfoHandler
 	roadmapHandler      *handlers.RoadmapHandler
@@ -112,6 +113,7 @@ func (app *Application) initHandlers() error {
 	app.authMiddleware = authMiddleware
 
 	app.authHandler = handlers.NewAuthHandler(app.repo)
+	app.adminHandler = handlers.NewAdminHandler(app.repo)
 	app.roomHandler = handlers.NewRoomHandler(app.repo, app.sseHub)
 	app.roomDetailHandler = handlers.NewRoomDetailHandler(app.repo)
 	app.roomJoinHandler = handlers.NewRoomJoinHandler(app.repo)
