@@ -286,9 +286,9 @@
           </template>
         </div>
 
-        <!-- 行表示（モバイルは常時、デスクトップはリスト選択時） -->
+        <!-- 行表示（モバイルは常時、デスクトップはリスト選択時に2列） -->
         <div
-          class="bg-white border-y border-gray-200 divide-y divide-gray-200 -mx-4 sm:mx-0 sm:border sm:rounded-lg sm:overflow-hidden"
+          class="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-4"
           :class="viewMode === 'grid' ? 'md:hidden' : ''"
           x-show="filteredRooms.length > 0"
           x-cloak
@@ -300,8 +300,8 @@
               role="button"
               :tabindex="isRowClickable(room) ? 0 : -1"
               :aria-label="room.isJoined ? '「' + room.name + '」に入室' : '「' + room.name + '」に参加'"
-              class="flex items-center gap-3 px-4 py-3 transition-colors"
-              :class="room.isJoined ? 'bg-blue-50 cursor-pointer hover:bg-blue-100' : (isRowClickable(room) ? 'cursor-pointer hover:bg-gray-50 active:bg-gray-100' : 'opacity-60')"
+              class="flex items-center gap-3 px-4 py-3 rounded-lg border transition-colors"
+              :class="room.isJoined ? 'bg-blue-50 border-blue-300 cursor-pointer hover:bg-blue-100' : (isRowClickable(room) ? 'bg-white border-gray-200 cursor-pointer hover:bg-gray-50 active:bg-gray-100' : 'bg-white border-gray-200 opacity-60')"
             >
               <div
                 :class="getGameIconClass(room.gameVersion.code)"
