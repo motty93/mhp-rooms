@@ -2,7 +2,6 @@ package persistence
 
 import (
 	"gorm.io/gorm"
-	"mhp-rooms/internal/models"
 )
 
 // DBAdapter はデータベースアダプターのインターフェース
@@ -27,27 +26,4 @@ type MigrationHelper interface {
 
 	// InsertInitialData は初期データを挿入
 	InsertInitialData(db *gorm.DB) error
-}
-
-// CommonMigrate はデータベース共通のマイグレーションを実行
-func CommonMigrate(db *gorm.DB) error {
-	// 共通のテーブル作成
-	return db.AutoMigrate(
-		&models.Platform{},
-		&models.GameVersion{},
-		&models.User{},
-		&models.Room{},
-		&models.RoomMember{},
-		&models.RoomMessage{},
-		&models.MessageReaction{},
-		&models.ReactionType{},
-		&models.UserBlock{},
-		&models.PlayerName{},
-		&models.UserFollow{},
-		&models.UserActivity{},
-		&models.RoomLog{},
-		&models.PasswordReset{},
-		&models.UserReport{},
-		&models.ReportAttachment{},
-	)
 }

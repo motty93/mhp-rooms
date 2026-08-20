@@ -12,15 +12,17 @@ import (
 
 // RoomCleanupService 一定期間活動がない部屋を自動解散するサービス
 type RoomCleanupService struct {
-	repo            *repository.Repository
-	activityService *ActivityService
+	repo                *repository.Repository
+	activityService     *ActivityService
+	notificationService *NotificationService
 }
 
 // NewRoomCleanupService 新しいRoomCleanupServiceインスタンスを作成
 func NewRoomCleanupService(repo *repository.Repository) *RoomCleanupService {
 	return &RoomCleanupService{
-		repo:            repo,
-		activityService: NewActivityService(repo),
+		repo:                repo,
+		activityService:     NewActivityService(repo),
+		notificationService: NewNotificationService(repo),
 	}
 }
 
@@ -44,6 +46,13 @@ func (s *RoomCleanupService) DismissInactiveRooms(idleDuration time.Duration) ([
 	var dismissed []models.Room
 	var errs []error
 	for _, room := range rooms {
+		// 解散するとメンバーは退出状態になるため、お知らせ用に事前に取得しておく
+		members, err := s.repo.Room.GetRoomMembers(room.ID)
+		if err != nil {
+			log.Printf("解散前のメンバー取得に失敗: room_id=%s: %v", room.ID, err)
+			members = nil
+		}
+
 		if err := s.repo.Room.DismissRoom(room.ID, models.DismissReasonInactive); err != nil {
 			errs = append(errs, fmt.Errorf("dismiss room %s (%s): %w", room.ID, room.Name, err))
 			continue
@@ -53,6 +62,12 @@ func (s *RoomCleanupService) DismissInactiveRooms(idleDuration time.Duration) ([
 		// アクティビティ記録の失敗は解散処理の成否に影響させない
 		if err := s.activityService.RecordRoomAutoDismiss(room.HostUserID, &room); err != nil {
 			log.Printf("部屋自動削除アクティビティの記録に失敗: room_id=%s: %v", room.ID, err)
+		}
+		if err := s.notificationService.NotifyRoomAutoDismissed(&room); err != nil {
+			log.Printf("部屋自動削除のお知らせ作成に失敗: room_id=%s: %v", room.ID, err)
+		}
+		if err := s.notificationService.NotifyRoomAutoDismissedToMembers(&room, members); err != nil {
+			log.Printf("部屋自動削除のメンバー向けお知らせ作成に失敗: room_id=%s: %v", room.ID, err)
 		}
 	}
 

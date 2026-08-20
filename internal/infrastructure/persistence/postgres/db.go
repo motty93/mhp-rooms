@@ -118,6 +118,7 @@ func (db *DB) addConstraintsAndIndexes() error {
 
 		// ルームメッセージ関連
 		"CREATE INDEX IF NOT EXISTS idx_room_messages_room_id_created_at ON room_messages(room_id, created_at DESC)",
+		"CREATE INDEX IF NOT EXISTS idx_notifications_user_id_created_at ON notifications(user_id, created_at DESC)",
 
 		// ユーザーブロック関連
 		"CREATE INDEX IF NOT EXISTS idx_user_blocks_blocked_user_id ON user_blocks(blocked_user_id)",
@@ -258,24 +259,6 @@ func (db *DB) insertInitialData() error {
 
 // commonMigrate はデータベース共通のマイグレーションを実行
 func (db *DB) commonMigrate() error {
-	// 共通のテーブル作成
-	return db.conn.AutoMigrate(
-		&models.Platform{},
-		&models.GameVersion{},
-		&models.User{},
-		&models.Room{},
-		&models.RoomMember{},
-		&models.RoomMessage{},
-		&models.MessageReaction{},
-		&models.ReactionType{},
-		&models.UserBlock{},
-		&models.PlayerName{},
-		&models.UserFollow{},
-		&models.UserActivity{},
-		&models.RoomLog{},
-		&models.PasswordReset{},
-		&models.UserReport{},
-		&models.ReportAttachment{},
-		&models.Contact{},
-	)
+	// 共通のテーブル作成（モデル一覧は models.AllModels で一元管理）
+	return db.conn.AutoMigrate(models.AllModels()...)
 }
