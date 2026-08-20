@@ -25,6 +25,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - Tailwind CSS (スタイリング)
 - **コンテナ**: Docker + Docker Compose
 - **デプロイ**: Google Cloud Run
+  - **ステージング**: https://stg.huntershub.net
+  - **本番**: https://huntershub.net
 
 ## プロジェクト構造
 

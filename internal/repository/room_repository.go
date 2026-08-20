@@ -808,3 +808,25 @@ func (r *roomRepository) CountRoomsByHostUser(userID uuid.UUID) (int64, error) {
 
 	return count, nil
 }
+
+// GetAllRoomsForAdmin 管理画面用に解散済み・満室も含む全部屋を新しい順で取得
+func (r *roomRepository) GetAllRoomsForAdmin(limit, offset int) ([]models.Room, error) {
+	var rooms []models.Room
+	err := r.db.GetConn().
+		Preload("GameVersion").
+		Preload("Host", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "username", "display_name")
+		}).
+		Order("created_at DESC").
+		Limit(limit).
+		Offset(offset).
+		Find(&rooms).Error
+	return rooms, err
+}
+
+// CountAllRooms 全部屋数（解散済み含む）を取得
+func (r *roomRepository) CountAllRooms() (int64, error) {
+	var count int64
+	err := r.db.GetConn().Model(&models.Room{}).Count(&count).Error
+	return count, err
+}

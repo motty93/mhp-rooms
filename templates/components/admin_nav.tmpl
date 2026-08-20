@@ -1,0 +1,60 @@
+{{ define "admin_nav" }}
+  <section class="bg-white py-6 border-b border-gray-200">
+    <div class="container mx-auto px-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-800">管理画面</h1>
+          <p class="text-sm text-gray-500 mt-1">
+            閲覧専用です。閲覧操作は監査ログに記録されます
+          </p>
+        </div>
+      </div>
+      <nav class="mt-4 flex gap-2">
+        <a
+          href="/admin"
+          class="px-4 py-2 rounded-md text-sm font-medium transition-colors {{ if eq . "dashboard" }}
+            bg-gray-800 text-white
+          {{ else }}
+            bg-gray-100 text-gray-700 hover:bg-gray-200
+          {{ end }}"
+        >
+          タイムライン
+        </a>
+        <a
+          href="/admin/rooms"
+          class="px-4 py-2 rounded-md text-sm font-medium transition-colors {{ if eq . "rooms" }}
+            bg-gray-800 text-white
+          {{ else }}
+            bg-gray-100 text-gray-700 hover:bg-gray-200
+          {{ end }}"
+        >
+          部屋一覧
+        </a>
+      </nav>
+    </div>
+  </section>
+{{ end }}
+
+{{ define "admin_pagination" }}
+  {{ if gt .TotalPages 1 }}
+    <div class="mt-6 flex items-center justify-center gap-3 text-sm">
+      {{ if gt .CurrentPage 1 }}
+        <a
+          href="{{ .BaseURL }}?page={{ sub .CurrentPage 1 }}"
+          class="px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+          >前へ</a
+        >
+      {{ end }}
+      <span class="text-gray-500">
+        {{ .CurrentPage }} / {{ .TotalPages }} ページ（全{{ .Total }}件）
+      </span>
+      {{ if lt .CurrentPage .TotalPages }}
+        <a
+          href="{{ .BaseURL }}?page={{ add .CurrentPage 1 }}"
+          class="px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+          >次へ</a
+        >
+      {{ end }}
+    </div>
+  {{ end }}
+{{ end }}
