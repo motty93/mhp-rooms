@@ -70,6 +70,7 @@ func (app *Application) SetupRoutes() chi.Router {
 		app.setupRoomRoutes(r)
 		app.setupAuthRoutes(r)
 		app.setupAPIRoutes(r)
+		app.setupAdminRoutes(r)
 	}
 
 	return r
@@ -171,6 +172,21 @@ func (app *Application) setupRoomRoutes(r chi.Router) {
 			rr.Post("/{id}/sse-token", app.sseTokenHandler.GenerateSSEToken)
 			rr.Get("/{id}/messages/stream", rmh.StreamMessages)
 		}
+	})
+}
+
+// setupAdminRoutes 管理者専用ルート。全環境で認証必須とし、権限がない場合は 404 を返す
+func (app *Application) setupAdminRoutes(r chi.Router) {
+	r.Route("/admin", func(ar chi.Router) {
+		if app.hasAuthMiddleware() {
+			ar.Use(app.authMiddleware.Middleware)
+		}
+		// 認証ミドルウェアがない環境でもコンテキストにユーザーが載らないため、RequireAdmin が 404 を返す
+		ar.Use(middleware.RequireAdmin)
+
+		ar.Get("/", app.adminHandler.Dashboard)
+		ar.Get("/rooms", app.adminHandler.Rooms)
+		ar.Get("/rooms/{id}", app.adminHandler.RoomDetail)
 	})
 }
 
