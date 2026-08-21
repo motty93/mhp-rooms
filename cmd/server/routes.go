@@ -98,6 +98,7 @@ func (app *Application) setupPageRoutes(r chi.Router) {
 	r.Get("/profile", app.withAuth(profileHandler.Profile))
 	r.Get("/profile/edit", app.withAuth(profileHandler.EditForm))
 	r.Get("/profile/view", app.withAuth(profileHandler.ViewProfile))
+	r.Get("/users", app.withOptionalAuth(app.userHandler.List))
 	r.Get("/users/{uuid}", app.withOptionalAuth(app.userHandler.Show))
 
 	// 更新情報・ロードマップ（完全静的のため認証ミドルウェアを適用しない）

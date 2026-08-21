@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"net/url"
 	"strings"
 
 	"mhp-rooms/internal/config"
@@ -146,6 +147,24 @@ func sequence(start, end int) []int {
 	return result
 }
 
+func hunterListURL(query, sort string, page int) string {
+	values := url.Values{}
+	if query != "" {
+		values.Set("q", query)
+	}
+	if sort != "" && sort != "recent" {
+		values.Set("sort", sort)
+	}
+	if page > 1 {
+		values.Set("page", fmt.Sprintf("%d", page))
+	}
+	encoded := values.Encode()
+	if encoded == "" {
+		return "/users"
+	}
+	return "/users?" + encoded
+}
+
 func TemplateFuncs() template.FuncMap {
 	return template.FuncMap{
 		"lower":            toLower,
@@ -167,5 +186,6 @@ func TemplateFuncs() template.FuncMap {
 		"getEnv":           config.GetEnv,
 		"safeHTML":         safeHTMLString,
 		"truncate":         truncateHTML,
+		"hunterListURL":    hunterListURL,
 	}
 }

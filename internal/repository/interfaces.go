@@ -16,6 +16,8 @@ type UserRepository interface {
 	FindUserByEmail(email string) (*models.User, error)
 	UpdateUser(user *models.User) error
 	GetActiveUsers(limit, offset int) ([]models.User, error)
+	ListPublicHunters(params PublicHunterListParams) ([]PublicHunter, error)
+	CountPublicHunters(query string) (int64, error)
 }
 
 type GameVersionRepository interface {

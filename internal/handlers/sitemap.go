@@ -91,6 +91,12 @@ func defaultSitemapEntries(baseURL string, now time.Time) []URL {
 			Priority:   0.9,
 		},
 		{
+			Loc:        baseURL + "/users",
+			LastMod:    lastMod,
+			ChangeFreq: "daily",
+			Priority:   0.8,
+		},
+		{
 			Loc:        baseURL + "/contact",
 			LastMod:    lastMod,
 			ChangeFreq: "monthly",
