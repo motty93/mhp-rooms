@@ -572,6 +572,23 @@
             {{ end }}
           </div>
         {{ end }}
+
+
+        <div
+          id="recent-activity"
+          class="mt-10 min-h-[16rem]"
+          hx-get="/rooms/recent-activity"
+          hx-trigger="load"
+          hx-swap="innerHTML"
+          aria-live="polite"
+        >
+          <div
+            class="flex h-64 items-center justify-center rounded-xl border border-gray-200 bg-white text-sm text-gray-500"
+            role="status"
+          >
+            最近のうごきを読み込んでいます
+          </div>
+        </div>
       </div>
     </section>
 

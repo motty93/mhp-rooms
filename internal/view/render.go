@@ -30,6 +30,7 @@ var partialDependencies = map[string][]string{
 	"profile_rooms":        {"tab_pagination.tmpl"},
 	"user_profile_rooms":   {"tab_pagination.tmpl"},
 	"profile_activity":     {"tab_pagination.tmpl"},
+	"recent_activity_feed": {},
 }
 
 func Template(w http.ResponseWriter, templateName string, data Data) {
@@ -69,6 +70,7 @@ func Template(w http.ResponseWriter, templateName string, data Data) {
 		filepath.Join("templates", "components", "block_report_buttons.tmpl"),
 		filepath.Join("templates", "components", "report_modal.tmpl"),
 		filepath.Join("templates", "components", "admin_nav.tmpl"),
+		filepath.Join("templates", "components", "recent_activity_feed.tmpl"),
 		filepath.Join("templates", "pages", templateName),
 	)
 	if err != nil {
