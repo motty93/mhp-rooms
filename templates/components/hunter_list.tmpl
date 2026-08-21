@@ -1,0 +1,116 @@
+{{ define "hunter_list" }}
+  <div id="hunter-results" aria-live="polite">
+    <p class="mb-4 text-sm text-gray-600">{{ .Total }} 人のハンター</p>
+    {{ if .Hunters }}
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {{ range .Hunters }}
+          <article
+            class="flex min-w-0 flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+          >
+            <div class="flex min-w-0 items-center gap-3">
+              {{ if .AvatarURL }}
+                <img
+                  src="{{ stringPtr .AvatarURL }}"
+                  alt="{{ .DisplayName }} のアバター"
+                  width="56"
+                  height="56"
+                  loading="lazy"
+                  class="h-14 w-14 shrink-0 rounded-full object-cover"
+                />
+              {{ else }}
+                <img
+                  src="/static/images/default-avatar.webp"
+                  alt="{{ .DisplayName }} のデフォルトアバター"
+                  width="56"
+                  height="56"
+                  loading="lazy"
+                  class="h-14 w-14 shrink-0 rounded-full object-cover"
+                />
+              {{ end }}
+              <div class="min-w-0">
+                <h2 class="truncate text-base font-bold text-gray-800">
+                  {{ .DisplayName }}
+                </h2>
+                {{ if .Username }}
+                  <p class="truncate text-sm text-gray-500">
+                    @{{ stringPtr .Username }}
+                  </p>
+                {{ end }}
+              </div>
+            </div>
+            <dl class="mt-4 space-y-2 border-t border-gray-100 pt-3 text-sm">
+              <div>
+                <dt class="sr-only">最近の活動</dt>
+                <dd class="text-gray-600">
+                  {{ if .RecentActivityTitle }}
+                    {{ stringPtr .RecentActivityTitle }}{{ if .RecentActivityTime }}
+                      <span class="ml-1 text-xs text-gray-400"
+                        >{{ .RecentActivityTime }}</span
+                      >
+                    {{ end }}
+                  {{ else }}
+                    最近の公開活動はありません
+                  {{ end }}
+                </dd>
+              </div>
+              <div class="flex justify-between gap-3">
+                <dt class="text-gray-500">部屋を作成</dt>
+                <dd class="font-medium text-gray-800">
+                  {{ .RoomCreateCount }} 件
+                </dd>
+              </div>
+            </dl>
+            <a
+              href="/users/{{ .ID }}"
+              class="mt-4 inline-flex min-h-11 items-center justify-center rounded-md border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2"
+              >プロフィールを見る</a
+            >
+          </article>
+        {{ end }}
+      </div>
+      {{ if gt .TotalPages 1 }}
+        <nav
+          class="mt-8 flex items-center justify-center gap-3"
+          aria-label="ハンター一覧のページ送り"
+        >
+          {{ if gt .Page 1 }}
+            <a
+              href="{{ hunterListURL .Query .Sort (sub .Page 1) }}"
+              hx-get="{{ hunterListURL .Query .Sort (sub .Page 1) }}"
+              hx-target="#hunter-results"
+              hx-swap="outerHTML"
+              class="inline-flex min-h-11 items-center rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2"
+              >前へ</a
+            >
+          {{ end }}
+          <span class="text-sm text-gray-600"
+            >{{ .Page }} / {{ .TotalPages }}</span
+          >
+          {{ if lt .Page .TotalPages }}
+            <a
+              href="{{ hunterListURL .Query .Sort (add .Page 1) }}"
+              hx-get="{{ hunterListURL .Query .Sort (add .Page 1) }}"
+              hx-target="#hunter-results"
+              hx-swap="outerHTML"
+              class="inline-flex min-h-11 items-center rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2"
+              >次へ</a
+            >
+          {{ end }}
+        </nav>
+      {{ end }}
+    {{ else }}
+      <div
+        class="rounded-xl border border-dashed border-gray-300 bg-white p-8 text-center"
+      >
+        <p class="text-gray-700">
+          条件に一致するハンターが見つかりませんでした。
+        </p>
+        <a
+          href="/users"
+          class="mt-4 inline-flex min-h-11 items-center rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2"
+          >検索をリセット</a
+        >
+      </div>
+    {{ end }}
+  </div>
+{{ end }}

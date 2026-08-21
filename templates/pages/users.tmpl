@@ -1,0 +1,82 @@
+{{ define "head" }}
+  <meta
+    name="description"
+    content="HuntersHubで一緒に狩りを楽しむハンターを探せます。"
+  />
+{{ end }}
+{{ define "page" }}
+  {{ $data := .PageData }}
+  <main class="min-h-[calc(100vh-4rem)] bg-gray-50 py-8 sm:py-12">
+    <div class="container mx-auto max-w-6xl px-4">
+      <header class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">ハンターを探す</h1>
+        <p class="mt-2 text-gray-600">
+          一緒に狩りを楽しむハンターを見つけよう。
+        </p>
+      </header>
+      <form
+        action="/users"
+        method="get"
+        hx-get="/users"
+        hx-target="#hunter-results"
+        hx-swap="outerHTML"
+        hx-push-url="true"
+        hx-disabled-elt="find button"
+        class="mb-6 grid gap-4 rounded-xl border border-gray-200 bg-white p-4 sm:grid-cols-[1fr_auto] sm:items-end"
+      >
+        <div>
+          <label
+            for="hunter-search"
+            class="mb-1 block text-sm font-medium text-gray-700"
+            >名前・ユーザー名で検索</label
+          ><input
+            id="hunter-search"
+            name="q"
+            value="{{ $data.Query }}"
+            type="search"
+            class="min-h-11 w-full rounded-md border border-gray-300 px-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2"
+          />
+        </div>
+        <div class="flex flex-col gap-2 sm:flex-row">
+          <div>
+            <label
+              for="hunter-sort"
+              class="mb-1 block text-sm font-medium text-gray-700"
+              >並び替え</label
+            ><select
+              id="hunter-sort"
+              name="sort"
+              class="min-h-11 rounded-md border border-gray-300 px-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2"
+            >
+              <option
+                value="recent"
+                {{ if eq $data.Sort "recent" }}selected{{ end }}
+              >
+                最近活動した順
+              </option>
+              <option
+                value="rooms"
+                {{ if eq $data.Sort "rooms" }}selected{{ end }}
+              >
+                部屋作成数が多い順
+              </option>
+              <option
+                value="joined"
+                {{ if eq $data.Sort "joined" }}selected{{ end }}
+              >
+                登録日が新しい順
+              </option>
+            </select>
+          </div>
+          <button
+            type="submit"
+            class="min-h-11 rounded-md bg-gray-800 px-5 text-sm font-medium text-white hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2 disabled:cursor-wait disabled:opacity-60"
+          >
+            検索
+          </button>
+        </div>
+      </form>
+      {{ template "hunter_list" $data }}
+    </div>
+  </main>
+{{ end }}
