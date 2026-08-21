@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -47,6 +48,59 @@ type RoomsPageData struct {
 	CurrentPage  int                  `json:"current_page"`
 	TotalPages   int                  `json:"total_pages"`
 	PerPage      int                  `json:"per_page"`
+}
+
+// RecentActivityFeedData は部屋一覧に遅延表示する公開活動フィードです。
+type RecentActivityFeedData struct {
+	Activities      []RecentActivityItem
+	WeeklyRoomCount int64
+}
+
+type RecentActivityItem struct {
+	UserID      uuid.UUID
+	DisplayName string
+	AvatarURL   *string
+	Title       string
+	TimeAgo     string
+	Type        string
+}
+
+// RecentActivity は公開対象の最近の活動を部分テンプレートで返します。
+func (h *RoomHandler) RecentActivity(w http.ResponseWriter, r *http.Request) {
+	activities, err := h.repo.UserActivity.GetRecentPublicActivities(8)
+	if err != nil {
+		log.Printf("最近のうごき取得エラー: %v", err)
+		http.Error(w, "最近のうごきの取得に失敗しました", http.StatusInternalServerError)
+		return
+	}
+	weeklyRoomCount, err := h.repo.UserActivity.CountPublicActivitiesByTypeSince(models.ActivityRoomCreate, startOfCurrentWeek(time.Now()))
+	if err != nil {
+		log.Printf("今週の部屋作成数取得エラー: %v", err)
+		http.Error(w, "最近のうごきの取得に失敗しました", http.StatusInternalServerError)
+		return
+	}
+	items := make([]RecentActivityItem, 0, len(activities))
+	for _, activity := range activities {
+		items = append(items, RecentActivityItem{
+			UserID:      activity.User.ID,
+			DisplayName: activity.User.DisplayName,
+			AvatarURL:   activity.User.AvatarURL,
+			Title:       activity.Title,
+			TimeAgo:     formatRelativeTime(activity.CreatedAt),
+			Type:        activity.ActivityType,
+		})
+	}
+	if err := renderPartialTemplate(w, "recent_activity_feed", RecentActivityFeedData{Activities: items, WeeklyRoomCount: weeklyRoomCount}); err != nil {
+		log.Printf("最近のうごき描画エラー: %v", err)
+		http.Error(w, "最近のうごきの表示に失敗しました", http.StatusInternalServerError)
+	}
+}
+
+func startOfCurrentWeek(now time.Time) time.Time {
+	jst := time.FixedZone("JST", 9*60*60)
+	local := now.In(jst)
+	daysSinceMonday := (int(local.Weekday()) + 6) % 7
+	return time.Date(local.Year(), local.Month(), local.Day()-daysSinceMonday, 0, 0, 0, 0, jst)
 }
 
 func (h *RoomHandler) Rooms(w http.ResponseWriter, r *http.Request) {
