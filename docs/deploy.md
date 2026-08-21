@@ -308,6 +308,25 @@ Cloud Run Jobsで実行する場合は [Cloud Run マイグレーション実行
 
 ---
 
+## サイト用OGP画像（デフォルトカード）の更新
+
+独自の OGP を持たないページ（トップ・部屋一覧など）で使われる `{prefix}/ogp/og_image.png` は、`ogp-renderer` のサイトモードで生成します。デザインを変更したら各環境で 1 回実行して差し替えます。
+
+```bash
+# ローカル確認（tmp/images/dev/ogp/og_image.png に出力）
+make generate-site-ogp
+
+# ステージング / 本番の GCS を更新（Job のイメージがデプロイ済みであること）
+gcloud run jobs execute ogp-renderer-stg --region=asia-northeast1 \
+  --update-env-vars OGP_TARGET=site --wait
+gcloud run jobs execute ogp-renderer --region=asia-northeast1 \
+  --update-env-vars OGP_TARGET=site --wait
+```
+
+- サイトモードは DB に接続せず、`ROOM_ID` も不要です
+- `og_image.png` は同一 URL を上書きするため `Cache-Control: public, max-age=3600` で保存されます（部屋 OGP は従来どおり immutable）
+- SNS 側のキャッシュは各サービスのカードバリデータ（X の Card Validator 等）で再取得させてください
+
 ## 放置部屋の自動削除
 
 一定期間（既定 48 時間）活動がない募集中の部屋を自動的に解散する Cloud Run Job `room-cleanup` を、Cloud Scheduler から 1 時間ごとに実行します。
