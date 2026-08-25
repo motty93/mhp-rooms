@@ -15,7 +15,7 @@
     {{ else if eq .RelationStatus "following" }}
       <div class="w-full space-y-2">
         <button
-          onclick="showUnfollowModal('{{ .User.ID }}', '{{ .User.DisplayName }}')"
+          onclick="showUnfollowModal('{{ .User.ID }}', '{{ jsEscape (profileDisplayName .User) }}')"
           class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2.5 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
         >
           <i class="fa-solid fa-user-check"></i>
@@ -44,7 +44,7 @@
           </span>
         </div>
         <button
-          onclick="showUnfollowModal('{{ .User.ID }}', '{{ .User.DisplayName }}', true)"
+          onclick="showUnfollowModal('{{ .User.ID }}', '{{ jsEscape (profileDisplayName .User) }}', true)"
           class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
         >
           <i class="fa-solid fa-user-minus"></i>

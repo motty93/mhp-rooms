@@ -12,6 +12,7 @@ import (
 	"mhp-rooms/internal/middleware"
 	"mhp-rooms/internal/models"
 	"mhp-rooms/internal/repository"
+	"mhp-rooms/internal/utils"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -207,7 +208,7 @@ func (uh *UserHandler) Show(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := TemplateData{
-		Title:    user.DisplayName + "のプロフィール",
+		Title:    utils.ResolvePublicDisplayName(user.DisplayName, user.Username, user.ID) + "のプロフィール",
 		PageData: profileData,
 	}
 
