@@ -16,6 +16,8 @@ type UserRepository interface {
 	FindUserByEmail(email string) (*models.User, error)
 	UpdateUser(user *models.User) error
 	GetActiveUsers(limit, offset int) ([]models.User, error)
+	ListPublicHunters(params PublicHunterListParams) ([]PublicHunter, error)
+	CountPublicHunters(query string) (int64, error)
 }
 
 type GameVersionRepository interface {
@@ -104,6 +106,8 @@ type UserActivityRepository interface {
 	GetUserActivities(userID uuid.UUID, since time.Time, limit, offset int) ([]models.UserActivity, error)
 	GetUserActivitiesByType(userID uuid.UUID, activityType string, limit, offset int) ([]models.UserActivity, error)
 	CountUserActivities(userID uuid.UUID, since time.Time) (int64, error)
+	GetRecentPublicActivities(limit int) ([]models.UserActivity, error)
+	CountPublicActivitiesByTypeSince(activityType string, since time.Time) (int64, error)
 	DeleteActivity(id uuid.UUID) error
 	DeleteOldActivities(olderThan time.Time) error
 }

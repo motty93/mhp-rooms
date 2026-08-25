@@ -138,6 +138,7 @@ func (db *DB) addConstraintsAndIndexes() error {
 
 		// ユーザーアクティビティ関連（追加）
 		"CREATE INDEX IF NOT EXISTS idx_user_activities_user_id_created_at ON user_activities(user_id, created_at DESC)",
+		"CREATE INDEX IF NOT EXISTS idx_user_activities_activity_type_created_at ON user_activities(activity_type, created_at DESC)",
 
 		// ルーム関連（追加）
 		"CREATE INDEX IF NOT EXISTS idx_rooms_is_closed ON rooms(is_closed)",

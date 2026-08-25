@@ -53,6 +53,7 @@
               "name": [
                 "ホーム",
                 "部屋一覧",
+                "ハンターを探す",
                 "ログイン",
                 "新規登録",
                 "お問い合わせ",
@@ -62,6 +63,7 @@
               "url": [
                 "{{ $siteURL }}/",
                 "{{ $siteURL }}/rooms",
+                "{{ $siteURL }}/users",
                 "{{ $siteURL }}/auth/login",
                 "{{ $siteURL }}/auth/register",
                 "{{ $siteURL }}/contact",
@@ -441,6 +443,12 @@
                     >
                       部屋一覧
                     </a>
+                    <a
+                      href="/users"
+                      @click="$store.mobileMenu.close()"
+                      class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                      >ハンターを探す</a
+                    >
                   </div>
                 </div>
 
@@ -502,6 +510,12 @@
                     >
                       部屋一覧
                     </a>
+                    <a
+                      href="/users"
+                      @click="$store.mobileMenu.close()"
+                      class="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                      >ハンターを探す</a
+                    >
                     <button
                       @click="$store.roomCreate.open(); $store.mobileMenu.close();"
                       class="block w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"

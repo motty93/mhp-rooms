@@ -4,6 +4,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
+	"time"
 
 	"mhp-rooms/internal/middleware"
 	"mhp-rooms/internal/models"
@@ -37,6 +41,105 @@ type UserProfileData struct {
 	FollowerCount   int64             `json:"followerCount"`
 	FavoriteGames   []string          `json:"favoriteGames"`
 	PlayTimes       *models.PlayTimes `json:"playTimes"`
+}
+
+const publicHuntersPerPage = 20
+
+// HunterListData は公開ハンター一覧の表示データです。
+type HunterListData struct {
+	Hunters    []HunterListItem
+	Query      string
+	Sort       string
+	Page       int
+	TotalPages int
+	Total      int64
+}
+
+type HunterListItem struct {
+	repository.PublicHunter
+	RecentActivityTime string
+}
+
+// List は公開ハンター一覧を表示します。HTMXリクエストでは結果領域のみ返します。
+func (uh *UserHandler) List(w http.ResponseWriter, r *http.Request) {
+	query, sort, page := normalizeHunterListParams(r)
+	total, err := uh.repo.User.CountPublicHunters(query)
+	if err != nil {
+		log.Printf("ハンター件数取得エラー: %v", err)
+		http.Error(w, "ハンター一覧の取得に失敗しました", http.StatusInternalServerError)
+		return
+	}
+	totalPages := int((total + publicHuntersPerPage - 1) / publicHuntersPerPage)
+	if totalPages < 1 {
+		totalPages = 1
+	}
+	if page > totalPages {
+		page = totalPages
+	}
+	hunters, err := uh.repo.User.ListPublicHunters(repository.PublicHunterListParams{Query: query, Sort: sort, Limit: publicHuntersPerPage, Offset: (page - 1) * publicHuntersPerPage})
+	if err != nil {
+		log.Printf("ハンター一覧取得エラー: %v", err)
+		http.Error(w, "ハンター一覧の取得に失敗しました", http.StatusInternalServerError)
+		return
+	}
+	items := make([]HunterListItem, 0, len(hunters))
+	for _, hunter := range hunters {
+		item := HunterListItem{
+			PublicHunter:       hunter,
+			RecentActivityTime: formatHunterActivityTime(hunter.RecentActivityAt),
+		}
+		items = append(items, item)
+	}
+	data := HunterListData{Hunters: items, Query: query, Sort: sort, Page: page, TotalPages: totalPages, Total: total}
+	if r.Header.Get("HX-Request") == "true" {
+		w.Header().Set("HX-Push-Url", hunterListURL(query, sort, page))
+		if err := renderPartialTemplate(w, "hunter_list", data); err != nil {
+			http.Error(w, "テンプレートの描画に失敗しました", http.StatusInternalServerError)
+		}
+		return
+	}
+	renderTemplate(w, r, "users.tmpl", TemplateData{Title: "ハンターを探す", PageData: data})
+}
+
+func formatHunterActivityTime(value string) string {
+	if value == "" {
+		return ""
+	}
+	for _, layout := range []string{time.RFC3339Nano, "2006-01-02 15:04:05.999999999Z07:00"} {
+		if parsed, err := time.Parse(layout, value); err == nil {
+			return formatRelativeTime(parsed)
+		}
+	}
+	return ""
+}
+
+func normalizeHunterListParams(r *http.Request) (string, string, int) {
+	query := strings.TrimSpace(r.URL.Query().Get("q"))
+	if len([]rune(query)) > 100 {
+		query = string([]rune(query)[:100])
+	}
+	sort := r.URL.Query().Get("sort")
+	if sort != "rooms" && sort != "joined" {
+		sort = "recent"
+	}
+	return query, sort, parsePageParam(r)
+}
+
+func hunterListURL(query, sort string, page int) string {
+	values := url.Values{}
+	if query != "" {
+		values.Set("q", query)
+	}
+	if sort != "recent" {
+		values.Set("sort", sort)
+	}
+	if page > 1 {
+		values.Set("page", strconv.Itoa(page))
+	}
+	if encoded := values.Encode(); encoded != "" {
+		return "/users?" + encoded
+	}
+	return "/users"
 }
 
 // Show 他のユーザーのプロフィールページを表示

@@ -98,6 +98,7 @@ func (app *Application) setupPageRoutes(r chi.Router) {
 	r.Get("/profile", app.withAuth(profileHandler.Profile))
 	r.Get("/profile/edit", app.withAuth(profileHandler.EditForm))
 	r.Get("/profile/view", app.withAuth(profileHandler.ViewProfile))
+	r.Get("/users", app.withOptionalAuth(app.userHandler.List))
 	r.Get("/users/{uuid}", app.withOptionalAuth(app.userHandler.Show))
 
 	// 更新情報・ロードマップ（完全静的のため認証ミドルウェアを適用しない）
@@ -126,11 +127,13 @@ func (app *Application) setupRoomRoutes(r chi.Router) {
 		// 部屋一覧・詳細（本番環境では認証情報をオプションで取得、開発環境では認証なし）
 		if app.hasAuthMiddleware() {
 			rr.Get("/", app.withOptionalAuth(rh.Rooms))
+			rr.Get("/recent-activity", app.withOptionalAuth(rh.RecentActivity))
 			rr.Get("/{id}", app.withOptionalAuth(rdh.RoomDetail))
 			// 部屋参加ページ（スケルトン、OGPクローラー対応のため認証オプション）
 			rr.Get("/{id}/join", app.withOptionalAuth(rjh.RoomJoinPage))
 		} else {
 			rr.Get("/", rh.Rooms)
+			rr.Get("/recent-activity", rh.RecentActivity)
 			rr.Get("/{id}", rdh.RoomDetail)
 			// 部屋参加ページ（開発環境では認証なし）
 			rr.Get("/{id}/join", rjh.RoomJoinPage)

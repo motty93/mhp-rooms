@@ -95,6 +95,14 @@ room-cleanup:
 	DRY_RUN=$(or $(DRY_RUN),false) \
 	go run cmd/room-cleanup/main.go
 
+# サイト共通のデフォルトOGP画像を生成（OG_BUCKET 未指定ならローカル tmp/images/ に保存）
+generate-site-ogp:
+	@echo "サイト用OGP画像を生成中..."
+	@OGP_TARGET=site \
+	OG_PREFIX=$(or $(OG_PREFIX),dev) \
+	go run cmd/ogp-renderer/main.go
+	@echo "✅ サイト用OGP画像生成完了"
+
 # 更新情報・ロードマップの静的ファイル生成
 generate-info:
 	@echo "更新情報・ロードマップの静的ファイルを生成中..."

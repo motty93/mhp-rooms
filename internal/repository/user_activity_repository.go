@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 
 	"mhp-rooms/internal/models"
 )
@@ -117,6 +118,39 @@ func (r *userActivityRepository) CountUserActivities(userID uuid.UUID, since tim
 		Where("user_id = ? AND created_at > ?", userID, since).
 		Count(&count).Error
 
+	return count, err
+}
+
+// GetRecentPublicActivities は有効なユーザーによる公開対象の活動を新しい順で取得します。
+func (r *userActivityRepository) GetRecentPublicActivities(limit int) ([]models.UserActivity, error) {
+	if limit <= 0 || limit > 20 {
+		limit = 8
+	}
+
+	var activities []models.UserActivity
+	err := r.db.GetConn().
+		Joins("JOIN users ON users.id = user_activities.user_id AND users.is_active = ?", true).
+		Where("user_activities.activity_type IN ?", models.PublicFeedActivityTypes()).
+		Order("user_activities.created_at DESC").
+		Limit(limit).
+		Preload("User", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "display_name", "username", "avatar_url")
+		}).
+		Find(&activities).Error
+	return activities, err
+}
+
+// CountPublicActivitiesByTypeSince は指定した公開対象活動の期間内件数を返します。
+func (r *userActivityRepository) CountPublicActivitiesByTypeSince(activityType string, since time.Time) (int64, error) {
+	if !models.IsPublicFeedActivity(activityType) {
+		return 0, errors.New("公開対象ではないアクティビティタイプです")
+	}
+
+	var count int64
+	err := r.db.GetConn().Model(&models.UserActivity{}).
+		Joins("JOIN users ON users.id = user_activities.user_id AND users.is_active = ?", true).
+		Where("user_activities.activity_type = ? AND user_activities.created_at >= ?", activityType, since).
+		Count(&count).Error
 	return count, err
 }
 
