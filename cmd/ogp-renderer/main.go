@@ -48,7 +48,16 @@ const (
 	TitleFontSize       = 64.0 // タイトル
 	LogoFontSize        = 36.0 // HuntersHub
 	GameVersionFontSize = 36.0 // ゲームバージョン
+
+	// サイト用OGP（デフォルトカード）のレイアウト設定
+	SiteIconSize        = 120.0 // 中央ロゴのアイコンサイズ
+	SiteNameFontSize    = 84.0  // サービス名
+	SiteTaglineFontSize = 38.0  // タグライン
+	SiteBadgeFontSize   = 28.0  // ゲームバッジ
 )
+
+// siteGameCodes サイト用OGPに並べる対応タイトル（表示順）
+var siteGameCodes = []string{"MHP", "MHP2", "MHP2G", "MHP3", "MHXX"}
 
 func main() {
 	startTime := time.Now()
@@ -74,10 +83,6 @@ func main() {
 		iconImagePath = "cmd/ogp-renderer/assets/images/icon.webp" // ローカル開発用デフォルト
 	}
 
-	if roomIDStr == "" {
-		log.Fatal("必須の環境変数が設定されていません: ROOM_ID")
-	}
-
 	if ogPrefix == "" {
 		ogPrefix = "dev" // デフォルト
 	}
@@ -85,7 +90,36 @@ func main() {
 	// ローカルモード判定（OG_BUCKETが空の場合）
 	isLocalMode := ogBucket == ""
 	if isLocalMode {
-		log.Printf("ローカルモード: tmp/images/og/ に保存します")
+		log.Printf("ローカルモード: tmp/images/ に保存します")
+	}
+
+	// サイト用OGP（デフォルトカード）の生成モード。DB接続・ROOM_ID は不要
+	if os.Getenv("OGP_TARGET") == "site" {
+		log.Printf("サイト用OGP画像生成開始: bucket=%s, prefix=%s", ogBucket, ogPrefix)
+
+		img, err := generateSiteOGPImage(fontPath, iconImagePath)
+		if err != nil {
+			log.Fatalf("サイト用OGP画像生成失敗: %v", err)
+		}
+
+		objectPath := "ogp/og_image.png"
+		if isLocalMode {
+			if err := saveToLocal(img, ogPrefix, objectPath); err != nil {
+				log.Fatalf("ローカル保存失敗: %v", err)
+			}
+		} else {
+			// 同一URLを上書きするため immutable にしない
+			if err := uploadToGCS(context.Background(), img, ogBucket, ogPrefix, objectPath, "public, max-age=3600"); err != nil {
+				log.Fatalf("GCSアップロード失敗: %v", err)
+			}
+		}
+
+		log.Printf("サイト用OGP画像保存完了: duration_ms=%d", time.Since(startTime).Milliseconds())
+		return
+	}
+
+	if roomIDStr == "" {
+		log.Fatal("必須の環境変数が設定されていません: ROOM_ID")
 	}
 
 	// RoomIDのパース
@@ -133,14 +167,15 @@ func main() {
 
 	// 保存先の決定とアップロード
 	ctx := context.Background()
+	objectPath := fmt.Sprintf("ogp/rooms/%s.png", roomID)
 	if isLocalMode {
 		// ローカルファイルシステムに保存
-		if err := saveToLocal(img, ogPrefix, roomID); err != nil {
+		if err := saveToLocal(img, ogPrefix, objectPath); err != nil {
 			log.Fatalf("ローカル保存失敗: %v", err)
 		}
 	} else {
 		// GCSへのアップロード
-		if err := uploadToGCS(ctx, img, ogBucket, ogPrefix, roomID); err != nil {
+		if err := uploadToGCS(ctx, img, ogBucket, ogPrefix, objectPath, "public, max-age=31536000, immutable"); err != nil {
 			log.Fatalf("GCSアップロード失敗: %v", err)
 		}
 	}
@@ -175,13 +210,12 @@ func mustLoadFaceTTF(path string, size float64) font.Face {
 }
 
 // saveToLocal ローカルファイルシステムに画像を保存
-func saveToLocal(img image.Image, ogPrefix string, roomID uuid.UUID) error {
-	// パス: tmp/images/{env}/ogp/rooms/{id}.png
-	dirPath := filepath.Join("tmp", "images", ogPrefix, "ogp", "rooms")
-	filePath := filepath.Join(dirPath, fmt.Sprintf("%s.png", roomID))
+func saveToLocal(img image.Image, ogPrefix string, objectPath string) error {
+	// パス: tmp/images/{env}/{objectPath}
+	filePath := filepath.Join("tmp", "images", ogPrefix, filepath.FromSlash(objectPath))
 
 	// ディレクトリを作成
-	if err := os.MkdirAll(dirPath, 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
 		return fmt.Errorf("ディレクトリ作成失敗: %w", err)
 	}
 
@@ -202,22 +236,22 @@ func saveToLocal(img image.Image, ogPrefix string, roomID uuid.UUID) error {
 }
 
 // uploadToGCS GCSに画像をアップロード
-func uploadToGCS(ctx context.Context, img image.Image, ogBucket, ogPrefix string, roomID uuid.UUID) error {
+func uploadToGCS(ctx context.Context, img image.Image, ogBucket, ogPrefix string, objectPath string, cacheControl string) error {
 	client, err := storage.NewClient(ctx)
 	if err != nil {
 		return fmt.Errorf("GCSクライアント作成失敗: %w", err)
 	}
 	defer client.Close()
 
-	// オブジェクトパス: %s/ogp/rooms/%s.png
-	objectPath := fmt.Sprintf("%s/ogp/rooms/%s.png", ogPrefix, roomID)
+	// オブジェクトパス: {prefix}/{objectPath}
+	fullPath := fmt.Sprintf("%s/%s", ogPrefix, objectPath)
 	bucket := client.Bucket(ogBucket)
-	obj := bucket.Object(objectPath)
+	obj := bucket.Object(fullPath)
 
 	// アップロード
 	w := obj.NewWriter(ctx)
 	w.ContentType = "image/png"
-	w.CacheControl = "public, max-age=31536000, immutable"
+	w.CacheControl = cacheControl
 
 	if err := png.Encode(w, img); err != nil {
 		return fmt.Errorf("画像エンコード失敗: %w", err)
@@ -262,6 +296,91 @@ func generateOGPImage(room *models.Room, pal view.GameVersionPalette, fontPath, 
 	// 右下: HuntersHubロゴ
 	if err := drawHuntersHubLogoBottomRight(dc, scale, fontPath, iconImagePath); err != nil {
 		return nil, fmt.Errorf("ロゴ描画失敗: %w", err)
+	}
+
+	// 高解像度→等倍へ縮小（Lanczos3）
+	hi := dc.Image()
+	lo := resize.Resize(uint(OGPWidth), uint(OGPHeight), hi, resize.Lanczos3)
+	return lo, nil
+}
+
+// generateSiteOGPImage サイト共通のデフォルトOGP画像を生成する。
+// 部屋OGPと同じデザイン言語（グラデーション枠 + 白カード）で、
+// 中央にロゴ・タグライン・対応タイトルのバッジ列を配置する
+func generateSiteOGPImage(fontPath, iconImagePath string) (image.Image, error) {
+	scale := float64(RenderScale)
+	W := int(float64(OGPWidth) * scale)
+	H := int(float64(OGPHeight) * scale)
+
+	dc := gg.NewContext(W, H)
+
+	// 背景: 白
+	dc.SetColor(color.RGBA{R: 255, G: 255, B: 255, A: 255})
+	dc.Clear()
+
+	// 枠はサイト共通のグレー（未定義コードで返る既定パレット）
+	if err := drawGradientBorder(dc, view.GetPalette(""), scale); err != nil {
+		return nil, fmt.Errorf("枠描画失敗: %w", err)
+	}
+
+	centerX := float64(W) / 2
+
+	// 中央: アイコン + サービス名
+	dc.SetFontFace(mustLoadFaceTTF(fontPath, SiteNameFontSize*scale))
+	name := "HuntersHub"
+	nameWidth, _ := dc.MeasureString(name)
+
+	iconSize := SiteIconSize * scale
+	iconGap := 24 * scale
+	rowWidth := iconSize + iconGap + nameWidth
+	rowX := centerX - rowWidth/2
+	nameBaselineY := 255 * scale
+
+	if iconImg, err := gg.LoadImage(iconImagePath); err != nil {
+		log.Printf("アイコン画像の読み込みに失敗: %v", err)
+	} else {
+		resizedIcon := resize.Resize(uint(iconSize), uint(iconSize), iconImg, resize.Lanczos3)
+		// テキストのベースラインに視覚的に揃える
+		iconY := nameBaselineY - iconSize*0.82
+		dc.DrawImage(resizedIcon, int(rowX), int(iconY))
+	}
+
+	dc.SetColor(color.RGBA{R: 0, G: 0, B: 0, A: 255})
+	dc.DrawString(name, rowX+iconSize+iconGap, nameBaselineY)
+
+	// タグライン
+	dc.SetFontFace(mustLoadFaceTTF(fontPath, SiteTaglineFontSize*scale))
+	tagline := "モンハンシリーズのパーティ募集掲示板"
+	taglineWidth, _ := dc.MeasureString(tagline)
+	dc.SetColor(color.RGBA{R: 75, G: 85, B: 99, A: 255})
+	dc.DrawString(tagline, centerX-taglineWidth/2, 350*scale)
+
+	// 対応タイトルのバッジ列（各ゲームのパレット色）
+	dc.SetFontFace(mustLoadFaceTTF(fontPath, SiteBadgeFontSize*scale))
+	badgeHeight := 54 * scale
+	badgePadX := 24 * scale
+	badgeGap := 16 * scale
+	badgeCenterY := 445 * scale
+
+	badgeWidths := make([]float64, len(siteGameCodes))
+	totalBadgeWidth := 0.0
+	for i, code := range siteGameCodes {
+		w, _ := dc.MeasureString(code)
+		badgeWidths[i] = w + badgePadX*2
+		totalBadgeWidth += badgeWidths[i]
+	}
+	totalBadgeWidth += badgeGap * float64(len(siteGameCodes)-1)
+
+	x := centerX - totalBadgeWidth/2
+	for i, code := range siteGameCodes {
+		dc.SetColor(view.GetPalette(code).BottomColor)
+		dc.DrawRoundedRectangle(x, badgeCenterY-badgeHeight/2, badgeWidths[i], badgeHeight, badgeHeight/2)
+		dc.Fill()
+
+		dc.SetColor(color.RGBA{R: 255, G: 255, B: 255, A: 255})
+		dc.DrawStringAnchored(code, x+badgeWidths[i]/2, badgeCenterY, 0.5, 0.37)
+
+		x += badgeWidths[i] + badgeGap
 	}
 
 	// 高解像度→等倍へ縮小（Lanczos3）

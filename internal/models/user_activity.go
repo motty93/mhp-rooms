@@ -47,6 +47,23 @@ const (
 	ActivityUserJoin = "user_join" // ユーザー登録
 )
 
+var publicFeedActivityTypes = [...]string{ActivityRoomCreate, ActivityRoomJoin, ActivityUserJoin}
+
+// PublicFeedActivityTypes は公開フィードに掲載する活動種別のコピーを返します。
+func PublicFeedActivityTypes() []string {
+	return append([]string(nil), publicFeedActivityTypes[:]...)
+}
+
+// IsPublicFeedActivity は活動種別が公開フィードの対象かを返します。
+func IsPublicFeedActivity(activityType string) bool {
+	for _, publicType := range publicFeedActivityTypes {
+		if activityType == publicType {
+			return true
+		}
+	}
+	return false
+}
+
 // エンティティタイプ定数
 const (
 	EntityTypeRoom    = "room"
