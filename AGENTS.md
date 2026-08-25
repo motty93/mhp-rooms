@@ -15,5 +15,8 @@ Author Go tests alongside implementations using the `_test.go` suffix and table-
 ## Commit & Pull Request Guidelines
 Commits use Conventional Commit prefixes (`feat:`, `fix:`, `refactor:`, etc.) and the imperative mood. Keep related changes grouped and describe context in Japanese, matching the rest of the history. Pull requests should summarize the change, list manual verification steps (for example `make test`, browser smoke checks), reference linked issues, and attach UI screenshots or recordings when templates or CSS shift. Call out schema updates, migrations, or seed adjustments explicitly so reviewers can apply them locally.
 
+## Release Information Checklist
+Before creating a release PR containing user-visible changes, follow `リリース前の更新情報確認 【必須】` in `docs/deploy.md`. Confirm that the current `content/info` article's body and `summary` cover the release, set `updated` to the actual release date and time, and run `make generate-info`. The corrected update information must be merged into `staging` before the production release PR is merged.
+
 ## Collaboration Notes
 Team communication, inline comments, and documentation default to Japanese. Confirm any adjustments to header layout or other UX-critical conventions with product stakeholders before merging.
