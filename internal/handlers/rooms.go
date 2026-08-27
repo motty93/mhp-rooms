@@ -81,18 +81,22 @@ func (h *RoomHandler) RecentActivity(w http.ResponseWriter, r *http.Request) {
 	}
 	items := make([]RecentActivityItem, 0, len(activities))
 	for _, activity := range activities {
-		items = append(items, RecentActivityItem{
-			UserID:      activity.User.ID,
-			DisplayName: activity.User.DisplayName,
-			AvatarURL:   activity.User.AvatarURL,
-			Title:       activity.Title,
-			TimeAgo:     formatRelativeTime(activity.CreatedAt),
-			Type:        activity.ActivityType,
-		})
+		items = append(items, recentActivityItem(activity))
 	}
 	if err := renderPartialTemplate(w, "recent_activity_feed", RecentActivityFeedData{Activities: items, WeeklyRoomCount: weeklyRoomCount}); err != nil {
 		log.Printf("最近のうごき描画エラー: %v", err)
 		http.Error(w, "最近のうごきの表示に失敗しました", http.StatusInternalServerError)
+	}
+}
+
+func recentActivityItem(activity models.UserActivity) RecentActivityItem {
+	return RecentActivityItem{
+		UserID:      activity.User.ID,
+		DisplayName: utils.ResolvePublicDisplayName(activity.User.DisplayName, activity.User.Username, activity.User.ID),
+		AvatarURL:   activity.User.AvatarURL,
+		Title:       activity.Title,
+		TimeAgo:     formatRelativeTime(activity.CreatedAt),
+		Type:        activity.ActivityType,
 	}
 }
 

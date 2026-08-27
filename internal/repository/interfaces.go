@@ -16,6 +16,8 @@ type UserRepository interface {
 	FindUserByEmail(email string) (*models.User, error)
 	UpdateUser(user *models.User) error
 	GetActiveUsers(limit, offset int) ([]models.User, error)
+	ListAdminUsers(params AdminUserListParams) ([]AdminUser, error)
+	CountAdminUsers(query string) (int64, error)
 	ListPublicHunters(params PublicHunterListParams) ([]PublicHunter, error)
 	CountPublicHunters(query string) (int64, error)
 }
@@ -54,8 +56,8 @@ type RoomRepository interface {
 	GetUserRoomStatus(userID uuid.UUID) (string, *models.Room, error) // (status, room, error)
 	GetRoomsByHostUser(userID uuid.UUID, limit, offset int) ([]models.Room, error)
 	CountRoomsByHostUser(userID uuid.UUID) (int64, error)
-	GetAllRoomsForAdmin(limit, offset int) ([]models.Room, error)
-	CountAllRooms() (int64, error)
+	GetAllRoomsForAdmin(limit, offset int, hostUserID *uuid.UUID) ([]models.Room, error)
+	CountAllRooms(hostUserID *uuid.UUID) (int64, error)
 }
 
 type RoomLogRepository interface {

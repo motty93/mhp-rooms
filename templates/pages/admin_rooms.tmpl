@@ -44,7 +44,9 @@
                     <td class="px-4 py-3 text-gray-700 whitespace-nowrap">
                       {{ .GameVersion }}
                     </td>
-                    <td class="px-4 py-3 text-gray-700">{{ .HostName }}</td>
+                    <td class="px-4 py-3 text-gray-700">
+                      <a href="/users/{{ .HostUserID }}" class="text-blue-600 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 rounded">{{ .HostName }}</a>
+                    </td>
                     <td class="px-4 py-3 text-gray-700 whitespace-nowrap">
                       {{ .Players }}
                     </td>

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -18,6 +20,7 @@ import (
 const (
 	adminLogsPerPage     = 50
 	adminRoomsPerPage    = 20
+	adminUsersPerPage    = 20
 	adminMessagesPerPage = 50
 
 	// AdminActionView 管理者による部屋閲覧の監査ログ用アクション
@@ -56,6 +59,7 @@ type adminLogRow struct {
 // adminRoomRow 部屋一覧の1行分
 type adminRoomRow struct {
 	ID          uuid.UUID
+	HostUserID  uuid.UUID
 	Name        string
 	GameVersion string
 	HostName    string
@@ -64,6 +68,19 @@ type adminRoomRow struct {
 	StatusClass string
 	ReportCount int64
 	CreatedAt   string
+}
+
+// adminUserRow ユーザー一覧の1行分（メールアドレスは管理画面専用）
+type adminUserRow struct {
+	ID             uuid.UUID
+	DisplayName    string
+	Username       string
+	Email          string
+	Role           string
+	CreatedAt      string
+	RoomCount      int64
+	ReportCount    int64
+	LastActivityAt string
 }
 
 // adminMessageRow 部屋詳細のチャットログ1行分
@@ -90,6 +107,14 @@ type adminDashboardData struct {
 // adminRoomsData 部屋一覧の PageData
 type adminRoomsData struct {
 	Rooms      []adminRoomRow
+	Pagination Pagination
+}
+
+// adminUsersData ユーザー一覧の PageData
+type adminUsersData struct {
+	Users      []adminUserRow
+	Query      string
+	Sort       string
 	Pagination Pagination
 }
 
@@ -138,13 +163,18 @@ func (h *AdminHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 // Rooms 解散済みも含む全部屋の一覧
 func (h *AdminHandler) Rooms(w http.ResponseWriter, r *http.Request) {
 	page := parsePageParam(r)
+	hostUserID, err := parseAdminRoomsHostUserID(r.URL.Query().Get("host_user_id"))
+	if err != nil {
+		http.Error(w, "host_user_id は有効なUUIDを指定してください", http.StatusBadRequest)
+		return
+	}
 
-	rooms, err := h.repo.Room.GetAllRoomsForAdmin(adminRoomsPerPage, (page-1)*adminRoomsPerPage)
+	rooms, err := h.repo.Room.GetAllRoomsForAdmin(adminRoomsPerPage, (page-1)*adminRoomsPerPage, hostUserID)
 	if err != nil {
 		http.Error(w, "部屋一覧の取得に失敗しました", http.StatusInternalServerError)
 		return
 	}
-	total, err := h.repo.Room.CountAllRooms()
+	total, err := h.repo.Room.CountAllRooms(hostUserID)
 	if err != nil {
 		http.Error(w, "部屋件数の取得に失敗しました", http.StatusInternalServerError)
 		return
@@ -169,11 +199,41 @@ func (h *AdminHandler) Rooms(w http.ResponseWriter, r *http.Request) {
 
 	data := adminRoomsData{
 		Rooms:      buildAdminRoomRows(rooms, reportCounts),
-		Pagination: newPagination(total, page, adminRoomsPerPage, "/admin/rooms"),
+		Pagination: newPaginationWithQuery(total, page, adminRoomsPerPage, "/admin/rooms", adminRoomsQuery(hostUserID)),
 	}
 
 	view.Template(w, "admin_rooms.tmpl", view.Data{
 		Title:    "部屋一覧（管理）",
+		PageData: data,
+	})
+}
+
+// Users は無効化済みも含め、管理者だけにユーザーと集計情報を表示します。
+func (h *AdminHandler) Users(w http.ResponseWriter, r *http.Request) {
+	params := normalizeAdminUserListParams(r.URL.Query().Get("q"), r.URL.Query().Get("sort"))
+	page := parsePageParam(r)
+	params.Limit = adminUsersPerPage
+	params.Offset = (page - 1) * adminUsersPerPage
+
+	users, err := h.repo.User.ListAdminUsers(params)
+	if err != nil {
+		http.Error(w, "ユーザー一覧の取得に失敗しました", http.StatusInternalServerError)
+		return
+	}
+	total, err := h.repo.User.CountAdminUsers(params.Query)
+	if err != nil {
+		http.Error(w, "ユーザー件数の取得に失敗しました", http.StatusInternalServerError)
+		return
+	}
+
+	data := adminUsersData{
+		Users:      buildAdminUserRows(users),
+		Query:      params.Query,
+		Sort:       params.Sort,
+		Pagination: newPaginationWithQuery(total, page, adminUsersPerPage, "/admin/users", adminUsersQuery(params)),
+	}
+	view.Template(w, "admin_users.tmpl", view.Data{
+		Title:    "ユーザー一覧（管理）",
 		PageData: data,
 	})
 }
@@ -292,6 +352,7 @@ func buildAdminRoomRows(rooms []models.Room, reportCounts map[uuid.UUID]int64) [
 		statusLabel, statusClass := adminRoomStatus(room)
 		rows = append(rows, adminRoomRow{
 			ID:          room.ID,
+			HostUserID:  room.HostUserID,
 			Name:        room.Name,
 			GameVersion: room.GameVersion.Code,
 			HostName:    adminUserName(&room.HostUserID, &room.Host),
@@ -303,6 +364,76 @@ func buildAdminRoomRows(rooms []models.Room, reportCounts map[uuid.UUID]int64) [
 		})
 	}
 	return rows
+}
+
+func buildAdminUserRows(users []repository.AdminUser) []adminUserRow {
+	rows := make([]adminUserRow, 0, len(users))
+	for _, user := range users {
+		username := "-"
+		if user.Username != nil && *user.Username != "" {
+			username = *user.Username
+		}
+		lastActivityAt := "活動なし"
+		if user.LastActivityAt != nil {
+			lastActivityAt = formatAdminTime(*user.LastActivityAt)
+		}
+		rows = append(rows, adminUserRow{
+			ID:             user.ID,
+			DisplayName:    user.DisplayName,
+			Username:       username,
+			Email:          user.Email,
+			Role:           user.Role,
+			CreatedAt:      formatAdminTime(user.CreatedAt),
+			RoomCount:      user.RoomCount,
+			ReportCount:    user.ReportCount,
+			LastActivityAt: lastActivityAt,
+		})
+	}
+	return rows
+}
+
+func normalizeAdminUserListParams(query, sort string) repository.AdminUserListParams {
+	normalizedQuery := strings.TrimSpace(query)
+	if runes := []rune(normalizedQuery); len(runes) > 100 {
+		normalizedQuery = string(runes[:100])
+	}
+	if sort != "rooms" && sort != "reports" && sort != "joined" {
+		sort = "joined"
+	}
+	return repository.AdminUserListParams{Query: normalizedQuery, Sort: sort}
+}
+
+func adminUsersQuery(params repository.AdminUserListParams) url.Values {
+	values := url.Values{}
+	if params.Query != "" {
+		values.Set("q", params.Query)
+	}
+	values.Set("sort", params.Sort)
+	return values
+}
+
+func parseAdminRoomsHostUserID(value string) (*uuid.UUID, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return nil, nil
+	}
+
+	parsed, err := uuid.Parse(value)
+	if err != nil {
+		return nil, fmt.Errorf("parse host user ID: %w", err)
+	}
+	if parsed == uuid.Nil {
+		return nil, fmt.Errorf("host user ID must not be nil UUID")
+	}
+	return &parsed, nil
+}
+
+func adminRoomsQuery(hostUserID *uuid.UUID) url.Values {
+	values := url.Values{}
+	if hostUserID != nil {
+		values.Set("host_user_id", hostUserID.String())
+	}
+	return values
 }
 
 func buildAdminMemberRows(members []models.RoomMember) []adminMemberRow {

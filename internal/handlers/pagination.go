@@ -3,6 +3,7 @@ package handlers
 import (
 	"math"
 	"net/http"
+	"net/url"
 	"strconv"
 )
 
@@ -16,6 +17,29 @@ type Pagination struct {
 	Total       int64  `json:"total"`
 	PerPage     int    `json:"perPage"`
 	BaseURL     string `json:"baseUrl"`
+	PreviousURL string `json:"previousUrl"`
+	NextURL     string `json:"nextUrl"`
+}
+
+// newPaginationWithQuery はクエリパラメータを保ったページ送り情報を組み立てます。
+func newPaginationWithQuery(total int64, page, perPage int, path string, query url.Values) Pagination {
+	pagination := newPagination(total, page, perPage, path)
+	if page > 1 {
+		pagination.PreviousURL = paginationURL(path, query, page-1)
+	}
+	if page < pagination.TotalPages {
+		pagination.NextURL = paginationURL(path, query, page+1)
+	}
+	return pagination
+}
+
+func paginationURL(path string, query url.Values, page int) string {
+	values := make(url.Values, len(query)+1)
+	for key, value := range query {
+		values[key] = append([]string(nil), value...)
+	}
+	values.Set("page", strconv.Itoa(page))
+	return (&url.URL{Path: path, RawQuery: values.Encode()}).String()
 }
 
 // parsePageParam クエリパラメータ page を1以上の整数として返す（未指定・不正値は1）
