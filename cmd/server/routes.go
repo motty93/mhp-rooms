@@ -188,6 +188,7 @@ func (app *Application) setupAdminRoutes(r chi.Router) {
 		ar.Use(middleware.RequireAdmin)
 
 		ar.Get("/", app.adminHandler.Dashboard)
+		ar.Get("/users", app.adminHandler.Users)
 		ar.Get("/rooms", app.adminHandler.Rooms)
 		ar.Get("/rooms/{id}", app.adminHandler.RoomDetail)
 	})

@@ -9,10 +9,11 @@
           </p>
         </div>
       </div>
-      <nav class="mt-4 flex gap-2">
+      <nav class="mt-4 flex flex-wrap gap-2" aria-label="管理画面ナビゲーション">
         <a
           href="/admin"
-          class="px-4 py-2 rounded-md text-sm font-medium transition-colors {{ if eq . "dashboard" }}
+          aria-current="{{ if eq . "dashboard" }}page{{ end }}"
+          class="min-h-11 px-4 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 {{ if eq . "dashboard" }}
             bg-gray-800 text-white
           {{ else }}
             bg-gray-100 text-gray-700 hover:bg-gray-200
@@ -22,13 +23,25 @@
         </a>
         <a
           href="/admin/rooms"
-          class="px-4 py-2 rounded-md text-sm font-medium transition-colors {{ if eq . "rooms" }}
+          aria-current="{{ if eq . "rooms" }}page{{ end }}"
+          class="min-h-11 px-4 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 {{ if eq . "rooms" }}
             bg-gray-800 text-white
           {{ else }}
             bg-gray-100 text-gray-700 hover:bg-gray-200
           {{ end }}"
         >
           部屋一覧
+        </a>
+        <a
+          href="/admin/users"
+          aria-current="{{ if eq . "users" }}page{{ end }}"
+          class="min-h-11 px-4 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 {{ if eq . "users" }}
+            bg-gray-800 text-white
+          {{ else }}
+            bg-gray-100 text-gray-700 hover:bg-gray-200
+          {{ end }}"
+        >
+          ユーザー一覧
         </a>
       </nav>
     </div>
@@ -40,8 +53,8 @@
     <div class="mt-6 flex items-center justify-center gap-3 text-sm">
       {{ if gt .CurrentPage 1 }}
         <a
-          href="{{ .BaseURL }}?page={{ sub .CurrentPage 1 }}"
-          class="px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+          href="{{ if .PreviousURL }}{{ .PreviousURL }}{{ else }}{{ .BaseURL }}?page={{ sub .CurrentPage 1 }}{{ end }}"
+          class="inline-flex min-h-11 items-center px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >前へ</a
         >
       {{ end }}
@@ -50,8 +63,8 @@
       </span>
       {{ if lt .CurrentPage .TotalPages }}
         <a
-          href="{{ .BaseURL }}?page={{ add .CurrentPage 1 }}"
-          class="px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+          href="{{ if .NextURL }}{{ .NextURL }}{{ else }}{{ .BaseURL }}?page={{ add .CurrentPage 1 }}{{ end }}"
+          class="inline-flex min-h-11 items-center px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >次へ</a
         >
       {{ end }}

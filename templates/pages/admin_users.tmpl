@@ -1,0 +1,91 @@
+{{ define "head" }}
+  <meta name="robots" content="noindex, nofollow" />
+{{ end }}
+
+{{ define "page" }}
+  <div class="min-h-[calc(100vh-4rem)]">
+    {{ template "admin_nav" "users" }}
+
+    <section class="py-8">
+      <div class="container mx-auto px-4">
+        <div class="flex flex-wrap items-baseline justify-between gap-3 mb-4">
+          <h2 class="text-lg font-bold text-gray-800">ユーザー一覧（無効化済みを含む）</h2>
+          <p class="text-sm text-gray-500">全{{ .PageData.Pagination.Total }}件</p>
+        </div>
+
+        <form action="/admin/users" method="get" class="mb-6 bg-white border border-gray-200 rounded-lg p-4">
+          <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_14rem_auto] md:items-end">
+            <div>
+              <label for="admin-user-query" class="block mb-1 text-sm font-medium text-gray-700">ユーザーを検索</label>
+              <input
+                id="admin-user-query"
+                name="q"
+                type="search"
+                value="{{ .PageData.Query }}"
+                maxlength="100"
+                placeholder="表示名・ユーザー名・メールアドレス"
+                class="min-h-11 w-full rounded-md border border-gray-300 px-3 text-base text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              />
+            </div>
+            <div>
+              <label for="admin-user-sort" class="block mb-1 text-sm font-medium text-gray-700">並び順</label>
+              <select id="admin-user-sort" name="sort" class="min-h-11 w-full rounded-md border border-gray-300 px-3 text-base text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                <option value="joined" {{ if eq .PageData.Sort "joined" }}selected{{ end }}>登録日（新しい順）</option>
+                <option value="rooms" {{ if eq .PageData.Sort "rooms" }}selected{{ end }}>部屋作成数（多い順）</option>
+                <option value="reports" {{ if eq .PageData.Sort "reports" }}selected{{ end }}>通報数（多い順）</option>
+              </select>
+            </div>
+            <div class="flex gap-2">
+              <button type="submit" class="min-h-11 rounded-md bg-gray-800 px-4 text-sm font-medium text-white transition-colors hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">検索</button>
+              <a href="/admin/users" class="inline-flex min-h-11 items-center rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">リセット</a>
+            </div>
+          </div>
+        </form>
+
+        {{ if .PageData.Users }}
+          <div class="bg-white border border-gray-200 rounded-lg overflow-x-auto">
+            <table class="min-w-[860px] w-full text-sm">
+              <thead>
+                <tr class="text-left text-xs text-gray-500 border-b border-gray-200 bg-gray-50">
+                  <th scope="col" class="px-4 py-3">表示名 / ユーザー名</th>
+                  <th scope="col" class="px-4 py-3">メールアドレス</th>
+                  <th scope="col" class="px-4 py-3 whitespace-nowrap">ロール</th>
+                  <th scope="col" class="px-4 py-3 whitespace-nowrap">登録日</th>
+                  <th scope="col" class="px-4 py-3 whitespace-nowrap">部屋作成数</th>
+                  <th scope="col" class="px-4 py-3 whitespace-nowrap">通報数</th>
+                  <th scope="col" class="px-4 py-3 whitespace-nowrap">最終活動</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                {{ range .PageData.Users }}
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3">
+                      <a href="/users/{{ .ID }}" class="font-medium text-blue-600 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 rounded">{{ .DisplayName }}</a>
+                      <p class="mt-1 text-xs text-gray-500">{{ .Username }}</p>
+                    </td>
+                    <td class="px-4 py-3 text-gray-700 whitespace-nowrap">{{ .Email }}</td>
+                    <td class="px-4 py-3 text-gray-700 whitespace-nowrap">{{ .Role }}</td>
+                    <td class="px-4 py-3 text-gray-500 whitespace-nowrap">{{ .CreatedAt }}</td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                      <a href="/admin/rooms?host_user_id={{ .ID }}" class="text-blue-600 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 rounded">{{ .RoomCount }}件</a>
+                    </td>
+                    <td class="px-4 py-3 text-gray-700 whitespace-nowrap">{{ .ReportCount }}件</td>
+                    <td class="px-4 py-3 text-gray-500 whitespace-nowrap">{{ .LastActivityAt }}</td>
+                  </tr>
+                {{ end }}
+              </tbody>
+            </table>
+          </div>
+        {{ else }}
+          <div class="rounded-lg border border-dashed border-gray-300 bg-white px-6 py-12 text-center">
+            <h3 class="text-base font-semibold text-gray-800">該当するユーザーが見つかりません</h3>
+            <p class="mt-2 text-sm text-gray-500">検索条件を変更するか、条件をリセットしてもう一度確認してください。</p>
+            <a href="/admin/users" class="inline-flex min-h-11 items-center mt-4 rounded-md bg-gray-800 px-4 text-sm font-medium text-white transition-colors hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">条件をリセット</a>
+          </div>
+        {{ end }}
+
+        {{ template "admin_pagination" .PageData.Pagination }}
+      </div>
+    </section>
+  </div>
+{{ end }}
