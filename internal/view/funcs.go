@@ -8,6 +8,10 @@ import (
 	"strings"
 
 	"mhp-rooms/internal/config"
+	"mhp-rooms/internal/models"
+	"mhp-rooms/internal/utils"
+
+	"github.com/google/uuid"
 )
 
 func toLower(s string) string {
@@ -80,6 +84,17 @@ func safeString(s *string) string {
 
 func hasStringValue(s *string) bool {
 	return s != nil && *s != ""
+}
+
+func profileDisplayName(user *models.User) string {
+	if user == nil {
+		return utils.ResolvePublicDisplayName("", nil, uuid.Nil)
+	}
+	return utils.ResolvePublicDisplayName(user.DisplayName, user.Username, user.ID)
+}
+
+func hasProfileDisplayName(user *models.User) bool {
+	return user != nil && strings.TrimSpace(user.DisplayName) != ""
 }
 
 func jsEscape(s string) string {
@@ -167,25 +182,27 @@ func hunterListURL(query, sort string, page int) string {
 
 func TemplateFuncs() template.FuncMap {
 	return template.FuncMap{
-		"lower":            toLower,
-		"json":             toJSON,
-		"map":              makeMap,
-		"gameVersionColor": GetGameVersionColor,
-		"gameVersionIcon":  gameVersionIconHTML,
-		"gameVersionAbbr":  GetGameVersionAbbreviation,
-		"stringPtr":        safeString,
-		"safeString":       safeString,
-		"hasStringValue":   hasStringValue,
-		"jsEscape":         jsEscape,
-		"jsEscapePtr":      jsEscapePtr,
-		"add":              add,
-		"sub":              sub,
-		"mul":              mul,
-		"min":              min,
-		"sequence":         sequence,
-		"getEnv":           config.GetEnv,
-		"safeHTML":         safeHTMLString,
-		"truncate":         truncateHTML,
-		"hunterListURL":    hunterListURL,
+		"lower":                 toLower,
+		"json":                  toJSON,
+		"map":                   makeMap,
+		"gameVersionColor":      GetGameVersionColor,
+		"gameVersionIcon":       gameVersionIconHTML,
+		"gameVersionAbbr":       GetGameVersionAbbreviation,
+		"stringPtr":             safeString,
+		"safeString":            safeString,
+		"hasStringValue":        hasStringValue,
+		"profileDisplayName":    profileDisplayName,
+		"hasProfileDisplayName": hasProfileDisplayName,
+		"jsEscape":              jsEscape,
+		"jsEscapePtr":           jsEscapePtr,
+		"add":                   add,
+		"sub":                   sub,
+		"mul":                   mul,
+		"min":                   min,
+		"sequence":              sequence,
+		"getEnv":                config.GetEnv,
+		"safeHTML":              safeHTMLString,
+		"truncate":              truncateHTML,
+		"hunterListURL":         hunterListURL,
 	}
 }

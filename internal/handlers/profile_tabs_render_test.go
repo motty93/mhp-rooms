@@ -236,3 +236,78 @@ func TestRenderPagesIncludeNotificationUI(t *testing.T) {
 		}
 	}
 }
+
+func TestRenderUnconfiguredUserProfileUsesFallbackName(t *testing.T) {
+	chdirRepoRoot(t)
+
+	username := "@fallback-user"
+	bio := "自己紹介は設定済みです。"
+	user := &models.User{
+		BaseModel:   models.BaseModel{ID: uuid.MustParse("12345678-1234-1234-1234-123456789abc")},
+		DisplayName: "  ",
+		Username:    &username,
+		Bio:         &bio,
+	}
+	profileData := UserProfileData{
+		User:            user,
+		IsAuthenticated: true,
+		RelationStatus:  "following",
+		PlayTimes:       &models.PlayTimes{},
+		RoomsPagination: newPagination(0, 1, tabPerPage, "/api/users/123/rooms"),
+	}
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/users/12345678-1234-1234-1234-123456789abc", nil)
+	renderTemplate(w, r, "user_profile.tmpl", TemplateData{
+		Title:    "@fallback-userのプロフィール",
+		PageData: profileData,
+	})
+
+	body := w.Body.String()
+	if w.Code != 200 || strings.Contains(body, "Template parsing error") || strings.Contains(body, "Template execution error") {
+		t.Fatalf("status = %d, body:\n%s", w.Code, truncate(body, 1500))
+	}
+	for _, want := range []string{
+		"<title>@fallback-userのプロフィール - HuntersHub</title>",
+		"\n                @fallback-user\n              </h2>",
+		`alt="@fallback-user のアバター"`,
+		"自己紹介は設定済みです。",
+		"プロフィールはまだ設定されていません。",
+		"showUnfollowModal('12345678-1234-1234-1234-123456789abc', '@fallback-user')",
+		"userName: '@fallback-user'",
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("描画結果に %q が含まれていない:\n%s", want, body)
+		}
+	}
+
+	partialData := struct {
+		User            *models.User
+		IsOwnProfile    bool
+		IsAuthenticated bool
+		RelationStatus  string
+		AvatarURL       string
+	}{
+		User:            user,
+		IsAuthenticated: true,
+		RelationStatus:  "following",
+		AvatarURL:       "/static/images/default-avatar.webp",
+	}
+	partialWriter := httptest.NewRecorder()
+	if err := renderPartialTemplate(partialWriter, "profile_card_content", partialData); err != nil {
+		t.Fatalf("renderPartialTemplate() error = %v", err)
+	}
+	partialBody := partialWriter.Body.String()
+	for _, want := range []string{
+		">@fallback-user</h2>",
+		`alt="@fallback-user のアバター"`,
+		"自己紹介は設定済みです。",
+		"プロフィールはまだ設定されていません。",
+		"showUnfollowModal('12345678-1234-1234-1234-123456789abc', '@fallback-user')",
+		"userName: '@fallback-user'",
+	} {
+		if !strings.Contains(partialBody, want) {
+			t.Errorf("部分更新の描画結果に %q が含まれていない:\n%s", want, partialBody)
+		}
+	}
+}

@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"strings"
@@ -32,6 +33,90 @@ type PublicHunter struct {
 	RecentActivityTitle *string
 	RecentActivityAt    string
 	RoomCreateCount     int64
+}
+
+// AdminUserListParams は管理画面のユーザー一覧の検索・並び替え条件です。
+type AdminUserListParams struct {
+	Query, Sort   string
+	Limit, Offset int
+}
+
+// AdminUser は管理画面だけで使用するユーザー一覧の表示データです。
+// Email は管理者向けテンプレートにのみ渡します。
+type AdminUser struct {
+	ID             uuid.UUID
+	DisplayName    string
+	Username       *string
+	Email          string
+	Role           string
+	CreatedAt      time.Time
+	RoomCount      int64
+	ReportCount    int64
+	LastActivityAt *time.Time
+}
+
+// adminUserRecord はDBからの集計結果を受け取るための内部表現です。
+// SQLite は MAX(created_at) を文字列として返すため、最終活動日時には専用の Scanner を使います。
+type adminUserRecord struct {
+	ID             uuid.UUID
+	DisplayName    string
+	Username       *string
+	Email          string
+	Role           string
+	CreatedAt      time.Time
+	RoomCount      int64
+	ReportCount    int64
+	LastActivityAt nullableAdminTime
+}
+
+type nullableAdminTime struct {
+	Time  time.Time
+	Valid bool
+}
+
+func (t nullableAdminTime) Value() (driver.Value, error) {
+	if !t.Valid {
+		return nil, nil
+	}
+	return t.Time, nil
+}
+
+func (t *nullableAdminTime) Scan(value interface{}) error {
+	t.Time = time.Time{}
+	t.Valid = false
+	if value == nil {
+		return nil
+	}
+
+	var raw string
+	switch value := value.(type) {
+	case time.Time:
+		t.Time = value
+		t.Valid = true
+		return nil
+	case string:
+		raw = value
+	case []byte:
+		raw = string(value)
+	default:
+		return fmt.Errorf("scan admin activity time %T", value)
+	}
+
+	for _, layout := range []string{
+		time.RFC3339Nano,
+		"2006-01-02 15:04:05.999999999-07:00",
+		"2006-01-02 15:04:05.999999999Z07:00",
+		"2006-01-02 15:04:05.999999999",
+		"2006-01-02 15:04:05",
+	} {
+		parsed, err := time.Parse(layout, raw)
+		if err == nil {
+			t.Time = parsed
+			t.Valid = true
+			return nil
+		}
+	}
+	return fmt.Errorf("parse admin activity time %q", raw)
 }
 
 // NewUserRepository は新しいUserRepositoryインスタンスを作成
@@ -121,6 +206,77 @@ func (r *userRepository) GetActiveUsers(limit, offset int) ([]models.User, error
 		Offset(offset).
 		Find(&users).Error
 	return users, err
+}
+
+// ListAdminUsers は無効化済みを含む管理用ユーザー一覧を集計付きで返します。
+func (r *userRepository) ListAdminUsers(params AdminUserListParams) ([]AdminUser, error) {
+	if params.Limit <= 0 || params.Limit > 100 {
+		params.Limit = 20
+	}
+	if params.Offset < 0 {
+		params.Offset = 0
+	}
+	if params.Sort != "rooms" && params.Sort != "reports" && params.Sort != "joined" {
+		params.Sort = "joined"
+	}
+
+	roomCount := "(SELECT COUNT(*) FROM rooms admin_rooms WHERE admin_rooms.host_user_id = users.id)"
+	reportCount := "(SELECT COUNT(*) FROM user_reports admin_reports WHERE admin_reports.reported_user_id = users.id)"
+	lastActivityAt := "(SELECT MAX(admin_activities.created_at) FROM user_activities admin_activities WHERE admin_activities.user_id = users.id)"
+	query := r.db.GetConn().Model(&models.User{}).Select(
+		"users.id, users.display_name, users.username, users.email, users.role, users.created_at, " + roomCount + " AS room_count, " + reportCount + " AS report_count, " + lastActivityAt + " AS last_activity_at",
+	)
+	if normalized := strings.TrimSpace(params.Query); normalized != "" {
+		like := "%" + strings.ToLower(normalized) + "%"
+		query = query.Where("(LOWER(users.display_name) LIKE ? OR LOWER(COALESCE(users.username, '')) LIKE ? OR LOWER(users.email) LIKE ?)", like, like, like)
+	}
+	switch params.Sort {
+	case "rooms":
+		query = query.Order("room_count DESC, users.created_at DESC, users.id ASC")
+	case "reports":
+		query = query.Order("report_count DESC, users.created_at DESC, users.id ASC")
+	default:
+		query = query.Order("users.created_at DESC, users.id ASC")
+	}
+
+	var records []adminUserRecord
+	if err := query.Limit(params.Limit).Offset(params.Offset).Scan(&records).Error; err != nil {
+		return nil, err
+	}
+	users := make([]AdminUser, 0, len(records))
+	for _, record := range records {
+		var lastActivityAt *time.Time
+		if record.LastActivityAt.Valid {
+			value := record.LastActivityAt.Time
+			lastActivityAt = &value
+		}
+		users = append(users, AdminUser{
+			ID:             record.ID,
+			DisplayName:    record.DisplayName,
+			Username:       record.Username,
+			Email:          record.Email,
+			Role:           record.Role,
+			CreatedAt:      record.CreatedAt,
+			RoomCount:      record.RoomCount,
+			ReportCount:    record.ReportCount,
+			LastActivityAt: lastActivityAt,
+		})
+	}
+	return users, nil
+}
+
+// CountAdminUsers は管理画面の検索条件に一致する全ユーザー数を返します。
+func (r *userRepository) CountAdminUsers(search string) (int64, error) {
+	query := r.db.GetConn().Model(&models.User{})
+	if normalized := strings.TrimSpace(search); normalized != "" {
+		like := "%" + strings.ToLower(normalized) + "%"
+		query = query.Where("(LOWER(display_name) LIKE ? OR LOWER(COALESCE(username, '')) LIKE ? OR LOWER(email) LIKE ?)", like, like, like)
+	}
+	var count int64
+	if err := query.Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 // ListPublicHunters は公開ハンター一覧をN+1なしで取得します。

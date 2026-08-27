@@ -1,14 +1,20 @@
 package handlers
 
 import (
+	"fmt"
+	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 
 	"mhp-rooms/internal/models"
+	"mhp-rooms/internal/repository"
 	"mhp-rooms/internal/view"
 )
 
@@ -142,11 +148,142 @@ func TestAdminUserName(t *testing.T) {
 	}
 }
 
+func TestNormalizeAdminUserListParams(t *testing.T) {
+	longQuery := strings.Repeat("あ", 101)
+	tests := []struct {
+		name      string
+		query     string
+		sort      string
+		wantQuery string
+		wantSort  string
+	}{
+		{"前後の空白を除去", "  hunter  ", "rooms", "hunter", "rooms"},
+		{"100文字に制限", longQuery, "reports", strings.Repeat("あ", 100), "reports"},
+		{"不正な並び順は登録日順", "", "unknown", "", "joined"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := normalizeAdminUserListParams(tt.query, tt.sort)
+			if got.Query != tt.wantQuery || got.Sort != tt.wantSort {
+				t.Fatalf("normalizeAdminUserListParams() = %+v, want query=%q sort=%q", got, tt.wantQuery, tt.wantSort)
+			}
+		})
+	}
+}
+
+func TestAdminListPaginationQueries(t *testing.T) {
+	userParams := repository.AdminUserListParams{Query: "room master", Sort: "joined"}
+	userURL := paginationURL("/admin/users", adminUsersQuery(userParams), 2)
+	if want := "/admin/users?page=2&q=room+master&sort=joined"; userURL != want {
+		t.Errorf("ユーザー一覧のページURL = %q, want %q", userURL, want)
+	}
+
+	hostUserID := uuid.New()
+	roomURL := paginationURL("/admin/rooms", adminRoomsQuery(&hostUserID), 3)
+	if want := "/admin/rooms?host_user_id=" + hostUserID.String() + "&page=3"; roomURL != want {
+		t.Errorf("部屋一覧のページURL = %q, want %q", roomURL, want)
+	}
+}
+
+func TestParseAdminRoomsHostUserID(t *testing.T) {
+	validID := uuid.New()
+	tests := []struct {
+		name    string
+		value   string
+		wantNil bool
+		wantErr bool
+	}{
+		{"未指定", "  ", true, false},
+		{"有効なUUID", " " + validID.String() + " ", false, false},
+		{"不正なUUID", "not-a-uuid", true, true},
+		{"nil UUID", uuid.Nil.String(), true, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := parseAdminRoomsHostUserID(tt.value)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("error = %v, wantErr %t", err, tt.wantErr)
+			}
+			if (got == nil) != tt.wantNil {
+				t.Fatalf("ID = %v, wantNil %t", got, tt.wantNil)
+			}
+			if got != nil && *got != validID {
+				t.Errorf("ID = %s, want %s", got, validID)
+			}
+		})
+	}
+}
+
+func TestAdminRoomsRejectsInvalidHostUserID(t *testing.T) {
+	handler := &AdminHandler{}
+	request := httptest.NewRequest(http.MethodGet, "/admin/rooms?host_user_id=not-a-uuid", nil)
+	response := httptest.NewRecorder()
+
+	handler.Rooms(response, request)
+
+	if response.Code != http.StatusBadRequest {
+		t.Errorf("status = %d, want %d", response.Code, http.StatusBadRequest)
+	}
+}
+
+func TestAdminUsersRendersSearchResultsAndPreservesListParams(t *testing.T) {
+	chdirRepoRoot(t)
+
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.AutoMigrate(&models.User{}, &models.Room{}, &models.UserActivity{}, &models.UserReport{}); err != nil {
+		t.Fatal(err)
+	}
+
+	now := time.Date(2026, 8, 26, 12, 0, 0, 0, time.UTC)
+	for i := 0; i < adminUsersPerPage+1; i++ {
+		username := fmt.Sprintf("hunter-%02d", i)
+		user := &models.User{
+			BaseModel:      models.BaseModel{ID: uuid.New(), CreatedAt: now.Add(time.Duration(i) * time.Minute)},
+			SupabaseUserID: uuid.New(),
+			Email:          fmt.Sprintf("hunter-%02d@example.test", i),
+			Username:       &username,
+			DisplayName:    fmt.Sprintf("Hunter %02d", i),
+			IsActive:       i != adminUsersPerPage,
+			Role:           models.RoleUser,
+		}
+		if err := db.Create(user).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	handler := NewAdminHandler(repository.NewRepository(adminHandlerTestDB{conn: db}))
+	request := httptest.NewRequest(http.MethodGet, "/admin/users?q=+HUNTER+&sort=joined", nil)
+	response := httptest.NewRecorder()
+
+	handler.Users(response, request)
+
+	body := response.Body.String()
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, body:\n%s", response.Code, truncate(body, 1500))
+	}
+	for _, want := range []string{
+		"hunter-20@example.test", // 無効ユーザーも表示する
+		`value="HUNTER"`,
+		`<option value="joined" selected>`,
+		`href="/admin/users?page=2&amp;q=HUNTER&amp;sort=joined"`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("描画結果に %q が含まれていない", want)
+		}
+	}
+}
+
 // TestRenderAdminTemplates 管理画面テンプレートがパース・描画できることを確認する
 func TestRenderAdminTemplates(t *testing.T) {
 	chdirRepoRoot(t)
 
 	roomID := uuid.New()
+	userID := uuid.New()
 	room := &models.Room{
 		BaseModel:      models.BaseModel{ID: roomID},
 		Name:           "テスト部屋",
@@ -177,11 +314,28 @@ func TestRenderAdminTemplates(t *testing.T) {
 			template: "admin_rooms.tmpl",
 			data: adminRoomsData{
 				Rooms: []adminRoomRow{
-					{ID: roomID, Name: "テスト部屋", GameVersion: "MHP2G", HostName: "ホスト太郎", Players: "1/4", StatusLabel: "募集中", StatusClass: "bg-green-100 text-green-800", ReportCount: 2, CreatedAt: "2026-08-20 12:00"},
+					{ID: roomID, HostUserID: userID, Name: "テスト部屋", GameVersion: "MHP2G", HostName: "ホスト太郎", Players: "1/4", StatusLabel: "募集中", StatusClass: "bg-green-100 text-green-800", ReportCount: 2, CreatedAt: "2026-08-20 12:00"},
 				},
 				Pagination: newPagination(1, 1, adminRoomsPerPage, "/admin/rooms"),
 			},
-			want: []string{"全部屋一覧", "テスト部屋", "2件", "募集中"},
+			want: []string{"全部屋一覧", "テスト部屋", "2件", "募集中", "/users/" + userID.String()},
+		},
+		{
+			template: "admin_users.tmpl",
+			data: adminUsersData{
+				Users: []adminUserRow{{
+					ID: userID, DisplayName: "ハンター太郎", Username: "hunter-taro", Email: "hunter@example.test", Role: models.RoleUser,
+					CreatedAt: "2026-08-20 12:00", RoomCount: 3, ReportCount: 2, LastActivityAt: "2026-08-21 12:00",
+				}},
+				Query: "hunter", Sort: "rooms",
+				Pagination: newPaginationWithQuery(60, 2, adminUsersPerPage, "/admin/users", url.Values{"q": {"hunter"}, "sort": {"rooms"}}),
+			},
+			want: []string{"ユーザーを検索", "hunter@example.test", "/users/" + userID.String(), "/admin/rooms?host_user_id=" + userID.String(), "page=3"},
+		},
+		{
+			template: "admin_users.tmpl",
+			data:     adminUsersData{Sort: "joined", Pagination: newPagination(0, 1, adminUsersPerPage, "/admin/users")},
+			want:     []string{"該当するユーザーが見つかりません", "条件をリセット"},
 		},
 		{
 			template: "admin_room_detail.tmpl",
@@ -223,3 +377,11 @@ func TestRenderAdminTemplates(t *testing.T) {
 func stringPtrForTest(s string) *string {
 	return &s
 }
+
+type adminHandlerTestDB struct {
+	conn *gorm.DB
+}
+
+func (d adminHandlerTestDB) GetConn() *gorm.DB { return d.conn }
+func (d adminHandlerTestDB) Close() error      { return nil }
+func (d adminHandlerTestDB) GetType() string   { return "sqlite" }
