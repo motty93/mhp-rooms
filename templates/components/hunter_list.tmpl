@@ -1,6 +1,41 @@
 {{ define "hunter_list" }}
   <div id="hunter-results" aria-live="polite">
-    <p class="mb-4 text-sm text-gray-600">{{ .Total }} 人のハンター</p>
+    <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <p class="text-sm text-gray-600">{{ .Total }} 人のハンター</p>
+      <div class="flex items-center gap-2">
+        <label for="hunter-sort" class="text-sm font-medium text-gray-700"
+          >並び替え</label
+        ><select
+          id="hunter-sort"
+          name="sort"
+          hx-get="/users"
+          hx-trigger="change"
+          hx-target="#hunter-results"
+          hx-swap="outerHTML"
+          hx-include="#hunter-search"
+          class="min-h-11 rounded-md border border-gray-300 px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2"
+        >
+          <option
+            value="recent"
+            {{ if eq .Sort "recent" }}selected{{ end }}
+          >
+            最近活動した順
+          </option>
+          <option
+            value="rooms"
+            {{ if eq .Sort "rooms" }}selected{{ end }}
+          >
+            部屋作成数が多い順
+          </option>
+          <option
+            value="joined"
+            {{ if eq .Sort "joined" }}selected{{ end }}
+          >
+            登録日が新しい順
+          </option>
+        </select>
+      </div>
+    </div>
     {{ if .Hunters }}
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {{ range .Hunters }}
