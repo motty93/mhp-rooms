@@ -17,6 +17,11 @@
 
           <div class="hidden md:flex items-center gap-3">
             <a
+              href="/rooms"
+              class="inline-flex min-h-11 items-center font-medium transition-colors px-3 py-2 rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+              >部屋一覧</a
+            >
+            <a
               href="/users"
               {{ if eq .Title "ハンターを探す" }}aria-current="page"{{ end }}
               class="inline-flex min-h-11 items-center font-medium transition-colors px-3 py-2 rounded-md {{ if eq .Title "ハンターを探す" }}
@@ -257,6 +262,16 @@
           </div>
 
           <div class="flex items-center space-x-3">
+            <a
+              href="/rooms"
+              {{ if eq .Title "部屋一覧" }}aria-current="page"{{ end }}
+              class="hidden min-h-11 md:inline-flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors {{ if eq .Title "部屋一覧" }}
+                bg-gray-100 text-gray-900
+              {{ else }}
+                text-gray-700 hover:bg-gray-100 hover:text-gray-900
+              {{ end }}"
+              >部屋一覧</a
+            >
             <a
               href="/users"
               {{ if eq .Title "ハンターを探す" }}aria-current="page"{{ end }}
