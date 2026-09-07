@@ -1,34 +1,113 @@
 {{ define "profile_card_content" }}
   {{ $displayName := profileDisplayName .User }}
-  <div class="flex flex-col items-center">
-    <div class="relative">
-      <img
-        class="w-32 h-32 rounded-full mb-4 border-4 border-white object-cover shadow-sm"
-        src="{{ .AvatarURL }}"
-        alt="{{ $displayName }} のアバター"
-      />
-      <span
-        class="absolute bottom-4 right-2 bg-green-500 w-5 h-5 rounded-full border-2 border-white"
-        title="オンライン"
-      ></span>
+  <div
+    class="relative h-24 overflow-hidden bg-gradient-to-r from-slate-800 to-slate-600 sm:h-28"
+  >
+    <div
+      class="absolute -right-16 -top-28 h-72 w-72 rounded-full border border-white/10 shadow-[0_0_0_2.25rem_rgba(255,255,255,0.04),0_0_0_4.5rem_rgba(255,255,255,0.03)]"
+      aria-hidden="true"
+    ></div>
+  </div>
+
+  <div class="public-profile-grid px-4 pb-6 sm:px-8 sm:pb-7">
+    <img
+      class="public-profile-avatar -mt-7 h-20 w-20 rounded-full border-4 border-white bg-gray-100 object-cover shadow-lg sm:-mt-10 sm:h-28 sm:w-28 sm:border-[5px]"
+      src="{{ if .User.AvatarURL }}
+        {{ stringPtr .User.AvatarURL }}
+      {{ else }}
+        /static/images/default-avatar.webp
+      {{ end }}"
+      width="112"
+      height="112"
+      alt="{{ $displayName }} のアバター"
+    />
+
+    <div class="public-profile-identity pt-3 sm:pt-4">
+      <h1
+        class="break-words text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl"
+      >
+        {{ $displayName }}
+      </h1>
+      {{ if hasStringValue .User.Username }}
+        <p class="mt-1 break-all text-sm text-gray-500">
+          {{ stringPtr .User.Username }}
+        </p>
+      {{ end }}
     </div>
-    <h2 class="text-2xl font-bold text-gray-800">{{ $displayName }}</h2>
 
-    {{ if .User.Bio }}
-      <p class="text-center text-gray-600 mb-6 text-sm">{{ .User.Bio }}</p>
+    <div class="public-profile-bio text-sm leading-7 text-gray-700">
+      {{ if hasStringValue .User.Bio }}
+        <p class="break-words">{{ stringPtr .User.Bio }}</p>
+      {{ else }}
+        <p class="text-gray-500">自己紹介はまだ設定されていません。</p>
+      {{ end }}
+      {{ if not (hasProfileDisplayName .User) }}
+        <p class="mt-2 text-gray-500" role="status">
+          プロフィールはまだ設定されていません。
+        </p>
+      {{ end }}
+    </div>
+
+    {{ if and .IsAuthenticated (not .IsOwnProfile) }}
+      <div class="public-profile-actions flex items-start gap-2 sm:pt-5">
+        {{ template "follow_buttons" . }}
+        {{ template "block_report_buttons" . }}
+      </div>
     {{ end }}
-    {{ if not (hasProfileDisplayName .User) }}
-      <p class="text-center text-gray-600 mb-6 text-sm" role="status">
-        プロフィールはまだ設定されていません。
+  </div>
+
+  <div
+    class="grid divide-y divide-gray-200 border-t border-gray-200 bg-gray-50 sm:grid-cols-3 sm:divide-x sm:divide-y-0"
+  >
+    <section class="px-5 py-4 sm:px-7 sm:py-5">
+      <h2
+        class="mb-2 flex items-center gap-2 text-xs font-semibold text-gray-500"
+      >
+        <i class="fa-regular fa-clock" aria-hidden="true"></i>
+        よく遊ぶ時間
+      </h2>
+      {{ if and .PlayTimes (or .PlayTimes.Weekday .PlayTimes.Weekend) }}
+        <p class="text-sm font-semibold leading-6 text-gray-700">
+          {{ if .PlayTimes.Weekday }}平日 {{ .PlayTimes.Weekday }}{{ end }}
+          {{ if and .PlayTimes.Weekday .PlayTimes.Weekend }}<br />{{ end }}
+          {{ if .PlayTimes.Weekend }}休日 {{ .PlayTimes.Weekend }}{{ end }}
+        </p>
+      {{ else }}
+        <p class="text-sm text-gray-500">未設定</p>
+      {{ end }}
+    </section>
+
+    <section class="px-5 py-4 sm:px-7 sm:py-5">
+      <h2
+        class="mb-2 flex items-center gap-2 text-xs font-semibold text-gray-500"
+      >
+        <i class="fa-solid fa-gamepad" aria-hidden="true"></i>
+        好きなゲーム
+      </h2>
+      {{ if gt (len .FavoriteGames) 0 }}
+        <div class="flex flex-wrap gap-2">
+          {{ range .FavoriteGames }}
+            <span
+              class="inline-flex min-h-7 items-center rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-800"
+              >{{ . }}</span
+            >
+          {{ end }}
+        </div>
+      {{ else }}
+        <p class="text-sm text-gray-500">未設定</p>
+      {{ end }}
+    </section>
+
+    <section class="px-5 py-4 sm:px-7 sm:py-5">
+      <h2
+        class="mb-2 flex items-center gap-2 text-xs font-semibold text-gray-500"
+      >
+        <i class="fa-solid fa-user-group" aria-hidden="true"></i>
+        つながり
+      </h2>
+      <p class="text-sm font-semibold text-gray-700">
+        フォロワー {{ .FollowerCount }}人
       </p>
-    {{ end }}
-
-
-    <!-- フォローボタン -->
-    {{ template "follow_buttons" . }}
-
-
-    <!-- ブロック・通報ボタン -->
-    {{ template "block_report_buttons" . }}
+    </section>
   </div>
 {{ end }}

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -183,6 +184,52 @@ func TestRenderProfilePagesWithRoomsTab(t *testing.T) {
 	}
 }
 
+func TestRenderUserProfileIncludesDetailsAndAccessibleTabs(t *testing.T) {
+	chdirRepoRoot(t)
+
+	username := "sample-hunter"
+	bio := "素材集めを中心に遊んでいます。"
+	user := sampleUser()
+	user.Username = &username
+	user.Bio = &bio
+	profileData := UserProfileData{
+		User:            user,
+		FollowerCount:   12,
+		FavoriteGames:   []string{"MHP2G", "MHXX"},
+		PlayTimes:       &models.PlayTimes{Weekday: "21:00〜24:00"},
+		RoomsPagination: newPagination(0, 1, tabPerPage, "/api/users/123/rooms"),
+	}
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/users/123", nil)
+	renderTemplate(w, r, "user_profile.tmpl", TemplateData{Title: "test", PageData: profileData})
+
+	body := w.Body.String()
+	if w.Code != 200 || strings.Contains(body, "Template parsing error") || strings.Contains(body, "Template execution error") {
+		t.Fatalf("status = %d, body:\n%s", w.Code, truncate(body, 1500))
+	}
+	for _, want := range []string{
+		"sample-hunter",
+		"素材集めを中心に遊んでいます。",
+		"MHP2G",
+		"MHXX",
+		"平日 21:00〜24:00",
+		"フォロワー 12人",
+		`role="tablist"`,
+		`role="tab"`,
+		`aria-controls="tab-content"`,
+		`sm:min-h-[380px]`,
+		"部屋一覧を見る",
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("描画結果に %q が含まれていない", want)
+		}
+	}
+	if strings.Contains(body, `title="オンライン"`) {
+		t.Error("実態のないオンライン表示が残っている")
+	}
+}
+
 func TestRenderRoomsTabShowsAutoDismissNote(t *testing.T) {
 	chdirRepoRoot(t)
 
@@ -267,9 +314,11 @@ func TestRenderUnconfiguredUserProfileUsesFallbackName(t *testing.T) {
 	if w.Code != 200 || strings.Contains(body, "Template parsing error") || strings.Contains(body, "Template execution error") {
 		t.Fatalf("status = %d, body:\n%s", w.Code, truncate(body, 1500))
 	}
+	if !regexp.MustCompile(`<h1[^>]*>\s*@fallback-user\s*</h1>`).MatchString(body) {
+		t.Errorf("フォールバック名がページ見出しに描画されていない:\n%s", body)
+	}
 	for _, want := range []string{
 		"<title>@fallback-userのプロフィール - HuntersHub</title>",
-		"\n                @fallback-user\n              </h2>",
 		`alt="@fallback-user のアバター"`,
 		"自己紹介は設定済みです。",
 		"プロフィールはまだ設定されていません。",
@@ -286,20 +335,24 @@ func TestRenderUnconfiguredUserProfileUsesFallbackName(t *testing.T) {
 		IsOwnProfile    bool
 		IsAuthenticated bool
 		RelationStatus  string
-		AvatarURL       string
+		FollowerCount   int64
+		FavoriteGames   []string
+		PlayTimes       *models.PlayTimes
 	}{
 		User:            user,
 		IsAuthenticated: true,
 		RelationStatus:  "following",
-		AvatarURL:       "/static/images/default-avatar.webp",
+		PlayTimes:       &models.PlayTimes{},
 	}
 	partialWriter := httptest.NewRecorder()
 	if err := renderPartialTemplate(partialWriter, "profile_card_content", partialData); err != nil {
 		t.Fatalf("renderPartialTemplate() error = %v", err)
 	}
 	partialBody := partialWriter.Body.String()
+	if !regexp.MustCompile(`<h1[^>]*>\s*@fallback-user\s*</h1>`).MatchString(partialBody) {
+		t.Errorf("部分更新にフォールバック名が描画されていない:\n%s", partialBody)
+	}
 	for _, want := range []string{
-		">@fallback-user</h2>",
 		`alt="@fallback-user のアバター"`,
 		"自己紹介は設定済みです。",
 		"プロフィールはまだ設定されていません。",
