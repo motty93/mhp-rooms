@@ -220,7 +220,7 @@ func TestRenderUserProfileIncludesDetailsAndAccessibleTabs(t *testing.T) {
 		`role="tablist"`,
 		`role="tab"`,
 		`aria-controls="tab-content"`,
-		`sm:min-h-[380px]`,
+		`sm:min-h-[640px]`,
 		"部屋一覧を見る",
 	} {
 		if !strings.Contains(body, want) {
