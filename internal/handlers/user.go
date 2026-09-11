@@ -38,6 +38,7 @@ type UserProfileData struct {
 	Activities      []Activity        `json:"activities"`
 	Rooms           []RoomSummary     `json:"rooms"`
 	RoomsPagination Pagination        `json:"roomsPagination"`
+	ActivityCount   int64             `json:"activityCount"`
 	Followers       []Follower        `json:"followers"`
 	FollowerCount   int64             `json:"followerCount"`
 	FavoriteGames   []string          `json:"favoriteGames"`
@@ -163,7 +164,7 @@ func (uh *UserHandler) Show(w http.ResponseWriter, r *http.Request) {
 	currentUser := uh.getCurrentUser(r)
 	isOwnProfile := false
 	relationStatus := "none"
-	var followerCount int64 = 0
+	followerCount := getFollowerCount(uh.repo, user.ID)
 
 	if currentUser != nil {
 		if currentUser.ID == user.ID {
@@ -174,13 +175,6 @@ func (uh *UserHandler) Show(w http.ResponseWriter, r *http.Request) {
 		// 認証済みユーザーのみフォロー関係をチェック
 		relationStatus = uh.checkRelationStatus(currentUser.ID, user.ID)
 
-		// 認証済みユーザーのみフォロワー数を取得
-		if uh.repo != nil && uh.repo.UserFollow != nil {
-			followers, err := uh.repo.UserFollow.GetFollowers(user.ID)
-			if err == nil {
-				followerCount = int64(len(followers))
-			}
-		}
 	}
 
 	// お気に入りゲームとプレイ時間帯を取得
@@ -201,6 +195,7 @@ func (uh *UserHandler) Show(w http.ResponseWriter, r *http.Request) {
 		Activities:      uh.getMockActivities(),
 		Rooms:           rooms,
 		RoomsPagination: roomsPagination,
+		ActivityCount:   getActivityCount(uh.repo, user.ID),
 		Followers:       uh.getMockFollowers(),
 		FollowerCount:   followerCount,
 		FavoriteGames:   favoriteGames,
@@ -234,7 +229,7 @@ func (uh *UserHandler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 	currentUser := uh.getCurrentUser(r)
 	isOwnProfile := false
 	relationStatus := "none"
-	var followerCount int64 = 0
+	followerCount := getFollowerCount(uh.repo, user.ID)
 
 	if currentUser != nil {
 		if currentUser.ID == user.ID {
@@ -244,13 +239,6 @@ func (uh *UserHandler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 			relationStatus = uh.checkRelationStatus(currentUser.ID, user.ID)
 		}
 
-		// 認証済みユーザーのみフォロワー数を取得
-		if uh.repo != nil && uh.repo.UserFollow != nil {
-			followers, err := uh.repo.UserFollow.GetFollowers(user.ID)
-			if err == nil {
-				followerCount = int64(len(followers))
-			}
-		}
 	}
 
 	// お気に入りゲームとプレイ時間帯を取得
@@ -271,6 +259,7 @@ func (uh *UserHandler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 		Activities:      uh.getMockActivities(),
 		Rooms:           rooms,
 		RoomsPagination: roomsPagination,
+		ActivityCount:   getActivityCount(uh.repo, user.ID),
 		Followers:       uh.getMockFollowers(),
 		FollowerCount:   followerCount,
 		FavoriteGames:   favoriteGames,
@@ -340,19 +329,25 @@ func (uh *UserHandler) GetProfileCard(w http.ResponseWriter, r *http.Request) {
 			relationStatus = uh.checkRelationStatus(currentUser.ID, user.ID)
 		}
 	}
+	favoriteGames, _ := user.GetFavoriteGames()
+	playTimes, _ := user.GetPlayTimes()
 
 	profileData := struct {
 		User            *models.User
 		IsOwnProfile    bool
 		IsAuthenticated bool
 		RelationStatus  string
-		AvatarURL       string
+		FollowerCount   int64
+		FavoriteGames   []string
+		PlayTimes       *models.PlayTimes
 	}{
 		User:            user,
 		IsOwnProfile:    isOwnProfile,
 		IsAuthenticated: currentUser != nil,
 		RelationStatus:  relationStatus,
-		AvatarURL:       getAvatarURL(user),
+		FollowerCount:   getFollowerCount(uh.repo, user.ID),
+		FavoriteGames:   favoriteGames,
+		PlayTimes:       playTimes,
 	}
 
 	if err := renderPartialTemplate(w, "profile_card_content", profileData); err != nil {
@@ -361,12 +356,27 @@ func (uh *UserHandler) GetProfileCard(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Helper functions for profile card generation
-func getAvatarURL(user *models.User) string {
-	if user.AvatarURL != nil && *user.AvatarURL != "" {
-		return *user.AvatarURL
+func getFollowerCount(repo *repository.Repository, userID uuid.UUID) int64 {
+	if repo == nil || repo.UserFollow == nil {
+		return 0
 	}
-	return "/static/images/default-avatar.webp"
+	count, err := repo.UserFollow.CountFollowers(userID)
+	if err != nil {
+		return 0
+	}
+	return count
+}
+
+func getActivityCount(repo *repository.Repository, userID uuid.UUID) int64 {
+	if repo == nil || repo.UserActivity == nil {
+		return 0
+	}
+	since := time.Now().AddDate(0, 0, -activityWindowDays)
+	count, err := repo.UserActivity.CountUserActivities(userID, since)
+	if err != nil {
+		return 0
+	}
+	return count
 }
 
 func getBioHTML(bio *string) string {
