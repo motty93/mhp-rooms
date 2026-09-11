@@ -38,6 +38,7 @@ type UserProfileData struct {
 	Activities      []Activity        `json:"activities"`
 	Rooms           []RoomSummary     `json:"rooms"`
 	RoomsPagination Pagination        `json:"roomsPagination"`
+	ActivityCount   int64             `json:"activityCount"`
 	Followers       []Follower        `json:"followers"`
 	FollowerCount   int64             `json:"followerCount"`
 	FavoriteGames   []string          `json:"favoriteGames"`
@@ -194,6 +195,7 @@ func (uh *UserHandler) Show(w http.ResponseWriter, r *http.Request) {
 		Activities:      uh.getMockActivities(),
 		Rooms:           rooms,
 		RoomsPagination: roomsPagination,
+		ActivityCount:   getActivityCount(uh.repo, user.ID),
 		Followers:       uh.getMockFollowers(),
 		FollowerCount:   followerCount,
 		FavoriteGames:   favoriteGames,
@@ -257,6 +259,7 @@ func (uh *UserHandler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 		Activities:      uh.getMockActivities(),
 		Rooms:           rooms,
 		RoomsPagination: roomsPagination,
+		ActivityCount:   getActivityCount(uh.repo, user.ID),
 		Followers:       uh.getMockFollowers(),
 		FollowerCount:   followerCount,
 		FavoriteGames:   favoriteGames,
@@ -358,6 +361,18 @@ func getFollowerCount(repo *repository.Repository, userID uuid.UUID) int64 {
 		return 0
 	}
 	count, err := repo.UserFollow.CountFollowers(userID)
+	if err != nil {
+		return 0
+	}
+	return count
+}
+
+func getActivityCount(repo *repository.Repository, userID uuid.UUID) int64 {
+	if repo == nil || repo.UserActivity == nil {
+		return 0
+	}
+	since := time.Now().AddDate(0, 0, -activityWindowDays)
+	count, err := repo.UserActivity.CountUserActivities(userID, since)
 	if err != nil {
 		return 0
 	}

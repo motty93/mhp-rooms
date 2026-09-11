@@ -7,9 +7,10 @@
           @click="dropdownOpen = !dropdownOpen"
           :aria-expanded="dropdownOpen"
           aria-haspopup="menu"
-          class="flex min-h-11 cursor-pointer items-center justify-center whitespace-nowrap rounded-lg border border-gray-300 bg-white px-4 py-2 font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2"
+          aria-label="その他の操作"
+          class="flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 transition-colors duration-200 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2"
         >
-          <span>その他</span>
+          <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
         </button>
 
         <div

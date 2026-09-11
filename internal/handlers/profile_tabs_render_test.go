@@ -197,6 +197,7 @@ func TestRenderUserProfileIncludesDetailsAndAccessibleTabs(t *testing.T) {
 		FollowerCount:   12,
 		FavoriteGames:   []string{"MHP2G", "MHXX"},
 		PlayTimes:       &models.PlayTimes{Weekday: "21:00〜24:00"},
+		ActivityCount:   2,
 		RoomsPagination: newPagination(0, 1, tabPerPage, "/api/users/123/rooms"),
 	}
 
@@ -210,6 +211,7 @@ func TestRenderUserProfileIncludesDetailsAndAccessibleTabs(t *testing.T) {
 	}
 	for _, want := range []string{
 		"sample-hunter",
+		"@sample-hunter",
 		"素材集めを中心に遊んでいます。",
 		"MHP2G",
 		"MHXX",
@@ -227,6 +229,9 @@ func TestRenderUserProfileIncludesDetailsAndAccessibleTabs(t *testing.T) {
 	}
 	if strings.Contains(body, `title="オンライン"`) {
 		t.Error("実態のないオンライン表示が残っている")
+	}
+	if !regexp.MustCompile(`アクティビティ\s*<span[^>]*>\s*2\s*</span`).MatchString(body) {
+		t.Errorf("アクティビティタブに件数バッジが描画されていない:\n%s", body)
 	}
 }
 
@@ -317,11 +322,15 @@ func TestRenderUnconfiguredUserProfileUsesFallbackName(t *testing.T) {
 	if !regexp.MustCompile(`<h1[^>]*>\s*@fallback-user\s*</h1>`).MatchString(body) {
 		t.Errorf("フォールバック名がページ見出しに描画されていない:\n%s", body)
 	}
+	if strings.Contains(body, "@@fallback-user") {
+		t.Error("ユーザー名行で @ が二重に描画されている")
+	}
 	for _, want := range []string{
 		"<title>@fallback-userのプロフィール - HuntersHub</title>",
 		`alt="@fallback-user のアバター"`,
 		"自己紹介は設定済みです。",
 		"プロフィールはまだ設定されていません。",
+		`aria-label="その他の操作"`,
 		"showUnfollowModal('12345678-1234-1234-1234-123456789abc', '@fallback-user')",
 		"userName: '@fallback-user'",
 	} {

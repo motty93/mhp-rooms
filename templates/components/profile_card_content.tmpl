@@ -28,9 +28,9 @@
       >
         {{ $displayName }}
       </h1>
-      {{ if hasStringValue .User.Username }}
+      {{ if and (hasProfileDisplayName .User) (hasStringValue .User.Username) }}
         <p class="mt-1 break-all text-sm text-gray-500">
-          {{ stringPtr .User.Username }}
+          @{{ stringPtr .User.Username }}
         </p>
       {{ end }}
     </div>
