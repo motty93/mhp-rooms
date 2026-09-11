@@ -220,7 +220,7 @@ func TestRenderUserProfileIncludesDetailsAndAccessibleTabs(t *testing.T) {
 		`role="tablist"`,
 		`role="tab"`,
 		`aria-controls="tab-content"`,
-		`sm:min-h-[380px]`,
+		`sm:min-h-[640px]`,
 		"部屋一覧を見る",
 	} {
 		if !strings.Contains(body, want) {
@@ -229,6 +229,9 @@ func TestRenderUserProfileIncludesDetailsAndAccessibleTabs(t *testing.T) {
 	}
 	if strings.Contains(body, `title="オンライン"`) {
 		t.Error("実態のないオンライン表示が残っている")
+	}
+	if !regexp.MustCompile(`<img[^>]*class="public-profile-avatar relative z-10 [^"]*"`).MatchString(body) {
+		t.Error("アバターをカバー画像より前面に描画する指定（relative z-10）がない")
 	}
 	if !regexp.MustCompile(`アクティビティ\s*<span[^>]*>\s*2\s*</span`).MatchString(body) {
 		t.Errorf("アクティビティタブに件数バッジが描画されていない:\n%s", body)

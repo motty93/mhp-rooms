@@ -11,7 +11,7 @@
 
   <div class="public-profile-grid px-4 pb-6 sm:px-8 sm:pb-7">
     <img
-      class="public-profile-avatar -mt-7 h-20 w-20 rounded-full border-4 border-white bg-gray-100 object-cover shadow-lg sm:-mt-10 sm:h-28 sm:w-28 sm:border-[5px]"
+      class="public-profile-avatar relative z-10 -mt-7 h-20 w-20 rounded-full border-4 border-white bg-gray-100 object-cover shadow-lg sm:-mt-10 sm:h-28 sm:w-28 sm:border-[5px]"
       src="{{ if .User.AvatarURL }}
         {{ stringPtr .User.AvatarURL }}
       {{ else }}
