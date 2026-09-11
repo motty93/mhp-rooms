@@ -10,7 +10,7 @@
     data-init-favorite-games="{{ json .FavoriteGames }}"
     data-init-play-times="{{ json .PlayTimes }}"
     x-init="$data.initFromDataAttributes($el)"
-    class="flex flex-col items-center"
+    class="mx-auto flex w-full max-w-2xl flex-col items-center p-6 sm:p-8"
   >
     <h3 class="text-xl font-bold text-gray-800 mb-6 text-center">
       プロフィール編集
