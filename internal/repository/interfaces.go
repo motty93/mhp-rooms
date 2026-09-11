@@ -96,6 +96,7 @@ type UserFollowRepository interface {
 	DeleteFollow(followerUserID, followingUserID uuid.UUID) error
 	GetFollow(followerUserID, followingUserID uuid.UUID) (*models.UserFollow, error)
 	UpdateFollowStatus(followerUserID, followingUserID uuid.UUID, status string) error
+	CountFollowers(userID uuid.UUID) (int64, error)
 	GetFollowers(userID uuid.UUID) ([]models.UserFollow, error)
 	GetFollowing(userID uuid.UUID) ([]models.UserFollow, error)
 	GetMutualFriends(userID uuid.UUID) ([]models.User, error)

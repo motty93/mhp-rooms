@@ -51,7 +51,6 @@ func (h *RoadmapHandler) Index(w http.ResponseWriter, r *http.Request) {
 
 	data := TemplateData{
 		Title:      "開発ロードマップ",
-		HideHeader: true,
 		StaticPage: true,
 		PageData: map[string]interface{}{
 			"Roadmaps": roadmaps,
@@ -92,7 +91,6 @@ func (h *RoadmapHandler) Detail(w http.ResponseWriter, r *http.Request) {
 
 	data := TemplateData{
 		Title:      foundArticle.Title + " - 開発ロードマップ",
-		HideHeader: true,
 		StaticPage: true,
 		PageData: map[string]interface{}{
 			"Article": foundArticle,

@@ -225,19 +225,25 @@ func (fh *FollowHandler) GetFollowStatus(w http.ResponseWriter, r *http.Request)
 func (fh *FollowHandler) returnProfileCardHTML(w http.ResponseWriter, r *http.Request, targetUser *models.User, currentUser *models.User) {
 	// フォロー関係をチェック
 	relationStatus := fh.checkRelationStatus(currentUser.ID, targetUser.ID)
+	favoriteGames, _ := targetUser.GetFavoriteGames()
+	playTimes, _ := targetUser.GetPlayTimes()
 
 	profileData := struct {
 		User            *models.User
 		IsOwnProfile    bool
 		IsAuthenticated bool
 		RelationStatus  string
-		AvatarURL       string
+		FollowerCount   int64
+		FavoriteGames   []string
+		PlayTimes       *models.PlayTimes
 	}{
 		User:            targetUser,
 		IsOwnProfile:    false,
 		IsAuthenticated: currentUser != nil,
 		RelationStatus:  relationStatus,
-		AvatarURL:       fh.getAvatarURL(targetUser),
+		FollowerCount:   getFollowerCount(fh.repo, targetUser.ID),
+		FavoriteGames:   favoriteGames,
+		PlayTimes:       playTimes,
 	}
 
 	if err := renderPartialTemplate(w, "profile_card_content", profileData); err != nil {
@@ -267,12 +273,4 @@ func (fh *FollowHandler) checkRelationStatus(currentUserID, targetUserID uuid.UU
 	}
 
 	return "none"
-}
-
-// ヘルパー関数
-func (fh *FollowHandler) getAvatarURL(user *models.User) string {
-	if user.AvatarURL != nil && *user.AvatarURL != "" {
-		return *user.AvatarURL
-	}
-	return "/static/images/default-avatar.webp"
 }

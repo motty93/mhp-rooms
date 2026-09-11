@@ -67,6 +67,7 @@ func Template(w http.ResponseWriter, templateName string, data Data) {
 		filepath.Join("templates", "components", "tab_pagination.tmpl"),
 		filepath.Join("templates", "components", "profile_followers.tmpl"),
 		filepath.Join("templates", "components", "profile_following.tmpl"),
+		filepath.Join("templates", "components", "profile_card_content.tmpl"),
 		filepath.Join("templates", "components", "follow_buttons.tmpl"),
 		filepath.Join("templates", "components", "block_report_buttons.tmpl"),
 		filepath.Join("templates", "components", "report_modal.tmpl"),

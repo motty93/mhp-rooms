@@ -81,6 +81,16 @@ func (r *userFollowRepository) UpdateFollowStatus(followerUserID, followingUserI
 	return nil
 }
 
+// CountFollowers 承認済みのフォロワー数を取得
+func (r *userFollowRepository) CountFollowers(userID uuid.UUID) (int64, error) {
+	var count int64
+	err := r.db.GetConn().
+		Model(&models.UserFollow{}).
+		Where("following_user_id = ? AND status = ?", userID, models.FollowStatusAccepted).
+		Count(&count).Error
+	return count, err
+}
+
 // GetFollowers フォロワー一覧を取得
 func (r *userFollowRepository) GetFollowers(userID uuid.UUID) ([]models.UserFollow, error) {
 	var follows []models.UserFollow
