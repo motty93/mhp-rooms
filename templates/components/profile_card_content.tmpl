@@ -48,7 +48,22 @@
       {{ end }}
     </div>
 
-    {{ if and .IsAuthenticated (not .IsOwnProfile) }}
+    {{ if .IsOwnProfile }}
+      <div class="public-profile-actions flex items-start gap-2 sm:pt-5">
+        <div class="w-full sm:w-auto">
+          <button
+            type="button"
+            hx-get="/profile/edit"
+            hx-target="#profile-card-content"
+            hx-swap="innerHTML"
+            class="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-gray-700 px-5 py-2.5 font-bold text-white transition-colors duration-200 hover:bg-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 sm:w-auto"
+          >
+            <i class="fa-solid fa-pencil" aria-hidden="true"></i>
+            <span>プロフィールを編集</span>
+          </button>
+        </div>
+      </div>
+    {{ else if .IsAuthenticated }}
       <div class="public-profile-actions flex items-start gap-2 sm:pt-5">
         {{ template "follow_buttons" . }}
         {{ template "block_report_buttons" . }}
