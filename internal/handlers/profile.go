@@ -58,18 +58,6 @@ type activityTabData struct {
 	Pagination Pagination
 }
 
-type ProfileData struct {
-	User            *models.User      `json:"user"`
-	IsOwnProfile    bool              `json:"isOwnProfile"`
-	Activities      []Activity        `json:"activities"`
-	Rooms           []RoomSummary     `json:"rooms"`
-	RoomsPagination Pagination        `json:"roomsPagination"`
-	Followers       []Follower        `json:"followers"`
-	FollowerCount   int64             `json:"followerCount"`
-	FavoriteGames   []string          `json:"favoriteGames"`
-	PlayTimes       *models.PlayTimes `json:"playTimes"`
-}
-
 type Activity struct {
 	Type        string `json:"type"`
 	Title       string `json:"title"`
@@ -115,42 +103,39 @@ func (ph *ProfileHandler) Profile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	favoriteGames, _ := user.GetFavoriteGames()
-	playTimes, _ := user.GetPlayTimes()
-
-	// フォロワー数を取得（開発環境では20人固定）
-	var followerCount int64 = 20
-	if ph.repo != nil && ph.repo.UserFollow != nil {
-		followers, err := ph.repo.UserFollow.GetFollowers(user.ID)
-		if err == nil {
-			followerCount = int64(len(followers))
-		}
-	}
+	profileData := ph.ownProfileData(user)
 
 	// 作成した部屋の1ページ目を取得（タブ初期表示用）
-	rooms, roomsPagination, err := ph.hostedRoomsPage(user.ID, 1, "/api/profile/rooms")
+	rooms, roomsPagination, err := ph.hostedRoomsPage(user.ID, 1, fmt.Sprintf("/api/users/%s/rooms", user.ID))
 	if err != nil {
 		ph.logger.Printf("部屋取得エラー: %v", err)
 	}
-
-	profileData := ProfileData{
-		User:            user,
-		IsOwnProfile:    true,
-		Activities:      ph.getMockActivities(),
-		Rooms:           rooms,
-		RoomsPagination: roomsPagination,
-		Followers:       ph.getMockFollowers(),
-		FollowerCount:   followerCount,
-		FavoriteGames:   favoriteGames,
-		PlayTimes:       playTimes,
-	}
+	profileData.Rooms = rooms
+	profileData.RoomsPagination = roomsPagination
 
 	data := TemplateData{
 		Title:    "プロフィール",
 		PageData: profileData,
 	}
 
-	renderTemplate(w, r, "profile.tmpl", data)
+	renderTemplate(w, r, "user_profile.tmpl", data)
+}
+
+// ownProfileData 自分のプロフィール表示用データを組み立てる（Rooms・RoomsPagination は呼び出し側で設定する）
+func (ph *ProfileHandler) ownProfileData(user *models.User) UserProfileData {
+	favoriteGames, _ := user.GetFavoriteGames()
+	playTimes, _ := user.GetPlayTimes()
+
+	return UserProfileData{
+		User:            user,
+		IsOwnProfile:    true,
+		IsAuthenticated: true,
+		RelationStatus:  "none",
+		ActivityCount:   getActivityCount(ph.repo, user.ID),
+		FollowerCount:   getFollowerCount(ph.repo, user.ID),
+		FavoriteGames:   favoriteGames,
+		PlayTimes:       playTimes,
+	}
 }
 
 // EditForm プロフィール編集フォームを返す（htmx用）
@@ -267,57 +252,6 @@ func (ph *ProfileHandler) Activity(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Rooms 作成した部屋タブコンテンツを返す（htmx用）
-func (ph *ProfileHandler) Rooms(w http.ResponseWriter, r *http.Request) {
-	var targetUserID uuid.UUID
-	var err error
-
-	userIDStr := chi.URLParam(r, "uuid")
-	if userIDStr != "" {
-		// 他のユーザーのプロフィール
-		targetUserID, err = uuid.Parse(userIDStr)
-		if err != nil {
-			http.Error(w, "無効なユーザーIDです", http.StatusBadRequest)
-			return
-		}
-	} else {
-		// 自分のプロフィール
-		user := getUserFromContext(r.Context())
-		if user == nil {
-			// htmxリクエストの場合はHX-Redirectヘッダーを使用
-			if r.Header.Get("HX-Request") == "true" {
-				w.Header().Set("HX-Redirect", "/auth/login")
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
-			// 通常のリクエストの場合はリダイレクト
-			http.Redirect(w, r, "/auth/login", http.StatusFound)
-			return
-		}
-
-		targetUserID = user.ID
-	}
-
-	rooms, pagination, err := ph.hostedRoomsPage(targetUserID, parsePageParam(r), r.URL.Path)
-	if err != nil {
-		ph.logger.Printf("部屋取得エラー: %v", err)
-		http.Error(w, "部屋データの取得に失敗しました", http.StatusInternalServerError)
-		return
-	}
-
-	data := roomsTabData{
-		Rooms:      rooms,
-		Pagination: pagination,
-	}
-
-	// 部分テンプレートを使用してレンダリング
-	if err := renderPartialTemplate(w, "profile_rooms", data); err != nil {
-		ph.logger.Printf("テンプレートレンダリングエラー: %v", err)
-		http.Error(w, "テンプレートの描画に失敗しました", http.StatusInternalServerError)
-		return
-	}
-}
-
 // Following フォロー中タブコンテンツを返す（htmx用）
 func (ph *ProfileHandler) Following(w http.ResponseWriter, r *http.Request) {
 	// URLパラメータからユーザーIDを取得（他ユーザーのプロフィール表示用）
@@ -385,78 +319,6 @@ func (ph *ProfileHandler) Followers(w http.ResponseWriter, r *http.Request) {
 		ph.logger.Printf("テンプレートレンダリングエラー: %v", err)
 		http.Error(w, "テンプレートの描画に失敗しました", http.StatusInternalServerError)
 		return
-	}
-}
-
-// Helper functions
-func (ph *ProfileHandler) getMockActivities() []Activity {
-	return []Activity{
-		{
-			Type:        "room_create",
-			Title:       "【部屋作成】古龍種連戦",
-			Description: "ターゲット: クシャルダオラ",
-			TimeAgo:     "3時間前",
-			Icon:        "fa-door-open",
-			IconColor:   "text-green-500",
-		},
-		{
-			Type:        "room_join",
-			Title:       "【部屋参加】二つ名持ちモンスター",
-			Description: "ホスト: 素材コレクター",
-			TimeAgo:     "昨日",
-			Icon:        "fa-right-to-bracket",
-			IconColor:   "text-blue-500",
-		},
-		{
-			Type:        "follow_add",
-			Title:       "ハンター太郎さんをフォローしました",
-			Description: "",
-			TimeAgo:     "2日前",
-			Icon:        "fa-user-plus",
-			IconColor:   "text-yellow-500",
-		},
-	}
-}
-
-func (ph *ProfileHandler) getMockRooms() []RoomSummary {
-	return []RoomSummary{
-		{
-			ID:          uuid.New(),
-			Name:        "テスト部屋（更新済み）",
-			Description: "部屋設定の更新機能が正常に動作することを確認しました。",
-			GameVersion: "MHP3",
-			PlayerCount: "1/4",
-			Status:      "active",
-			CreatedAt:   "3時間前",
-		},
-		{
-			ID:          uuid.New(),
-			Name:        "古龍種連戦",
-			Description: "古龍種を順番に討伐していきます",
-			GameVersion: "MHP2G",
-			PlayerCount: "0/4",
-			Status:      "ended",
-			CreatedAt:   "1日前",
-		},
-	}
-}
-
-func (ph *ProfileHandler) getMockFollowers() []Follower {
-	return []Follower{
-		{
-			ID:             uuid.New(),
-			Username:       "ハンター太郎",
-			AvatarURL:      "/static/images/default-avatar.webp",
-			IsOnline:       true,
-			FollowingSince: "2日前",
-		},
-		{
-			ID:             uuid.New(),
-			Username:       "素材コレクター",
-			AvatarURL:      "/static/images/default-avatar.webp",
-			IsOnline:       false,
-			FollowingSince: "5日前",
-		},
 	}
 }
 
@@ -690,33 +552,9 @@ func (ph *ProfileHandler) ViewProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// お気に入りゲームとプレイ時間帯を取得
-	favoriteGames, _ := user.GetFavoriteGames()
-	playTimes, _ := user.GetPlayTimes()
+	data := ph.ownProfileData(user)
 
-	// フォロワー数を取得
-	var followerCount int64 = 0
-	if ph.repo != nil && ph.repo.UserFollow != nil {
-		followers, err := ph.repo.UserFollow.GetFollowers(user.ID)
-		if err == nil {
-			followerCount = int64(len(followers))
-		}
-	}
-
-	// テンプレート用データ
-	data := struct {
-		User          *models.User
-		FavoriteGames []string
-		PlayTimes     *models.PlayTimes
-		FollowerCount int64
-	}{
-		User:          user,
-		FavoriteGames: favoriteGames,
-		PlayTimes:     playTimes,
-		FollowerCount: followerCount,
-	}
-
-	if err := renderPartialTemplate(w, "profile_view", data); err != nil {
+	if err := renderPartialTemplate(w, "profile_card_content", data); err != nil {
 		ph.logger.Printf("テンプレートレンダリングエラー: %v", err)
 		http.Error(w, "テンプレートの描画に失敗しました", http.StatusInternalServerError)
 		return

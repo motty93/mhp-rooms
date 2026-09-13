@@ -288,7 +288,7 @@ user, _ := repo.FindUserByID(userID)  // 主キーのIDで検索
 3. **類似実装箇所との整合性確認**
    - 同じような機能が既に実装されていないか
    - 実装されている場合、どのIDを使用しているか
-   - 例: `templates/components/follow_buttons.tmpl`、`templates/pages/profile.tmpl` などを参照
+   - 例: `templates/components/follow_buttons.tmpl`、`templates/pages/user_profile.tmpl` などを参照
 
 4. **データベーススキーマの確認**
    - テーブルの主キーとユニークキーの関係

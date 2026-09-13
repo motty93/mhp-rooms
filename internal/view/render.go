@@ -28,7 +28,6 @@ type Data struct {
 var partialDependencies = map[string][]string{
 	"profile_card_content": {"follow_buttons.tmpl", "block_report_buttons.tmpl"},
 	"hunter_list":          {},
-	"profile_rooms":        {"tab_pagination.tmpl"},
 	"user_profile_rooms":   {"tab_pagination.tmpl"},
 	"profile_activity":     {"tab_pagination.tmpl"},
 	"recent_activity_feed": {},
@@ -59,10 +58,8 @@ func Template(w http.ResponseWriter, templateName string, data Data) {
 		filepath.Join("templates", "components", "footer.tmpl"),
 		filepath.Join("templates", "components", "room_create_button.tmpl"),
 		filepath.Join("templates", "components", "room_create_modal.tmpl"),
-		filepath.Join("templates", "components", "profile_view.tmpl"),
 		filepath.Join("templates", "components", "profile_edit_form.tmpl"),
 		filepath.Join("templates", "components", "profile_activity.tmpl"),
-		filepath.Join("templates", "components", "profile_rooms.tmpl"),
 		filepath.Join("templates", "components", "user_profile_rooms.tmpl"),
 		filepath.Join("templates", "components", "tab_pagination.tmpl"),
 		filepath.Join("templates", "components", "profile_followers.tmpl"),
