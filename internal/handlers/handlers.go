@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 
+	"mhp-rooms/internal/middleware"
 	"mhp-rooms/internal/repository"
 	"mhp-rooms/internal/view"
 )
@@ -16,6 +17,9 @@ type BaseHandler struct {
 type TemplateData = view.Data
 
 func renderTemplate(w http.ResponseWriter, r *http.Request, templateName string, data TemplateData) {
+	if user, ok := middleware.GetUserFromContext(r.Context()); ok && user != nil {
+		data.IsAuthenticated = true
+	}
 	data = withCanonicalURL(r, data)
 	view.Template(w, templateName, data)
 }

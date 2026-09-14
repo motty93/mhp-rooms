@@ -46,6 +46,7 @@ func sampleRoomDetailData() TemplateData {
 // 埋め込み JavaScript が構文エラーなくパースできることを確認する
 func TestRenderRoomDetailWithKickUI(t *testing.T) {
 	chdirRepoRoot(t)
+	t.Setenv("SITE_URL", "https://www.huntershub.net")
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "/rooms/test", nil)
@@ -57,6 +58,9 @@ func TestRenderRoomDetailWithKickUI(t *testing.T) {
 	}
 
 	for _, want := range []string{
+		`<link rel="canonical" href="https://www.huntershub.net/rooms/test" />`,
+		`<meta property="og:url" content="https://www.huntershub.net/rooms/test" />`,
+		`<meta name="twitter:url" content="https://www.huntershub.net/rooms/test" />`,
 		`@click="toggleMemberMenu(index)"`,
 		`@click="openKickModal(member)"`,
 		`@click="openReportForMember(member)"`,

@@ -8,7 +8,7 @@
 {{ end }}
 
 {{ define "og_meta" }}
-  {{ $siteURL := getEnv "SITE_URL" "http://localhost:8080" }}
+  {{ $siteURL := .SiteURL }}
   <meta property="og:title" content="{{ .PageData.Room.Name }} - 部屋に参加" />
   <meta
     property="og:description"

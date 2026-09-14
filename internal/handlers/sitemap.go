@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"mhp-rooms/internal/config"
@@ -35,7 +34,7 @@ type URLSet struct {
 
 // SitemapHandler generates XML sitemap for the website
 func (h *PageHandler) Sitemap(w http.ResponseWriter, r *http.Request) {
-	baseURL := strings.TrimRight(config.GetEnv("SITE_URL", "http://localhost:8080"), "/")
+	baseURL := config.PublicSiteURL()
 	now := time.Now()
 
 	urls := make([]URL, 0, 32)

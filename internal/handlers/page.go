@@ -42,7 +42,7 @@ func (h *PageHandler) Hello(w http.ResponseWriter, r *http.Request) {
 
 // Robots responds with an environment-aware robots.txt
 func (h *PageHandler) Robots(w http.ResponseWriter, r *http.Request) {
-	siteURL := strings.TrimRight(config.GetEnv("SITE_URL", "http://localhost:8080"), "/")
+	siteURL := config.PublicSiteURL()
 	env := strings.ToLower(config.GetEnv("ENV", "development"))
 	var builder strings.Builder
 	builder.WriteString("# robots.txt for HuntersHub\n\n")

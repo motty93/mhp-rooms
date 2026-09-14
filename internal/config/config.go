@@ -153,6 +153,11 @@ func GetEnv(key, defaultValue string) string {
 	return defaultValue
 }
 
+// PublicSiteURL returns the configured public origin without a trailing slash.
+func PublicSiteURL() string {
+	return strings.TrimRight(GetEnv("SITE_URL", "http://localhost:8080"), "/")
+}
+
 func getEnvInt(key string, defaultValue int) int {
 	if value := os.Getenv(key); value != "" {
 		if intValue, err := strconv.Atoi(value); err == nil {

@@ -3,7 +3,6 @@ package handlers
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
 	"mhp-rooms/internal/config"
 
@@ -22,7 +21,7 @@ func BuildOGPImageURL(roomID uuid.UUID, ogVersion int) string {
 		)
 	}
 
-	siteURL := config.GetEnv("SITE_URL", "http://localhost:8080")
+	siteURL := config.PublicSiteURL()
 	return fmt.Sprintf(
 		"%s/tmp/images/%s/ogp/rooms/%s.png?v=%d",
 		siteURL, ogPrefix, roomID, ogVersion,
@@ -31,7 +30,7 @@ func BuildOGPImageURL(roomID uuid.UUID, ogVersion int) string {
 
 // withCanonicalURL ensures every view receives a canonical URL and site URL derived from the request path.
 func withCanonicalURL(r *http.Request, data TemplateData) TemplateData {
-	base := strings.TrimRight(config.GetEnv("SITE_URL", "http://localhost:8080"), "/")
+	base := config.PublicSiteURL()
 
 	if data.SiteURL == "" {
 		data.SiteURL = base

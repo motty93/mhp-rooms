@@ -14,7 +14,6 @@ import (
 	"mhp-rooms/internal/middleware"
 	"mhp-rooms/internal/models"
 	"mhp-rooms/internal/repository"
-	"mhp-rooms/internal/view"
 )
 
 const (
@@ -154,7 +153,7 @@ func (h *AdminHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 		Pagination: newPagination(total, page, adminLogsPerPage, "/admin"),
 	}
 
-	view.Template(w, "admin_dashboard.tmpl", view.Data{
+	renderTemplate(w, r, "admin_dashboard.tmpl", TemplateData{
 		Title:    "管理ダッシュボード",
 		PageData: data,
 	})
@@ -202,7 +201,7 @@ func (h *AdminHandler) Rooms(w http.ResponseWriter, r *http.Request) {
 		Pagination: newPaginationWithQuery(total, page, adminRoomsPerPage, "/admin/rooms", adminRoomsQuery(hostUserID)),
 	}
 
-	view.Template(w, "admin_rooms.tmpl", view.Data{
+	renderTemplate(w, r, "admin_rooms.tmpl", TemplateData{
 		Title:    "部屋一覧（管理）",
 		PageData: data,
 	})
@@ -232,7 +231,7 @@ func (h *AdminHandler) Users(w http.ResponseWriter, r *http.Request) {
 		Sort:       params.Sort,
 		Pagination: newPaginationWithQuery(total, page, adminUsersPerPage, "/admin/users", adminUsersQuery(params)),
 	}
-	view.Template(w, "admin_users.tmpl", view.Data{
+	renderTemplate(w, r, "admin_users.tmpl", TemplateData{
 		Title:    "ユーザー一覧（管理）",
 		PageData: data,
 	})
@@ -312,7 +311,7 @@ func (h *AdminHandler) RoomDetail(w http.ResponseWriter, r *http.Request) {
 		data.DismissedAt = formatAdminTime(*room.DismissedAt)
 	}
 
-	view.Template(w, "admin_room_detail.tmpl", view.Data{
+	renderTemplate(w, r, "admin_room_detail.tmpl", TemplateData{
 		Title:    fmt.Sprintf("%s（管理）", room.Name),
 		PageData: data,
 	})

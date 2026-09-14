@@ -16,7 +16,7 @@
       <meta name="author" content="HuntersHub" />
 
       <!-- 構造化データ -->
-      {{ $siteURL := getEnv "SITE_URL" "https://huntershub.net" }}
+      {{ $siteURL := .SiteURL }}
       <script type="application/ld+json">
         {
           "@context": "https://schema.org",
@@ -320,7 +320,7 @@
         {{ end }}
         {{ $ogBucket := getEnv "OG_BUCKET" "" }}
         {{ $ogPrefix := getEnv "OG_PREFIX" "dev" }}
-        {{ $siteURL := getEnv "SITE_URL" "http://localhost:8080" }}
+        {{ $siteURL := .SiteURL }}
         {{ $defaultOGImage := "" }}
         {{ if $ogBucket }}
           {{ $defaultOGImage = printf "https://storage.googleapis.com/%s/%s/ogp/og_image.png" $ogBucket $ogPrefix }}
@@ -346,8 +346,9 @@
         {{ template "header" . }}
 
         {{ if not .StaticPage }}
-          <!-- お知らせパネル -->
-          {{ template "notification_panel" }}
+          {{ if .IsAuthenticated }}
+            {{ template "notification_panel" }}
+          {{ end }}
 
           <!-- モバイルメニュー -->
           <div class="md:hidden">
@@ -413,11 +414,8 @@
 
               <!-- メニュー内容 -->
               <div class="p-6">
-                <!-- 未認証時のメニュー -->
-                <div
-                  x-show="$store.auth.initialized && !$store.auth.loading && !$store.auth.isAuthenticated"
-                  style="display: none;"
-                >
+                {{ if not .IsAuthenticated }}
+                <div>
                   <div class="space-y-4">
                     <a
                       href="/auth/login"
@@ -451,12 +449,10 @@
                     >
                   </div>
                 </div>
+                {{ end }}
 
-                <!-- 認証済み時のメニュー -->
-                <div
-                  x-show="$store.auth.initialized && !$store.auth.loading && $store.auth.isAuthenticated"
-                  style="display: none;"
-                >
+                {{ if .IsAuthenticated }}
+                <div>
                   <div class="space-y-2">
                     <!-- 参加中の部屋 -->
                     <template x-if="$store.auth.currentRoom">
@@ -541,6 +537,7 @@
                     ログアウト
                   </button>
                 </div>
+                {{ end }}
               </div>
             </div>
           </div>
@@ -563,6 +560,7 @@
       {{ template "footer" . }}
 
       {{ if not .StaticPage }}
+        {{ if .IsAuthenticated }}
         <!-- グローバル部屋作成モーダル -->
         <div
           x-data="{ 
@@ -1106,6 +1104,7 @@
             </div>
           </div>
         </div>
+        {{ end }}
       {{ end }}
     </body>
   </html>
