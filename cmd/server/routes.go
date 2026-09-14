@@ -253,7 +253,6 @@ func (app *Application) setupAPIRoutes(r chi.Router) {
 		ar.Post("/profile/update", app.withAuth(app.profileHandler.UpdateProfile))
 		ar.Post("/profile/upload-avatar", app.withAuth(app.profileHandler.UploadAvatar))
 		ar.Get("/profile/activity", app.withAuth(app.profileHandler.Activity))
-		ar.Get("/profile/rooms", app.withAuth(app.profileHandler.Rooms))
 		ar.Get("/profile/followers", app.withAuth(app.profileHandler.Followers))
 		ar.Get("/profile/following", app.withAuth(app.profileHandler.Following))
 

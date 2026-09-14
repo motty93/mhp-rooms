@@ -67,12 +67,6 @@ func TestRenderRoomsTabPartials(t *testing.T) {
 		wantNoPaging bool
 	}{
 		{
-			name:         "自分のプロフィール: 複数ページならページ送りを描画",
-			template:     "profile_rooms",
-			pagination:   newPagination(45, 2, tabPerPage, "/api/profile/rooms"),
-			wantPageLink: `hx-get="/api/profile/rooms?page=3"`,
-		},
-		{
 			name:         "他ユーザー: 複数ページならページ送りを描画",
 			template:     "user_profile_rooms",
 			pagination:   newPagination(45, 1, tabPerPage, "/api/users/abc/rooms"),
@@ -80,8 +74,8 @@ func TestRenderRoomsTabPartials(t *testing.T) {
 		},
 		{
 			name:         "1ページに収まる場合はページ送りを描画しない",
-			template:     "profile_rooms",
-			pagination:   newPagination(5, 1, tabPerPage, "/api/profile/rooms"),
+			template:     "user_profile_rooms",
+			pagination:   newPagination(5, 1, tabPerPage, "/api/users/abc/rooms"),
 			wantNoPaging: true,
 		},
 	}
@@ -142,13 +136,15 @@ func TestRenderProfilePagesWithRoomsTab(t *testing.T) {
 	}{
 		{
 			name:     "自分のプロフィールページ",
-			template: "profile.tmpl",
-			pageData: ProfileData{
+			template: "user_profile.tmpl",
+			pageData: UserProfileData{
 				User:            sampleUser(),
 				PlayTimes:       &models.PlayTimes{},
 				IsOwnProfile:    true,
+				IsAuthenticated: true,
+				RelationStatus:  "none",
 				Rooms:           sampleRooms(2),
-				RoomsPagination: newPagination(30, 1, tabPerPage, "/api/profile/rooms"),
+				RoomsPagination: newPagination(30, 1, tabPerPage, "/api/users/abc/rooms"),
 			},
 		},
 		{
@@ -243,7 +239,7 @@ func TestRenderUserProfileIncludesDetailsAndAccessibleTabs(t *testing.T) {
 func TestRenderRoomsTabShowsAutoDismissNote(t *testing.T) {
 	chdirRepoRoot(t)
 
-	for _, tmpl := range []string{"profile_rooms", "user_profile_rooms"} {
+	for _, tmpl := range []string{"user_profile_rooms"} {
 		t.Run(tmpl, func(t *testing.T) {
 			w := httptest.NewRecorder()
 			data := roomsTabData{
@@ -265,6 +261,56 @@ func TestRenderRoomsTabShowsAutoDismissNote(t *testing.T) {
 	}
 }
 
+// TestRenderOwnProfileShowsEditButtonInsteadOfFollow 自分のプロフィールでは編集ボタンのみが描画され、フォロー・通報系のUIが出ないことを確認する
+func TestRenderOwnProfileShowsEditButtonInsteadOfFollow(t *testing.T) {
+	chdirRepoRoot(t)
+
+	profileData := UserProfileData{
+		User:            sampleUser(),
+		PlayTimes:       &models.PlayTimes{},
+		IsOwnProfile:    true,
+		IsAuthenticated: true,
+		RelationStatus:  "none",
+		RoomsPagination: newPagination(0, 1, tabPerPage, "/api/users/abc/rooms"),
+	}
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/profile", nil)
+	renderTemplate(w, r, "user_profile.tmpl", TemplateData{Title: "test", PageData: profileData})
+
+	body := w.Body.String()
+	if w.Code != 200 || strings.Contains(body, "Template parsing error") || strings.Contains(body, "Template execution error") {
+		t.Fatalf("status = %d, body:\n%s", w.Code, truncate(body, 1500))
+	}
+	for _, want := range []string{`hx-get="/profile/edit"`, "プロフィールを編集"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("描画結果に %q が含まれていない", want)
+		}
+	}
+	for _, notWant := range []string{"フォローする", `aria-label="その他の操作"`} {
+		if strings.Contains(body, notWant) {
+			t.Errorf("自分のプロフィールに %q が描画されている", notWant)
+		}
+	}
+
+	// ViewProfile が返す部分HTML（編集キャンセル・保存後に読み込まれる）でも同様であることを確認する
+	partialWriter := httptest.NewRecorder()
+	if err := renderPartialTemplate(partialWriter, "profile_card_content", profileData); err != nil {
+		t.Fatalf("renderPartialTemplate() error = %v", err)
+	}
+	partialBody := partialWriter.Body.String()
+	for _, want := range []string{`hx-get="/profile/edit"`, "プロフィールを編集"} {
+		if !strings.Contains(partialBody, want) {
+			t.Errorf("部分更新の描画結果に %q が含まれていない", want)
+		}
+	}
+	for _, notWant := range []string{"フォローする", `aria-label="その他の操作"`} {
+		if strings.Contains(partialBody, notWant) {
+			t.Errorf("部分更新に %q が描画されている", notWant)
+		}
+	}
+}
+
 // TestRenderPagesIncludeNotificationUI 共通レイアウトにお知らせベルとパネルが描画されることを確認する
 func TestRenderPagesIncludeNotificationUI(t *testing.T) {
 	chdirRepoRoot(t)
@@ -272,11 +318,13 @@ func TestRenderPagesIncludeNotificationUI(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "/profile", nil)
 	r = r.WithContext(context.WithValue(r.Context(), middleware.UserContextKey, &middleware.AuthUser{ID: "user-id"}))
-	renderTemplate(w, r, "profile.tmpl", TemplateData{Title: "test", PageData: ProfileData{
+	renderTemplate(w, r, "user_profile.tmpl", TemplateData{Title: "test", PageData: UserProfileData{
 		User:            sampleUser(),
 		PlayTimes:       &models.PlayTimes{},
 		IsOwnProfile:    true,
-		RoomsPagination: newPagination(0, 1, tabPerPage, "/api/profile/rooms"),
+		IsAuthenticated: true,
+		RelationStatus:  "none",
+		RoomsPagination: newPagination(0, 1, tabPerPage, "/api/users/abc/rooms"),
 	}})
 
 	body := w.Body.String()
