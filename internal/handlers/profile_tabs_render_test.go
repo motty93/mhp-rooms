@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"context"
 	"net/http/httptest"
 	"regexp"
 	"strings"
 	"testing"
 
+	"mhp-rooms/internal/middleware"
 	"mhp-rooms/internal/models"
 
 	"github.com/google/uuid"
@@ -315,6 +317,7 @@ func TestRenderPagesIncludeNotificationUI(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "/profile", nil)
+	r = r.WithContext(context.WithValue(r.Context(), middleware.UserContextKey, &middleware.AuthUser{ID: "user-id"}))
 	renderTemplate(w, r, "user_profile.tmpl", TemplateData{Title: "test", PageData: UserProfileData{
 		User:            sampleUser(),
 		PlayTimes:       &models.PlayTimes{},

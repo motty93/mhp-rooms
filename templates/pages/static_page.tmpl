@@ -3,7 +3,7 @@
   {{ $page := .PageData.Page }}
   {{ $ogBucket := getEnv "OG_BUCKET" "" }}
   {{ $ogPrefix := getEnv "OG_PREFIX" "dev" }}
-  {{ $siteURL := getEnv "SITE_URL" "http://localhost:8080" }}
+  {{ $siteURL := .SiteURL }}
   {{ $defaultOGImage := "" }}
   {{ if $ogBucket }}
     {{ $defaultOGImage = printf "https://storage.googleapis.com/%s/%s/ogp/og_image.png" $ogBucket $ogPrefix }}
@@ -38,7 +38,7 @@
 {{ end }}
 
 {{ define "og_meta" }}
-  {{ $siteURL := getEnv "SITE_URL" "http://localhost:8080" }}
+  {{ $siteURL := .SiteURL }}
   {{ $ogBucket := getEnv "OG_BUCKET" "" }}
   {{ $ogPrefix := getEnv "OG_PREFIX" "dev" }}
   {{ $defaultOGImage := "" }}

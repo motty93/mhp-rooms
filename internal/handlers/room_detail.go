@@ -134,6 +134,9 @@ func (h *RoomDetailHandler) RoomDetail(w http.ResponseWriter, r *http.Request) {
 // renderRoomDetailTemplate は部屋詳細専用のテンプレートレンダリング関数
 func renderRoomDetailTemplate(w http.ResponseWriter, r *http.Request, templateName string, data TemplateData) {
 	funcMap := view.TemplateFuncs()
+	if user, ok := middleware.GetUserFromContext(r.Context()); ok && user != nil {
+		data.IsAuthenticated = true
+	}
 	data = withCanonicalURL(r, data)
 
 	tmpl, err := template.New("").Funcs(funcMap).ParseFiles(

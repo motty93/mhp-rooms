@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"net/http"
 	"path/filepath"
+	"time"
 
 	"mhp-rooms/internal/config"
 )
@@ -20,8 +21,10 @@ type Data struct {
 	SiteURL                string
 	SSEHost                string
 	IsProduction           bool
+	IsAuthenticated        bool
 	AnalyticsMeasurementID string
 	AnalyticsEnabled       bool
+	CurrentYear            int
 }
 
 // partialDependencies 部分テンプレートが内部で参照する他のコンポーネント
@@ -35,6 +38,12 @@ var partialDependencies = map[string][]string{
 
 func Template(w http.ResponseWriter, templateName string, data Data) {
 	funcMap := TemplateFuncs()
+	if data.SiteURL == "" {
+		data.SiteURL = config.PublicSiteURL()
+	}
+	if data.CurrentYear == 0 {
+		data.CurrentYear = time.Now().Year()
+	}
 
 	if config.AppConfig != nil {
 		data.IsProduction = config.AppConfig.IsProduction()

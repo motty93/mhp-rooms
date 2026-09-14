@@ -19,11 +19,11 @@
       "@type": "WebSite",
       "name": "HuntersHub",
       "alternateName": "ハンターズハブ",
-      "url": "https://huntershub.net",
+      "url": "{{ .SiteURL }}",
       "description": "モンスターハンター全シリーズ対応のパーティメンバー募集掲示板。MHP/MHP2/MHP2G/MHP3/MHXX/MHW/MHWIBのリアルタイム仲間募集サービス",
       "potentialAction": {
         "@type": "SearchAction",
-        "target": "https://huntershub.net/rooms?q={search_term_string}",
+        "target": "{{ .SiteURL }}/rooms?q={search_term_string}",
         "query-input": "required name=search_term_string"
       }
     }
