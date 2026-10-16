@@ -331,14 +331,13 @@ func (h *RoomHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	}
 
 	room := &models.Room{
-		RoomCode:       roomCode,
-		Name:           req.Name,
-		GameVersionID:  gameVersionID,
-		HostUserID:     hostUserID,
-		MaxPlayers:     req.MaxPlayers,
-		IsActive:       true,
-		CurrentPlayers: 0, // 初期人数（メンバー追加処理で更新される）
-		OGVersion:      1, // OGP画像のバージョン初期値
+		RoomCode:      roomCode,
+		Name:          req.Name,
+		GameVersionID: gameVersionID,
+		HostUserID:    hostUserID,
+		MaxPlayers:    req.MaxPlayers,
+		IsActive:      true,
+		OGVersion:     1, // OGP画像のバージョン初期値
 	}
 
 	if req.Description != "" {
@@ -514,21 +513,7 @@ func (h *RoomHandler) JoinRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// forceJoinフラグが設定されている場合は、先に現在の部屋から退出する
-	if req.ForceJoin {
-		// 現在参加している部屋があれば退出
-		activeRoom, findErr := h.repo.Room.FindActiveRoomByUserID(userID)
-		if findErr == nil && activeRoom != nil && activeRoom.ID != roomID {
-			// 退出処理を実行
-			if leaveErr := h.repo.Room.LeaveRoom(activeRoom.ID, userID); leaveErr != nil {
-				// 退出に失敗した場合は処理を中断
-				http.Error(w, "現在の部屋からの退出に失敗しました", http.StatusInternalServerError)
-				return
-			}
-		}
-	}
-
-	if err := h.repo.Room.JoinRoom(roomID, userID, req.Password); err != nil {
+	if err := h.repo.Room.JoinRoom(roomID, userID, req.Password, req.ForceJoin); err != nil {
 		// 既に参加している場合は部屋詳細に遷移
 		if strings.HasPrefix(err.Error(), "ALREADY_JOINED:") {
 			response := map[string]interface{}{
@@ -560,6 +545,16 @@ func (h *RoomHandler) JoinRoom(w http.ResponseWriter, r *http.Request) {
 			}
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusForbidden)
+			json.NewEncoder(w).Encode(response)
+			return
+		}
+		if strings.HasPrefix(err.Error(), "ROOM_FULL:") {
+			response := map[string]interface{}{
+				"error":   "ROOM_FULL",
+				"message": strings.TrimPrefix(err.Error(), "ROOM_FULL:"),
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusConflict)
 			json.NewEncoder(w).Encode(response)
 			return
 		}

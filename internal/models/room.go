@@ -75,10 +75,6 @@ func (r *Room) IsFull() bool {
 	return r.CurrentPlayers >= r.MaxPlayers
 }
 
-func (r *Room) CanJoin() bool {
-	return r.IsActive && !r.IsClosed && !r.IsFull()
-}
-
 // GetDescription は説明文を安全に取得
 func (r *Room) GetDescription() string {
 	if r.Description != nil {

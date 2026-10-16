@@ -44,9 +44,7 @@ type RoomRepository interface {
 	DismissRoom(id uuid.UUID, reason string) error
 	FindInactiveRooms(idleSince time.Time) ([]models.Room, error)
 	ToggleRoomClosed(id uuid.UUID, isClosed bool) error
-	IncrementRoomPlayerCount(id uuid.UUID) error
-	DecrementRoomPlayerCount(id uuid.UUID) error
-	JoinRoom(roomID, userID uuid.UUID, password string) error
+	JoinRoom(roomID, userID uuid.UUID, password string, leaveCurrentRoom bool) error
 	LeaveRoom(roomID, userID uuid.UUID) error
 	KickMember(roomID, userID uuid.UUID) error
 	FindActiveRoomByUserID(userID uuid.UUID) (*models.Room, error)

@@ -600,6 +600,9 @@ window.userProfileRoomsHandler = {
 
       if (!response.ok) {
         const errorText = await response.text()
+        if (response.status === 409 && errorText.includes('ROOM_FULL')) {
+          throw new Error(JSON.parse(errorText).message)
+        }
         throw new Error(errorText || '参加に失敗しました')
       }
 

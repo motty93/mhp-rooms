@@ -1629,6 +1629,10 @@
                 throw new Error('パスワードが間違っています')
               }
 
+              if (joinResponse.status === 409 && errorText.includes('ROOM_FULL')) {
+                throw new Error(JSON.parse(errorText).message)
+              }
+
               throw new Error(errorText || '参加に失敗しました')
             }
 
