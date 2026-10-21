@@ -21,6 +21,9 @@ func NewRoomRepository(db DBInterface) RoomRepository {
 
 func (r *roomRepository) CreateRoom(room *models.Room) error {
 	return r.db.GetConn().Transaction(func(tx *gorm.DB) error {
+		// ホストも定員に含めるため、作成時点の人数は 1
+		room.CurrentPlayers = 1
+
 		// 部屋を作成
 		if err := tx.Create(room).Error; err != nil {
 			return err
@@ -307,22 +310,7 @@ func (r *roomRepository) ToggleRoomClosed(id uuid.UUID, isClosed bool) error {
 		Update("is_closed", isClosed).Error
 }
 
-func (r *roomRepository) IncrementRoomPlayerCount(id uuid.UUID) error {
-	return r.db.GetConn().
-		Model(&models.Room{}).
-		Where("id = ?", id).
-		Update("current_players", gorm.Expr("current_players + ?", 1)).Error
-}
-
-func (r *roomRepository) DecrementRoomPlayerCount(id uuid.UUID) error {
-	return r.db.GetConn().
-		Model(&models.Room{}).
-		Where("id = ?", id).
-		Where("current_players > ?", 0).
-		Update("current_players", gorm.Expr("current_players - ?", 1)).Error
-}
-
-func (r *roomRepository) JoinRoom(roomID, userID uuid.UUID, password string) error {
+func (r *roomRepository) JoinRoom(roomID, userID uuid.UUID, password string, leaveCurrentRoom bool) error {
 	return r.db.GetConn().Transaction(func(tx *gorm.DB) error {
 		// ユーザーの存在確認（開発環境では自動作成）
 		var user models.User
@@ -347,17 +335,6 @@ func (r *roomRepository) JoinRoom(roomID, userID uuid.UUID, password string) err
 			}
 		}
 
-		// 他の部屋に参加しているかチェック
-		var activeInOtherRoom models.RoomMember
-		query := "user_id = ? AND status = ? AND room_id != ?"
-		if err := tx.Where(query, userID, "active", roomID).First(&activeInOtherRoom).Error; err == nil {
-			// 既に他の部屋に参加している場合
-			return fmt.Errorf("OTHER_ROOM_ACTIVE:既に別の部屋に参加しています")
-		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-			// record not found 以外のエラーが発生した場合
-			return fmt.Errorf("部屋メンバー検索エラー: %w", err)
-		}
-
 		var room models.Room
 		if err := tx.Where("id = ?", roomID).First(&room).Error; err != nil {
 			return err
@@ -370,20 +347,49 @@ func (r *roomRepository) JoinRoom(roomID, userID uuid.UUID, password string) err
 			return fmt.Errorf("KICKED:この部屋から退出させられたため、再度参加することはできません")
 		}
 
-		if !room.CanJoin() {
+		// 満員の部屋の参加済みメンバーには満員ではなく参加済みを返すため、満員チェックより先に判定する
+		var activeMember models.RoomMember
+		if err := tx.Where("room_id = ? AND user_id = ? AND status = ?", roomID, userID, "active").
+			First(&activeMember).Error; err == nil {
+			// 既に参加している場合は特別なエラーコードを返す
+			return fmt.Errorf("ALREADY_JOINED:既にルームに参加しています")
+		}
+
+		if !room.IsActive || room.IsClosed {
 			return fmt.Errorf("ルームに参加できません")
+		}
+
+		// current_players 列は古い値が残っている場合があるため、実際のアクティブメンバー数（ホスト込み）で満員を判定する
+		var activeCount int64
+		if err := tx.Model(&models.RoomMember{}).
+			Where("room_id = ? AND status = ?", roomID, models.MemberStatusActive).
+			Count(&activeCount).Error; err != nil {
+			return err
+		}
+		room.CurrentPlayers = int(activeCount)
+		if room.IsFull() {
+			return fmt.Errorf("ROOM_FULL:満員のため参加できません")
 		}
 
 		if !room.CheckPassword(password) {
 			return fmt.Errorf("パスワードが間違っています")
 		}
 
-		// アクティブなメンバーかチェック
-		var activeMember models.RoomMember
-		if err := tx.Where("room_id = ? AND user_id = ? AND status = ?", roomID, userID, "active").
-			First(&activeMember).Error; err == nil {
-			// 既に参加している場合は特別なエラーコードを返す
-			return fmt.Errorf("ALREADY_JOINED:既にルームに参加しています")
+		// 参加できる部屋だと確定してから他の部屋への参加を確認する。
+		// 強制参加の退出は同じトランザクションで行い、参加に失敗したら元の部屋に残す
+		var activeInOtherRoom models.RoomMember
+		query := "user_id = ? AND status = ? AND room_id != ?"
+		if err := tx.Where(query, userID, "active", roomID).First(&activeInOtherRoom).Error; err == nil {
+			// 既に他の部屋に参加している場合
+			if !leaveCurrentRoom {
+				return fmt.Errorf("OTHER_ROOM_ACTIVE:既に別の部屋に参加しています")
+			}
+			if leaveErr := removeMemberTx(tx, activeInOtherRoom.RoomID, userID, models.MemberStatusLeft, "leave"); leaveErr != nil {
+				return fmt.Errorf("現在の部屋からの退出に失敗しました: %w", leaveErr)
+			}
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+			// record not found 以外のエラーが発生した場合
+			return fmt.Errorf("部屋メンバー検索エラー: %w", err)
 		}
 
 		// 既存の退室済みメンバーがいるかチェック
@@ -418,10 +424,10 @@ func (r *roomRepository) JoinRoom(roomID, userID uuid.UUID, password string) err
 			}
 		}
 
-		// 部屋のプレイヤー数を更新
+		// 部屋のプレイヤー数を更新（参加前の人数 + 本人）
 		if err := tx.Model(&models.Room{}).
 			Where("id = ?", roomID).
-			Update("current_players", gorm.Expr("current_players + ?", 1)).Error; err != nil {
+			Update("current_players", int(activeCount)+1).Error; err != nil {
 			return err
 		}
 
@@ -449,52 +455,61 @@ func (r *roomRepository) KickMember(roomID, userID uuid.UUID) error {
 	return r.removeMember(roomID, userID, models.MemberStatusKicked, "kick")
 }
 
-// removeMember アクティブなメンバーを status に変更して部屋から外し、人数を減らして action のログを残す
 func (r *roomRepository) removeMember(roomID, userID uuid.UUID, status, action string) error {
 	return r.db.GetConn().Transaction(func(tx *gorm.DB) error {
-		now := time.Now()
-		result := tx.Model(&models.RoomMember{}).
-			Where("room_id = ? AND user_id = ? AND status = ?", roomID, userID, models.MemberStatusActive).
-			Updates(map[string]interface{}{
-				"status":  status,
-				"left_at": &now,
-			})
-
-		if result.Error != nil {
-			return result.Error
-		}
-
-		if result.RowsAffected == 0 {
-			return fmt.Errorf("ルームメンバーが見つかりません")
-		}
-
-		// ユーザー情報を取得
-		var user models.User
-		if err := tx.Select("id", "supabase_user_id", "email", "username", "display_name", "avatar_url", "bio", "psn_online_id", "nintendo_network_id", "nintendo_switch_id", "pretendo_network_id", "twitter_id", "is_active", "role", "created_at", "updated_at").Where("id = ?", userID).First(&user).Error; err != nil {
-			return err
-		}
-
-		// 部屋のプレイヤー数を更新
-		if err := tx.Model(&models.Room{}).
-			Where("id = ?", roomID).
-			Where("current_players > ?", 0).
-			Update("current_players", gorm.Expr("current_players - ?", 1)).Error; err != nil {
-			return err
-		}
-
-		// 退室ログを記録
-		log := models.RoomLog{
-			RoomID: roomID,
-			UserID: &userID,
-			Action: action,
-			Details: models.JSONB{
-				Data: map[string]interface{}{
-					"user_name": user.DisplayName,
-				},
-			},
-		}
-		return tx.Create(&log).Error
+		return removeMemberTx(tx, roomID, userID, status, action)
 	})
+}
+
+// removeMemberTx アクティブなメンバーを status に変更して部屋から外し、人数を数え直して action のログを残す。呼び出し元のトランザクション内で実行する
+func removeMemberTx(tx *gorm.DB, roomID, userID uuid.UUID, status, action string) error {
+	now := time.Now()
+	result := tx.Model(&models.RoomMember{}).
+		Where("room_id = ? AND user_id = ? AND status = ?", roomID, userID, models.MemberStatusActive).
+		Updates(map[string]interface{}{
+			"status":  status,
+			"left_at": &now,
+		})
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("ルームメンバーが見つかりません")
+	}
+
+	// ユーザー情報を取得
+	var user models.User
+	if err := tx.Select("id", "supabase_user_id", "email", "username", "display_name", "avatar_url", "bio", "psn_online_id", "nintendo_network_id", "nintendo_switch_id", "pretendo_network_id", "twitter_id", "is_active", "role", "created_at", "updated_at").Where("id = ?", userID).First(&user).Error; err != nil {
+		return err
+	}
+
+	// 部屋のプレイヤー数を、残っているアクティブメンバー数に合わせる
+	var activeCount int64
+	if err := tx.Model(&models.RoomMember{}).
+		Where("room_id = ? AND status = ?", roomID, models.MemberStatusActive).
+		Count(&activeCount).Error; err != nil {
+		return err
+	}
+	if err := tx.Model(&models.Room{}).
+		Where("id = ?", roomID).
+		Update("current_players", int(activeCount)).Error; err != nil {
+		return err
+	}
+
+	// 退室ログを記録
+	log := models.RoomLog{
+		RoomID: roomID,
+		UserID: &userID,
+		Action: action,
+		Details: models.JSONB{
+			Data: map[string]interface{}{
+				"user_name": user.DisplayName,
+			},
+		},
+	}
+	return tx.Create(&log).Error
 }
 
 func (r *roomRepository) FindActiveRoomByUserID(userID uuid.UUID) (*models.Room, error) {

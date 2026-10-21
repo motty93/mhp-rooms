@@ -125,16 +125,8 @@ func (r *Repository) ToggleRoomClosed(id uuid.UUID, isClosed bool) error {
 	return r.Room.ToggleRoomClosed(id, isClosed)
 }
 
-func (r *Repository) IncrementRoomPlayerCount(id uuid.UUID) error {
-	return r.Room.IncrementRoomPlayerCount(id)
-}
-
-func (r *Repository) DecrementRoomPlayerCount(id uuid.UUID) error {
-	return r.Room.DecrementRoomPlayerCount(id)
-}
-
-func (r *Repository) JoinRoom(roomID, userID uuid.UUID, password string) error {
-	return r.Room.JoinRoom(roomID, userID, password)
+func (r *Repository) JoinRoom(roomID, userID uuid.UUID, password string, leaveCurrentRoom bool) error {
+	return r.Room.JoinRoom(roomID, userID, password, leaveCurrentRoom)
 }
 
 func (r *Repository) LeaveRoom(roomID, userID uuid.UUID) error {
